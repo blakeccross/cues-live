@@ -13,6 +13,20 @@ final class InputMappingStoreTests: XCTestCase {
         store = InputMappingStore(defaults: defaults)
     }
 
+    func testFirstLaunchLoadsDefaultKeyMappings() {
+        XCTAssertEqual(store.mappings.count, InputMappingStore.defaultMappings.count)
+        XCTAssertEqual(store.mapping(for: .playPause)?.key?.keyName, "Space")
+        XCTAssertEqual(store.mapping(for: .stop)?.key?.keyName, "S")
+        XCTAssertEqual(store.mapping(for: .fade)?.key?.keyName, "F")
+        XCTAssertEqual(store.mapping(for: .loop)?.key?.keyName, "L")
+    }
+
+    func testSavedEmptyMappingsDoNotRestoreDefaults() {
+        defaults.set(Data("[]".utf8), forKey: "inputMapping.mappings")
+        let reloaded = InputMappingStore(defaults: defaults)
+        XCTAssertTrue(reloaded.mappings.isEmpty)
+    }
+
     func testAssigningKeyReplacesPreviousAction() {
         let space = KeyBinding(
             keyCode: 49,

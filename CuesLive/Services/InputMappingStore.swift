@@ -108,7 +108,18 @@ final class InputMappingStore {
     }
 
     private static func load(from defaults: UserDefaults) -> [InputMapping] {
-        guard let data = defaults.data(forKey: Keys.mappings) else { return [] }
+        guard let data = defaults.data(forKey: Keys.mappings) else {
+            return defaultMappings
+        }
         return (try? JSONDecoder().decode([InputMapping].self, from: data)) ?? []
+    }
+
+    static var defaultMappings: [InputMapping] {
+        [
+            InputMapping(action: .playPause, key: .unmodified(keyCode: 49, character: " ", keyName: "Space")),
+            InputMapping(action: .stop, key: .unmodified(keyCode: 1, character: "s", keyName: "S")),
+            InputMapping(action: .fade, key: .unmodified(keyCode: 3, character: "f", keyName: "F")),
+            InputMapping(action: .loop, key: .unmodified(keyCode: 37, character: "l", keyName: "L")),
+        ]
     }
 }

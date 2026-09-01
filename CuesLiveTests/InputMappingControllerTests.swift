@@ -9,6 +9,7 @@ final class InputMappingControllerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         let defaults = UserDefaults(suiteName: "InputMappingControllerTests.\(UUID().uuidString)")!
+        defaults.set(Data("[]".utf8), forKey: "inputMapping.mappings")
         store = InputMappingStore(defaults: defaults)
         controller = InputMappingController(store: store, bindsHardware: false)
     }

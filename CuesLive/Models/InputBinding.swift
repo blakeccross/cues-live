@@ -30,6 +30,19 @@ struct KeyBinding: Codable, Hashable, Sendable {
         isEscape || keyCode == 48 || keyName == "Tab"
     }
 
+    /// Unmodified key binding with a known macOS virtual key code.
+    static func unmodified(keyCode: UInt16, character: String, keyName: String) -> KeyBinding {
+        KeyBinding(
+            keyCode: keyCode,
+            character: character,
+            keyName: keyName,
+            command: false,
+            shift: false,
+            option: false,
+            control: false
+        )
+    }
+
     func matches(_ other: KeyBinding) -> Bool {
         guard command == other.command,
               shift == other.shift,

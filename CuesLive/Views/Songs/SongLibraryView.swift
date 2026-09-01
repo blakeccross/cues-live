@@ -643,13 +643,30 @@ private struct AddClickSongSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @FocusState private var songNameFocused: Bool
+
     @State private var songName = ""
     @State private var bpmText = "120"
-    @State private var numerator = TimeSignatureChange.defaultNumerator
-    @State private var denominator = TimeSignatureChange.defaultDenominator
+    @State private var selectedPreset = MeterPreset(
+        numerator: TimeSignatureChange.defaultNumerator,
+        denominator: TimeSignatureChange.defaultDenominator
+    )
 
-    private static let presets: [(numerator: Int, denominator: Int)] = [
-        (4, 4), (3, 4), (2, 4), (6, 8), (5, 4), (7, 8), (12, 8)
+    private struct MeterPreset: Hashable {
+        let numerator: Int
+        let denominator: Int
+
+        var label: String { "\(numerator)/\(denominator)" }
+    }
+
+    private static let presets: [MeterPreset] = [
+        MeterPreset(numerator: 4, denominator: 4),
+        MeterPreset(numerator: 3, denominator: 4),
+        MeterPreset(numerator: 2, denominator: 4),
+        MeterPreset(numerator: 6, denominator: 8),
+        MeterPreset(numerator: 5, denominator: 4),
+        MeterPreset(numerator: 7, denominator: 8),
+        MeterPreset(numerator: 12, denominator: 8)
     ]
 
     private var canCreate: Bool {
@@ -671,73 +688,85 @@ private struct AddClickSongSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Song name", text: $songName)
-                    TextField("Tempo (BPM)", text: $bpmText)
-                        #if os(iOS)
-                        .keyboardType(.decimalPad)
-                        #endif
-                }
+        AppSheetContainer {
+            NavigationStack {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Song name")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.textSecondary)
 
-                Section("Meter") {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
-                        ForEach(Array(Self.presets.enumerated()), id: \.offset) { _, preset in
-                            Button {
-                                numerator = preset.numerator
-                                denominator = preset.denominator
-                            } label: {
-                                Text("\(preset.numerator)/\(preset.denominator)")
-                                    .font(.body.monospacedDigit().weight(.medium))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 8)
-                            }
-                            .appEditorToolbarPill()
-                            .tint(
-                                numerator == preset.numerator && denominator == preset.denominator
-                                    ? AppColors.accent
-                                    : .secondary
-                            )
-                        }
+                        TextField("My Song", text: $songName)
+                            .textFieldStyle(.roundedBorder)
+                            .focused($songNameFocused)
                     }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-                }
 
-                Section {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Tempo (BPM)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.textSecondary)
+
+                        TextField("120", text: $bpmText)
+                            .textFieldStyle(.roundedBorder)
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
+                    }
+
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Meter")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.textSecondary)
+
+                        Picker("Meter", selection: $selectedPreset) {
+                            ForEach(Self.presets, id: \.self) { preset in
+                                Text(preset.label).tag(preset)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                    }
+
                     Text("Creates an 8-bar click track set to loop.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AppColors.textTertiary)
                 }
-            }
-            .navigationTitle("Add Click")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                .padding(AppSpacing.lg)
+                .frame(minWidth: 360, minHeight: 280)
+                .navigationTitle("Add Click")
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                        .foregroundStyle(AppColors.textSecondary)
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Create") {
+                            createClickSong()
+                        }
+                        .foregroundStyle(canCreate ? AppColors.accent : AppColors.textTertiary)
+                        .disabled(!canCreate)
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        guard let bpm = parsedBPM else { return }
-                        onCreate(
-                            songName.trimmingCharacters(in: .whitespacesAndNewlines),
-                            bpm,
-                            numerator,
-                            denominator
-                        )
-                    }
-                    .disabled(!canCreate)
+                .onAppear {
+                    songNameFocused = true
                 }
             }
         }
-        #if os(macOS)
-        .frame(minWidth: 360, minHeight: 380)
-        #endif
+    }
+
+    private func createClickSong() {
+        guard let bpm = parsedBPM else { return }
+        onCreate(
+            songName.trimmingCharacters(in: .whitespacesAndNewlines),
+            bpm,
+            selectedPreset.numerator,
+            selectedPreset.denominator
+        )
     }
 }
 
