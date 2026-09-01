@@ -552,6 +552,8 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
     private let readerQueue = DispatchQueue(label: "StreamingStemBuffer.reader", qos: .userInitiated)
     private let reader: AVAudioFile
     private let readBuffer: AVAudioPCMBuffer
+    private let decodeConverter: AVAudioConverter?
+    private let decodedScratch: AVAudioPCMBuffer?
     private var timer: DispatchSourceTimer?
 
     init(
@@ -572,9 +574,37 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
             throw DecodedStemBufferError.unsupportedFormat
         }
 
+        let playbackFormat: AVAudioFormat
+        let converter: AVAudioConverter?
+        let convertedScratch: AVAudioPCMBuffer?
+
+        if format.commonFormat == .pcmFormatFloat32 && !format.isInterleaved {
+            playbackFormat = format
+            converter = nil
+            convertedScratch = nil
+        } else if let targetFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: format.sampleRate,
+            channels: format.channelCount,
+            interleaved: false
+        ),
+        let audioConverter = AVAudioConverter(from: format, to: targetFormat),
+        let floatScratch = AVAudioPCMBuffer(
+            pcmFormat: targetFormat,
+            frameCapacity: AVAudioFrameCount(pageFrames)
+        ) {
+            playbackFormat = targetFormat
+            converter = audioConverter
+            convertedScratch = floatScratch
+        } else {
+            throw DecodedStemBufferError.unsupportedFormat
+        }
+
         reader = file
         readBuffer = scratch
-        audioFormat = format
+        decodeConverter = converter
+        decodedScratch = convertedScratch
+        audioFormat = playbackFormat
         sampleRate = format.sampleRate
         channelCount = Int(format.channelCount)
         frameCount = Int(file.length)
@@ -785,11 +815,43 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
         }
 
         let framesRead = Int(readBuffer.frameLength)
-        guard framesRead > 0, let channelData = readBuffer.floatChannelData else { return nil }
+        guard framesRead > 0 else { return nil }
 
-        let page = Page(channelCount: channelCount, capacity: pageFrames, validFrames: framesRead)
+        let channelData: UnsafePointer<UnsafeMutablePointer<Float>>
+        let validFrames: Int
+
+        if let decodeConverter, let decodedScratch {
+            decodeConverter.reset()
+            decodedScratch.frameLength = 0
+            var conversionError: NSError?
+            var didProvideInput = false
+            let inputBuffer = readBuffer
+            let status = decodeConverter.convert(to: decodedScratch, error: &conversionError) { _, outStatus in
+                if didProvideInput {
+                    outStatus.pointee = .noDataNow
+                    return nil
+                }
+                didProvideInput = true
+                outStatus.pointee = .haveData
+                return inputBuffer
+            }
+            guard status != .error,
+                  decodedScratch.frameLength > 0,
+                  let convertedChannels = decodedScratch.floatChannelData else {
+                return nil
+            }
+            channelData = convertedChannels
+            validFrames = Int(decodedScratch.frameLength)
+        } else if let directChannels = readBuffer.floatChannelData {
+            channelData = directChannels
+            validFrames = framesRead
+        } else {
+            return nil
+        }
+
+        let page = Page(channelCount: channelCount, capacity: pageFrames, validFrames: validFrames)
         for channel in 0..<channelCount {
-            page.channels[channel].update(from: channelData[channel], count: framesRead)
+            page.channels[channel].update(from: channelData[channel], count: validFrames)
         }
         return page
     }

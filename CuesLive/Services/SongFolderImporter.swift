@@ -80,6 +80,7 @@ enum SongFolderImporter {
         }
 
         let scan = try scanFolderContents(at: folderURL)
+
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let songName = trimmedName.isEmpty ? scan.suggestedName : trimmedName
 

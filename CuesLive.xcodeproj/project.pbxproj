@@ -139,6 +139,7 @@
 		AA00000100000000000000F3 /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
 		AA00000100000000000000F4 /* SongSectionNameNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */; };
 		AA00000100000000000000F5 /* SongSectionNameNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */; };
+		AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012E /* TrackGroupStoreTests.swift */; };
 		AA00000100000000000000F6 /* AbletonProjectImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */; };
 		AA00000100000000000000F7 /* SpeechSampleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F7 /* SpeechSampleRenderer.swift */; };
 		AA00000100000000000000F8 /* CueTrackScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F8 /* CueTrackScheduler.swift */; };
@@ -341,6 +342,7 @@
 		AA00000200000000000000F3 /* SongSectionPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionPresets.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizer.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizerTests.swift; sourceTree = "<group>"; };
+		AA000002000000000000012E /* TrackGroupStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroupStoreTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbletonProjectImporterTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F7 /* SpeechSampleRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSampleRenderer.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F8 /* CueTrackScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueTrackScheduler.swift; sourceTree = "<group>"; };
@@ -691,6 +693,7 @@
 				AA000002000000000000012B /* SongMusicalKeyTests.swift */,
 				AA00000200000000000000D9 /* SongUndoControllerTests.swift */,
 				AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */,
+				AA000002000000000000012E /* TrackGroupStoreTests.swift */,
 				AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */,
 				AA00000200000000000000FB /* CueTrackSchedulerTests.swift */,
 				AA00000200000000000000FC /* CueTrackGeneratorTests.swift */,
@@ -1063,6 +1066,7 @@
 				AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */,
 				AA00000100000000000000D9 /* SongUndoControllerTests.swift in Sources */,
 				AA00000100000000000000F5 /* SongSectionNameNormalizerTests.swift in Sources */,
+				AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */,
 				AA00000100000000000000F6 /* AbletonProjectImporterTests.swift in Sources */,
 				AA00000100000000000000FB /* CueTrackSchedulerTests.swift in Sources */,
 				AA00000100000000000000FC /* CueTrackGeneratorTests.swift in Sources */,

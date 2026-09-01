@@ -67,6 +67,7 @@ struct LivePlaybackView: View {
     @State private var showingShowFileExporter = false
     @State private var showFileDocument: ShowFileDocument?
     @State private var songImportFeedback: SongImportFeedback?
+    @State private var isImportingSongFolder = false
     @State private var infoPanelHeight: CGFloat = 0
     @State private var mixerDetent: LiveGroupMixerDetent = .hidden
     @State private var headerPendingEdit: SetlistEntry?
@@ -480,7 +481,8 @@ struct LivePlaybackView: View {
             },
             onAddToSetlist: { song in
                 addSong(song, at: workingSetlist.sortedEntries.count)
-            }
+            },
+            isImportInProgress: isImportingSongFolder
         )
     }
 
@@ -527,14 +529,21 @@ struct LivePlaybackView: View {
     }
 
     private func importSong(from folderURL: URL) {
-        do {
-            let importResult = try SongFolderImporter.importFromFolder(
-                at: folderURL,
-                context: modelContext
-            )
-            songImportFeedback = .success(SongFolderImporter.summaryMessage(for: importResult))
-        } catch {
-            songImportFeedback = .failure(error.localizedDescription)
+        guard !isImportingSongFolder else { return }
+
+        isImportingSongFolder = true
+        Task { @MainActor in
+            defer { isImportingSongFolder = false }
+
+            do {
+                let importResult = try SongFolderImporter.importFromFolder(
+                    at: folderURL,
+                    context: modelContext
+                )
+                songImportFeedback = .success(SongFolderImporter.summaryMessage(for: importResult))
+            } catch {
+                songImportFeedback = .failure(error.localizedDescription)
+            }
         }
     }
 

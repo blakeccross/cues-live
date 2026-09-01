@@ -7,8 +7,7 @@ enum WaveformLoader {
     static let overviewSampleCount = 4096
 
     static func loadPeaks(from url: URL, targetSampleCount: Int = overviewSampleCount) -> [Float] {
-        let peaks = loadRawPeaks(from: url, targetSampleCount: targetSampleCount)
-        return normalize(peaks)
+        normalize(loadRawPeaks(from: url, targetSampleCount: targetSampleCount))
     }
 
     static func loadRawPeaks(from url: URL, targetSampleCount: Int = overviewSampleCount) -> [Float] {
@@ -19,38 +18,96 @@ enum WaveformLoader {
 
         let totalFrames = Int(file.length)
         let bucketCount = min(targetSampleCount, totalFrames)
+        guard bucketCount > 0 else { return [] }
+
         let framesPerBucket = max(1, totalFrames / bucketCount)
+        // Sample a small window per bucket instead of scanning the entire file.
+        let framesPerSample = min(framesPerBucket, 8_192)
 
         var peaks = [Float](repeating: 0, count: bucketCount)
-        let format = file.processingFormat
+        let sourceFormat = file.processingFormat
+        let channelCount = Int(sourceFormat.channelCount)
+        guard channelCount > 0 else { return [] }
 
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(framesPerBucket)
+        let canReadFloatDirectly =
+            sourceFormat.commonFormat == .pcmFormatFloat32 && !sourceFormat.isInterleaved
+
+        if canReadFloatDirectly {
+            guard let buffer = AVAudioPCMBuffer(
+                pcmFormat: sourceFormat,
+                frameCapacity: AVAudioFrameCount(framesPerSample)
+            ) else {
+                return []
+            }
+
+            for bucketIndex in 0..<bucketCount {
+                let startFrame = bucketIndex * framesPerBucket
+                guard startFrame < totalFrames else { break }
+
+                let readCount = min(framesPerSample, totalFrames - startFrame)
+                file.framePosition = AVAudioFramePosition(startFrame)
+                buffer.frameLength = 0
+
+                guard (try? file.read(into: buffer, frameCount: AVAudioFrameCount(readCount))) != nil else {
+                    break
+                }
+
+                peaks[bucketIndex] = peakAmplitude(in: buffer)
+            }
+
+            return Array(peaks.prefix(bucketCount))
+        }
+
+        guard let floatFormat = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: sourceFormat.sampleRate,
+            channels: AVAudioChannelCount(channelCount),
+            interleaved: false
+        ),
+        let converter = AVAudioConverter(from: sourceFormat, to: floatFormat),
+        let inputBuffer = AVAudioPCMBuffer(
+            pcmFormat: sourceFormat,
+            frameCapacity: AVAudioFrameCount(framesPerSample)
+        ),
+        let outputBuffer = AVAudioPCMBuffer(
+            pcmFormat: floatFormat,
+            frameCapacity: AVAudioFrameCount(framesPerSample)
         ) else {
             return []
         }
 
-        file.framePosition = 0
-        var bucketIndex = 0
+        for bucketIndex in 0..<bucketCount {
+            let startFrame = bucketIndex * framesPerBucket
+            guard startFrame < totalFrames else { break }
 
-        while file.framePosition < file.length, bucketIndex < bucketCount {
-            let remaining = AVAudioFrameCount(file.length - file.framePosition)
-            let readCount = min(AVAudioFrameCount(framesPerBucket), remaining)
-            buffer.frameLength = 0
+            let readCount = min(framesPerSample, totalFrames - startFrame)
+            file.framePosition = AVAudioFramePosition(startFrame)
+            inputBuffer.frameLength = 0
 
-            do {
-                try file.read(into: buffer, frameCount: readCount)
-            } catch {
+            guard (try? file.read(into: inputBuffer, frameCount: AVAudioFrameCount(readCount))) != nil,
+                  inputBuffer.frameLength > 0 else {
                 break
             }
 
-            peaks[bucketIndex] = peakAmplitude(in: buffer)
-            bucketIndex += 1
+            converter.reset()
+            outputBuffer.frameLength = 0
+            var conversionError: NSError?
+            var didProvideInput = false
+            let status = converter.convert(to: outputBuffer, error: &conversionError) { _, outStatus in
+                if didProvideInput {
+                    outStatus.pointee = .noDataNow
+                    return nil
+                }
+                didProvideInput = true
+                outStatus.pointee = .haveData
+                return inputBuffer
+            }
+
+            guard status != .error, outputBuffer.frameLength > 0 else { break }
+            peaks[bucketIndex] = peakAmplitude(in: outputBuffer)
         }
 
-        peaks = Array(peaks.prefix(bucketIndex))
-        return peaks
+        return Array(peaks.prefix(bucketCount))
     }
 
     static func summedPeaks(
@@ -99,6 +156,10 @@ enum WaveformLoader {
             return peakFromInt16Channels(int16Channels, frameLength: frameLength, channelCount: Int(buffer.format.channelCount))
         }
 
+        if let int32Channels = buffer.int32ChannelData {
+            return peakFromInt32Channels(int32Channels, frameLength: frameLength, channelCount: Int(buffer.format.channelCount))
+        }
+
         return 0
     }
 
@@ -131,13 +192,30 @@ enum WaveformLoader {
         }
         return peak
     }
+
+    private static func peakFromInt32Channels(
+        _ channels: UnsafePointer<UnsafeMutablePointer<Int32>>,
+        frameLength: Int,
+        channelCount: Int
+    ) -> Float {
+        let scale = Float(Int32(1 << 23))
+        var peak: Float = 0
+        for channel in 0..<channelCount {
+            let data = channels[channel]
+            for frame in 0..<frameLength {
+                peak = max(peak, abs(Float(data[frame]) / scale))
+            }
+        }
+        return peak
+    }
 }
 
 enum WaveformPeakResampler {
     /// Upper bound on bars drawn per lane regardless of zoom level.
     static let maxDisplayBars = 1200
-    /// One bar per pixel — used in the song editor timeline.
-    static let editorBarSlotWidth: CGFloat = 1
+    /// Minimum horizontal spacing between bar centers in the song editor timeline.
+    /// Two points per bar keeps scrolling smooth on long multi-track sessions.
+    static let editorBarSlotWidth: CGFloat = 2
     /// Minimum horizontal spacing between bar centers when zoomed out (Voice Memos style).
     static let voiceMemosBarSlotWidth: CGFloat = 3
 
@@ -377,6 +455,9 @@ final class WaveformCache {
         }
 
         let task = Task.detached(priority: .utility) { () -> [Float] in
+            await WaveformPeakLoadLimiter.shared.acquire()
+            defer { Task { await WaveformPeakLoadLimiter.shared.release() } }
+
             let peaks = WaveformLoader.loadPeaks(from: url)
             WaveformPeakDiskCache.save(peaks, forKey: key)
             await WaveformCache.shared.store(peaks, forKey: key)
@@ -416,6 +497,9 @@ final class WaveformCache {
         }
 
         let task = Task.detached(priority: .utility) { () -> [Float] in
+            await WaveformPeakLoadLimiter.shared.acquire()
+            defer { Task { await WaveformPeakLoadLimiter.shared.release() } }
+
             let peaks = WaveformLoader.summedPeaks(from: sources)
             WaveformPeakDiskCache.save(peaks, forKey: key)
             await WaveformCache.shared.store(peaks, forKey: key)
@@ -448,5 +532,39 @@ final class WaveformCache {
         let values = try? url.resourceValues(forKeys: [.contentModificationDateKey])
         guard let date = values?.contentModificationDate else { return 0 }
         return Int(date.timeIntervalSince1970)
+    }
+}
+
+private enum WaveformPeakLoadLimiter {
+    static let shared = PeakLoadLimiter(maxConcurrent: 1)
+}
+
+private actor PeakLoadLimiter {
+    private let maxConcurrent: Int
+    private var activeCount = 0
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    init(maxConcurrent: Int) {
+        self.maxConcurrent = max(1, maxConcurrent)
+    }
+
+    func acquire() async {
+        if activeCount < maxConcurrent {
+            activeCount += 1
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+        activeCount += 1
+    }
+
+    func release() {
+        activeCount = max(0, activeCount - 1)
+        if let next = waiters.first {
+            waiters.removeFirst()
+            next.resume()
+        }
     }
 }

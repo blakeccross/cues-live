@@ -66,6 +66,8 @@ struct TimelinePlayheadOverlay: View {
     let duration: TimeInterval
     let contentWidth: CGFloat
     let height: CGFloat
+    /// When the overlay is pinned to the viewport, subtract the lane horizontal scroll offset.
+    var horizontalScrollOffset: CGFloat = 0
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -82,7 +84,7 @@ struct TimelinePlayheadOverlay: View {
                     for: clampedTime,
                     duration: safeDuration,
                     contentWidth: contentWidth
-                ),
+                ) - horizontalScrollOffset,
                 scale: displayScale
             )
             drawPlayhead(in: context, size: size, centerX: centerX)

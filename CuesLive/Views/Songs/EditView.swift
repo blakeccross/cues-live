@@ -69,9 +69,7 @@ struct EditView: View {
     @FocusState private var isTimelineFocused: Bool
     @State private var cachedRulerSections: [ArrangementDisplaySection] = []
     @State private var cachedTrackSections: [UUID: [ArrangementDisplaySection]] = [:]
-    @State private var timelineVerticalScrollOffset: CGFloat = 0
-
-    private let timelineVerticalScrollSpace = "editTimelineVerticalScroll"
+    @State private var isTimelineReady = false
 
     @Query(sort: [SortDescriptor(\TrackGroup.sortOrder), SortDescriptor(\TrackGroup.name)])
     private var trackGroups: [TrackGroup]
@@ -477,8 +475,17 @@ struct EditView: View {
         TimelineLayout.minZoom(duration: timelineDuration, viewportWidth: timelineViewportWidth)
     }
 
+    /// Before geometry is measured, `timelineZoom` is still 1 and would lay out the full
+    /// natural width (~duration × 6 px). Use a fit-to-viewport estimate until then.
+    private var resolvedTimelineZoom: CGFloat {
+        guard timelineViewportWidth > 0 else {
+            return TimelineLayout.minZoom(duration: timelineDuration, viewportWidth: 1200)
+        }
+        return timelineZoom
+    }
+
     private var timelineContentWidth: CGFloat {
-        TimelineLayout.contentWidth(for: timelineDuration, zoom: timelineZoom)
+        TimelineLayout.contentWidth(for: timelineDuration, zoom: resolvedTimelineZoom)
     }
 
     /// Fills the scroll viewport when song content is narrower than the editor area.
@@ -703,6 +710,17 @@ struct EditView: View {
         .frame(maxHeight: .infinity)
     }
 
+    private var timelineLoadingPlaceholder: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Spacer(minLength: 0)
+            ProgressView("Loading timeline…")
+                .controlSize(.regular)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.dawTimelineBackground)
+    }
+
     private var addTrackFlowModifier: AddTrackFlowModifier {
         AddTrackFlowModifier(
             showingTrackImporter: $showingTrackImporter,
@@ -723,7 +741,11 @@ struct EditView: View {
 #endif
 
             if hasTimelineContent {
-                dawTimeline
+                if isTimelineReady {
+                    dawTimeline
+                } else {
+                    timelineLoadingPlaceholder
+                }
             } else {
                 emptyTracksPlaceholder
             }
@@ -741,6 +763,10 @@ struct EditView: View {
             viewModel.syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
             reconfigureMIDI()
             prepareSectionAnnouncements()
+            Task { @MainActor in
+                await Task.yield()
+                isTimelineReady = true
+            }
         }
         .onChange(of: clipSelection) { _, newValue in
             if let trackID = newValue?.trackID {
@@ -1597,51 +1623,18 @@ struct EditView: View {
     }
 
     private var stemTimeline: some View {
-        GeometryReader { geometry in
-            let tracksViewportHeight = max(0, geometry.size.height - TimelineLayout.rulerTotalHeight)
-
-            HStack(alignment: .top, spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: true) {
-                    TimelinePlayheadLayer(
-                        duration: timelineDuration,
-                        contentWidth: timelineContentWidth,
-                        displayWidth: timelineDisplayWidth,
-                        height: TimelineLayout.rulerTotalHeight + tracksViewportHeight
-                    ) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            timelineRulerStack
-                                .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerTotalHeight)
-
-                            ScrollView(.vertical, showsIndicators: true) {
-                                VStack(spacing: 0) {
-                                    TimelineVerticalScrollOffsetReporter(
-                                        coordinateSpaceName: timelineVerticalScrollSpace
-                                    )
-                                    trackTimelineScrollContent
-                                        .frame(width: timelineDisplayWidth, alignment: .leading)
-                                }
-                            }
-                            .coordinateSpace(name: timelineVerticalScrollSpace)
-                            .modifier(TimelineVerticalScrollOffsetObserver(offset: $timelineVerticalScrollOffset))
-                            .frame(height: tracksViewportHeight)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onGeometryChange(for: CGFloat.self) { proxy in
-                    proxy.size.width
-                } action: { width in
-                    timelineViewportWidth = width
-                }
-                .simultaneousGesture(timelinePinchGesture)
-                .onTapGesture {
-                    isTimelineFocused = true
-                }
-
-                trackHeaderColumn(tracksViewportHeight: tracksViewportHeight)
-            }
-        }
-        .frame(maxHeight: .infinity)
+        EditStemTimelineView(
+            timelineDuration: timelineDuration,
+            timelineContentWidth: timelineContentWidth,
+            timelineDisplayWidth: timelineDisplayWidth,
+            timelineViewportWidth: $timelineViewportWidth,
+            isTimelineFocused: $isTimelineFocused,
+            ruler: { timelineRulerStack },
+            lanes: { trackTimelineScrollContent },
+            headerRulerCorner: { trackHeaderRulerCorner },
+            headers: { trackHeaderList }
+        )
+        .simultaneousGesture(timelinePinchGesture)
     }
 
     private var timelineRulerStack: some View {
@@ -1706,18 +1699,6 @@ struct EditView: View {
             contentWidth: timelineContentWidth
         )
         return (startX, max(0, endX - startX))
-    }
-
-    private func trackHeaderColumn(tracksViewportHeight: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            trackHeaderRulerCorner
-
-            trackHeaderList
-                .offset(y: -timelineVerticalScrollOffset)
-                .frame(height: tracksViewportHeight, alignment: .top)
-                .clipped()
-        }
-        .frame(width: TimelineLayout.trackHeaderWidth)
     }
 
     private var timelineRulerSection: some View {
@@ -1830,6 +1811,7 @@ struct EditView: View {
             )
 
             trackLanesContent
+                .compositingGroup()
                 .frame(width: timelineContentWidth, alignment: .leading)
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .leading)
@@ -1871,7 +1853,8 @@ struct EditView: View {
                     },
                     onSeek: { time in
                         AudioEngineManager.shared.seek(to: time)
-                    }
+                    },
+                    shouldLoadWaveformPeaks: viewModel.isLoaded
                 )
                 .frame(width: timelineContentWidth, alignment: .leading)
                 }
@@ -1897,7 +1880,7 @@ struct EditView: View {
     }
 
     private var trackHeaderList: some View {
-        VStack(spacing: TimelineLayout.laneSpacing) {
+        LazyVStack(spacing: TimelineLayout.laneSpacing) {
             ForEach(song.sortedTracks, id: \.id) { track in
                 TrackLaneHeaderView(
                     track: track,
@@ -1949,6 +1932,7 @@ struct EditView: View {
         .frame(width: TimelineLayout.trackHeaderWidth)
         .background(Color.dawTrackHeaderColumnBackground)
         .onReceive(Timer.publish(every: 1.0 / 30.0, on: .main, in: .common).autoconnect()) { _ in
+            guard audioEngine.isPlaying else { return }
             audioEngine.refreshGroupMeters()
         }
         .overlay(alignment: .leading) {
@@ -3048,7 +3032,120 @@ private struct TempoMarkerEditorMenu: View {
     }
 }
 
-private struct TimelineVerticalScrollOffsetKey: PreferenceKey {
+private struct TimelineHorizontalFollower<Content: View>: View {
+    let contentWidth: CGFloat
+    let scrollOffset: CGFloat
+    let viewportWidth: CGFloat
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .frame(width: contentWidth, alignment: .leading)
+            .offset(x: -scrollOffset)
+            .frame(width: viewportWidth, alignment: .leading)
+            .clipped()
+    }
+}
+
+private struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Headers: View>: View {
+    let timelineDuration: TimeInterval
+    let timelineContentWidth: CGFloat
+    let timelineDisplayWidth: CGFloat
+    @Binding var timelineViewportWidth: CGFloat
+    @FocusState.Binding var isTimelineFocused: Bool
+    @ViewBuilder let ruler: () -> Ruler
+    @ViewBuilder let lanes: () -> Lanes
+    @ViewBuilder let headerRulerCorner: () -> HeaderCorner
+    @ViewBuilder let headers: () -> Headers
+
+    @State private var timelineHorizontalOffset: CGFloat = 0
+
+    private let timelineHorizontalScrollSpace = "editTimelineHorizontalScroll"
+
+    var body: some View {
+        GeometryReader { geometry in
+            let timelineColumnWidth = max(0, geometry.size.width - TimelineLayout.trackHeaderWidth)
+            let tracksViewportHeight = max(0, geometry.size.height - TimelineLayout.rulerTotalHeight)
+
+            VStack(spacing: 0) {
+                HStack(alignment: .top, spacing: 0) {
+                    TimelineHorizontalFollower(
+                        contentWidth: timelineDisplayWidth,
+                        scrollOffset: timelineHorizontalOffset,
+                        viewportWidth: timelineColumnWidth
+                    ) {
+                        ruler()
+                            .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerTotalHeight)
+                    }
+
+                    headerRulerCorner()
+                }
+
+                ScrollView(.vertical, showsIndicators: true) {
+                    HStack(alignment: .top, spacing: 0) {
+                        ScrollView(.horizontal, showsIndicators: true) {
+                            VStack(spacing: 0) {
+                                TimelineHorizontalScrollOffsetReporter(
+                                    coordinateSpaceName: timelineHorizontalScrollSpace
+                                )
+                                lanes()
+                                    .frame(width: timelineDisplayWidth, alignment: .leading)
+                            }
+                        }
+                        .coordinateSpace(name: timelineHorizontalScrollSpace)
+                        .applyTimelineHorizontalOffsetObserver { timelineHorizontalOffset = $0 }
+                        .frame(width: timelineColumnWidth)
+
+                        headers()
+                            .frame(width: TimelineLayout.trackHeaderWidth)
+                    }
+                }
+                .frame(height: tracksViewportHeight)
+            }
+            .overlay(alignment: .topLeading) {
+                TimelinePlayheadTimeReader { playheadTime in
+                    TimelinePlayheadOverlay(
+                        playheadTime: playheadTime,
+                        duration: timelineDuration,
+                        contentWidth: timelineContentWidth,
+                        height: TimelineLayout.rulerTotalHeight + tracksViewportHeight,
+                        horizontalScrollOffset: timelineHorizontalOffset
+                    )
+                    .frame(width: timelineColumnWidth, alignment: .leading)
+                }
+                .allowsHitTesting(false)
+            }
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                max(0, proxy.size.width - TimelineLayout.trackHeaderWidth)
+            } action: { width in
+                timelineViewportWidth = width
+            }
+            .onTapGesture {
+                isTimelineFocused = true
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyTimelineHorizontalOffsetObserver(_ onChange: @escaping (CGFloat) -> Void) -> some View {
+        if #available(macOS 15.0, iOS 18.0, *) {
+            self.onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.x
+            } action: { _, newValue in
+                onChange(max(0, newValue))
+            }
+        } else {
+            self.onPreferenceChange(TimelineHorizontalScrollOffsetKey.self) { newValue in
+                onChange(max(0, newValue))
+            }
+        }
+    }
+}
+
+private struct TimelineHorizontalScrollOffsetKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -3056,37 +3153,17 @@ private struct TimelineVerticalScrollOffsetKey: PreferenceKey {
     }
 }
 
-private struct TimelineVerticalScrollOffsetObserver: ViewModifier {
-    @Binding var offset: CGFloat
-
-    func body(content: Content) -> some View {
-        if #available(macOS 15.0, iOS 18.0, *) {
-            content
-                .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                    geometry.contentOffset.y
-                } action: { _, newValue in
-                    offset = newValue
-                }
-        } else {
-            content
-                .onPreferenceChange(TimelineVerticalScrollOffsetKey.self) { newValue in
-                    offset = newValue
-                }
-        }
-    }
-}
-
-private struct TimelineVerticalScrollOffsetReporter: View {
+private struct TimelineHorizontalScrollOffsetReporter: View {
     let coordinateSpaceName: String
 
     var body: some View {
         GeometryReader { proxy in
             Color.clear.preference(
-                key: TimelineVerticalScrollOffsetKey.self,
-                value: -proxy.frame(in: .named(coordinateSpaceName)).minY
+                key: TimelineHorizontalScrollOffsetKey.self,
+                value: -proxy.frame(in: .named(coordinateSpaceName)).minX
             )
         }
-        .frame(height: 0)
+        .frame(width: 0, height: 0)
     }
 }
 
@@ -3127,10 +3204,10 @@ private struct TimelineMeasureGridOverlay: View {
     }
 
     var body: some View {
+        let boundaries = measureBoundaries(for: mappingWidth)
         Canvas { context, size in
             guard size.width > 0, size.height > 0, mappingWidth > 0 else { return }
 
-            let boundaries = measureBoundaries(for: mappingWidth)
             let rulerLineColor = Color.dawMeasureGridLine
             let trackLineColor = Color.dawMeasureGridLine.opacity(0.75)
             let rulerLineEnd = min(rulerHeight, size.height)

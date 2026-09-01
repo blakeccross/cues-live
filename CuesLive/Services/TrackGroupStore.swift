@@ -290,6 +290,21 @@ enum TrackGroupStore {
 
     static func defaultKeywords(forGroupName name: String) -> [String] {
         switch name.lowercased() {
+        case "drums":
+            return [
+                "kick in", "kick out", "kick", "snare top", "snare bot", "snare", "snr",
+                "rack tom", "floor tom", "rack", "floor", "flr", "tom", "toms",
+                "hat", "hihat", "hi-hat", "overhead", "room", "trig", "drum", "drums",
+                "knee"
+            ]
+        case "bass":
+            return ["bass", "bas", "sub", "subwoofer", "di bass"]
+        case "lv":
+            return [
+                "lead vocal", "lead vox", "vocal", "vox", "verse vox",
+                "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8",
+                "announce", "announcer"
+            ]
         case "percussion":
             return [
                 "cymbals", "cymbal", "crash", "ride", "shaker", "tambourine",
@@ -297,7 +312,9 @@ enum TrackGroupStore {
                 "clap", "hi-hat", "hihat", "loop", "fx"
             ]
         case "keys":
-            return ["piano", "organ", "org", "rhodes", "wurli", "keyboard", "glockenspiel", "glock"]
+            return ["piano", "organ", "org", "rhodes", "wurli", "keyboard", "keys", "glockenspiel", "glock"]
+        case "synth":
+            return ["synth", "synthesizer", "pad", "pads", "arp", "lead synth"]
         case "bgv":
             return [
                 "vocoder", "backing", "harmony", "choir",
@@ -306,15 +323,19 @@ enum TrackGroupStore {
         case "eg":
             return [
                 "electric guitar", "electric gtr", "electric guitars",
-                "lead guitar", 
-                "rhythm guitar",
+                "lead guitar", "rhythm guitar",
                 "clean guitar", "clean gtr",
-                "guitar", "guitars", "gtr",
+                "guitar", "guitars", "gtr", "egtr"
             ]
         case "ag":
-            return ["acoustic guitar", "acoustic gtr", "ac guitar", "ac gtr", "acoustic"]
+            return [
+                "acoustic guitar", "acoustic gtr", "ac guitar", "ac gtr",
+                "acoustic", "agtr", "aco"
+            ]
         case "strings":
             return ["strings", "violin", "viola", "cello", "cellos", "orchestra"]
+        case "other":
+            return ["crowd", "audience", "ambience", "ambient", "talkback", "sfx"]
         case "click":
             return ["click track", "click", "metronome"]
         case "cues":

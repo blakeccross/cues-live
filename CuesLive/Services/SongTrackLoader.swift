@@ -250,7 +250,7 @@ enum SongTrackLoader {
             throw PlaybackCoordinatorError.noTracks
         }
 
-        return try trackInputs.map { input in
+        return try trackInputs.enumerated().map { _, input in
             let buffer = try StreamingStemBuffer(url: input.url)
             var settings = input.settings
             if settings.trimEnd == nil {

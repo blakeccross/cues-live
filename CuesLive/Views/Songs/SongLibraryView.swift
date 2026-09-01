@@ -20,6 +20,7 @@ struct SongLibraryPanel: View {
     var onDismiss: () -> Void
     var onFolderSelected: (URL) -> Void
     var onAddToSetlist: (Song) -> Void
+    var isImportInProgress = false
 
     @State private var searchText = ""
     @State private var sortOrder: SongLibrarySortOrder = .newest
@@ -58,12 +59,18 @@ struct SongLibraryPanel: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            #if os(macOS)
-            headerBar
-            #endif
-            searchBar
-            songList
+        ZStack {
+            VStack(spacing: 0) {
+                #if os(macOS)
+                headerBar
+                #endif
+                searchBar
+                songList
+            }
+
+            if isImportInProgress {
+                importProgressOverlay
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(AppColors.backgroundSecondary)
@@ -77,6 +84,7 @@ struct SongLibraryPanel: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .disabled(isImportInProgress)
                 .accessibilityLabel("Add song")
                 .confirmationDialog(
                     "Add Song",
@@ -199,6 +207,7 @@ struct SongLibraryPanel: View {
                 }
                 .buttonStyle(.plain)
                 .appLinkPointer()
+                .disabled(isImportInProgress)
                 .accessibilityLabel("Add song")
                 .confirmationDialog(
                     "Add Song",
@@ -226,6 +235,23 @@ struct SongLibraryPanel: View {
             .foregroundStyle(AppColors.accent)
             .frame(width: 32, height: 32)
             .contentShape(Rectangle())
+    }
+
+    private var importProgressOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+
+            VStack(spacing: AppSpacing.sm) {
+                ProgressView()
+                    .tint(AppColors.accent)
+                Text("Importing song folder…")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+            }
+            .padding(AppSpacing.xl)
+            .background(AppColors.surfaceElevated, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        }
     }
 
     private var searchBar: some View {
@@ -480,6 +506,7 @@ struct SongLibraryPanel: View {
     }
 
     private func presentFolderImporter() {
+        guard !isImportInProgress else { return }
         #if os(macOS)
         // SwiftUI `.fileImporter` often fails to present from a Menu. Use NSOpenPanel after
         // the menu finishes dismissing so Finder reliably appears.

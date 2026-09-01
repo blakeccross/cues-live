@@ -155,10 +155,12 @@ struct WaveformLaneView: View {
     let onToggleLoopSection: (ArrangementDisplaySection) -> Void
     let onClipTrimCommitted: () -> Void
     let onSeek: (TimeInterval) -> Void
+    var shouldLoadWaveformPeaks = true
 
     @Bindable private var audioEngine = AudioEngineManager.shared
     @State private var sourcePeaks: [Float] = []
     @State private var cachedDisplayPeaks: [Float] = []
+    @State private var isLoadingWaveformPeaks = false
     @State private var activeHandle: TrimHandle?
     @State private var activeClipTrim: ActiveClipTrim?
     @State private var clipTrimDragStart: ClipTrimDragStart?
@@ -262,17 +264,28 @@ struct WaveformLaneView: View {
                 hydratePeaksFromCache()
                 refreshCachedDisplayPeaks()
             }
-            .task(id: fileURL.path) {
+            .task(id: waveformLoadTaskID) {
+                guard shouldLoadWaveformPeaks else { return }
+
                 if let cached = WaveformCache.shared.cachedPeaks(for: fileURL) {
                     sourcePeaks = cached
-                } else {
-                    sourcePeaks = await WaveformCache.shared.peaks(for: fileURL)
+                    refreshCachedDisplayPeaks()
+                    return
                 }
+
+                isLoadingWaveformPeaks = true
+                defer { isLoadingWaveformPeaks = false }
+
+                sourcePeaks = await WaveformCache.shared.peaks(for: fileURL)
                 refreshCachedDisplayPeaks()
             }
             .onChange(of: displayPeaksCacheKey) { _, _ in
                 refreshCachedDisplayPeaks()
             }
+    }
+
+    private var waveformLoadTaskID: String {
+        "\(fileURL.path)|\(shouldLoadWaveformPeaks)"
     }
 
     private func clipDisplayPeaks(timelineStart: TimeInterval, timelineEnd: TimeInterval) -> [Float] {
@@ -494,10 +507,19 @@ struct WaveformLaneView: View {
             ZStack(alignment: .leading) {
                 WaveformBarsCanvas(
                     bars: clipDisplayPeaks(timelineStart: timelineStart, timelineEnd: timelineEnd),
-                    showsEmptyBaseline: showsFullSourceWaveform,
+                    showsEmptyBaseline: showsFullSourceWaveform || isLoadingWaveformPeaks,
                     fillColor: Color.white.opacity(0.55)
                 )
+                .equatable()
                 .allowsHitTesting(false)
+
+                if isLoadingWaveformPeaks, sourcePeaks.isEmpty {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(.white.opacity(0.8))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .allowsHitTesting(false)
+                }
 
                 if let dragRange {
                     selectionOverlay(

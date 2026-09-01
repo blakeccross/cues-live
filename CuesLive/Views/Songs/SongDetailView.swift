@@ -52,6 +52,7 @@ struct SongDetailView: View {
     @State private var undoController = SongUndoController()
     @State private var selectedSongID: UUID?
     @State private var showingSongLibrary = false
+    @State private var isImportingSongFolder = false
     @State private var songImportFeedback: SongImportFeedback?
 
     var body: some View {
@@ -173,7 +174,7 @@ struct SongDetailView: View {
     private var songDetailContent: some View {
         VStack(spacing: 0) {
             if let viewModel {
-                ZStack {
+                ZStack(alignment: .top) {
                     EditView(
                         song: activeSong,
                         viewModel: viewModel,
@@ -193,22 +194,19 @@ struct SongDetailView: View {
                         onBack: attemptDismiss
                     )
 
-                    if viewModel.isReloadingSong {
-                        Color.black.opacity(0.35)
-                            .ignoresSafeArea()
-                        VStack(spacing: AppSpacing.sm) {
-                            ProgressView()
-                                .tint(AppColors.accent)
-                            Text(viewModel.isReloadingSong && activeSong.transposeHighQuality ? "Processing audio…" : "Loading audio…")
-                                .font(.headline)
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-                        .padding(AppSpacing.xl)
-                        .background(AppColors.surfaceElevated, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                    if viewModel.isReloadingSong && viewModel.isLoaded {
+                        songLoadingOverlay(for: viewModel)
+                    } else if !viewModel.isLoaded && viewModel.loadError == nil {
+                        audioLoadingBanner(for: viewModel)
                     }
                 }
                 .onChange(of: viewModel.isReloadingSong) { wasReloading, isReloading in
                     guard wasReloading, !isReloading else { return }
+                    syncArrangementPlayback()
+                    syncTempoPlayback()
+                }
+                .onChange(of: viewModel.isLoaded) { _, isLoaded in
+                    guard isLoaded else { return }
                     syncArrangementPlayback()
                     syncTempoPlayback()
                 }
@@ -218,6 +216,45 @@ struct SongDetailView: View {
                     .foregroundStyle(AppColors.textSecondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+        }
+    }
+
+    private func audioLoadingBanner(for viewModel: SongEditorViewModel) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .tint(AppColors.accent)
+            Text(viewModel.isReloadingSong && activeSong.transposeHighQuality ? "Processing audio…" : "Loading audio…")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(AppColors.textPrimary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        .padding(AppSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .top)
+    }
+
+    private func songLoadingOverlay(for viewModel: SongEditorViewModel) -> some View {
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+            VStack(spacing: AppSpacing.sm) {
+                ProgressView()
+                    .tint(AppColors.accent)
+                Text(viewModel.isReloadingSong && activeSong.transposeHighQuality ? "Processing audio…" : "Loading audio…")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.textPrimary)
+                if let loadError = viewModel.loadError {
+                    Text(loadError)
+                        .font(.subheadline)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(AppSpacing.xl)
+            .background(AppColors.surfaceElevated, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
     }
 
@@ -257,11 +294,16 @@ struct SongDetailView: View {
     private func loadEditor(for song: Song, forceReloadViewModel: Bool) {
         if viewModel == nil || forceReloadViewModel {
             let model = SongEditorViewModel(song: song)
+            model.preloadTrackDurations()
             model.loadSong(context: modelContext)
             viewModel = model
         }
+
         try? SongProjectBridge.ensureProjectFile(for: song, context: modelContext)
-        guard let projectState = try? SongProjectBridge.loadProjectState(for: song) else { return }
+
+        guard let projectState = try? SongProjectBridge.loadProjectState(for: song) else {
+            return
+        }
         arrangementMarkers = projectState.markers
         arrangementSlots = projectState.arrangement.slots
         clipTrims = projectState.arrangement.clipTrims
@@ -364,19 +406,27 @@ struct SongDetailView: View {
             onFolderSelected: { folderURL in
                 importSong(from: folderURL)
             },
-            onAddToSetlist: { _ in }
+            onAddToSetlist: { _ in },
+            isImportInProgress: isImportingSongFolder
         )
     }
 
     private func importSong(from folderURL: URL) {
-        do {
-            let importResult = try SongFolderImporter.importFromFolder(
-                at: folderURL,
-                context: modelContext
-            )
-            songImportFeedback = .success(SongFolderImporter.summaryMessage(for: importResult))
-        } catch {
-            songImportFeedback = .failure(error.localizedDescription)
+        guard !isImportingSongFolder else { return }
+
+        isImportingSongFolder = true
+        Task { @MainActor in
+            defer { isImportingSongFolder = false }
+
+            do {
+                let importResult = try SongFolderImporter.importFromFolder(
+                    at: folderURL,
+                    context: modelContext
+                )
+                songImportFeedback = .success(SongFolderImporter.summaryMessage(for: importResult))
+            } catch {
+                songImportFeedback = .failure(error.localizedDescription)
+            }
         }
     }
 

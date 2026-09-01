@@ -113,47 +113,53 @@ final class SongEditorViewModel {
         pruneDecodedBufferCache()
         TrackBakeCache.shared.prune(activeTrackIDs: Set(trackInputs.map(\.id)))
 
-        let sourceModificationDates = SongTrackLoader.sourceModificationDates(for: trackInputs)
-
-        let decodedBuffers: [UUID: DecodedStemBuffer]
-        do {
-            decodedBuffers = try await SongTrackLoader.decodeTracks(
-                inputs: trackInputs,
-                sourceModificationDates: sourceModificationDates,
-                decodedBufferCache: decodedBufferCache
-            )
-            for input in trackInputs {
-                guard let buffer = decodedBuffers[input.id] else { continue }
-                let modificationDate = sourceModificationDates[input.id] ?? .distantPast
-                decodedBufferCache[input.id] = CachedDecodedTrack(
-                    relativePath: input.relativePath,
-                    sourceModificationDate: modificationDate,
-                    buffer: buffer
-                )
-            }
-        } catch {
-            isLoaded = false
-            loadError = error.localizedDescription
-            return
-        }
-
         let bakePitchShift = song.transposeHighQuality
 
-        let preparationResult: Result<[AudioEngineManager.PreparedTrackPayload], Error> =
-            await Task.detached(priority: .userInitiated) {
+        let preparationResult: Result<[AudioEngineManager.PreparedTrackPayload], Error>
+        if bakePitchShift {
+            let sourceModificationDates = SongTrackLoader.sourceModificationDates(for: trackInputs)
+
+            let decodedBuffers: [UUID: DecodedStemBuffer]
+            do {
+                decodedBuffers = try await SongTrackLoader.decodeTracks(
+                    inputs: trackInputs,
+                    sourceModificationDates: sourceModificationDates,
+                    decodedBufferCache: decodedBufferCache
+                )
+                for input in trackInputs {
+                    guard let buffer = decodedBuffers[input.id] else { continue }
+                    let modificationDate = sourceModificationDates[input.id] ?? .distantPast
+                    decodedBufferCache[input.id] = CachedDecodedTrack(
+                        relativePath: input.relativePath,
+                        sourceModificationDate: modificationDate,
+                        buffer: buffer
+                    )
+                }
+            } catch {
+                isLoaded = false
+                loadError = error.localizedDescription
+                return
+            }
+
+            preparationResult = await Task.detached(priority: .userInitiated) {
                 do {
                     return .success(
                         try await SongTrackLoader.prepareTrackPayloads(
                             inputs: trackInputs,
                             decodedBuffers: decodedBuffers,
                             sourceModificationDates: sourceModificationDates,
-                            bakePitchShift: bakePitchShift
+                            bakePitchShift: true
                         )
                     )
                 } catch {
                     return .failure(error)
                 }
             }.value
+        } else {
+            preparationResult = Result {
+                try SongTrackLoader.streamingPayloads(trackInputs: trackInputs)
+            }
+        }
 
         guard generation == reloadGeneration, !Task.isCancelled else { return }
 
@@ -275,6 +281,14 @@ final class SongEditorViewModel {
         audioEngine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
         audioEngine.stop()
         audioEngine.play()
+    }
+
+    func preloadTrackDurations() {
+        for track in song.sortedTracks {
+            guard trackDurations[track.id] == nil else { continue }
+            guard let url = FileStore.trackURL(for: song, track: track) else { continue }
+            trackDurations[track.id] = FileStore.fileDuration(at: url) ?? 0
+        }
     }
 
     func fileDuration(for track: AudioTrack) -> TimeInterval {
