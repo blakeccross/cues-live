@@ -12,7 +12,7 @@
 		<string>audio</string>
 	</array>
 	<key>SUFeedURL</key>
-	<string>https://github.com/blakecross/CuesLiveApp/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/blakeccross/cues-live/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>2X2PbZqvkrxWF7/kqTrVF5zXunQu0Ogf71qFggSUM4o=</string>
 	<key>SUEnableAutomaticChecks</key>
