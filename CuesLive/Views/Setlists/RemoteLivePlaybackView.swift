@@ -16,6 +16,7 @@ struct RemoteLivePlaybackView: View {
     @State private var showingSongLibrary = false
     @State private var showingAddHeaderAlert = false
     @State private var newHeaderTitle = "New Header"
+    @State private var newHeaderTimeText = "0:00"
     @State private var workingEntries: [RemoteSetlistEntryDTO] = []
     @State private var draggedSetlistEntryID: UUID?
     @State private var hasPendingSetlistReorder = false
@@ -191,12 +192,13 @@ struct RemoteLivePlaybackView: View {
         #endif
         .alert("New Header", isPresented: $showingAddHeaderAlert) {
             TextField("Header title", text: $newHeaderTitle)
+            TextField("Time", text: $newHeaderTimeText)
             Button("Add") {
                 addHeaderToSetlist()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Headers divide the setlist into sections.")
+            Text("Headers divide the setlist into sections. Time uses m:ss or h:mm:ss.")
         }
     }
 
@@ -263,7 +265,8 @@ struct RemoteLivePlaybackView: View {
     private func addHeaderToSetlist() {
         let trimmed = newHeaderTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        client.send(.addSetlistHeader(title: trimmed, atIndex: nil))
+        let timeSeconds = LiveSetlistDurationFormat.seconds(fromClock: newHeaderTimeText) ?? 0
+        client.send(.addSetlistHeader(title: trimmed, atIndex: nil, timeSeconds: timeSeconds))
     }
 
     private func handleMappedLiveAction(_ action: MappableLiveAction) {
@@ -346,6 +349,7 @@ struct RemoteLivePlaybackView: View {
             LiveSetlistAddMenu(
                 onAddHeader: {
                     newHeaderTitle = "New Header"
+                    newHeaderTimeText = "0:00"
                     showingAddHeaderAlert = true
                 },
                 onAddSong: { showingSongLibrary = true }
@@ -364,6 +368,7 @@ struct RemoteLivePlaybackView: View {
                     .contextMenu {
                         Button {
                             newHeaderTitle = "New Header"
+                            newHeaderTimeText = "0:00"
                             showingAddHeaderAlert = true
                         } label: {
                             Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
@@ -395,6 +400,7 @@ struct RemoteLivePlaybackView: View {
                     .contextMenu {
                         Button {
                             newHeaderTitle = "New Header"
+                            newHeaderTimeText = "0:00"
                             showingAddHeaderAlert = true
                         } label: {
                             Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
@@ -428,7 +434,10 @@ struct RemoteLivePlaybackView: View {
         snapshot: RemoteSessionSnapshot
     ) -> some View {
         if let header = entry.headerTitle, entry.songID == nil {
-            LiveSetlistHeaderRow(title: header)
+            LiveSetlistHeaderRow(
+                title: header,
+                timeText: LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
+            )
                 .liveSetlistTrailingReorderHandle(accessibilityNoun: "header") {
                     commitRemoteSetlistReorder()
                     draggedSetlistEntryID = entry.id

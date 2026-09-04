@@ -9,6 +9,8 @@ final class SetlistEntry {
     var song: Song?
     var setlist: Setlist?
     var headerTitle: String?
+    /// Optional clock shown beside setlist headers (same column as song durations).
+    var headerTimeSeconds: TimeInterval?
 
     var isHeader: Bool {
         song == nil && headerTitle != nil
@@ -40,8 +42,9 @@ final class SetlistEntry {
         self.song = song
     }
 
-    init(sortOrder: Int, headerTitle: String) {
+    init(sortOrder: Int, headerTitle: String, headerTimeSeconds: TimeInterval? = nil) {
         self.sortOrder = sortOrder
         self.headerTitle = headerTitle
+        self.headerTimeSeconds = headerTimeSeconds
     }
 }

@@ -223,6 +223,8 @@ struct RemoteSetlistEntryDTO: Codable, Hashable, Identifiable, Sendable {
     var id: UUID
     var sortOrder: Int
     var headerTitle: String?
+    /// Optional display clock for header rows (same column as song durations).
+    var headerTimeSeconds: TimeInterval?
     var songID: UUID?
     var transition: String
     var playbackIndex: Int?
@@ -429,8 +431,8 @@ enum RemoteSessionCommand: Codable, Sendable {
     case moveSetlistEntry(entryID: UUID, toIndex: Int)
     /// Adds a host-library song to the live setlist (`atIndex` nil appends).
     case addSongToSetlist(songID: UUID, atIndex: Int?)
-    /// Inserts a setlist header (`atIndex` nil appends).
-    case addSetlistHeader(title: String, atIndex: Int?)
+    /// Inserts a setlist header (`atIndex` nil appends). Optional `timeSeconds` is the clock shown beside the header.
+    case addSetlistHeader(title: String, atIndex: Int?, timeSeconds: TimeInterval?)
 }
 
 enum RemoteSessionMessage: Codable, Sendable {

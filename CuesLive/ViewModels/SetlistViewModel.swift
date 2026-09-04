@@ -8,17 +8,33 @@ final class SetlistViewModel {
         insertEntry(entry, at: index, in: setlist, context: context)
     }
 
-    func insertHeader(title: String, at index: Int, to setlist: Setlist, context: ModelContext) {
-        let entry = SetlistEntry(sortOrder: 0, headerTitle: title)
+    func insertHeader(
+        title: String,
+        timeSeconds: TimeInterval? = nil,
+        at index: Int,
+        to setlist: Setlist,
+        context: ModelContext
+    ) {
+        let entry = SetlistEntry(sortOrder: 0, headerTitle: title, headerTimeSeconds: timeSeconds)
         entry.setlist = setlist
         insertEntry(entry, at: index, in: setlist, context: context)
     }
 
-    func renameHeader(_ entry: SetlistEntry, title: String, context: ModelContext) {
+    func updateHeader(
+        _ entry: SetlistEntry,
+        title: String,
+        timeSeconds: TimeInterval?,
+        context: ModelContext
+    ) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, entry.isHeader, let setlist = entry.setlist else { return }
         entry.headerTitle = trimmed
+        entry.headerTimeSeconds = timeSeconds.map { max(0, $0) }
         persistSetlist(setlist, context: context)
+    }
+
+    func renameHeader(_ entry: SetlistEntry, title: String, context: ModelContext) {
+        updateHeader(entry, title: title, timeSeconds: entry.headerTimeSeconds, context: context)
     }
 
     func removeEntry(_ entry: SetlistEntry, from setlist: Setlist, context: ModelContext) {

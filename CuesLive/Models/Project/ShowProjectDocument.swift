@@ -6,6 +6,7 @@ struct ShowProjectEntry: Codable, Hashable, Identifiable {
     var transition: String
     var songProject: ProjectDocumentReference?
     var headerTitle: String?
+    var headerTimeSeconds: TimeInterval?
     var overlap: OverlapTransitionConfig?
 
     init(
@@ -14,6 +15,7 @@ struct ShowProjectEntry: Codable, Hashable, Identifiable {
         transition: SetlistTransition = .continue,
         songProject: ProjectDocumentReference? = nil,
         headerTitle: String? = nil,
+        headerTimeSeconds: TimeInterval? = nil,
         overlap: OverlapTransitionConfig? = nil
     ) {
         self.id = id
@@ -21,6 +23,7 @@ struct ShowProjectEntry: Codable, Hashable, Identifiable {
         self.transition = transition.rawValue
         self.songProject = songProject
         self.headerTitle = headerTitle
+        self.headerTimeSeconds = headerTimeSeconds
         self.overlap = overlap
     }
 
@@ -38,6 +41,7 @@ struct ShowProjectEntry: Codable, Hashable, Identifiable {
         case transition
         case songProject
         case headerTitle
+        case headerTimeSeconds
         case overlap
     }
 
@@ -48,6 +52,7 @@ struct ShowProjectEntry: Codable, Hashable, Identifiable {
         transition = try container.decode(String.self, forKey: .transition)
         songProject = try container.decodeIfPresent(ProjectDocumentReference.self, forKey: .songProject)
         headerTitle = try container.decodeIfPresent(String.self, forKey: .headerTitle)
+        headerTimeSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .headerTimeSeconds)
         overlap = try container.decodeIfPresent(OverlapTransitionConfig.self, forKey: .overlap)
     }
 
@@ -58,6 +63,7 @@ struct ShowProjectEntry: Codable, Hashable, Identifiable {
         try container.encode(transition, forKey: .transition)
         try container.encodeIfPresent(songProject, forKey: .songProject)
         try container.encodeIfPresent(headerTitle, forKey: .headerTitle)
+        try container.encodeIfPresent(headerTimeSeconds, forKey: .headerTimeSeconds)
         try container.encodeIfPresent(overlap, forKey: .overlap)
     }
 }

@@ -330,7 +330,8 @@ enum SongProjectBridge {
             if entry.isHeader, let headerTitle = entry.headerTitle {
                 return ShowProjectEntry(
                     sortOrder: entry.sortOrder,
-                    headerTitle: headerTitle
+                    headerTitle: headerTitle,
+                    headerTimeSeconds: entry.headerTimeSeconds
                 )
             }
 
@@ -398,7 +399,11 @@ enum SongProjectBridge {
     ) throws {
         for showEntry in document.entries.sorted(by: { $0.sortOrder < $1.sortOrder }) {
             if showEntry.isHeader, let headerTitle = showEntry.headerTitle {
-                let entry = SetlistEntry(sortOrder: showEntry.sortOrder, headerTitle: headerTitle)
+                let entry = SetlistEntry(
+                    sortOrder: showEntry.sortOrder,
+                    headerTitle: headerTitle,
+                    headerTimeSeconds: showEntry.headerTimeSeconds
+                )
                 entry.setlist = setlist
                 context.insert(entry)
                 setlist.entries.append(entry)

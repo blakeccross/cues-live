@@ -72,7 +72,9 @@ struct LivePlaybackView: View {
     @State private var infoPanelHeight: CGFloat = 0
     @State private var mixerDetent: LiveGroupMixerDetent = .hidden
     @State private var headerPendingEdit: SetlistEntry?
+    @State private var isCreatingHeader = false
     @State private var editHeaderTitle = ""
+    @State private var editHeaderTimeText = "0:00"
     @State private var overlapEditorContext: SetlistOverlapEditorContext?
     @State private var draggedSetlistEntryID: PersistentIdentifier?
     @State private var hasPendingSetlistReorder = false
@@ -154,18 +156,50 @@ struct LivePlaybackView: View {
                 }
             )
         }
-        .alert("Edit Header", isPresented: Binding(
+        .sheet(isPresented: Binding(
             get: { headerPendingEdit != nil },
-            set: { if !$0 { headerPendingEdit = nil } }
+            set: { if !$0 { dismissHeaderEdit() } }
         )) {
-            TextField("Header title", text: $editHeaderTitle)
-            Button("Save") {
-                saveHeaderEdit()
+            headerEditorSheet
+        }
+    }
+
+    private var headerEditorSheet: some View {
+        NavigationStack {
+            Form {
+                TextField("Title", text: $editHeaderTitle)
+                TextField("Time", text: $editHeaderTimeText)
+                Text("Time uses m:ss or h:mm:ss (same column as song durations).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            Button("Cancel", role: .cancel) {
-                headerPendingEdit = nil
+            #if os(macOS)
+            .formStyle(.grouped)
+            .frame(minWidth: 340, idealWidth: 380, minHeight: 180)
+            #endif
+            .navigationTitle(isCreatingHeader ? "New Header" : "Edit Header")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismissHeaderEdit()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveHeaderEdit()
+                    }
+                    .disabled(!canSaveHeaderEdit)
+                }
             }
         }
+    }
+
+    private var canSaveHeaderEdit: Bool {
+        !editHeaderTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && LiveSetlistDurationFormat.seconds(fromClock: editHeaderTimeText) != nil
     }
 
     private var missingMediaAlertMessage: String {
@@ -1252,7 +1286,10 @@ struct LivePlaybackView: View {
     private func setlistHeaderRow(entry: SetlistEntry) -> some View {
         let title = entry.headerTitle ?? ""
 
-        return LiveSetlistHeaderRow(title: title)
+        return LiveSetlistHeaderRow(
+            title: title,
+            timeText: LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
+        )
             .liveSetlistTrailingReorderHandle(accessibilityNoun: "header") {
                 commitSetlistReorder()
                 draggedSetlistEntryID = entry.id
@@ -1272,8 +1309,10 @@ struct LivePlaybackView: View {
             #endif
             .contextMenu {
                 Button {
+                    isCreatingHeader = false
                     headerPendingEdit = entry
                     editHeaderTitle = entry.headerTitle ?? ""
+                    editHeaderTimeText = LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
                 } label: {
                     Label("Edit", systemImage: "pencil")
                 }
@@ -1495,15 +1534,30 @@ struct LivePlaybackView: View {
         let index = workingSetlist.sortedEntries.count
         viewModel.insertHeader(title: "New Header", at: index, to: workingSetlist, context: modelContext)
         if let entry = workingSetlist.sortedEntries.last(where: { $0.isHeader }) {
+            isCreatingHeader = true
             headerPendingEdit = entry
             editHeaderTitle = entry.headerTitle ?? "New Header"
+            editHeaderTimeText = LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
         }
     }
 
     private func saveHeaderEdit() {
         guard let entry = headerPendingEdit else { return }
-        viewModel.renameHeader(entry, title: editHeaderTitle, context: modelContext)
+        guard let timeSeconds = LiveSetlistDurationFormat.seconds(fromClock: editHeaderTimeText) else {
+            return
+        }
+        viewModel.updateHeader(
+            entry,
+            title: editHeaderTitle,
+            timeSeconds: timeSeconds,
+            context: modelContext
+        )
+        dismissHeaderEdit()
+    }
+
+    private func dismissHeaderEdit() {
         headerPendingEdit = nil
+        isCreatingHeader = false
     }
 
     private var loopSlotIDs: Set<UUID> {

@@ -78,8 +78,8 @@ final class RemoteSessionCommandBridge {
             moveSetlistEntry(entryID: entryID, toIndex: toIndex, host: host)
         case .addSongToSetlist(let songID, let atIndex):
             addSongToSetlist(songID: songID, atIndex: atIndex, host: host)
-        case .addSetlistHeader(let title, let atIndex):
-            addSetlistHeader(title: title, atIndex: atIndex, host: host)
+        case .addSetlistHeader(let title, let atIndex, let timeSeconds):
+            addSetlistHeader(title: title, atIndex: atIndex, timeSeconds: timeSeconds, host: host)
         }
     }
 
@@ -94,12 +94,18 @@ final class RemoteSessionCommandBridge {
         host.onSetlistChanged()
     }
 
-    private func addSetlistHeader(title: String, atIndex: Int?, host: HostContext) {
+    private func addSetlistHeader(title: String, atIndex: Int?, timeSeconds: TimeInterval?, host: HostContext) {
         guard let setlist = host.setlist else { return }
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         let index = atIndex ?? setlist.sortedEntries.count
-        SetlistViewModel().insertHeader(title: trimmed, at: index, to: setlist, context: host.modelContext)
+        SetlistViewModel().insertHeader(
+            title: trimmed,
+            timeSeconds: timeSeconds,
+            at: index,
+            to: setlist,
+            context: host.modelContext
+        )
         host.coordinator.syncSetlist(setlist)
         host.onSetlistChanged()
     }

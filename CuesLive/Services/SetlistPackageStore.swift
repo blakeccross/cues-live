@@ -292,7 +292,8 @@ enum SetlistPackageStore {
             if entry.isHeader, let headerTitle = entry.headerTitle {
                 return ShowProjectEntry(
                     sortOrder: entry.sortOrder,
-                    headerTitle: headerTitle
+                    headerTitle: headerTitle,
+                    headerTimeSeconds: entry.headerTimeSeconds
                 )
             }
 

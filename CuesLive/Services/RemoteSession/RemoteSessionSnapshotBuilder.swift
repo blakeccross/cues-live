@@ -26,6 +26,7 @@ enum RemoteSessionSnapshotBuilder {
                         id: entryID,
                         sortOrder: entry.sortOrder,
                         headerTitle: header,
+                        headerTimeSeconds: entry.headerTimeSeconds,
                         songID: nil,
                         transition: entry.transition.rawValue,
                         playbackIndex: nil
@@ -43,6 +44,7 @@ enum RemoteSessionSnapshotBuilder {
                     id: entryID,
                     sortOrder: entry.sortOrder,
                     headerTitle: nil,
+                    headerTimeSeconds: nil,
                     songID: song.id,
                     transition: entry.transition.rawValue,
                     playbackIndex: playbackIndex

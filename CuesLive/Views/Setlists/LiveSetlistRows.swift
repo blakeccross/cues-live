@@ -3,14 +3,15 @@ import UniformTypeIdentifiers
 
 struct LiveSetlistHeaderRow: View {
     let title: String
+    var timeText: String = "0:00"
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            Text("0:00")
+            Text(timeText)
                 .font(.subheadline.monospaced())
                 .foregroundStyle(AppColors.textTertiary)
                 .frame(width: 52, alignment: .trailing)
-                .accessibilityHidden(true)
+                .accessibilityLabel("Time \(timeText)")
 
             Text(title)
                 .font(.caption.weight(.semibold))
@@ -188,6 +189,39 @@ enum LiveSetlistDurationFormat {
             return String(format: "%d:%02d:%02d", hours, minutes, seconds)
         }
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    /// Parses `m:ss`, `mm:ss`, or `h:mm:ss`. Empty / whitespace → `0`.
+    static func seconds(fromClock text: String) -> TimeInterval? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return 0 }
+
+        let parts = trimmed.split(separator: ":", omittingEmptySubsequences: false)
+        guard (1...3).contains(parts.count),
+              parts.allSatisfy({ !$0.isEmpty && $0.allSatisfy(\.isNumber) }) else {
+            return nil
+        }
+
+        let values = parts.compactMap { Int($0) }
+        guard values.count == parts.count else { return nil }
+
+        switch values.count {
+        case 1:
+            return TimeInterval(max(0, values[0]))
+        case 2:
+            let minutes = values[0]
+            let seconds = values[1]
+            guard (0..<60).contains(seconds) else { return nil }
+            return TimeInterval(max(0, minutes) * 60 + seconds)
+        case 3:
+            let hours = values[0]
+            let minutes = values[1]
+            let seconds = values[2]
+            guard (0..<60).contains(minutes), (0..<60).contains(seconds) else { return nil }
+            return TimeInterval(max(0, hours) * 3600 + minutes * 60 + seconds)
+        default:
+            return nil
+        }
     }
 }
 
