@@ -17,6 +17,10 @@ name: Release macOS
 #   APPLE_API_KEY_ID          Key ID from App Store Connect
 #   APPLE_API_ISSUER_ID       Issuer ID from App Store Connect
 #   SPARKLE_PRIVATE_KEY       Sparkle EdDSA private key (output of: generate_keys -x sparkle_private.key)
+#
+# Workflow input:
+#   build_number              Optional. Leave empty to auto-pick (max published + 1).
+#                             Sparkle requires this integer to increase every release.
 
 on:
   push:
@@ -29,8 +33,8 @@ on:
         required: false
         type: string
       build_number:
-        description: "Build number / CFBundleVersion (integer, must increase each release)."
-        required: true
+        description: "Optional build override. Leave empty to auto-use (highest published Sparkle build + 1)."
+        required: false
         type: string
 
 permissions:
@@ -71,20 +75,61 @@ jobs:
 
       - name: Resolve versions
         id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             MARKETING="${{ inputs.marketing_version }}"
-            BUILD="${{ inputs.build_number }}"
+            BUILD_OVERRIDE="${{ inputs.build_number }}"
           else
             # tag like v1.2.3 → 1.2.3
             MARKETING="${GITHUB_REF_NAME#v}"
-            BUILD="${{ github.run_number }}"
+            BUILD_OVERRIDE=""
           fi
 
           if [[ -z "${MARKETING}" ]]; then
             MARKETING="0.0.0-ci"
+          fi
+
+          next_build_number() {
+            local max=0
+            local v asset tag
+
+            # Highest sparkle:version in the published appcast (authoritative for updates).
+            if curl -fsSL \
+              "https://github.com/${{ github.repository }}/releases/latest/download/appcast.xml" \
+              -o "$RUNNER_TEMP/appcast-prev.xml" 2>/dev/null; then
+              while read -r v; do
+                if [[ "$v" =~ ^[0-9]+$ ]] && (( v > max )); then
+                  max=$v
+                fi
+              done < <(grep -oE '<sparkle:version>[0-9]+' "$RUNNER_TEMP/appcast-prev.xml" | grep -oE '[0-9]+$' || true)
+            fi
+
+            # Also scan recent release asset names: cues.live-1.0.5-2.zip / .dmg
+            while read -r tag; do
+              [[ -z "$tag" ]] && continue
+              while read -r asset; do
+                if [[ "$asset" =~ ^cues\.live-[0-9.]+-([0-9]+)\.(zip|dmg)$ ]]; then
+                  v="${BASH_REMATCH[1]}"
+                  if (( v > max )); then
+                    max=$v
+                  fi
+                fi
+              done < <(gh release view "$tag" --repo "${{ github.repository }}" --json assets --jq '.assets[].name' 2>/dev/null || true)
+            done < <(gh release list --repo "${{ github.repository }}" --limit 30 --json tagName --jq '.[].tagName' 2>/dev/null || true)
+
+            echo $((max + 1))
+          }
+
+          if [[ -n "${BUILD_OVERRIDE}" ]]; then
+            BUILD="${BUILD_OVERRIDE}"
+            echo "Using manual build override: ${BUILD}"
+          else
+            BUILD="$(next_build_number)"
+            echo "Auto-selected next build number: ${BUILD}"
           fi
 
           if [[ ! "${BUILD}" =~ ^[0-9]+$ ]]; then
