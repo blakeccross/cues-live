@@ -15,6 +15,9 @@ struct WaveformBarsCanvas: View, Equatable {
     var playheadFraction: CGFloat?
     var playedColor: Color = Color.liveVoiceMemosPlayed
     var unplayedColor: Color = Color.liveVoiceMemosUnplayed
+    /// Metal offscreens help short static waveforms but thrash scroll for
+    /// setlist-length lanes (tens of thousands of points wide).
+    var usesDrawingGroup = true
 
     private let minBarHeight: CGFloat = 1.0
     private let voiceMemosMinBarHeight: CGFloat = 2.0
@@ -23,9 +26,9 @@ struct WaveformBarsCanvas: View, Equatable {
         let canvas = Canvas { context, size in
             drawWaveform(in: &context, size: size)
         }
-        // `drawingGroup()` helps static waveforms, but forces a Metal offscreen
-        // pass every frame while `playheadFraction` animates during playback.
-        if playheadFraction == nil {
+        // `drawingGroup()` helps short static waveforms, but forces a huge Metal
+        // offscreen while `playheadFraction` animates or when the lane is very wide.
+        if usesDrawingGroup, playheadFraction == nil {
             canvas.drawingGroup()
         } else {
             canvas
@@ -155,6 +158,21 @@ struct WaveformBarsCanvas: View, Equatable {
         fillColor: Color
     ) {
         guard endX > startX else { return }
+
+        let span = endX - startX
+        // Long empty lanes (e.g. 79‑minute songs still loading) must not mint
+        // thousands of rounded rects — a thin baseline is enough.
+        if span > 400 {
+            let barHeight = min(voiceMemosMinBarHeight, bodyHeight * 0.08)
+            let rect = CGRect(
+                x: startX,
+                y: midY - barHeight / 2,
+                width: span,
+                height: barHeight
+            )
+            context.fill(Path(rect), with: .color(fillColor.opacity(0.55)))
+            return
+        }
 
         let barSlotWidth: CGFloat = 3
         let barWidth: CGFloat = 2

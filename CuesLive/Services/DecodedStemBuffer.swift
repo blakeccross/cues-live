@@ -38,11 +38,16 @@ protocol StemSampleSource: AnyObject, Sendable {
     /// sources evict pages behind the playhead, so a loop restart would otherwise
     /// read silence from the loop head. In-memory sources ignore it.
     func setPinnedRegion(sourceFrames: Range<Int>?)
+
+    /// Starts or stops background look-ahead reading. Streaming sources pause
+    /// their reader timer when inactive so idle songs do not burn CPU/disk.
+    func setReaderActive(_ active: Bool)
 }
 
 extension StemSampleSource {
     func prewarm(aroundSourceFrame frame: Int) {}
     func setPinnedRegion(sourceFrames: Range<Int>?) {}
+    func setReaderActive(_ active: Bool) {}
 }
 
 /// Float32 PCM decoded once at load time for real-time memory playback.
@@ -550,11 +555,15 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
 
     // File + scratch buffer are ONLY ever used on `readerQueue`.
     private let readerQueue = DispatchQueue(label: "StreamingStemBuffer.reader", qos: .userInitiated)
+    private static let readerQueueKey = DispatchSpecificKey<UInt8>()
     private let reader: AVAudioFile
     private let readBuffer: AVAudioPCMBuffer
     private let decodeConverter: AVAudioConverter?
     private let decodedScratch: AVAudioPCMBuffer?
     private var timer: DispatchSourceTimer?
+    /// When false, the continuous look-ahead timer is not scheduled. One-shot
+    /// fills still run from `prewarm` / render requests so seeks and tests work.
+    private var isReaderActive = false
 
     init(
         url: URL,
@@ -611,14 +620,27 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
         self.pageFrames = pageFrames
         lookAheadPages = max(1, Int((lookAheadSeconds * format.sampleRate / Double(pageFrames)).rounded(.up)))
         lookBehindPages = max(0, Int((lookBehindSeconds * format.sampleRate / Double(pageFrames)).rounded(.up)))
-
-        startReaderTimer()
+        readerQueue.setSpecific(key: Self.readerQueueKey, value: 1)
     }
 
     deinit {
-        timer?.cancel()
+        // Never leave a DispatchSource suspended across release — cancel only
+        // while it is resumed (or never started).
+        if let timer {
+            timer.setEventHandler {}
+            timer.cancel()
+        }
         timer = nil
+        // Drain in-flight reader work before releasing page memory. Without this,
+        // a teardown during live setlist edits can race the reader queue.
+        // Skip sync when deinit already runs on `readerQueue` (last release from
+        // an async block) — syncing then aborts.
+        if DispatchQueue.getSpecific(key: Self.readerQueueKey) == nil {
+            readerQueue.sync { }
+        }
+        os_unfair_lock_lock(&pageLock)
         pages.removeAll()
+        os_unfair_lock_unlock(&pageLock)
     }
 
     func prewarm(aroundSourceFrame frame: Int) {
@@ -626,7 +648,21 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
         os_unfair_lock_lock(&centerLock)
         requestedCenterFrame = clamped
         os_unfair_lock_unlock(&centerLock)
-        readerQueue.sync { self.fillWindow(around: clamped) }
+        if DispatchQueue.getSpecific(key: Self.readerQueueKey) != nil {
+            fillWindow(around: clamped)
+        } else {
+            readerQueue.sync { self.fillWindow(around: clamped) }
+        }
+    }
+
+    func setReaderActive(_ active: Bool) {
+        // Sync so activation is deterministic before play/seek returns, and so
+        // the last strong reference is not released from an async reader block.
+        if DispatchQueue.getSpecific(key: Self.readerQueueKey) != nil {
+            applyReaderActive(active)
+        } else {
+            readerQueue.sync { self.applyReaderActive(active) }
+        }
     }
 
     func setPinnedRegion(sourceFrames: Range<Int>?) {
@@ -739,13 +775,43 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
         guard os_unfair_lock_trylock(&centerLock) else { return }
         requestedCenterFrame = frame
         os_unfair_lock_unlock(&centerLock)
+        // When the continuous timer is off, still schedule a one-shot fill so
+        // seeks / loop tests / paused scrubbing page audio in.
+        scheduleOneShotFillIfIdle()
+    }
+
+    private func scheduleOneShotFillIfIdle() {
+        readerQueue.async { [weak self] in
+            guard let self, !self.isReaderActive else { return }
+            os_unfair_lock_lock(&self.centerLock)
+            let center = self.requestedCenterFrame
+            os_unfair_lock_unlock(&self.centerLock)
+            self.fillWindow(around: center)
+        }
+    }
+
+    /// Runs on `readerQueue`. Cancel/recreate instead of suspend/resume — releasing
+    /// a suspended DispatchSource aborts the process.
+    private func applyReaderActive(_ active: Bool) {
+        guard isReaderActive != active else { return }
+        isReaderActive = active
+        if active {
+            startReaderTimer()
+            os_unfair_lock_lock(&centerLock)
+            let center = requestedCenterFrame
+            os_unfair_lock_unlock(&centerLock)
+            fillWindow(around: center)
+        } else {
+            stopReaderTimer()
+        }
     }
 
     private func startReaderTimer() {
+        stopReaderTimer()
         let source = DispatchSource.makeTimerSource(queue: readerQueue)
         source.schedule(deadline: .now(), repeating: .milliseconds(40), leeway: .milliseconds(10))
         source.setEventHandler { [weak self] in
-            guard let self else { return }
+            guard let self, self.isReaderActive else { return }
             os_unfair_lock_lock(&self.centerLock)
             let center = self.requestedCenterFrame
             os_unfair_lock_unlock(&self.centerLock)
@@ -753,6 +819,13 @@ final class StreamingStemBuffer: StemSampleSource, @unchecked Sendable {
         }
         timer = source
         source.resume()
+    }
+
+    private func stopReaderTimer() {
+        guard let timer else { return }
+        timer.setEventHandler {}
+        timer.cancel()
+        self.timer = nil
     }
 
     /// Runs on `readerQueue`. Evicts out-of-window pages and decodes missing ones.

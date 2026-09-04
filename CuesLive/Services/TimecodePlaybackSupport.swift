@@ -19,7 +19,7 @@ enum TimecodePlaybackSupport {
             songIndex: songIndex,
             priorSongDurations: priorSongDurations
         )
-        let buffer = try LTCGenerator.generate(
+        let buffer = try ProceduralLTCBuffer(
             duration: duration,
             start: start,
             frameRate: settings.frameRate

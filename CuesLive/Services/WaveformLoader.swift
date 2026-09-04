@@ -22,7 +22,8 @@ enum WaveformLoader {
 
         let framesPerBucket = max(1, totalFrames / bucketCount)
         // Sample a small window per bucket instead of scanning the entire file.
-        let framesPerSample = min(framesPerBucket, 8_192)
+        // Cap the window so long stems (e.g. 79 min) stay seek-light.
+        let framesPerSample = min(framesPerBucket, totalFrames > 48_000 * 600 ? 2_048 : 8_192)
 
         var peaks = [Float](repeating: 0, count: bucketCount)
         let sourceFormat = file.processingFormat
@@ -119,20 +120,36 @@ enum WaveformLoader {
         let maxDuration = sources.map(\.duration).max() ?? 1
         guard maxDuration > 0 else { return [] }
 
+        let perFile = sources.map { source -> (peaks: [Float], duration: TimeInterval) in
+            (loadRawPeaks(from: source.url, targetSampleCount: targetSampleCount), source.duration)
+        }
+        return sumAlignedPeaks(perFile, maxDuration: maxDuration, targetSampleCount: targetSampleCount)
+    }
+
+    /// Merges already-decoded per-file peak overviews into one summed overview.
+    static func sumAlignedPeaks(
+        _ sources: [(peaks: [Float], duration: TimeInterval)],
+        maxDuration: TimeInterval? = nil,
+        targetSampleCount: Int = overviewSampleCount
+    ) -> [Float] {
+        guard !sources.isEmpty else { return [] }
+
+        let resolvedMaxDuration = maxDuration ?? sources.map(\.duration).max() ?? 1
+        guard resolvedMaxDuration > 0 else { return [] }
+
         let bucketCount = targetSampleCount
         var summed = [Float](repeating: 0, count: bucketCount)
 
         for source in sources {
-            let rawPeaks = loadRawPeaks(from: source.url, targetSampleCount: targetSampleCount)
-            guard !rawPeaks.isEmpty, source.duration > 0 else { continue }
+            guard !source.peaks.isEmpty, source.duration > 0 else { continue }
 
             for bucketIndex in 0..<bucketCount {
-                let time = maxDuration * (Double(bucketIndex) + 0.5) / Double(bucketCount)
+                let time = resolvedMaxDuration * (Double(bucketIndex) + 0.5) / Double(bucketCount)
                 guard time < source.duration else { continue }
 
-                let sourceIndex = Int((time / source.duration) * Double(rawPeaks.count))
-                let clampedIndex = min(max(0, sourceIndex), rawPeaks.count - 1)
-                summed[bucketIndex] += rawPeaks[clampedIndex]
+                let sourceIndex = Int((time / source.duration) * Double(source.peaks.count))
+                let clampedIndex = min(max(0, sourceIndex), source.peaks.count - 1)
+                summed[bucketIndex] += source.peaks[clampedIndex]
             }
         }
 
@@ -211,7 +228,8 @@ enum WaveformLoader {
 }
 
 enum WaveformPeakResampler {
-    /// Upper bound on bars drawn per lane regardless of zoom level.
+    /// Upper bound on bars for the song-editor timeline (long sessions stay scrollable).
+    /// Setlist / Voice Memos paths pass `maximumBars: nil` so density stays fixed by slot width.
     static let maxDisplayBars = 1200
     /// Minimum horizontal spacing between bar centers in the song editor timeline.
     /// Two points per bar keeps scrolling smooth on long multi-track sessions.
@@ -222,25 +240,38 @@ enum WaveformPeakResampler {
     static func displayPeaks(
         from source: [Float],
         contentWidth: CGFloat,
-        minimumBarSlotWidth: CGFloat = editorBarSlotWidth
+        minimumBarSlotWidth: CGFloat = editorBarSlotWidth,
+        maximumBars: Int? = maxDisplayBars
     ) -> [Float] {
         guard !source.isEmpty else { return [] }
 
-        let requestedBars = requestedBarCount(for: contentWidth, minimumBarSlotWidth: minimumBarSlotWidth)
-        let barCount = min(requestedBars, maxDisplayBars, source.count)
+        let barCount = resolvedBarCount(
+            contentWidth: contentWidth,
+            minimumBarSlotWidth: minimumBarSlotWidth,
+            maximumBars: maximumBars
+        )
         guard barCount > 0 else { return [] }
-
-        if barCount >= source.count {
-            return source
-        }
 
         var result = [Float](repeating: 0, count: barCount)
         let ratio = Double(source.count) / Double(barCount)
 
-        for barIndex in 0..<barCount {
-            let start = Int(Double(barIndex) * ratio)
-            let end = min(source.count, max(start + 1, Int(Double(barIndex + 1) * ratio)))
-            result[barIndex] = source[start..<end].max() ?? 0
+        if ratio >= 1 {
+            // Source denser than display: max-downsample each slot.
+            for barIndex in 0..<barCount {
+                let start = Int(Double(barIndex) * ratio)
+                let end = min(source.count, max(start + 1, Int(Double(barIndex + 1) * ratio)))
+                result[barIndex] = source[start..<end].max() ?? 0
+            }
+        } else {
+            // Display denser than source: hold each overview sample across slots so
+            // long lanes keep the same ~3pt candle spacing as short ones.
+            for barIndex in 0..<barCount {
+                let sourceIndex = min(
+                    source.count - 1,
+                    Int(Double(barIndex) * Double(source.count) / Double(barCount))
+                )
+                result[barIndex] = source[sourceIndex]
+            }
         }
 
         return result
@@ -252,21 +283,26 @@ enum WaveformPeakResampler {
         sections: [ArrangementDisplaySection],
         timelineDuration: TimeInterval,
         contentWidth: CGFloat,
-        minimumBarSlotWidth: CGFloat = editorBarSlotWidth
+        minimumBarSlotWidth: CGFloat = editorBarSlotWidth,
+        maximumBars: Int? = maxDisplayBars
     ) -> [Float] {
         guard !source.isEmpty, fileDuration > 0, !sections.isEmpty else {
             return displayPeaks(
                 from: source,
                 contentWidth: contentWidth,
-                minimumBarSlotWidth: minimumBarSlotWidth
+                minimumBarSlotWidth: minimumBarSlotWidth,
+                maximumBars: maximumBars
             )
         }
 
         let safeTimelineDuration = max(timelineDuration, 0.001)
         let sortedSections = sections.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
 
-        let requestedBars = requestedBarCount(for: contentWidth, minimumBarSlotWidth: minimumBarSlotWidth)
-        let barCount = min(requestedBars, maxDisplayBars)
+        let barCount = resolvedBarCount(
+            contentWidth: contentWidth,
+            minimumBarSlotWidth: minimumBarSlotWidth,
+            maximumBars: maximumBars
+        )
         guard barCount > 0 else { return [] }
 
         var result = [Float](repeating: 0, count: barCount)
@@ -293,13 +329,15 @@ enum WaveformPeakResampler {
         timelineDuration: TimeInterval,
         timeRange: ClosedRange<TimeInterval>,
         contentWidth: CGFloat,
-        minimumBarSlotWidth: CGFloat = voiceMemosBarSlotWidth
+        minimumBarSlotWidth: CGFloat = voiceMemosBarSlotWidth,
+        maximumBars: Int? = nil
     ) -> [Float] {
         guard !source.isEmpty else { return [] }
 
-        let barCount = min(
-            requestedBarCount(for: contentWidth, minimumBarSlotWidth: minimumBarSlotWidth),
-            maxDisplayBars
+        let barCount = resolvedBarCount(
+            contentWidth: contentWidth,
+            minimumBarSlotWidth: minimumBarSlotWidth,
+            maximumBars: maximumBars
         )
         guard barCount > 0 else { return [] }
 
@@ -351,6 +389,16 @@ enum WaveformPeakResampler {
         )
         guard startIndex < endIndex else { return [] }
         return Array(bars[startIndex..<endIndex])
+    }
+
+    private static func resolvedBarCount(
+        contentWidth: CGFloat,
+        minimumBarSlotWidth: CGFloat,
+        maximumBars: Int?
+    ) -> Int {
+        let requested = requestedBarCount(for: contentWidth, minimumBarSlotWidth: minimumBarSlotWidth)
+        guard let maximumBars else { return requested }
+        return min(requested, max(1, maximumBars))
     }
 
     private static func requestedBarCount(for contentWidth: CGFloat, minimumBarSlotWidth: CGFloat) -> Int {
@@ -496,14 +544,54 @@ final class WaveformCache {
             return await existingTask.value
         }
 
-        let task = Task.detached(priority: .utility) { () -> [Float] in
-            await WaveformPeakLoadLimiter.shared.acquire()
-            defer { Task { await WaveformPeakLoadLimiter.shared.release() } }
+        // Snapshot per-file keys on the main actor, then decode misses off-main.
+        let fileJobs: [(index: Int, url: URL, duration: TimeInterval, cacheKey: String, cached: [Float]?)] =
+            sources.enumerated().map { index, source in
+                let cacheKey = Self.peakKey(for: source.url)
+                return (index, source.url, source.duration, cacheKey, cachedPeaks(for: source.url))
+            }
 
-            let peaks = WaveformLoader.summedPeaks(from: sources)
-            WaveformPeakDiskCache.save(peaks, forKey: key)
-            await WaveformCache.shared.store(peaks, forKey: key)
-            return peaks
+        let task = Task.detached(priority: .utility) { () -> [Float] in
+            var ordered = Array(
+                repeating: (peaks: [Float](), duration: 0.0),
+                count: fileJobs.count
+            )
+
+            await withTaskGroup(of: (Int, [Float], TimeInterval).self) { group in
+                for job in fileJobs {
+                    group.addTask {
+                        if let cached = job.cached {
+                            return (job.index, cached, job.duration)
+                        }
+
+                        await WaveformPeakLoadLimiter.shared.acquire()
+                        let peaks: [Float]
+                        defer { Task { await WaveformPeakLoadLimiter.shared.release() } }
+
+                        if let diskPeaks = WaveformPeakDiskCache.load(forKey: job.cacheKey) {
+                            peaks = diskPeaks
+                        } else {
+                            peaks = WaveformLoader.loadPeaks(from: job.url)
+                            WaveformPeakDiskCache.save(peaks, forKey: job.cacheKey)
+                        }
+                        return (job.index, peaks, job.duration)
+                    }
+                }
+
+                for await (index, peaks, duration) in group {
+                    ordered[index] = (peaks, duration)
+                }
+            }
+
+            let summed = WaveformLoader.sumAlignedPeaks(ordered)
+            WaveformPeakDiskCache.save(summed, forKey: key)
+            await WaveformCache.shared.store(summed, forKey: key)
+            for job in fileJobs where job.cached == nil {
+                let peaks = ordered[job.index].peaks
+                guard !peaks.isEmpty else { continue }
+                await WaveformCache.shared.store(peaks, forKey: job.cacheKey)
+            }
+            return summed
         }
 
         inflightTasks[key] = task
@@ -536,7 +624,7 @@ final class WaveformCache {
 }
 
 private enum WaveformPeakLoadLimiter {
-    static let shared = PeakLoadLimiter(maxConcurrent: 1)
+    static let shared = PeakLoadLimiter(maxConcurrent: 4)
 }
 
 private actor PeakLoadLimiter {

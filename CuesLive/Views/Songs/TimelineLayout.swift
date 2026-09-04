@@ -115,14 +115,50 @@ enum MeasureTiming {
         contentWidth: CGFloat,
         timeSignatureChanges: [TimeSignatureChange],
         minimumPixelSpacing: CGFloat = 10,
-        maximumTime: TimeInterval? = nil
+        maximumTime: TimeInterval? = nil,
+        /// When set, only emit boundaries that fall inside this timeline window
+        /// (plus one stride of padding). Used by viewport-tiled setlist lanes so
+        /// long songs do not allocate thousands of unused lines.
+        visibleTimeRange: ClosedRange<TimeInterval>? = nil
     ) -> [TimeInterval] {
         let safeDuration = max(duration, 0.001)
         let timeLimit = max(safeDuration, maximumTime ?? safeDuration)
         guard safeDuration > 0, contentWidth > 0, !tempoChanges.isEmpty else { return [] }
 
+        // Estimate stride from the first measure so we never allocate every
+        // measure for multi‑hour songs just to throw most of them away.
+        let firstMeasureTime = timeAtStartOfMeasure(
+            2,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        )
+        guard firstMeasureTime < timeLimit - 0.0001 else { return [] }
+        let pixelsPerMeasure = CGFloat(firstMeasureTime) * contentWidth / CGFloat(safeDuration)
+        let stride = max(1, Int(ceil(minimumPixelSpacing / max(pixelsPerMeasure, 0.001))))
+
+        let rangeStart = max(0, visibleTimeRange?.lowerBound ?? 0)
+        let rangeEnd = min(timeLimit, visibleTimeRange?.upperBound ?? timeLimit)
+        guard rangeEnd > rangeStart else { return [] }
+
+        // Jump near the visible window instead of walking from measure 1.
+        var measure = 1 + stride
+        if rangeStart > firstMeasureTime {
+            let estimated = Int(rangeStart / max(firstMeasureTime, 0.0001))
+            measure = max(1 + stride, (estimated / stride) * stride)
+        }
+
+        // Walk backward one stride so the first visible line is included.
+        if measure > 1 + stride {
+            measure = max(1 + stride, measure - stride)
+        }
+
+        let visiblePixelWidth = max(
+            1,
+            CGFloat((rangeEnd - rangeStart) / safeDuration) * contentWidth
+        )
+        let hardCap = Int(visiblePixelWidth / 4) + 8
+
         var boundaries: [TimeInterval] = []
-        var measure = 2
         while true {
             let time = timeAtStartOfMeasure(
                 measure,
@@ -130,18 +166,14 @@ enum MeasureTiming {
                 timeSignatureChanges: timeSignatureChanges
             )
             guard time < timeLimit - 0.0001 else { break }
-            boundaries.append(time)
-            measure += 1
+            if time > rangeEnd + firstMeasureTime { break }
+            if time >= rangeStart - firstMeasureTime {
+                boundaries.append(time)
+            }
+            measure += stride
+            if boundaries.count > hardCap { break }
         }
-
-        guard let first = boundaries.first else { return [] }
-        let pixelsPerMeasure = CGFloat(first) * contentWidth / CGFloat(safeDuration)
-        let stride = max(1, Int(ceil(minimumPixelSpacing / max(pixelsPerMeasure, 0.001))))
-        guard stride > 1 else { return boundaries }
-
-        return boundaries.enumerated().compactMap { index, time in
-            (index + 1) % stride == 0 ? time : nil
-        }
+        return boundaries
     }
 
     static func beatAtStartOfMeasure(

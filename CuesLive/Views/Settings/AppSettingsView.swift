@@ -5,38 +5,51 @@ import SwiftUI
 /// Native macOS Settings window (cues.live → Settings… / ⌘,).
 struct AppSettingsView: View {
     let updater: SPUUpdater
+    @Bindable private var navigation = AppSettingsNavigation.shared
 
     var body: some View {
-        TabView {
+        TabView(selection: $navigation.selectedTab) {
             audioPane
                 .tabItem {
                     Label("Audio", systemImage: "speaker.wave.2")
                 }
+                .tag(AppSettingsTab.audio)
 
             timecodePane
                 .tabItem {
                     Label("Timecode", systemImage: "timelapse")
                 }
+                .tag(AppSettingsTab.timecode)
 
             groupsPane
                 .tabItem {
                     Label("Groups", systemImage: "rectangle.3.group")
                 }
+                .tag(AppSettingsTab.groups)
 
             remoteSessionPane
                 .tabItem {
                     Label("Remote", systemImage: "antenna.radiowaves.left.and.right")
                 }
+                .tag(AppSettingsTab.remote)
 
             mappingPane
                 .tabItem {
                     Label("Mapping", systemImage: "keyboard")
                 }
+                .tag(AppSettingsTab.mapping)
 
             GeneralSettingsPane(updater: updater)
                 .tabItem {
                     Label("General", systemImage: "gearshape")
                 }
+                .tag(AppSettingsTab.general)
+
+            helpPane
+                .tabItem {
+                    Label("Help", systemImage: "questionmark.circle")
+                }
+                .tag(AppSettingsTab.help)
         }
         .frame(width: 560, height: 560)
         .preferredColorScheme(.dark)
@@ -64,6 +77,10 @@ struct AppSettingsView: View {
 
     private var mappingPane: some View {
         InputMappingSettingsView()
+    }
+
+    private var helpPane: some View {
+        HelpSettingsView()
     }
 }
 

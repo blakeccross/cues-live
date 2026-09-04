@@ -27,6 +27,8 @@
 		AA0000010000000000000013 /* LivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000013 /* LivePlaybackView.swift */; };
 		AA0000010000000000000014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000014 /* Assets.xcassets */; };
 		AA0000010000000000000400 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000400 /* AppIcon.icon */; };
+		AA000001000000000000033E /* CueshowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033E /* CueshowDocument.icns */; };
+		AA000001000000000000033F /* CuesliveDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033F /* CuesliveDocument.icns */; };
 		AA0000010000000000000015 /* WaveformLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000016 /* WaveformLoader.swift */; };
 		AA0000010000000000000016 /* WaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000017 /* WaveformLaneView.swift */; };
 		AA0000010000000000000017 /* DAWColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000018 /* DAWColors.swift */; };
@@ -42,6 +44,7 @@
 		AA0000010000000000000023 /* TimelinePlayheadOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */; };
 		AA0000010000000000000026 /* DecodedStemBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000026 /* DecodedStemBuffer.swift */; };
 		AA0000010000000000000027 /* TrackMemoryPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000027 /* TrackMemoryPlayer.swift */; };
+		AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
 		AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000028 /* LiveSongWaveformView.swift */; };
 		AA0000010000000000000029 /* SetlistTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000029 /* SetlistTransition.swift */; };
 		AA000001000000000000002A /* TrackGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002A /* TrackGroup.swift */; };
@@ -187,9 +190,13 @@
 		AA0000010000000000000323 /* MIDIInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000323 /* MIDIInputService.swift */; };
 		AA0000010000000000000324 /* KeyboardInputMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000324 /* KeyboardInputMonitor.swift */; };
 		AA0000010000000000000325 /* InputMappingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000325 /* InputMappingController.swift */; };
+		AA000001000000000000033D /* LiveSetlistMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033D /* LiveSetlistMenuController.swift */; };
 		AA0000010000000000000326 /* MappableControlModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000326 /* MappableControlModifier.swift */; };
 		AA0000010000000000000327 /* InputMappingSessionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000327 /* InputMappingSessionViews.swift */; };
 		AA0000010000000000000328 /* InputMappingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000328 /* InputMappingSettingsView.swift */; };
+		AA000001000000000000033A /* HelpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033A /* HelpSettingsView.swift */; };
+		AA000001000000000000033B /* DocsTopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033B /* DocsTopic.swift */; };
+		AA000001000000000000033C /* DocsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033C /* DocsWindowView.swift */; };
 		AA0000010000000000000329 /* InputMappingStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000329 /* InputMappingStoreTests.swift */; };
 		AA000001000000000000032A /* InputMappingControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000032A /* InputMappingControllerTests.swift */; };
 		AA000001000000000000032B /* InputMappingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000032B /* InputMappingPanel.swift */; };
@@ -226,6 +233,8 @@
 		AA0000020000000000000013 /* LivePlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000020000000000000400 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		AA000002000000000000033E /* CueshowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CueshowDocument.icns; sourceTree = "<group>"; };
+		AA000002000000000000033F /* CuesliveDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CuesliveDocument.icns; sourceTree = "<group>"; };
 		AA0000020000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000020000000000000016 /* WaveformLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLoader.swift; sourceTree = "<group>"; };
 		AA0000020000000000000017 /* WaveformLaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLaneView.swift; sourceTree = "<group>"; };
@@ -242,6 +251,7 @@
 		AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePlayheadOverlay.swift; sourceTree = "<group>"; };
 		AA0000020000000000000026 /* DecodedStemBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodedStemBuffer.swift; sourceTree = "<group>"; };
 		AA0000020000000000000027 /* TrackMemoryPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMemoryPlayer.swift; sourceTree = "<group>"; };
+		AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformScrollBacking.swift; sourceTree = "<group>"; };
 		AA0000020000000000000028 /* LiveSongWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000029 /* SetlistTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistTransition.swift; sourceTree = "<group>"; };
 		AA000002000000000000002A /* TrackGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroup.swift; sourceTree = "<group>"; };
@@ -390,9 +400,13 @@
 		AA0000020000000000000323 /* MIDIInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIInputService.swift; sourceTree = "<group>"; };
 		AA0000020000000000000324 /* KeyboardInputMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardInputMonitor.swift; sourceTree = "<group>"; };
 		AA0000020000000000000325 /* InputMappingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingController.swift; sourceTree = "<group>"; };
+		AA000002000000000000033D /* LiveSetlistMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistMenuController.swift; sourceTree = "<group>"; };
 		AA0000020000000000000326 /* MappableControlModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappableControlModifier.swift; sourceTree = "<group>"; };
 		AA0000020000000000000327 /* InputMappingSessionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingSessionViews.swift; sourceTree = "<group>"; };
 		AA0000020000000000000328 /* InputMappingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingSettingsView.swift; sourceTree = "<group>"; };
+		AA000002000000000000033A /* HelpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpSettingsView.swift; sourceTree = "<group>"; };
+		AA000002000000000000033B /* DocsTopic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsTopic.swift; sourceTree = "<group>"; };
+		AA000002000000000000033C /* DocsWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsWindowView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000329 /* InputMappingStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingStoreTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000032A /* InputMappingControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingControllerTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000032B /* InputMappingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingPanel.swift; sourceTree = "<group>"; };
@@ -551,6 +565,7 @@
 				AA0000020000000000000324 /* KeyboardInputMonitor.swift */,
 				AA0000020000000000000322 /* InputMappingStore.swift */,
 				AA0000020000000000000325 /* InputMappingController.swift */,
+				AA000002000000000000033D /* LiveSetlistMenuController.swift */,
 				AA0000020000000000000064 /* MIDIScheduler.swift */,
 				AA0000020000000000000067 /* MIDIDeviceStore.swift */,
 				AA0000020000000000000074 /* ProjectUTType.swift */,
@@ -583,12 +598,22 @@
 			isa = PBXGroup;
 			children = (
 				AA000002000000000000000B /* RootView.swift */,
+				AA0000050000000000000330 /* Docs */,
 				AA000005000000000000000A /* Shared */,
 				AA0000050000000000000008 /* Songs */,
 				AA0000050000000000000009 /* Setlists */,
 				AA0000050000000000000210 /* Settings */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		AA0000050000000000000330 /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+				AA000002000000000000033B /* DocsTopic.swift */,
+				AA000002000000000000033C /* DocsWindowView.swift */,
+			);
+			path = Docs;
 			sourceTree = "<group>";
 		};
 		AA0000050000000000000008 /* Songs */ = {
@@ -623,6 +648,7 @@
 				AA00000200000000000000E2 /* MissingMediaRelinkView.swift */,
 				AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */,
 				AA000002000000000000008E /* TransportStatusReadout.swift */,
+				AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */,
 				AA0000020000000000000028 /* LiveSongWaveformView.swift */,
 				AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */,
 				AA000002000000000000007B /* LiveGroupMixerView.swift */,
@@ -655,6 +681,8 @@
 		AA000005000000000000000F /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				AA000002000000000000033E /* CueshowDocument.icns */,
+				AA000002000000000000033F /* CuesliveDocument.icns */,
 				AA0000050000000000000010 /* Click */,
 				AA0000050000000000000101 /* Guides */,
 			);
@@ -767,6 +795,7 @@
 				AA0000020000000000000309 /* RemoteSessionSettingsView.swift */,
 				AA000002000000000000030A /* DeviceSettingsSheet.swift */,
 				AA0000020000000000000328 /* InputMappingSettingsView.swift */,
+				AA000002000000000000033A /* HelpSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -874,6 +903,8 @@
 			files = (
 				AA0000010000000000000014 /* Assets.xcassets in Resources */,
 				AA0000010000000000000400 /* AppIcon.icon in Resources */,
+				AA000001000000000000033E /* CueshowDocument.icns in Resources */,
+				AA000001000000000000033F /* CuesliveDocument.icns in Resources */,
 				AA0000010000000000000044 /* click-accent.wav in Resources */,
 				AA0000010000000000000045 /* click-normal.wav in Resources */,
 				AA0000010000000000000100 /* SongSections in Resources */,
@@ -971,9 +1002,13 @@
 				AA0000010000000000000323 /* MIDIInputService.swift in Sources */,
 				AA0000010000000000000324 /* KeyboardInputMonitor.swift in Sources */,
 				AA0000010000000000000325 /* InputMappingController.swift in Sources */,
+				AA000001000000000000033D /* LiveSetlistMenuController.swift in Sources */,
 				AA0000010000000000000326 /* MappableControlModifier.swift in Sources */,
 				AA0000010000000000000327 /* InputMappingSessionViews.swift in Sources */,
 				AA0000010000000000000328 /* InputMappingSettingsView.swift in Sources */,
+				AA000001000000000000033A /* HelpSettingsView.swift in Sources */,
+				AA000001000000000000033B /* DocsTopic.swift in Sources */,
+				AA000001000000000000033C /* DocsWindowView.swift in Sources */,
 				AA000001000000000000032B /* InputMappingPanel.swift in Sources */,
 				AA000001000000000000001F /* ArrangementEditorMenu.swift in Sources */,
 				AA0000010000000000000037 /* ChangeKeyDialog.swift in Sources */,
@@ -984,6 +1019,7 @@
 				AA0000010000000000000026 /* DecodedStemBuffer.swift in Sources */,
 				AA0000010000000000000027 /* TrackMemoryPlayer.swift in Sources */,
 				AA0000010000000000000023 /* TimelinePlayheadOverlay.swift in Sources */,
+				AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */,
 				AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */,
 				AA0000010000000000000029 /* SetlistTransition.swift in Sources */,
 				AA00000100000000000000B1 /* OverlapTransitionConfig.swift in Sources */,

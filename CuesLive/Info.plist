@@ -25,5 +25,75 @@
 	<array>
 		<string>_cueslive._tcp</string>
 	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>live.cues.show</string>
+			<key>UTTypeDescription</key>
+			<string>cues.live Setlist</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cueshow</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>live.cues.song</string>
+			<key>UTTypeDescription</key>
+			<string>cues.live Song</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cueslive</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>cues.live Setlist</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>live.cues.show</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>CueshowDocument</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>cues.live Song</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>live.cues.song</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>CuesliveDocument</string>
+		</dict>
+	</array>
 </dict>
 </plist>

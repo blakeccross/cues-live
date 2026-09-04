@@ -1406,6 +1406,11 @@ struct EditView: View {
             return
         }
 
+        if cuedSectionID == section.id {
+            clearMarkerCue()
+            return
+        }
+
         cuedSectionID = section.id
         cueFireTime = sectionCueFireTime(for: section)
 

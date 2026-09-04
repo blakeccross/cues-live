@@ -1,5 +1,31 @@
 import Foundation
 
+/// Writes atomically without creating sibling temp files in the destination folder.
+/// Sandboxed apps only receive security-scoped access to the chosen file path, not arbitrary
+/// names in the same directory (e.g. `.Setlist.cueshow.tmp` on Desktop).
+private func writeDataAtomically(_ data: Data, to url: URL) throws {
+    let parent = url.deletingLastPathComponent()
+    if !FileManager.default.fileExists(atPath: parent.path) {
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+    }
+
+    let temporaryURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathExtension("tmp")
+
+    do {
+        try data.write(to: temporaryURL, options: .atomic)
+        if FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
+        }
+        try FileManager.default.copyItem(at: temporaryURL, to: url)
+    } catch {
+        try? FileManager.default.removeItem(at: temporaryURL)
+        throw error
+    }
+    try? FileManager.default.removeItem(at: temporaryURL)
+}
+
 enum ProjectFileStore {
     enum StoreError: LocalizedError {
         case unsupportedFormat(Int)
@@ -62,18 +88,7 @@ enum ProjectFileStore {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(document)
 
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-
-        let temporaryURL = url.deletingLastPathComponent()
-            .appendingPathComponent(".\(url.lastPathComponent).tmp")
-        try data.write(to: temporaryURL, options: .atomic)
-        if FileManager.default.fileExists(atPath: url.path) {
-            try FileManager.default.removeItem(at: url)
-        }
-        try FileManager.default.moveItem(at: temporaryURL, to: url)
+        try writeDataAtomically(data, to: url)
     }
 
     private static func uniqueProjectURL(in directory: URL, baseName: String, extension ext: String) -> URL {
@@ -154,18 +169,7 @@ enum ShowFileStore {
         encoder.dateEncodingStrategy = .iso8601
         let data = try encoder.encode(document)
 
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-
-        let temporaryURL = url.deletingLastPathComponent()
-            .appendingPathComponent(".\(url.lastPathComponent).tmp")
-        try data.write(to: temporaryURL, options: .atomic)
-        if FileManager.default.fileExists(atPath: url.path) {
-            try FileManager.default.removeItem(at: url)
-        }
-        try FileManager.default.moveItem(at: temporaryURL, to: url)
+        try writeDataAtomically(data, to: url)
     }
 
     static func displayName(fromShowURL url: URL) -> String {

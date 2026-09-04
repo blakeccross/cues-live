@@ -52,6 +52,7 @@ struct LivePlaybackView: View {
     @State private var didBootstrap = false
     @State private var coordinator = PlaybackCoordinator()
     @State private var viewModel = SetlistViewModel()
+    @Bindable private var playbackClock = AudioEngineManager.shared
     @State private var cuedSectionID: UUID?
     @State private var cueFireTime: TimeInterval?
     @State private var cueFlashPhase = false
@@ -117,18 +118,20 @@ struct LivePlaybackView: View {
         }
         .onAppear {
             bootstrapSetlistIfNeeded()
+            #if os(macOS)
+            syncLiveSetlistMenuController()
+            #endif
         }
-        .focusedValue(\.liveSetlistActions, LiveSetlistActions(
-            canSave: activeSetlist != nil,
-            save: presentSave,
-            saveAs: presentSaveAs,
-            canNew: activeSetlist != nil,
-            newSetlist: createUntitledSetlist,
-            canOpen: true,
-            open: presentOpen,
-            canExportPackage: activeSetlist != nil,
-            exportPackage: presentExportSetlistPackage
-        ))
+        .onDisappear {
+            #if os(macOS)
+            LiveSetlistMenuController.shared.reset()
+            #endif
+        }
+        .onChange(of: activeSetlistID) { _, _ in
+            #if os(macOS)
+            syncLiveSetlistMenuController()
+            #endif
+        }
         .alert("Missing Audio Files", isPresented: $showingMissingMediaAlert) {
             Button("Relink…") {
                 presentMissingMediaRelink(for: nil)
@@ -377,7 +380,7 @@ struct LivePlaybackView: View {
                     coordinator.unbindPlaybackHandlers()
                     coordinator.pause()
                 } else if let editedSongID = oldValue {
-                    coordinator.invalidateWaveformSnapshot(for: editedSongID)
+                    coordinator.refreshWaveformAfterEdit(for: editedSongID)
                 }
                 handleSongEditorDismissed(newValue)
             }
@@ -880,6 +883,23 @@ struct LivePlaybackView: View {
         activeSetlistID = setlist.id
     }
 
+    #if os(macOS)
+    private func syncLiveSetlistMenuController() {
+        let hasSetlist = activeSetlist != nil
+        LiveSetlistMenuController.shared.update(
+            canSave: hasSetlist,
+            save: presentSave,
+            saveAs: presentSaveAs,
+            canNew: hasSetlist,
+            newSetlist: createUntitledSetlist,
+            canOpen: true,
+            open: presentOpen,
+            canExportPackage: hasSetlist,
+            exportPackage: presentExportSetlistPackage
+        )
+    }
+    #endif
+
     private func switchToSetlist(_ setlist: Setlist) {
         guard setlist.id != activeSetlistID else { return }
 
@@ -1070,6 +1090,9 @@ struct LivePlaybackView: View {
                 },
                 playheadTimeProvider: { coordinator.livePlayheadTime() },
                 isPlayingProvider: { coordinator.isPlaying },
+                // Only observe clock time while idle so seeks move the marker without
+                // rebuilding the setlist on every playhead tick during playback.
+                idlePlayheadTime: playbackClock.isPlaying ? nil : playbackClock.currentTime,
                 cuedSectionID: cuedSectionID,
                 cueFlashPhase: cueFlashPhase,
                 onSeek: coordinator.seek,
@@ -1513,6 +1536,11 @@ struct LivePlaybackView: View {
         if !coordinator.isPlaying {
             clearMarkerCue()
             coordinator.seek(to: section.timelineStartSeconds)
+            return
+        }
+
+        if cuedSectionID == section.id {
+            clearMarkerCue()
             return
         }
 

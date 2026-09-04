@@ -33,6 +33,12 @@ struct DeviceSettingsSheet: View {
                                     .navigationTitle("Mappings")
                             }
                         }
+                        ToolbarItem(placement: .topBarLeading) {
+                            NavigationLink("Help") {
+                                HelpSettingsView()
+                                    .navigationTitle("Help")
+                            }
+                        }
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { dismiss() }
                                 .foregroundStyle(AppColors.accent)

@@ -82,11 +82,13 @@ final class StreamingStemBufferLoopTests: XCTestCase {
     /// moves the reader's window and evicts the pages behind it. The reader polls
     /// every 40ms, so this drives it for many times that.
     private func playTowardEndOfFile(_ buffer: StreamingStemBuffer) {
+        buffer.setReaderActive(true)
         let target = Int((fileSeconds - 1) * sampleRate)
         for _ in 0..<10 {
             _ = readFirstSample(from: buffer, at: target)
             Thread.sleep(forTimeInterval: 0.05)
         }
+        buffer.setReaderActive(false)
     }
 
     private func readFirstSample(from buffer: StreamingStemBuffer, at frame: Int) -> Float {

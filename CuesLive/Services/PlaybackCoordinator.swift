@@ -16,7 +16,10 @@ struct LiveSongWaveformSnapshot: Identifiable {
     let loopSlotIDs: Set<UUID>
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
-    /// When set (e.g. remote session), peaks are used directly and track files are not loaded.
+    /// When false, the setlist lane hides measure ticks (`song.bpm` is unset).
+    let showsMeasureGrid: Bool
+    /// When set (e.g. remote session or local setlist peak warm), peaks are used
+    /// directly and track files are not decoded on the setlist render path.
     let precomputedSourcePeaks: [Float]?
 
     var id: UUID { songID }
@@ -36,6 +39,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         loopSlotIDs: Set<UUID>,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
+        showsMeasureGrid: Bool,
         precomputedSourcePeaks: [Float]? = nil
     ) {
         self.songID = songID
@@ -48,7 +52,25 @@ struct LiveSongWaveformSnapshot: Identifiable {
         self.loopSlotIDs = loopSlotIDs
         self.tempoChanges = tempoChanges
         self.timeSignatureChanges = timeSignatureChanges
+        self.showsMeasureGrid = showsMeasureGrid
         self.precomputedSourcePeaks = precomputedSourcePeaks
+    }
+
+    func withPrecomputedPeaks(_ peaks: [Float]?) -> LiveSongWaveformSnapshot {
+        LiveSongWaveformSnapshot(
+            songID: songID,
+            songName: songName,
+            trackSources: trackSources,
+            fileDuration: fileDuration,
+            timelineDuration: timelineDuration,
+            sections: sections,
+            peakSections: peakSections,
+            loopSlotIDs: loopSlotIDs,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges,
+            showsMeasureGrid: showsMeasureGrid,
+            precomputedSourcePeaks: peaks
+        )
     }
 }
 
@@ -90,6 +112,8 @@ final class PlaybackCoordinator {
     private var loadTask: Task<Void, Never>?
     private var loadGeneration = 0
     private var waveformSnapshotPrefetchTask: Task<Void, Never>?
+    private var waveformPeakPrefetchTask: Task<Void, Never>?
+    private var pendingWaveformPeakJobs: [(songID: UUID, sources: [(url: URL, duration: TimeInterval)])] = []
     private var pendingWaveformSnapshotSongIDs: Set<UUID> = []
     private var waveformSnapshotsBySongID: [UUID: LiveSongWaveformSnapshot] = [:]
     private var prefetchedIncomingPayloads: [AudioEngineManager.PreparedTrackPayload]?
@@ -187,6 +211,7 @@ final class PlaybackCoordinator {
         bindPlaybackHandlers()
     }
 
+    @MainActor
     func configure(setlist: Setlist) {
         bindPlaybackFinishedHandler()
         applySetlistEntries(setlist.sortedEntries)
@@ -195,6 +220,7 @@ final class PlaybackCoordinator {
         loadCurrentSong()
     }
 
+    @MainActor
     func syncSetlist(_ setlist: Setlist) {
         let currentSongID = currentSong?.id
         applySetlistEntries(setlist.sortedEntries)
@@ -207,9 +233,12 @@ final class PlaybackCoordinator {
             currentIndex = min(currentIndex, songs.count - 1)
         }
 
+        // Always warm layout + peaks for the full setlist (covers song add/reorder).
+        prefetchWaveformSnapshots()
+
         if let song = currentSong, song.id == loadedSongID, isLoaded {
             refreshWaveformSnapshots()
-            prefetchWaveformSnapshots()
+            configureOverlapSchedulingIfNeeded()
             return
         }
 
@@ -270,21 +299,19 @@ final class PlaybackCoordinator {
     }
 
     /// Returns a cached waveform snapshot, building and storing one synchronously if needed.
+    @MainActor
     @discardableResult
     func resolveWaveformSnapshot(for song: Song) -> LiveSongWaveformSnapshot? {
         if let cached = waveformSnapshotsBySongID[song.id] {
             return cached
         }
         guard let snapshot = Self.makeWaveformSnapshot(for: song) else { return nil }
-        waveformSnapshotsBySongID[song.id] = snapshot
-        if song.id == currentSong?.id {
-            currentWaveformSnapshot = snapshot
-        }
-        return snapshot
+        return storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
     }
 
+    @MainActor
     func ensureWaveformSnapshot(for song: Song) {
-        guard waveformSnapshotsBySongID[song.id] == nil else { return }
+        if waveformSnapshotsBySongID[song.id] != nil { return }
         guard !pendingWaveformSnapshotSongIDs.contains(song.id) else { return }
 
         pendingWaveformSnapshotSongIDs.insert(song.id)
@@ -292,10 +319,7 @@ final class PlaybackCoordinator {
             defer { pendingWaveformSnapshotSongIDs.remove(song.id) }
             guard waveformSnapshotsBySongID[song.id] == nil else { return }
             guard let snapshot = Self.makeWaveformSnapshot(for: song) else { return }
-            waveformSnapshotsBySongID[song.id] = snapshot
-            if song.id == currentSong?.id {
-                currentWaveformSnapshot = snapshot
-            }
+            _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
         }
     }
 
@@ -306,25 +330,153 @@ final class PlaybackCoordinator {
         }
     }
 
+    /// Rebuilds setlist waveform layout after song edit and regenerates peaks when
+    /// audio sources changed (cache keys include file mtimes).
+    @MainActor
+    func refreshWaveformAfterEdit(for songID: UUID) {
+        invalidateWaveformSnapshot(for: songID)
+        guard let song = songs.first(where: { $0.id == songID }) else { return }
+        guard let snapshot = Self.makeWaveformSnapshot(for: song) else { return }
+        _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
+    }
+
     private func pruneWaveformSnapshotCache() {
         let activeSongIDs = Set(songs.map(\.id))
         waveformSnapshotsBySongID = waveformSnapshotsBySongID.filter { activeSongIDs.contains($0.key) }
     }
 
+    /// Builds lightweight layout snapshots for every setlist song, then warms
+    /// summed peak overviews in the background so returning to setlist is instant.
+    @MainActor
     private func prefetchWaveformSnapshots() {
         waveformSnapshotPrefetchTask?.cancel()
+        waveformPeakPrefetchTask?.cancel()
+        pendingWaveformPeakJobs.removeAll()
+        waveformPeakPrefetchTask = nil
+
         waveformSnapshotPrefetchTask = Task { @MainActor in
-            for song in songs {
+            var pendingPeakJobs: [(songID: UUID, sources: [(url: URL, duration: TimeInterval)])] = []
+
+            // Warm the current song first so the active lane paints ASAP.
+            let orderedSongs: [Song]
+            if let current = currentSong {
+                orderedSongs = [current] + songs.filter { $0.id != current.id }
+            } else {
+                orderedSongs = songs
+            }
+
+            for song in orderedSongs {
                 if Task.isCancelled { return }
-                if waveformSnapshotsBySongID[song.id] != nil { continue }
-                guard let snapshot = Self.makeWaveformSnapshot(for: song) else { continue }
-                waveformSnapshotsBySongID[song.id] = snapshot
-                if song.id == currentSong?.id {
-                    currentWaveformSnapshot = snapshot
+                let snapshot: LiveSongWaveformSnapshot
+                if let existing = waveformSnapshotsBySongID[song.id] {
+                    snapshot = attachingCachedPeaks(to: existing)
+                    if snapshot.precomputedSourcePeaks != existing.precomputedSourcePeaks {
+                        waveformSnapshotsBySongID[song.id] = snapshot
+                        if song.id == currentSong?.id {
+                            currentWaveformSnapshot = snapshot
+                        }
+                    }
+                } else if let built = Self.makeWaveformSnapshot(for: song) {
+                    snapshot = storeWaveformSnapshot(built, warmingPeaksIfNeeded: false)
+                } else {
+                    continue
+                }
+
+                if snapshot.precomputedSourcePeaks == nil, !snapshot.trackSources.isEmpty {
+                    pendingPeakJobs.append((song.id, snapshot.trackSources))
                 }
                 await Task.yield()
             }
+
+            guard !Task.isCancelled else { return }
+            enqueueWaveformPeakWarm(pendingPeakJobs)
         }
+    }
+
+    @MainActor
+    @discardableResult
+    private func storeWaveformSnapshot(
+        _ snapshot: LiveSongWaveformSnapshot,
+        warmingPeaksIfNeeded: Bool
+    ) -> LiveSongWaveformSnapshot {
+        let resolved = attachingCachedPeaks(to: snapshot)
+        waveformSnapshotsBySongID[resolved.songID] = resolved
+        if resolved.songID == currentSong?.id {
+            currentWaveformSnapshot = resolved
+        }
+        if warmingPeaksIfNeeded,
+           resolved.precomputedSourcePeaks == nil,
+           !resolved.trackSources.isEmpty {
+            enqueueWaveformPeakWarm([(resolved.songID, resolved.trackSources)])
+        }
+        return resolved
+    }
+
+    @MainActor
+    private func enqueueWaveformPeakWarm(
+        _ jobs: [(songID: UUID, sources: [(url: URL, duration: TimeInterval)])]
+    ) {
+        guard !jobs.isEmpty else { return }
+        for job in jobs {
+            pendingWaveformPeakJobs.removeAll { $0.songID == job.songID }
+            pendingWaveformPeakJobs.append(job)
+        }
+        startWaveformPeakWarmIfNeeded()
+    }
+
+    @MainActor
+    private func startWaveformPeakWarmIfNeeded() {
+        guard waveformPeakPrefetchTask == nil else { return }
+        guard !pendingWaveformPeakJobs.isEmpty else { return }
+
+        waveformPeakPrefetchTask = Task { @MainActor in
+            defer { waveformPeakPrefetchTask = nil }
+
+            while !pendingWaveformPeakJobs.isEmpty {
+                if Task.isCancelled {
+                    pendingWaveformPeakJobs.removeAll()
+                    return
+                }
+                let job = pendingWaveformPeakJobs.removeFirst()
+                let peaks = await WaveformCache.shared.summedPeaks(for: job.sources)
+                guard !Task.isCancelled else {
+                    pendingWaveformPeakJobs.removeAll()
+                    return
+                }
+                guard let existing = waveformSnapshotsBySongID[job.songID],
+                      Self.trackSourcesMatch(existing.trackSources, job.sources) else {
+                    continue
+                }
+                let updated = existing.withPrecomputedPeaks(peaks)
+                waveformSnapshotsBySongID[job.songID] = updated
+                if job.songID == currentSong?.id {
+                    currentWaveformSnapshot = updated
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func attachingCachedPeaks(
+        to snapshot: LiveSongWaveformSnapshot
+    ) -> LiveSongWaveformSnapshot {
+        if snapshot.precomputedSourcePeaks != nil { return snapshot }
+        guard let peaks = WaveformCache.shared.cachedSummedPeaks(for: snapshot.trackSources) else {
+            return snapshot
+        }
+        return snapshot.withPrecomputedPeaks(peaks)
+    }
+
+    private static func trackSourcesMatch(
+        _ lhs: [(url: URL, duration: TimeInterval)],
+        _ rhs: [(url: URL, duration: TimeInterval)]
+    ) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        for index in lhs.indices {
+            if lhs[index].url.path != rhs[index].url.path { return false }
+            if abs(lhs[index].duration - rhs[index].duration) > 0.001 { return false }
+        }
+        return true
     }
 
     private func handlePlaybackFinished() {
@@ -333,7 +485,9 @@ final class PlaybackCoordinator {
             advanceToNextSong(autoPlay: true)
         case .overlap:
             if incomingAudioEngine != nil, let incoming = nextSong {
-                completeActiveOverlapTransition(to: incoming)
+                Task { @MainActor in
+                    completeActiveOverlapTransition(to: incoming)
+                }
             } else {
                 advanceToNextSong(autoPlay: true)
             }
@@ -375,13 +529,18 @@ final class PlaybackCoordinator {
             clockEngine.stop()
         }
         audioEngine.stop()
-        incomingAudioEngine?.stop()
-        incomingAudioEngine = nil
+        releaseIncomingAudioEngine()
         activeOverlapConfig = nil
         clearIncomingPrefetch()
     }
 
+    private func releaseIncomingAudioEngine() {
+        incomingAudioEngine?.shutdown()
+        incomingAudioEngine = nil
+    }
+
     /// Reloads arrangement and waveform metadata for the already-loaded current song.
+    @MainActor
     func refreshCurrentSongState() {
         guard let song = currentSong, song.id == loadedSongID, isLoaded else { return }
         refreshWaveformSnapshots()
@@ -394,8 +553,7 @@ final class PlaybackCoordinator {
         // only the active engine.
         guard incomingAudioEngine == nil else {
             audioEngine.cancelScheduledOverlapStart()
-            incomingAudioEngine?.stop()
-            incomingAudioEngine = nil
+            releaseIncomingAudioEngine()
             activeOverlapConfig = nil
             clearIncomingPrefetch()
             clockEngine.seek(to: time)
@@ -463,8 +621,18 @@ final class PlaybackCoordinator {
         audioEngine.cancelScheduledTransition()
         audioEngine.stop()
         clockEngine.stop()
-        incomingAudioEngine?.stop()
-        incomingAudioEngine = nil
+        releaseIncomingAudioEngine()
+
+        // After an overlap handoff the audible engine may be a disposable instance
+        // while the shared clock engine still holds a stale graph. Consolidate back
+        // onto the shared engine before loading the next song.
+        if audioEngine !== clockEngine {
+            audioEngine.shutdown()
+            audioEngine = clockEngine
+            bindPlaybackHandlers()
+        }
+
+        audioEngine.suspendHardware()
         loadCurrentSong(autoPlay: autoPlay)
     }
 
@@ -545,6 +713,11 @@ final class PlaybackCoordinator {
 
         audioEngine.stop()
         clockEngine.stop()
+        releaseIncomingAudioEngine()
+        audioEngine.suspendHardware()
+        if clockEngine !== audioEngine {
+            clockEngine.suspendHardware()
+        }
 
         // `Song` is a SwiftData model; never hop off this context's actor with it.
         // Streaming payloads only open files / read headers, so this is cheap on-actor.
@@ -567,13 +740,18 @@ final class PlaybackCoordinator {
                     song: song,
                     songIndex: currentIndex
                 )
+                guard generation == loadGeneration, !Task.isCancelled else { return }
+
                 let routing = routingProvider?()
                 try audioEngine.loadPreparedTracks(payloads, routing: routing)
+                guard generation == loadGeneration, !Task.isCancelled else { return }
+
                 applySongEngineState(for: song)
                 applyGroupMixFromProvider()
-                currentWaveformSnapshot = Self.makeWaveformSnapshot(for: song)
-                if let currentWaveformSnapshot {
-                    waveformSnapshotsBySongID[song.id] = currentWaveformSnapshot
+                if let snapshot = Self.makeWaveformSnapshot(for: song) {
+                    _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
+                } else {
+                    currentWaveformSnapshot = nil
                 }
                 loadedSongID = song.id
                 isLoaded = true
@@ -611,19 +789,23 @@ final class PlaybackCoordinator {
         }
     }
 
+    @MainActor
     private func refreshWaveformSnapshots() {
         guard let song = currentSong else {
             currentWaveformSnapshot = nil
             return
         }
         if let cached = waveformSnapshotsBySongID[song.id] {
-            currentWaveformSnapshot = cached
+            let resolved = attachingCachedPeaks(to: cached)
+            currentWaveformSnapshot = resolved
+            waveformSnapshotsBySongID[song.id] = resolved
             return
         }
-        currentWaveformSnapshot = Self.makeWaveformSnapshot(for: song)
-        if let currentWaveformSnapshot {
-            waveformSnapshotsBySongID[song.id] = currentWaveformSnapshot
+        guard let snapshot = Self.makeWaveformSnapshot(for: song) else {
+            currentWaveformSnapshot = nil
+            return
         }
+        _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
     }
 
     private struct SongEngineLayout {
@@ -734,7 +916,10 @@ final class PlaybackCoordinator {
             peakSections: peakSections,
             loopSlotIDs: arrangement.loopSlotIDs,
             tempoChanges: projectState.tempoChanges,
-            timeSignatureChanges: projectState.timeSignatureChanges
+            timeSignatureChanges: projectState.timeSignatureChanges,
+            // Synthetic 120 BPM markers are always injected for timing math; only
+            // show measure ticks when the song actually has a set/imported tempo.
+            showsMeasureGrid: song.bpm != nil
         )
     }
 
@@ -916,6 +1101,7 @@ final class PlaybackCoordinator {
         }
     }
 
+    @MainActor
     private func completeActiveOverlapTransition(to incoming: Song) {
         audioEngine.cancelScheduledOverlapStart()
         clearIncomingPrefetch()
@@ -929,9 +1115,10 @@ final class PlaybackCoordinator {
             loadedSongID = incoming.id
             isLoaded = true
             loadError = nil
-            currentWaveformSnapshot = Self.makeWaveformSnapshot(for: incoming)
-            if let currentWaveformSnapshot {
-                waveformSnapshotsBySongID[incoming.id] = currentWaveformSnapshot
+            if let snapshot = Self.makeWaveformSnapshot(for: incoming) {
+                _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
+            } else {
+                currentWaveformSnapshot = nil
             }
             configureOverlapSchedulingIfNeeded()
             return
@@ -984,9 +1171,10 @@ final class PlaybackCoordinator {
         loadedSongID = incoming.id
         isLoaded = true
         loadError = nil
-        currentWaveformSnapshot = Self.makeWaveformSnapshot(for: incoming)
-        if let currentWaveformSnapshot {
-            waveformSnapshotsBySongID[incoming.id] = currentWaveformSnapshot
+        if let snapshot = Self.makeWaveformSnapshot(for: incoming) {
+            _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
+        } else {
+            currentWaveformSnapshot = nil
         }
         configureOverlapSchedulingIfNeeded()
     }

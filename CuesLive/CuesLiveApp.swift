@@ -57,6 +57,7 @@ struct CuesLiveApp: App {
             SongUndoCommands()
             ClipEditorCommands()
             LiveMappingCommands()
+            HelpMenuCommands()
         }
         #endif
 
@@ -66,20 +67,14 @@ struct CuesLiveApp: App {
                 .modelContainer(modelContainer)
                 .environment(InputMappingController.shared)
         }
+
+        Window("cues.live Help", id: DocsWindowID.value) {
+            DocsWindowView()
+                .frame(minWidth: 640, minHeight: 480)
+        }
+        .defaultSize(width: 780, height: 560)
         #endif
     }
-}
-
-struct LiveSetlistActions {
-    var canSave = false
-    var save: () -> Void = {}
-    var saveAs: () -> Void = {}
-    var canNew = false
-    var newSetlist: () -> Void = {}
-    var canOpen = false
-    var open: () -> Void = {}
-    var canExportPackage = false
-    var exportPackage: () -> Void = {}
 }
 
 struct SongEditorActions {
@@ -104,11 +99,6 @@ struct SongUndoActions {
     var redo: () -> Void = {}
 }
 
-private struct LiveSetlistActionsKey: FocusedValueKey {
-    typealias Value = LiveSetlistActions
-    static var defaultValue: Value? { nil }
-}
-
 private struct SongEditorActionsKey: FocusedValueKey {
     typealias Value = SongEditorActions
     static var defaultValue: Value? { nil }
@@ -125,11 +115,6 @@ private struct SongUndoActionsKey: FocusedValueKey {
 }
 
 extension FocusedValues {
-    var liveSetlistActions: LiveSetlistActions? {
-        get { self[LiveSetlistActionsKey.self] }
-        set { self[LiveSetlistActionsKey.self] = newValue }
-    }
-
     var songEditorActions: SongEditorActions? {
         get { self[SongEditorActionsKey.self] }
         set { self[SongEditorActionsKey.self] = newValue }
@@ -148,43 +133,43 @@ extension FocusedValues {
 
 #if os(macOS)
 struct FileMenuCommands: Commands {
-    @FocusedValue(\.liveSetlistActions) private var actions
+    @Bindable private var menu = LiveSetlistMenuController.shared
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("New") {
-                actions?.newSetlist()
+                menu.newSetlist()
             }
             .keyboardShortcut("n", modifiers: .command)
-            .disabled(actions?.canNew != true)
+            .disabled(!menu.canNew)
         }
 
         CommandGroup(replacing: .saveItem) {
             Button("Open…") {
-                actions?.open()
+                menu.open()
             }
             .keyboardShortcut("o", modifiers: .command)
-            .disabled(actions?.canOpen != true)
+            .disabled(!menu.canOpen)
 
             Divider()
 
             Button("Save") {
-                actions?.save()
+                menu.save()
             }
             .keyboardShortcut("s", modifiers: .command)
-            .disabled(actions?.canSave != true)
+            .disabled(!menu.canSave)
 
             Button("Save As…") {
-                actions?.saveAs()
+                menu.saveAs()
             }
             .keyboardShortcut("s", modifiers: [.command, .shift])
-            .disabled(actions?.canSave != true)
+            .disabled(!menu.canSave)
 
             Button("Export Setlist Folder…") {
-                actions?.exportPackage()
+                menu.exportPackage()
             }
             .keyboardShortcut("e", modifiers: [.command, .shift])
-            .disabled(actions?.canExportPackage != true)
+            .disabled(!menu.canExportPackage)
         }
     }
 }
@@ -261,6 +246,19 @@ struct LiveMappingCommands: Commands {
             Button(mapping.session == .midiMapping ? "Done MIDI Mapping" : "MIDI Mapping") {
                 mapping.toggleMIDIMapping()
             }
+        }
+    }
+}
+
+struct HelpMenuCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .help) {
+            Button("cues.live Help") {
+                openWindow(id: DocsWindowID.value)
+            }
+            .keyboardShortcut("?", modifiers: .command)
         }
     }
 }

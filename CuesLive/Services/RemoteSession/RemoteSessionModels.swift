@@ -95,6 +95,7 @@ extension RemoteSongDTO {
             loopSlotIDs: Set(loopSlotIDs),
             tempoChanges: tempo,
             timeSignatureChanges: signatures,
+            showsMeasureGrid: showsMeasureGrid,
             precomputedSourcePeaks: peaks
         )
     }
@@ -151,8 +152,71 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
     var loopSlotIDs: [UUID]
     var tempoChanges: [TempoChange]
     var timeSignatureChanges: [TimeSignatureChange]
+    /// When false, remote clients hide measure ticks (host song has no set BPM).
+    var showsMeasureGrid: Bool
     /// Downsampled summed peaks for remote waveform display (no media transfer).
     var peaks: [Float]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case fileDuration
+        case timelineDuration
+        case key
+        case sections
+        case peakSections
+        case loopSlotIDs
+        case tempoChanges
+        case timeSignatureChanges
+        case showsMeasureGrid
+        case peaks
+    }
+
+    init(
+        id: UUID,
+        name: String,
+        fileDuration: TimeInterval,
+        timelineDuration: TimeInterval,
+        key: String,
+        sections: [RemoteArrangementSectionDTO],
+        peakSections: [RemoteArrangementSectionDTO],
+        loopSlotIDs: [UUID],
+        tempoChanges: [TempoChange],
+        timeSignatureChanges: [TimeSignatureChange],
+        showsMeasureGrid: Bool,
+        peaks: [Float]
+    ) {
+        self.id = id
+        self.name = name
+        self.fileDuration = fileDuration
+        self.timelineDuration = timelineDuration
+        self.key = key
+        self.sections = sections
+        self.peakSections = peakSections
+        self.loopSlotIDs = loopSlotIDs
+        self.tempoChanges = tempoChanges
+        self.timeSignatureChanges = timeSignatureChanges
+        self.showsMeasureGrid = showsMeasureGrid
+        self.peaks = peaks
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        fileDuration = try container.decode(TimeInterval.self, forKey: .fileDuration)
+        timelineDuration = try container.decode(TimeInterval.self, forKey: .timelineDuration)
+        key = try container.decode(String.self, forKey: .key)
+        sections = try container.decode([RemoteArrangementSectionDTO].self, forKey: .sections)
+        peakSections = try container.decodeIfPresent([RemoteArrangementSectionDTO].self, forKey: .peakSections) ?? sections
+        loopSlotIDs = try container.decode([UUID].self, forKey: .loopSlotIDs)
+        tempoChanges = try container.decode([TempoChange].self, forKey: .tempoChanges)
+        timeSignatureChanges = try container.decode([TimeSignatureChange].self, forKey: .timeSignatureChanges)
+        // Older hosts omit this; keep prior behavior (show grid when tempo map exists).
+        showsMeasureGrid = try container.decodeIfPresent(Bool.self, forKey: .showsMeasureGrid)
+            ?? !tempoChanges.isEmpty
+        peaks = try container.decodeIfPresent([Float].self, forKey: .peaks) ?? []
+    }
 }
 
 struct RemoteSetlistEntryDTO: Codable, Hashable, Identifiable, Sendable {

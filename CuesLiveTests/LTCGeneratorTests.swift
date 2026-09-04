@@ -67,4 +67,67 @@ final class LTCGeneratorTests: XCTestCase {
             )
         )
     }
+
+    func testProceduralBufferMatchesMaterializedGenerator() throws {
+        let duration: TimeInterval = 1
+        let materialized = try LTCGenerator.generate(
+            duration: duration,
+            start: .atHour(1),
+            frameRate: .fps30
+        )
+        let procedural = try ProceduralLTCBuffer(
+            duration: duration,
+            start: .atHour(1),
+            frameRate: .fps30
+        )
+
+        XCTAssertEqual(procedural.frameCount, materialized.frameCount)
+
+        var destination = [Float](repeating: 0, count: procedural.frameCount)
+        destination.withUnsafeMutableBufferPointer { buffer in
+            guard let base = buffer.baseAddress else { return }
+            _ = procedural.copy(
+                channel: 0,
+                startingFrame: 0,
+                frameCount: procedural.frameCount,
+                into: base,
+                destinationOffset: 0,
+                gain: 1
+            )
+        }
+
+        materialized.withMutableSamples(channel: 0) { samples, count in
+            for index in 0..<count {
+                XCTAssertEqual(destination[index], samples[index], accuracy: 0.0001, "sample \(index)")
+            }
+        }
+    }
+
+    func testLongProceduralBufferInitIsCheap() throws {
+        let start = CFAbsoluteTimeGetCurrent()
+        let buffer = try ProceduralLTCBuffer(
+            duration: 79 * 60,
+            start: .atHour(1),
+            frameRate: .fps30
+        )
+        let elapsedMS = (CFAbsoluteTimeGetCurrent() - start) * 1_000
+
+        XCTAssertGreaterThan(buffer.frameCount, 1_000_000)
+        XCTAssertLessThan(elapsedMS, 250, "lazy LTC checkpoints should not scan the full song at init")
+
+        // Touch a late sample so checkpoints extend on demand.
+        let lateStart = Int(70 * 60 * buffer.sampleRate)
+        var sample: Float = 0
+        _ = withUnsafeMutablePointer(to: &sample) { pointer in
+            buffer.copy(
+                channel: 0,
+                startingFrame: lateStart,
+                frameCount: 1,
+                into: pointer,
+                destinationOffset: 0,
+                gain: 1
+            )
+        }
+        XCTAssertNotEqual(sample, 0)
+    }
 }

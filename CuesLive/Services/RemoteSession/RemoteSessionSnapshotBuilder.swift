@@ -202,6 +202,7 @@ enum RemoteSessionSnapshotBuilder {
             loopSlotIDs: loopSlotIDs,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
+            showsMeasureGrid: snapshot?.showsMeasureGrid ?? (song.bpm != nil),
             peaks: peaks
         )
     }

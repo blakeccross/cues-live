@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import os
 
 /// Pull-based memory playback for one track via `AVAudioSourceNode`.
 final class TrackMemoryPlayer {
@@ -21,6 +22,8 @@ final class TrackMemoryPlayer {
         var playbackTimelineOffset: TimeInterval = 0
         var playbackEndTimeline: TimeInterval?
         let peakMeter = PeakMeterHolder()
+        private var isInvalidated = false
+        private var stateLock = os_unfair_lock()
 
         init(
             transport: AudioPlaybackTransport,
@@ -33,6 +36,31 @@ final class TrackMemoryPlayer {
             self.sampleRate = buffer.sampleRate
         }
 
+        func invalidate() {
+            os_unfair_lock_lock(&stateLock)
+            isInvalidated = true
+            os_unfair_lock_unlock(&stateLock)
+        }
+
+        func updateMapper(_ mapper: ArrangementTimelineMapper) {
+            os_unfair_lock_lock(&stateLock)
+            self.mapper = mapper
+            os_unfair_lock_unlock(&stateLock)
+        }
+
+        func updateMix(volume: Float, isAudible: Bool) {
+            os_unfair_lock_lock(&stateLock)
+            mix = MixState(volume: volume, isAudible: isAudible)
+            os_unfair_lock_unlock(&stateLock)
+        }
+
+        func setPlaybackWindow(offset: TimeInterval, endTimeline: TimeInterval?) {
+            os_unfair_lock_lock(&stateLock)
+            playbackTimelineOffset = offset
+            playbackEndTimeline = endTimeline
+            os_unfair_lock_unlock(&stateLock)
+        }
+
         func render(
             frameCount: AVAudioFrameCount,
             hostTime: UInt64,
@@ -42,7 +70,17 @@ final class TrackMemoryPlayer {
 
             clearOutput(outputBuffer, frameCount: frameCount)
 
-            guard mix.isAudible else { return }
+            os_unfair_lock_lock(&stateLock)
+            guard !isInvalidated else {
+                os_unfair_lock_unlock(&stateLock)
+                return
+            }
+            guard mix.isAudible else {
+                os_unfair_lock_unlock(&stateLock)
+                return
+            }
+            // Hold the lock for the full render so mapper/mix cannot tear on the main thread.
+            defer { os_unfair_lock_unlock(&stateLock) }
 
             let transportState = transport.renderTimeline(atHostTime: hostTime, captureAnchor: true)
             guard transportState.isPlaying else { return }
@@ -369,7 +407,12 @@ final class TrackMemoryPlayer {
         ) {
             if buffer.channelCount == 1 {
                 guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
-                outputData[outputFrame] = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * leftGain
+                let sample = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * leftGain
+                outputData[outputFrame] = sample
+                for channel in 1..<outputChannelCount {
+                    guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
+                    extra[outputFrame] = sample
+                }
                 return
             }
 
@@ -401,6 +444,9 @@ final class TrackMemoryPlayer {
             let outputChannelCount = outputBuffers.count
             guard outputChannelCount > 0, frameCount > 0 else { return }
 
+            // fill ch0; if the multi-channel connection hands us a wider ABL,
+            // duplicate mono into additional channels so channel maps that
+            // dual-route ch0 stay valid without reading missing inputs.
             if buffer.channelCount == 1 {
                 let gain = leftGain
                 guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
@@ -412,6 +458,12 @@ final class TrackMemoryPlayer {
                     destinationOffset: outputFrameOffset,
                     gain: gain
                 )
+                for channel in 1..<outputChannelCount {
+                    guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
+                    let dest = extra.advanced(by: outputFrameOffset)
+                    let src = outputData.advanced(by: outputFrameOffset)
+                    dest.update(from: src, count: frameCount)
+                }
                 return
             }
 
@@ -484,6 +536,45 @@ final class TrackMemoryPlayer {
             }
             return peak
         }
+
+        func prepareLoopPrefetch(atMasterTimeline masterLoopStart: TimeInterval?) {
+            guard let masterLoopStart else {
+                buffer.setPinnedRegion(sourceFrames: nil)
+                return
+            }
+
+            os_unfair_lock_lock(&stateLock)
+            let offset = playbackTimelineOffset
+            let mapper = mapper
+            os_unfair_lock_unlock(&stateLock)
+
+            let effectiveTimeline = masterLoopStart - offset
+            guard effectiveTimeline >= 0,
+                  let sourceSeconds = mapper.sourceSeconds(atMasterTimeline: effectiveTimeline) else {
+                buffer.setPinnedRegion(sourceFrames: nil)
+                return
+            }
+
+            let startFrame = AudioPlaybackTransport.frameIndex(
+                for: sourceSeconds,
+                sampleRate: sampleRate
+            )
+            let length = max(1, Int(TrackMemoryPlayer.loopPrefetchSeconds * sampleRate))
+            buffer.setPinnedRegion(sourceFrames: startFrame..<(startFrame + length))
+        }
+
+        func prewarm(atTimelineSeconds timeline: TimeInterval) {
+            os_unfair_lock_lock(&stateLock)
+            let offset = playbackTimelineOffset
+            let mapper = mapper
+            os_unfair_lock_unlock(&stateLock)
+
+            let effectiveTimeline = timeline - offset
+            guard effectiveTimeline >= 0 else { return }
+            let sourceSeconds = mapper.sourceSeconds(atMasterTimeline: effectiveTimeline) ?? 0
+            let sourceFrame = Int(sourceSeconds * sampleRate)
+            buffer.prewarm(aroundSourceFrame: sourceFrame)
+        }
     }
 
     let trackID: UUID
@@ -508,7 +599,15 @@ final class TrackMemoryPlayer {
         let format = buffer.audioFormat
         let context = renderContext
 
-        sourceNode = AVAudioSourceNode(format: format) { _, timestamp, frameCount, outputData in
+        sourceNode = AVAudioSourceNode(format: format) { [weak context] _, timestamp, frameCount, outputData in
+            guard let context else {
+                let buffers = UnsafeMutableAudioBufferListPointer(outputData)
+                for buffer in buffers {
+                    guard let data = buffer.mData else { continue }
+                    memset(data, 0, Int(buffer.mDataByteSize))
+                }
+                return noErr
+            }
             let stamp = timestamp.pointee
             let hostTime = stamp.mFlags.contains(.hostTimeValid) ? stamp.mHostTime : mach_absolute_time()
 
@@ -521,17 +620,21 @@ final class TrackMemoryPlayer {
         }
     }
 
+    /// Stops reading sample data on the audio thread. Call before detaching the node.
+    func invalidateRendering() {
+        renderContext.invalidate()
+    }
+
     func updateMapper(_ mapper: ArrangementTimelineMapper) {
-        renderContext.mapper = mapper
+        renderContext.updateMapper(mapper)
     }
 
     func updateMix(volume: Float, isAudible: Bool) {
-        renderContext.mix = MixState(volume: volume, isAudible: isAudible)
+        renderContext.updateMix(volume: volume, isAudible: isAudible)
     }
 
     func setPlaybackWindow(offset: TimeInterval, endTimeline: TimeInterval?) {
-        renderContext.playbackTimelineOffset = offset
-        renderContext.playbackEndTimeline = endTimeline
+        renderContext.setPlaybackWindow(offset: offset, endTimeline: endTimeline)
     }
 
     func consumePeakMeter(decay: Float = 0.55) -> Float {
@@ -543,36 +646,12 @@ final class TrackMemoryPlayer {
     /// playhead, which otherwise silences the top of every loop pass.
     /// Pass `nil` when no loop is armed.
     func prepareLoopPrefetch(atMasterTimeline masterLoopStart: TimeInterval?) {
-        guard let masterLoopStart else {
-            renderContext.buffer.setPinnedRegion(sourceFrames: nil)
-            return
-        }
-
-        let effectiveTimeline = masterLoopStart - renderContext.playbackTimelineOffset
-        guard effectiveTimeline >= 0,
-              let sourceSeconds = renderContext.mapper.sourceSeconds(
-                atMasterTimeline: effectiveTimeline
-              ) else {
-            renderContext.buffer.setPinnedRegion(sourceFrames: nil)
-            return
-        }
-
-        let sampleRate = renderContext.sampleRate
-        let startFrame = AudioPlaybackTransport.frameIndex(
-            for: sourceSeconds,
-            sampleRate: sampleRate
-        )
-        let length = max(1, Int(Self.loopPrefetchSeconds * sampleRate))
-        renderContext.buffer.setPinnedRegion(sourceFrames: startFrame..<(startFrame + length))
+        renderContext.prepareLoopPrefetch(atMasterTimeline: masterLoopStart)
     }
 
     /// Warms the backing sample source for playback starting at the given master
     /// timeline position, so streaming sources have audio resident before play.
     func prewarm(atTimelineSeconds timeline: TimeInterval) {
-        let effectiveTimeline = timeline - renderContext.playbackTimelineOffset
-        guard effectiveTimeline >= 0 else { return }
-        let sourceSeconds = renderContext.mapper.sourceSeconds(atMasterTimeline: effectiveTimeline) ?? 0
-        let sourceFrame = Int(sourceSeconds * renderContext.sampleRate)
-        renderContext.buffer.prewarm(aroundSourceFrame: sourceFrame)
+        renderContext.prewarm(atTimelineSeconds: timeline)
     }
 }

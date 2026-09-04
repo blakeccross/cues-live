@@ -317,6 +317,7 @@ struct RemoteLivePlaybackView: View {
                     ensureWaveformSnapshotForSongID: { _ in },
                     playheadTimeProvider: { client.state.currentTime },
                     isPlayingProvider: { client.state.isPlaying },
+                    idlePlayheadTime: state.isPlaying ? nil : state.currentTime,
                     cuedSectionID: state.cuedSectionID,
                     cueFlashPhase: cueFlashPhase,
                     onSeek: { client.send(.seek($0)) },

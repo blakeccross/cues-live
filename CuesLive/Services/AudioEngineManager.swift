@@ -274,6 +274,7 @@ final class AudioEngineManager {
         let timePitchNode = AVAudioUnitTimePitch()
         timePitchNode.pitch = settings.pitchCents
         timePitchNode.rate = 1.0
+        timePitchNode.auAudioUnit.shouldBypassEffect = abs(settings.pitchCents) < 0.5
 
         let format = playbackBuffer.audioFormat
         engine.attach(memoryPlayer.sourceNode)
@@ -363,6 +364,7 @@ final class AudioEngineManager {
 
         let startTime = quantizeTimelineTime(transport.pausedTimelineSeconds())
         applyTrackPitch(at: startTime)
+        setStreamingReadersActive(true)
         prewarmTracks(atTimelineSeconds: startTime)
         transport.beginPlayback(from: startTime)
         isPlaying = true
@@ -380,6 +382,7 @@ final class AudioEngineManager {
         stopTimer()
         midiScheduler.stop()
         currentTime = timeline
+        setStreamingReadersActive(false)
     }
 
     func stop() {
@@ -391,13 +394,45 @@ final class AudioEngineManager {
         currentTime = 0
         stopTimer()
         midiScheduler.stop()
+        setStreamingReadersActive(false)
     }
 
     /// Stops the underlying `AVAudioEngine` without clearing the loaded graph.
     /// Used when another engine (e.g. overlap preview) needs exclusive hardware access.
     func suspendHardware() {
-        if engine.isRunning {
-            engine.stop()
+        stopEngineForGraphChanges()
+        invalidateAllPlayers()
+    }
+
+    /// Fully stops transport and tears down the graph. Use for disposable engine
+    /// instances (for example overlap handoff engines) before releasing them.
+    func shutdown() {
+        cancelScheduledOverlapStart()
+        cancelOverlapPlayback()
+        didNotifyPlaybackFinished = false
+        transport.stop()
+        isPlaying = false
+        currentTime = 0
+        stopTimer()
+        midiScheduler.stop()
+        setStreamingReadersActive(false)
+        stopEngineForGraphChanges()
+        invalidateAllPlayers()
+        detachAllTracks()
+        routingSnapshot = nil
+    }
+
+    deinit {
+        stopEngineForGraphChanges()
+        invalidateAllPlayers()
+    }
+
+    private func invalidateAllPlayers() {
+        for track in tracks.values {
+            track.memoryPlayer.invalidateRendering()
+        }
+        for track in overlapTracks.values {
+            track.memoryPlayer.invalidateRendering()
         }
     }
 
@@ -475,6 +510,9 @@ final class AudioEngineManager {
         }
 
         applyOverlapMixSettings()
+        for track in overlapTracks.values {
+            track.memoryPlayer.sampleSource.setReaderActive(true)
+        }
         prewarmOverlapTracks(atTimelineSeconds: quantizedStart)
     }
 
@@ -495,7 +533,9 @@ final class AudioEngineManager {
         // incoming song immediately after promotion.
         transport.cancelScheduledTransition()
 
-        // Keep the engine running so we don't introduce a tiny silence gap.
+        // Stop the engine and wait for the IO thread before detaching outgoing nodes.
+        let wasPlaying = isPlaying
+        stopEngineForGraphChanges()
         teardownTracks(withIDs: Set(tracks.keys), stopEngine: false)
 
         tracks = overlapTracks
@@ -527,6 +567,9 @@ final class AudioEngineManager {
         }
 
         applyAllMixSettings()
+        if wasPlaying {
+            try? startEngineIfNeeded()
+        }
         return clampedIncoming
     }
 
@@ -588,10 +631,53 @@ final class AudioEngineManager {
     }
 
     private func prewarmTracks(atTimelineSeconds timeline: TimeInterval, trackIDs: Set<UUID>? = nil) {
-        for track in tracks.values {
-            if let trackIDs, !trackIDs.contains(track.trackID) { continue }
-            track.memoryPlayer.prewarm(atTimelineSeconds: timeline)
+        let targets = tracks.values.filter { track in
+            if let trackIDs { return trackIDs.contains(track.trackID) }
+            return true
         }
+        guard !targets.isEmpty else { return }
+
+        // Each StreamingStemBuffer owns its own reader queue/file, so warm them
+        // in parallel (capped) instead of serially blocking the caller.
+        let group = DispatchGroup()
+        let gate = DispatchSemaphore(value: 8)
+        for track in targets {
+            group.enter()
+            gate.wait()
+            DispatchQueue.global(qos: .userInitiated).async {
+                track.memoryPlayer.prewarm(atTimelineSeconds: timeline)
+                gate.signal()
+                group.leave()
+            }
+        }
+        group.wait()
+    }
+
+    private func setStreamingReadersActive(_ active: Bool) {
+        for track in tracks.values {
+            track.memoryPlayer.sampleSource.setReaderActive(active)
+        }
+        for track in overlapTracks.values {
+            track.memoryPlayer.sampleSource.setReaderActive(active)
+        }
+    }
+
+    private func prewarmOverlapTracks(atTimelineSeconds timeline: TimeInterval) {
+        let targets = Array(overlapTracks.values)
+        guard !targets.isEmpty else { return }
+
+        let group = DispatchGroup()
+        let gate = DispatchSemaphore(value: 8)
+        for track in targets {
+            group.enter()
+            gate.wait()
+            DispatchQueue.global(qos: .userInitiated).async {
+                track.memoryPlayer.prewarm(atTimelineSeconds: timeline)
+                gate.signal()
+                group.leave()
+            }
+        }
+        group.wait()
     }
 
     func scheduleTransition(to targetOffset: TimeInterval, at transitionTimelineTime: TimeInterval) {
@@ -894,15 +980,12 @@ final class AudioEngineManager {
         }
     }
 
-    private func prewarmOverlapTracks(atTimelineSeconds timeline: TimeInterval) {
-        for track in overlapTracks.values {
-            track.memoryPlayer.prewarm(atTimelineSeconds: timeline)
-        }
-    }
-
     private func teardownOverlapTracks() {
         guard !overlapTracks.isEmpty else { return }
         stopEngineForGraphChanges()
+        for track in overlapTracks.values {
+            track.memoryPlayer.invalidateRendering()
+        }
         for track in overlapTracks.values {
             OverlapTrackGraphBuilder.detachPlayerGraph(
                 memoryPlayer: track.memoryPlayer,
@@ -919,6 +1002,9 @@ final class AudioEngineManager {
             stopEngineForGraphChanges()
         }
         for id in ids {
+            tracks[id]?.memoryPlayer.invalidateRendering()
+        }
+        for id in ids {
             guard let track = tracks[id] else { continue }
             engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
             engine.disconnectNodeInput(track.timePitchNode)
@@ -931,6 +1017,12 @@ final class AudioEngineManager {
 
     private func teardownTracks() {
         stopEngineForGraphChanges()
+        invalidateAllPlayers()
+        detachAllTracks()
+        routingSnapshot = nil
+    }
+
+    private func detachAllTracks() {
         for track in tracks.values {
             engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
             engine.disconnectNodeInput(track.timePitchNode)
@@ -939,7 +1031,6 @@ final class AudioEngineManager {
             engine.detach(track.timePitchNode)
         }
         tracks.removeAll()
-        routingSnapshot = nil
     }
 
     private func stopEngineForGraphChanges() {
@@ -959,17 +1050,23 @@ final class AudioEngineManager {
 
     private func wireTrackOutputs(routing: OutputRoutingSnapshot) throws {
         stopEngineForGraphChanges()
-        adoptOutputDevice(routing.deviceUID)
+        let boundRequestedDevice = adoptOutputDevice(routing.deviceUID)
+        // A stale/missing device UID must not force multi-channel maps onto whatever
+        // output the engine actually opened — that leaves the graph silent.
+        let channelCount = (routing.deviceUID != nil && !boundRequestedDevice)
+            ? 2
+            : outputChannelCount(for: routing)
         disconnectTrackOutputs()
-        connectTrackOutputs(routing: routing, channelCount: outputChannelCount(for: routing))
+        connectTrackOutputs(routing: routing, channelCount: channelCount)
         try startEngineIfNeeded()
     }
 
-    private func adoptOutputDevice(_ deviceUID: String?) {
-        guard let deviceUID else { return }
+    private func adoptOutputDevice(_ deviceUID: String?) -> Bool {
+        guard let deviceUID else { return true }
         // Bind only this engine's output unit — do not change the system default.
-        _ = AudioOutputDeviceService.bindOutputDevice(uid: deviceUID, to: engine)
+        let bound = AudioOutputDeviceService.bindOutputDevice(uid: deviceUID, to: engine)
         applyStableMaximumFramesToRender()
+        return bound
     }
 
     private func disconnectTrackOutputs() {
@@ -985,7 +1082,11 @@ final class AudioEngineManager {
         if channelCount > 2 {
             let routeTracks = tracks.values.map { track in
                 (
-                    sourceNode: track.memoryPlayer.sourceNode as AVAudioNode,
+                    // Channel maps must be applied on the source node after a
+                    // multi-channel connection. TimePitch stays mono and cannot
+                    // carry a device-width channel map.
+                    node: track.memoryPlayer.sourceNode as AVAudioNode,
+                    format: track.sourceFormat,
                     destination: OutputRoutingStore.destination(for: track.groupID, snapshot: routing)
                 )
             }
@@ -1113,8 +1214,10 @@ final class AudioEngineManager {
 
         for id in tracks.keys {
             guard let track = tracks[id] else { continue }
+            let cents = track.settings.pitchCents + compensationCents
             track.timePitchNode.rate = 1.0
-            track.timePitchNode.pitch = track.settings.pitchCents + compensationCents
+            track.timePitchNode.pitch = cents
+            track.timePitchNode.auAudioUnit.shouldBypassEffect = abs(cents) < 0.5
         }
     }
 

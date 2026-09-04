@@ -147,6 +147,9 @@ enum AudioOutputDeviceService {
         return deviceIDs.compactMap { deviceID in
             guard hasOutputChannels(deviceID: deviceID) else { return nil }
             guard let uid = deviceUID(for: deviceID), let name = deviceName(for: deviceID) else { return nil }
+            // Ephemeral Core Audio aggregates (CADefaultDeviceAggregate-*) are
+            // process-local and must not be persisted or rebound later.
+            if uid.hasPrefix("CADefaultDeviceAggregate") { return nil }
             let channels = outputChannelCount(for: deviceID)
             guard channels > 0 else { return nil }
             return AudioOutputDevice(id: uid, name: name, channelCount: channels)
