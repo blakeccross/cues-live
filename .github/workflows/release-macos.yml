@@ -1,6 +1,7 @@
 name: Release macOS
 
-# Builds a Developer ID–signed, notarized cues.live.app, zips it for Sparkle,
+# Builds a Developer ID–signed, notarized cues.live.app, packages a drag-to-
+# Applications DMG for first install, zips the app for Sparkle updates,
 # generates appcast.xml, and uploads everything to a GitHub Release.
 #
 # Trigger:
@@ -39,7 +40,7 @@ jobs:
   release:
     # macos-15's Xcode.app is still 16.4, which cannot compile AppIcon.icon.
     runs-on: macos-26
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
       - name: Checkout
@@ -133,52 +134,126 @@ jobs:
           mkdir -p build
 
           set -o pipefail
-          # arm64-only keeps CI memory under control (Release whole-module + universal often OOMs).
-          # ENABLE_PREVIEWS=NO avoids the Release/-O preview warning path.
-          xcodebuild \
-            -project CuesLive.xcodeproj \
-            -scheme CuesLive \
-            -configuration Release \
-            -destination "generic/platform=macOS" \
-            -archivePath "$PWD/build/CuesLive.xcarchive" \
-            -resultBundlePath "$PWD/build/Archive.xcresult" \
-            MARKETING_VERSION="$MARKETING" \
-            CURRENT_PROJECT_VERSION="$BUILD" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Developer ID Application" \
-            OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime" \
-            ENABLE_PREVIEWS=NO \
-            ARCHS=arm64 \
-            ONLY_ACTIVE_ARCH=NO \
-            EXCLUDED_ARCHS=x86_64 \
-            clean archive 2>&1 | tee build/archive.log
 
-          # Keep ExportOptions team ID in sync with secrets
+          # Build each Mac arch separately (Release whole-module + both arches in one
+          # xcodebuild often OOMs on GH runners), then lipo into a universal app.
+          COMMON_ARGS=(
+            -project CuesLive.xcodeproj
+            -scheme CuesLive
+            -configuration Release
+            -destination "generic/platform=macOS"
+            MARKETING_VERSION="$MARKETING"
+            CURRENT_PROJECT_VERSION="$BUILD"
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
+            CODE_SIGN_STYLE=Manual
+            CODE_SIGN_IDENTITY="Developer ID Application"
+            OTHER_CODE_SIGN_FLAGS="--timestamp --options runtime"
+            ENABLE_PREVIEWS=NO
+            ONLY_ACTIVE_ARCH=NO
+            COMPILER_INDEX_STORE_ENABLE=NO
+          )
+
+          echo "===== Archiving arm64 ====="
+          xcodebuild "${COMMON_ARGS[@]}" \
+            -archivePath "$PWD/build/CuesLive-arm64.xcarchive" \
+            -resultBundlePath "$PWD/build/Archive-arm64.xcresult" \
+            ARCHS=arm64 \
+            EXCLUDED_ARCHS=x86_64 \
+            clean archive 2>&1 | tee build/archive-arm64.log
+
+          echo "===== Archiving x86_64 ====="
+          xcodebuild "${COMMON_ARGS[@]}" \
+            -archivePath "$PWD/build/CuesLive-x86_64.xcarchive" \
+            -resultBundlePath "$PWD/build/Archive-x86_64.xcresult" \
+            ARCHS=x86_64 \
+            EXCLUDED_ARCHS=arm64 \
+            archive 2>&1 | tee build/archive-x86_64.log
+
           /usr/libexec/PlistBuddy -c "Set :teamID $APPLE_TEAM_ID" ExportOptions-DeveloperID.plist
 
+          echo "===== Exporting arm64 ====="
           xcodebuild \
             -exportArchive \
-            -archivePath "$PWD/build/CuesLive.xcarchive" \
-            -exportPath "$PWD/build/export" \
+            -archivePath "$PWD/build/CuesLive-arm64.xcarchive" \
+            -exportPath "$PWD/build/export-arm64" \
             -exportOptionsPlist ExportOptions-DeveloperID.plist
 
-          test -d "build/export/cues.live.app"
-          ICON="build/export/cues.live.app/Contents/Resources/AppIcon.icns"
+          echo "===== Exporting x86_64 ====="
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$PWD/build/CuesLive-x86_64.xcarchive" \
+            -exportPath "$PWD/build/export-x86_64" \
+            -exportOptionsPlist ExportOptions-DeveloperID.plist
+
+          ARM_APP="build/export-arm64/cues.live.app"
+          X86_APP="build/export-x86_64/cues.live.app"
+          APP="build/export/cues.live.app"
+          test -d "$ARM_APP"
+          test -d "$X86_APP"
+
+          rm -rf build/export
+          mkdir -p build/export
+          ditto "$ARM_APP" "$APP"
+
+          # Merge thin Mach-O binaries (app executable + any thin framework dylibs).
+          while IFS= read -r -d '' REL; do
+            REL="${REL#./}"
+            ARM_BIN="${ARM_APP}/${REL}"
+            X86_BIN="${X86_APP}/${REL}"
+            OUT_BIN="${APP}/${REL}"
+            if [[ ! -f "$X86_BIN" ]]; then
+              echo "Missing x86_64 counterpart for ${REL}; keeping arm64 slice"
+              continue
+            fi
+            if file "$ARM_BIN" | grep -q 'Mach-O'; then
+              if lipo -info "$ARM_BIN" 2>/dev/null | grep -q 'Non-fat file'; then
+                echo "lipo ${REL}"
+                lipo -create "$ARM_BIN" "$X86_BIN" -output "$OUT_BIN"
+              else
+                echo "already fat: ${REL} ($(lipo -info "$ARM_BIN"))"
+              fi
+            fi
+          done < <(cd "$ARM_APP" && find . -type f \( -perm -111 -o -name '*.dylib' -o -name '*.so' \) -print0)
+
+          BINARY="$APP/Contents/MacOS/cues.live"
+          lipo -info "$BINARY"
+          lipo -info "$BINARY" | grep -q 'x86_64'
+          lipo -info "$BINARY" | grep -q 'arm64'
+
+          # Re-sign after lipo (nested first, then the bundle).
+          IDENTITY="$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')"
+          test -n "$IDENTITY"
+          if [[ -d "$APP/Contents/Frameworks" ]]; then
+            find "$APP/Contents/Frameworks" -type f \( -perm -111 -o -name '*.dylib' \) -print0 \
+              | while IFS= read -r -d '' NESTED; do
+                  codesign --force --options runtime --timestamp --sign "$IDENTITY" "$NESTED"
+                done
+            find "$APP/Contents/Frameworks" -name '*.framework' -maxdepth 1 -print0 \
+              | while IFS= read -r -d '' FW; do
+                  codesign --force --options runtime --timestamp --sign "$IDENTITY" "$FW"
+                done
+          fi
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" "$BINARY"
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
+          ICON="$APP/Contents/Resources/AppIcon.icns"
           test -s "$ICON"
           echo "AppIcon.icns $(wc -c < "$ICON" | tr -d ' ') bytes"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "build/export/cues.live.app/Contents/Info.plist"
-          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "build/export/cues.live.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconName' "$APP/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$APP/Contents/Info.plist"
 
       - name: Show compile errors on failure
         if: failure()
         run: |
-          if [[ -f build/archive.log ]]; then
-            echo "===== Likely compiler diagnostics ====="
-            grep -E "error:|fatal error:|❌|LLVM ERROR|out of memory|unable to|cannot find|No such file|Command.*failed" build/archive.log | tail -n 200 || true
-            echo "===== Last 80 log lines ====="
-            tail -n 80 build/archive.log || true
-          fi
+          for log in build/archive-arm64.log build/archive-x86_64.log build/archive.log; do
+            if [[ -f "$log" ]]; then
+              echo "===== Likely compiler diagnostics ($log) ====="
+              grep -E "error:|fatal error:|❌|LLVM ERROR|out of memory|unable to|cannot find|No such file|Command.*failed" "$log" | tail -n 200 || true
+              echo "===== Last 80 log lines ($log) ====="
+              tail -n 80 "$log" || true
+            fi
+          done
 
       - name: Upload archive diagnostics
         if: failure()
@@ -186,7 +261,11 @@ jobs:
         with:
           name: archive-diagnostics
           path: |
+            build/archive-arm64.log
+            build/archive-x86_64.log
             build/archive.log
+            build/Archive-arm64.xcresult
+            build/Archive-x86_64.xcresult
             build/Archive.xcresult
           if-no-files-found: ignore
 
@@ -215,6 +294,45 @@ jobs:
 
           xcrun stapler staple "$APP"
           xcrun stapler validate "$APP"
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Build drag-to-Applications DMG
+        run: |
+          set -euo pipefail
+          MARKETING="${{ steps.versions.outputs.marketing }}"
+          BUILD="${{ steps.versions.outputs.build }}"
+          APP="build/export/cues.live.app"
+          INSTALL="build/install"
+          mkdir -p "$INSTALL"
+
+          DMG_NAME="cues.live-${MARKETING}-${BUILD}.dmg"
+          DMG_PATH="$INSTALL/$DMG_NAME"
+
+          Scripts/create-install-dmg.sh "$APP" "$DMG_PATH" "cues.live ${MARKETING}"
+
+          echo "DMG_PATH=$DMG_PATH" >> "$GITHUB_ENV"
+
+      - name: Notarize and staple DMG
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+
+          KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          echo -n "$APPLE_API_KEY_BASE64" | base64 --decode -o "$KEY_PATH"
+
+          xcrun notarytool submit "$DMG_PATH" \
+            --key "$KEY_PATH" \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER_ID" \
+            --wait
+
+          xcrun stapler staple "$DMG_PATH"
+          xcrun stapler validate "$DMG_PATH"
 
       - name: Package Sparkle zip + appcast
         env:
@@ -266,6 +384,8 @@ jobs:
           printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle_ed_key"
           chmod 600 "$RUNNER_TEMP/sparkle_ed_key"
 
+          # Appcast only indexes archives in $DIST (zip). The install DMG lives
+          # under build/install/ so generate_appcast does not publish it as an update.
           "$GENERATE_APPCAST" \
             --ed-key-file "$RUNNER_TEMP/sparkle_ed_key" \
             --download-url-prefix "https://github.com/${{ github.repository }}/releases/download/v${MARKETING}/" \
@@ -291,6 +411,7 @@ jobs:
           name: cues.live ${{ steps.versions.outputs.marketing }} (${{ steps.versions.outputs.build }})
           generate_release_notes: true
           files: |
+            ${{ env.DMG_PATH }}
             ${{ env.ZIP_PATH }}
             ${{ env.APPCAST_PATH }}
         env:
