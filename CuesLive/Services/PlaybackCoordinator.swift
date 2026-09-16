@@ -3,6 +3,13 @@ import Observation
 import CoreGraphics
 import SwiftData
 
+/// One MIDI device's cue points for the setlist view's read-only MIDI lane.
+struct LiveMIDILaneSnapshot: Identifiable, Equatable {
+    let id: UUID
+    let deviceName: String
+    let events: [MIDIEvent]
+}
+
 struct LiveSongWaveformSnapshot: Identifiable {
     let songID: UUID
     let songName: String
@@ -21,6 +28,8 @@ struct LiveSongWaveformSnapshot: Identifiable {
     /// When set (e.g. remote session or local setlist peak warm), peaks are used
     /// directly and track files are not decoded on the setlist render path.
     let precomputedSourcePeaks: [Float]?
+    /// One lane per MIDI device on this song, for the setlist's read-only MIDI strip.
+    let midiLanes: [LiveMIDILaneSnapshot]
 
     var id: UUID { songID }
 
@@ -40,7 +49,8 @@ struct LiveSongWaveformSnapshot: Identifiable {
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         showsMeasureGrid: Bool,
-        precomputedSourcePeaks: [Float]? = nil
+        precomputedSourcePeaks: [Float]? = nil,
+        midiLanes: [LiveMIDILaneSnapshot] = []
     ) {
         self.songID = songID
         self.songName = songName
@@ -54,6 +64,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         self.timeSignatureChanges = timeSignatureChanges
         self.showsMeasureGrid = showsMeasureGrid
         self.precomputedSourcePeaks = precomputedSourcePeaks
+        self.midiLanes = midiLanes
     }
 
     func withPrecomputedPeaks(_ peaks: [Float]?) -> LiveSongWaveformSnapshot {
@@ -69,7 +80,8 @@ struct LiveSongWaveformSnapshot: Identifiable {
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: showsMeasureGrid,
-            precomputedSourcePeaks: peaks
+            precomputedSourcePeaks: peaks,
+            midiLanes: midiLanes
         )
     }
 }
@@ -296,6 +308,13 @@ final class PlaybackCoordinator {
 
     func waveformSnapshot(for song: Song) -> LiveSongWaveformSnapshot? {
         waveformSnapshotsBySongID[song.id]
+    }
+
+    /// Largest MIDI device lane count across currently-known song snapshots, so
+    /// every song's setlist row reserves the same height and switching songs
+    /// doesn't jump.
+    var maxMIDILaneCount: Int {
+        waveformSnapshotsBySongID.values.map(\.midiLanes.count).max() ?? 0
     }
 
     /// Returns a cached waveform snapshot, building and storing one synchronously if needed.
@@ -912,6 +931,15 @@ final class PlaybackCoordinator {
             rulerSections: playbackLayout.rulerSections,
             trackSections: playbackLayout.trackSections
         )
+        let midiLanes = song.sortedMIDITracks.map { track in
+            LiveMIDILaneSnapshot(
+                id: track.id,
+                deviceName: track.device?.name ?? track.displayName,
+                events: projectState.midiEvents
+                    .filter { $0.trackID == track.id }
+                    .sorted { $0.timelineSeconds < $1.timelineSeconds }
+            )
+        }
 
         return LiveSongWaveformSnapshot(
             songID: song.id,
@@ -926,7 +954,8 @@ final class PlaybackCoordinator {
             timeSignatureChanges: projectState.timeSignatureChanges,
             // Synthetic 120 BPM markers are always injected for timing math; only
             // show measure ticks when the song actually has a set/imported tempo.
-            showsMeasureGrid: song.bpm != nil
+            showsMeasureGrid: song.bpm != nil,
+            midiLanes: midiLanes
         )
     }
 

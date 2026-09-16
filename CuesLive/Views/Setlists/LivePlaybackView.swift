@@ -1232,7 +1232,8 @@ struct LivePlaybackView: View {
                 onCueSection: cueSection,
                 onOverlapBadgeTapped: { playbackIndex in
                     presentOverlapEditor(forPlaybackIndex: playbackIndex)
-                }
+                },
+                maxMIDILaneCount: coordinator.maxMIDILaneCount
             )
             .overlay {
                 if coordinator.isLoadingSong {

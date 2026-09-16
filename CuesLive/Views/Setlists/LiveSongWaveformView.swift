@@ -43,6 +43,15 @@ enum LiveSetlistWaveformMetrics {
     /// Re-enable follow when the playhead is this close to the viewport center.
     static let followRelatchDistance: CGFloat = 64
 
+    /// Height of one MIDI device lane row below the waveform.
+    static let midiLaneRowHeight: CGFloat = 18
+    static let midiLaneRowSpacing: CGFloat = 3
+
+    static func midiLanesHeight(forRowCount count: Int) -> CGFloat {
+        guard count > 0 else { return 0 }
+        return CGFloat(count) * midiLaneRowHeight + CGFloat(count) * midiLaneRowSpacing
+    }
+
     static func clampedWaveformHeight(_ height: CGFloat) -> CGFloat {
         min(maximumWaveformHeight, max(minimumWaveformHeight, height))
     }
@@ -69,6 +78,57 @@ enum LiveSetlistWaveformMetrics {
 
     static func storageValue(forZoom horizontalZoom: CGFloat) -> Double {
         Double(clampedHorizontalZoom(horizontalZoom))
+    }
+}
+
+/// Read-only strip below the waveform showing one MIDI device's cue points as
+/// small dots along the timeline — the setlist view's counterpart to the song
+/// editor's fully-interactive `MIDILaneView`.
+struct LiveMIDIEventLaneView: View {
+    let contentWidth: CGFloat
+    let timelineDuration: TimeInterval
+    let deviceName: String
+    let events: [MIDIEvent]
+
+    private static let dotSize: CGFloat = 6
+
+    private var safeDuration: TimeInterval {
+        max(timelineDuration, 0.001)
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+
+            ForEach(events) { event in
+                Circle()
+                    .fill(Color.white.opacity(0.85))
+                    .frame(width: Self.dotSize, height: Self.dotSize)
+                    .position(
+                        x: TimelineLayout.xPosition(
+                            for: event.timelineSeconds,
+                            duration: safeDuration,
+                            contentWidth: contentWidth
+                        ),
+                        y: LiveSetlistWaveformMetrics.midiLaneRowHeight / 2
+                    )
+            }
+
+            Text(deviceName.uppercased())
+                .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                .foregroundStyle(AppColors.textTertiary)
+                .lineLimit(1)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(AppColors.surfaceElevated.opacity(0.9))
+                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                .padding(.leading, 3)
+                .padding(.top, 1)
+        }
+        .frame(width: contentWidth, height: LiveSetlistWaveformMetrics.midiLaneRowHeight)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        .allowsHitTesting(false)
     }
 }
 
@@ -957,12 +1017,16 @@ private struct LiveSongWaveformClipModifier: ViewModifier {
 
 struct SetlistWaveformHeaderMarker: View {
     let title: String
+    /// Matches the MIDI-lane space reserved below song waveforms, so the
+    /// divider spans the same height as the surrounding song lanes.
+    var extraHeight: CGFloat = 0
 
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
 
     private let markerWidth: CGFloat = 40
 
     var body: some View {
+        let totalHeight = waveformHeight + extraHeight
         RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
             .fill(AppColors.backgroundPrimary)
             .overlay {
@@ -973,10 +1037,10 @@ struct SetlistWaveformHeaderMarker: View {
                     .minimumScaleFactor(0.7)
                     .multilineTextAlignment(.center)
                     // Lay out along the vertical axis before rotating into the marker.
-                    .frame(width: max(0, waveformHeight - AppSpacing.md), height: markerWidth)
+                    .frame(width: max(0, totalHeight - AppSpacing.md), height: markerWidth)
                     .rotationEffect(.degrees(-90))
             }
-            .frame(width: markerWidth, height: waveformHeight)
+            .frame(width: markerWidth, height: totalHeight)
             .clipped()
     }
 }
@@ -997,6 +1061,9 @@ struct LiveSetlistWaveformScrollView: View {
     var onOverlapBadgeTapped: ((Int) -> Void)?
     /// When set, tapping a non-current song lane selects that song (remote client).
     var onSelectSong: ((Int) -> Void)?
+    /// Largest MIDI device lane count across the setlist's songs, so every
+    /// song's row reserves the same height and switching songs doesn't jump.
+    var maxMIDILaneCount: Int = 0
 
     @AppStorage(LiveSetlistWaveformMetrics.horizontalZoomAppStorageKey)
     private var storedHorizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoomStorageValue
@@ -1013,8 +1080,12 @@ struct LiveSetlistWaveformScrollView: View {
     private let laneSpacing: CGFloat = 24
     private static let zoomAdjustmentStep: CGFloat = 0.25
 
+    private var midiLanesExtraHeight: CGFloat {
+        LiveSetlistWaveformMetrics.midiLanesHeight(forRowCount: maxMIDILaneCount)
+    }
+
     private var laneHeight: CGFloat {
-        LiveSetlistWaveformMetrics.laneHeight(for: waveformHeight)
+        LiveSetlistWaveformMetrics.laneHeight(for: waveformHeight) + midiLanesExtraHeight
     }
 
     private var currentSongScrollID: String {
@@ -1124,7 +1195,7 @@ struct LiveSetlistWaveformScrollView: View {
     private func timelineItemView(_ item: LiveSetlistTimelineItem) -> some View {
         switch item {
         case .header(_, let title):
-            SetlistWaveformHeaderMarker(title: title)
+            SetlistWaveformHeaderMarker(title: title, extraHeight: midiLanesExtraHeight)
                 .id(item.id)
 
         case .song(let songID, let playbackIndex, let transitionAfter):
@@ -1257,31 +1328,42 @@ struct LiveSetlistWaveformScrollView: View {
     ) -> some View {
         let laneContentWidth = laneContentWidth(for: snapshot)
 
-        LiveSongWaveformView(
-            contentWidth: laneContentWidth,
-            trackSources: snapshot.trackSources,
-            fileDuration: snapshot.fileDuration,
-            timelineDuration: snapshot.timelineDuration,
-            sections: snapshot.sections,
-            peakSections: snapshot.peakSections,
-            loopSlotIDs: snapshot.loopSlotIDs,
-            tempoChanges: snapshot.tempoChanges,
-            timeSignatureChanges: snapshot.timeSignatureChanges,
-            cuedSectionID: isCurrent ? cuedSectionID : nil,
-            cueFlashPhase: isCurrent ? cueFlashPhase : false,
-            showsMeasureGrid: snapshot.showsMeasureGrid,
-            precomputedSourcePeaks: snapshot.precomputedSourcePeaks,
-            showsPlayhead: isCurrent,
-            isInteractive: isCurrent,
-            viewportWidth: viewportWidth,
-            isUserScrolling: isUserScrolling,
-            needsFollowScrollTarget: isCurrent && isFollowing,
-            idlePlayheadTime: isCurrent ? idlePlayheadTime : nil,
-            playheadTimeProvider: isCurrent ? playheadTimeProvider : nil,
-            isPlayingProvider: isCurrent ? isPlayingProvider : nil,
-            onSeek: onSeek,
-            onCueSection: onCueSection
-        )
+        VStack(alignment: .leading, spacing: LiveSetlistWaveformMetrics.midiLaneRowSpacing) {
+            LiveSongWaveformView(
+                contentWidth: laneContentWidth,
+                trackSources: snapshot.trackSources,
+                fileDuration: snapshot.fileDuration,
+                timelineDuration: snapshot.timelineDuration,
+                sections: snapshot.sections,
+                peakSections: snapshot.peakSections,
+                loopSlotIDs: snapshot.loopSlotIDs,
+                tempoChanges: snapshot.tempoChanges,
+                timeSignatureChanges: snapshot.timeSignatureChanges,
+                cuedSectionID: isCurrent ? cuedSectionID : nil,
+                cueFlashPhase: isCurrent ? cueFlashPhase : false,
+                showsMeasureGrid: snapshot.showsMeasureGrid,
+                precomputedSourcePeaks: snapshot.precomputedSourcePeaks,
+                showsPlayhead: isCurrent,
+                isInteractive: isCurrent,
+                viewportWidth: viewportWidth,
+                isUserScrolling: isUserScrolling,
+                needsFollowScrollTarget: isCurrent && isFollowing,
+                idlePlayheadTime: isCurrent ? idlePlayheadTime : nil,
+                playheadTimeProvider: isCurrent ? playheadTimeProvider : nil,
+                isPlayingProvider: isCurrent ? isPlayingProvider : nil,
+                onSeek: onSeek,
+                onCueSection: onCueSection
+            )
+
+            ForEach(snapshot.midiLanes) { lane in
+                LiveMIDIEventLaneView(
+                    contentWidth: laneContentWidth,
+                    timelineDuration: snapshot.timelineDuration,
+                    deviceName: lane.deviceName,
+                    events: lane.events
+                )
+            }
+        }
         .opacity(isCurrent ? 1 : 0.72)
     }
 }
