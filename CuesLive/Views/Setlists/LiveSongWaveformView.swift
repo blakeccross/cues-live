@@ -143,101 +143,33 @@ extension EnvironmentValues {
     }
 }
 
-struct LiveSetlistWaveformResizablePanel<Content: View>: View {
-    #if os(macOS)
+#if os(macOS)
+/// Gives the top pane of a `VSplitView` (see
+/// `LivePlaybackView.playbackMainSection`) a reasonable initial/minimum
+/// height. The actual live-resize measurement happens inside
+/// `LiveSetlistWaveformScrollView` itself (it self-measures rather than
+/// having an ancestor derive its height and republish it downward, which
+/// only works if every view in between is already flexible).
+struct LiveSetlistWaveformResizablePane<Content: View>: View {
+    var maxMIDILaneCount: Int = 0
+    @ViewBuilder let content: () -> Content
+
     @AppStorage(LiveSetlistWaveformMetrics.appStorageKey)
     private var storedWaveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeightStorageValue
 
-    @State private var waveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeight
-    #endif
-
-    @ViewBuilder let content: () -> Content
+    private var overheadHeight: CGFloat {
+        LiveSetlistWaveformMetrics.midiLanesHeight(forRowCount: maxMIDILaneCount)
+    }
 
     var body: some View {
-        #if os(macOS)
-        VStack(spacing: 0) {
-            content()
-                .environment(\.liveSetlistWaveformHeight, waveformHeight)
-
-            LiveSetlistWaveformResizeHandle(
-                height: $waveformHeight,
-                onResizeEnded: persistWaveformHeight
-            )
-        }
-        .animation(.none, value: waveformHeight)
-        .onAppear {
-            waveformHeight = LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight)
-        }
-        #else
         content()
-            .environment(\.liveSetlistWaveformHeight, LiveSetlistWaveformMetrics.defaultWaveformHeight)
-        #endif
-    }
-
-    #if os(macOS)
-    private func persistWaveformHeight() {
-        storedWaveformHeight = LiveSetlistWaveformMetrics.storageValue(forHeight: waveformHeight)
-    }
-    #endif
-}
-
-#if os(macOS)
-private struct LiveSetlistWaveformResizeHandle: View {
-    @Binding var height: CGFloat
-    let onResizeEnded: () -> Void
-
-    @State private var dragStartHeight: CGFloat?
-
-    private static let hitAreaHeight: CGFloat = 24
-    private static let adjustmentStep: CGFloat = 8
-
-    var body: some View {
-        Capsule()
-            .fill(AppColors.textSecondary.opacity(0.55))
-            .frame(width: 52, height: 5)
-            .frame(maxWidth: .infinity)
-            .frame(height: Self.hitAreaHeight)
-            .contentShape(Rectangle())
-        .highPriorityGesture(
-            DragGesture(minimumDistance: 1)
-                .onChanged { value in
-                    if dragStartHeight == nil {
-                        dragStartHeight = height
-                    }
-                    let proposed = (dragStartHeight ?? height) + value.translation.height
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        height = LiveSetlistWaveformMetrics.clampedWaveformHeight(proposed)
-                    }
-                }
-                .onEnded { _ in
-                    dragStartHeight = nil
-                    onResizeEnded()
-                }
-        )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Waveform height")
-        .accessibilityValue("\(Int(LiveSetlistWaveformMetrics.clampedWaveformHeight(height))) points")
-        .accessibilityAdjustableAction { direction in
-            switch direction {
-            case .increment:
-                height = LiveSetlistWaveformMetrics.clampedWaveformHeight(height + Self.adjustmentStep)
-            case .decrement:
-                height = LiveSetlistWaveformMetrics.clampedWaveformHeight(height - Self.adjustmentStep)
-            @unknown default:
-                break
-            }
-            onResizeEnded()
-        }
-        .onContinuousHover { phase in
-            switch phase {
-            case .active:
-                NSCursor.resizeUpDown.push()
-            case .ended:
-                NSCursor.pop()
-            }
-        }
+            .frame(
+                minHeight: LiveSetlistWaveformMetrics.minimumWaveformHeight + overheadHeight,
+                idealHeight: LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight) + overheadHeight,
+                maxHeight: LiveSetlistWaveformMetrics.maximumWaveformHeight + overheadHeight
+            )
+            // Keeps the VSplitView divider from sitting flush against the waveform.
+            .padding(.bottom, AppSpacing.xs)
     }
 }
 #endif
@@ -1068,7 +1000,17 @@ struct LiveSetlistWaveformScrollView: View {
     @AppStorage(LiveSetlistWaveformMetrics.horizontalZoomAppStorageKey)
     private var storedHorizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoomStorageValue
 
+    #if os(macOS)
+    // Self-measured (see the trailing `background` in `body`) rather than read
+    // from an ancestor's environment: an ancestor would need to already be
+    // flexible to observe VSplitView's live-resized height, but every view
+    // between here and the split pane has its own fixed intrinsic size.
+    @AppStorage(LiveSetlistWaveformMetrics.appStorageKey)
+    private var storedWaveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeightStorageValue
+    @State private var waveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeight
+    #else
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
+    #endif
 
     @State private var isFollowing = true
     @State private var isUserScrolling = false
@@ -1173,11 +1115,31 @@ struct LiveSetlistWaveformScrollView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        #if os(macOS)
+        .frame(
+            minHeight: LiveSetlistWaveformMetrics.minimumWaveformHeight + midiLanesExtraHeight,
+            maxHeight: LiveSetlistWaveformMetrics.maximumWaveformHeight + midiLanesExtraHeight,
+            alignment: .top
+        )
+        .background {
+            GeometryReader { geometry in
+                Color.clear
+                    .onChange(of: geometry.size.height, initial: true) { _, height in
+                        updateWaveformHeight(forAssignedHeight: height)
+                    }
+            }
+        }
+        .environment(\.liveSetlistWaveformHeight, waveformHeight)
+        #else
         .frame(height: laneHeight)
+        #endif
         .animation(.none, value: waveformHeight)
         .animation(.none, value: horizontalZoom)
         .onAppear {
             horizontalZoom = LiveSetlistWaveformMetrics.horizontalZoom(fromStorage: storedHorizontalZoom)
+            #if os(macOS)
+            waveformHeight = LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight)
+            #endif
         }
         .accessibilityAdjustableAction { direction in
             switch direction {
@@ -1190,6 +1152,19 @@ struct LiveSetlistWaveformScrollView: View {
             }
         }
     }
+
+    #if os(macOS)
+    private func updateWaveformHeight(forAssignedHeight assignedHeight: CGFloat) {
+        let clamped = LiveSetlistWaveformMetrics.clampedWaveformHeight(assignedHeight - midiLanesExtraHeight)
+        guard clamped != waveformHeight else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            waveformHeight = clamped
+        }
+        storedWaveformHeight = LiveSetlistWaveformMetrics.storageValue(forHeight: clamped)
+    }
+    #endif
 
     @ViewBuilder
     private func timelineItemView(_ item: LiveSetlistTimelineItem) -> some View {

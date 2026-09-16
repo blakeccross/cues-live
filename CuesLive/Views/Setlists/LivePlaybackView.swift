@@ -1180,6 +1180,22 @@ struct LivePlaybackView: View {
     }
 
     private var playbackMainSection: some View {
+        #if os(macOS)
+        Group {
+            if setlistHasSongs {
+                VSplitView {
+                    currentSongSection
+                        .background(AppColors.backgroundPrimary)
+
+                    setlistSection
+                        .background(AppColors.backgroundPrimary)
+                }
+            } else {
+                setlistSection
+                    .background(AppColors.backgroundPrimary)
+            }
+        }
+        #else
         VStack(spacing: 0) {
             if setlistHasSongs {
                 currentSongSection
@@ -1189,6 +1205,7 @@ struct LivePlaybackView: View {
             setlistSection
                 .background(AppColors.backgroundPrimary)
         }
+        #endif
     }
 
     private var currentSongSection: some View {
@@ -1199,10 +1216,15 @@ struct LivePlaybackView: View {
                     .foregroundStyle(.red)
                     .padding(AppSpacing.md)
             } else {
-                LiveSetlistWaveformResizablePanel {
+                #if os(macOS)
+                LiveSetlistWaveformResizablePane(maxMIDILaneCount: coordinator.maxMIDILaneCount) {
                     waveformContent
                         .padding(.top, AppSpacing.xs)
                 }
+                #else
+                waveformContent
+                    .padding(.top, AppSpacing.xs)
+                #endif
             }
         }
     }

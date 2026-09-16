@@ -118,7 +118,13 @@ final class LiveSongWaveformScrollBackingView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layerContentsRedrawPolicy = .onSetNeedsDisplay
+        // Lets AppKit stretch the existing tiles while the enclosing VSplitView
+        // divider is being dragged (bars/grid scale proportionally with height,
+        // so the stretch reads correctly) instead of us forcing a full
+        // CATiledLayer re-rasterization on every pixel of the drag, which reads
+        // as flicker/tearing. `viewDidEndLiveResize` below catches the settled
+        // height up to a sharp render once the drag ends.
+        layerContentsRedrawPolicy = .beforeViewResize
     }
 
     @available(*, unavailable)
@@ -152,12 +158,9 @@ final class LiveSongWaveformScrollBackingView: NSView {
         setNeedsDisplay(dirty)
     }
 
-    override func setFrameSize(_ newSize: NSSize) {
-        let changed = bounds.size != newSize
-        super.setFrameSize(newSize)
-        if changed {
-            needsDisplay = true
-        }
+    override func viewDidEndLiveResize() {
+        super.viewDidEndLiveResize()
+        needsDisplay = true
     }
 
     override func draw(_ dirtyRect: NSRect) {

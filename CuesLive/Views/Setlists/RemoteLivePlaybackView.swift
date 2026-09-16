@@ -211,8 +211,20 @@ struct RemoteLivePlaybackView: View {
                     .padding(AppSpacing.md)
             }
 
+            #if os(macOS)
+            if snapshot != nil, !(snapshot?.entries.isEmpty ?? true) {
+                VSplitView {
+                    waveformSection
+                    setlistSection
+                }
+            } else {
+                waveformSection
+                setlistSection
+            }
+            #else
             waveformSection
             setlistSection
+            #endif
         }
         #if os(iOS)
         .navigationDestination(isPresented: $mixerVisible) {
@@ -310,30 +322,39 @@ struct RemoteLivePlaybackView: View {
     }
 
     @ViewBuilder
+    private func timelineScrollView(for snapshot: RemoteSessionSnapshot) -> some View {
+        LiveSetlistWaveformScrollView(
+            timelineItems: snapshot.timelineItems,
+            currentPlaybackIndex: state.currentIndex,
+            waveformSnapshotForSongID: { snapshot.waveformSnapshot(forSongID: $0) },
+            ensureWaveformSnapshotForSongID: { _ in },
+            playheadTimeProvider: { client.state.currentTime },
+            isPlayingProvider: { client.state.isPlaying },
+            idlePlayheadTime: state.isPlaying ? nil : state.currentTime,
+            cuedSectionID: state.cuedSectionID,
+            cueFlashPhase: cueFlashPhase,
+            onSeek: { client.send(.seek($0)) },
+            onCueSection: { client.send(.cueSection(sectionID: $0.id)) },
+            onSelectSong: { index in
+                client.send(.goToSong(
+                    index: index,
+                    autoPlay: state.isAudiblePlaying
+                ))
+            }
+        )
+        .padding(.top, AppSpacing.xs)
+    }
+
+    @ViewBuilder
     private var waveformSection: some View {
         if let snapshot, !snapshot.entries.isEmpty {
-            LiveSetlistWaveformResizablePanel {
-                LiveSetlistWaveformScrollView(
-                    timelineItems: snapshot.timelineItems,
-                    currentPlaybackIndex: state.currentIndex,
-                    waveformSnapshotForSongID: { snapshot.waveformSnapshot(forSongID: $0) },
-                    ensureWaveformSnapshotForSongID: { _ in },
-                    playheadTimeProvider: { client.state.currentTime },
-                    isPlayingProvider: { client.state.isPlaying },
-                    idlePlayheadTime: state.isPlaying ? nil : state.currentTime,
-                    cuedSectionID: state.cuedSectionID,
-                    cueFlashPhase: cueFlashPhase,
-                    onSeek: { client.send(.seek($0)) },
-                    onCueSection: { client.send(.cueSection(sectionID: $0.id)) },
-                    onSelectSong: { index in
-                        client.send(.goToSong(
-                            index: index,
-                            autoPlay: state.isAudiblePlaying
-                        ))
-                    }
-                )
-                .padding(.top, AppSpacing.xs)
+            #if os(macOS)
+            LiveSetlistWaveformResizablePane {
+                timelineScrollView(for: snapshot)
             }
+            #else
+            timelineScrollView(for: snapshot)
+            #endif
         } else {
             ContentUnavailableView(
                 "Waiting for setlist",
