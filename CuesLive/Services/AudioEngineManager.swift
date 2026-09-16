@@ -1079,7 +1079,11 @@ final class AudioEngineManager {
     private func connectTrackOutputs(routing: OutputRoutingSnapshot, channelCount: Int) {
         restoreFullOutputGain()
 
-        if channelCount > 2 {
+        // Channel-map routing is also needed on a stereo-only (2-channel) device
+        // whenever a group is pinned to a single mono channel instead of the
+        // default full stereo pair — otherwise every group would always spread
+        // across both channels regardless of its configured destination.
+        if channelCount > 2 || routing.hasNonDefaultRouting {
             let routeTracks = tracks.values.map { track in
                 (
                     // Channel maps must be applied on the source node after a
@@ -1094,7 +1098,7 @@ final class AudioEngineManager {
             if OutputRoutingManager.applyChannelMapRouting(
                 engine: engine,
                 tracks: routeTracks,
-                outputChannelCount: channelCount
+                outputChannelCount: max(channelCount, 2)
             ) {
                 isAnnouncementPlayerWired = false
                 wireAnnouncementPlayerIfNeeded()

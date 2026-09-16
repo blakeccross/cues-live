@@ -6,6 +6,15 @@ struct OutputRoutingSnapshot {
     let routesByGroupID: [UUID: OutputDestination]
     let ungroupedDestination: OutputDestination
     let channelCount: Int
+
+    /// True when any group (or the ungrouped bus) is routed somewhere other than
+    /// the default full stereo pair — e.g. pinned to a single mono channel. On a
+    /// stereo-only device this signals that AU channel-map routing is needed
+    /// instead of the plain master-mixer path, so that routing is honored.
+    var hasNonDefaultRouting: Bool {
+        if ungroupedDestination != .defaultDestination { return true }
+        return routesByGroupID.values.contains { $0 != .defaultDestination }
+    }
 }
 
 enum OutputRoutingStore {

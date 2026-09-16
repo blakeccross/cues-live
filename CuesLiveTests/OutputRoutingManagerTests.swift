@@ -2,6 +2,24 @@ import XCTest
 @testable import CuesLive
 
 final class OutputRoutingManagerTests: XCTestCase {
+    func testMonoChannelMapWorksOnStereoOnlyDevice() {
+        let map = OutputRoutingManager.channelMap(
+            for: .mono(channel: 1),
+            outputChannelCount: 2
+        )
+
+        XCTAssertEqual(map.map(\.intValue), [0, -1], "a group pinned to mono channel 1 must not also feed channel 2 on a plain stereo device")
+    }
+
+    func testMonoChannelTwoOnStereoOnlyDeviceIsolatesRightChannel() {
+        let map = OutputRoutingManager.channelMap(
+            for: .mono(channel: 2),
+            outputChannelCount: 2
+        )
+
+        XCTAssertEqual(map.map(\.intValue), [-1, 0])
+    }
+
     func testStereoPairChannelMapPlacesSourceChannelsOnHardwarePair() {
         let map = OutputRoutingManager.channelMap(
             for: .stereoPair(startChannel: 3),
@@ -53,5 +71,27 @@ final class OutputRoutingManagerTests: XCTestCase {
             OutputRoutingManager.defaultStereoMap(4, sourceChannelCount: 1).map(\.intValue),
             [0, 0, -1, -1]
         )
+    }
+
+    func testSnapshotWithAllDefaultRoutingDoesNotRequireChannelMap() {
+        let snapshot = OutputRoutingSnapshot(
+            deviceUID: nil,
+            routesByGroupID: [UUID(): .defaultDestination],
+            ungroupedDestination: .defaultDestination,
+            channelCount: 2
+        )
+
+        XCTAssertFalse(snapshot.hasNonDefaultRouting)
+    }
+
+    func testSnapshotWithAMonoGroupRouteRequiresChannelMap() {
+        let snapshot = OutputRoutingSnapshot(
+            deviceUID: nil,
+            routesByGroupID: [UUID(): .mono(channel: 1)],
+            ungroupedDestination: .defaultDestination,
+            channelCount: 2
+        )
+
+        XCTAssertTrue(snapshot.hasNonDefaultRouting)
     }
 }

@@ -7,8 +7,10 @@ enum OutputRoutingManager {
     /// Tracks are connected with a multi-channel format matching the device so the
     /// AU channel map length is valid. Map **values** never reference source
     /// channels past `sourceChannelCount` (mono stems use dual-mono `0/0`, never
-    /// `0/1`). Returns `false` when the device is stereo-only so the caller can
-    /// use the master-mixer path.
+    /// `0/1`). Works for stereo-only (2-channel) devices too, so a group can be
+    /// pinned to a single physical channel (e.g. mono channel 1) instead of
+    /// always spreading across both. Returns `false` only when no tracks could
+    /// be routed, so the caller can fall back to the master-mixer path.
     @discardableResult
     static func applyChannelMapRouting(
         engine: AVAudioEngine,
@@ -16,7 +18,6 @@ enum OutputRoutingManager {
         outputChannelCount: Int
     ) -> Bool {
         let channelCount = max(outputChannelCount, 2)
-        guard channelCount > 2 else { return false }
 
         guard let multiChannelFormat = AudioOutputDeviceService.multiChannelFormat(
             sampleRate: DecodedStemBuffer.engineSampleRate,

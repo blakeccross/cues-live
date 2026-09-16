@@ -496,8 +496,12 @@ final class PlaybackCoordinator {
         }
     }
 
-    func loadCurrentSong(autoPlay: Bool = false, preservedTime: TimeInterval? = nil) {
-        if let song = currentSong {
+    func loadCurrentSong(
+        autoPlay: Bool = false,
+        preservedTime: TimeInterval? = nil,
+        invalidatesWaveformSnapshot: Bool = true
+    ) {
+        if invalidatesWaveformSnapshot, let song = currentSong {
             invalidateWaveformSnapshot(for: song.id)
         }
         loadTask?.cancel()
@@ -642,7 +646,10 @@ final class PlaybackCoordinator {
         let preservedTime = audioEngine.currentTime
         audioEngine.cancelScheduledTransition()
         audioEngine.pause()
-        loadCurrentSong(autoPlay: wasPlaying, preservedTime: preservedTime)
+        // Routing only rewires the audio graph — the song's audio content and
+        // waveform are unchanged, so keep the cached lane instead of flashing
+        // the setlist waveform back to its loading placeholder.
+        loadCurrentSong(autoPlay: wasPlaying, preservedTime: preservedTime, invalidatesWaveformSnapshot: false)
     }
 
     func updateGroupMix(context: ModelContext, persist: Bool = true) {
