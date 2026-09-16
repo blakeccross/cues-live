@@ -373,3 +373,82 @@ struct LiveSetlistEntryDropDelegate<ID: Hashable>: DropDelegate {
         return true
     }
 }
+
+/// Accepts a Finder folder drag anywhere over the setlist. Used on its own only
+/// where nothing else competes for the drop (the setlist container's blank-space
+/// fallback); rows use `LiveSetlistRowDropDelegate` instead — see its note.
+/// Dropped folders always append to the end of the setlist — no per-row
+/// insertion tracking, which made the list reflow (and feel jittery) on hover.
+struct LiveSetlistSongFolderDropDelegate: DropDelegate {
+    let onHover: () -> Void
+    let onExit: () -> Void
+    let onPerform: ([NSItemProvider]) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.fileURL])
+    }
+
+    func dropEntered(info: DropInfo) {
+        onHover()
+    }
+
+    func dropExited(info: DropInfo) {
+        onExit()
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .copy)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        onPerform(info.itemProviders(for: [.fileURL]))
+    }
+}
+
+/// Combines setlist-entry reordering and Finder folder-drop handling in a single
+/// delegate. A row can only usefully register for one `.onDrop` at a time: two
+/// separately-typed `.onDrop` modifiers stacked on the same view fight over which
+/// one AppKit treats as the row's drag destination, so the second (folder) one
+/// loses hover tracking the moment the drag enters a row. Declaring both the
+/// `.text` (reorder) and `.fileURL` (folder) types on one `.onDrop` and
+/// dispatching inside `DropInfo` avoids that conflict.
+struct LiveSetlistRowDropDelegate<ID: Hashable>: DropDelegate {
+    let targetID: ID?
+    let draggedID: ID?
+    let onMove: (ID, ID) -> Void
+    let onCommitReorder: () -> Void
+
+    let onFolderHover: () -> Void
+    let onFolderExit: () -> Void
+    let onFolderPerform: ([NSItemProvider]) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        draggedID != nil || info.hasItemsConforming(to: [.fileURL])
+    }
+
+    func dropEntered(info: DropInfo) {
+        if let draggedID, let targetID, draggedID != targetID {
+            onMove(draggedID, targetID)
+            return
+        }
+        guard draggedID == nil, info.hasItemsConforming(to: [.fileURL]) else { return }
+        onFolderHover()
+    }
+
+    func dropExited(info: DropInfo) {
+        guard draggedID == nil else { return }
+        onFolderExit()
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: draggedID != nil ? .move : .copy)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        if draggedID != nil {
+            onCommitReorder()
+            return true
+        }
+        return onFolderPerform(info.itemProviders(for: [.fileURL]))
+    }
+}

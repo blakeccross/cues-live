@@ -38,6 +38,7 @@ private struct MissingMediaSheetContext: Identifiable {
     let missingTracks: [SongMediaHealth.MissingTrack]
 }
 
+
 struct LivePlaybackView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(InputMappingController.self) private var mapping
@@ -69,6 +70,9 @@ struct LivePlaybackView: View {
     @State private var showFileDocument: ShowFileDocument?
     @State private var songImportFeedback: SongImportFeedback?
     @State private var isImportingSongFolder = false
+    #if os(macOS)
+    @State private var isTargetedForSongFolderDrop = false
+    #endif
     @State private var infoPanelHeight: CGFloat = 0
     @State private var mixerDetent: LiveGroupMixerDetent = .hidden
     @State private var headerPendingEdit: SetlistEntry?
@@ -583,6 +587,101 @@ struct LivePlaybackView: View {
             }
         }
     }
+
+    #if os(macOS)
+    /// Drop target for a Finder folder drag anywhere over the setlist (any row,
+    /// or the list background). Kept deliberately simple — no per-row insertion
+    /// preview, since reflowing the list on every hover made the UI feel jittery.
+    /// The dropped folder always becomes a new song appended to the end.
+    private func songFolderDropDelegate() -> LiveSetlistSongFolderDropDelegate {
+        LiveSetlistSongFolderDropDelegate(
+            onHover: {
+                isTargetedForSongFolderDrop = true
+            },
+            onExit: {
+                isTargetedForSongFolderDrop = false
+            },
+            onPerform: { providers in
+                performSongFolderDrop(providers)
+            }
+        )
+    }
+
+    /// Handles a Finder drag dropped onto the setlist: each dropped folder becomes a
+    /// new song in the library, appended to the end of the working setlist.
+    private func performSongFolderDrop(_ providers: [NSItemProvider]) -> Bool {
+        isTargetedForSongFolderDrop = false
+        let fileProviders = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
+        guard !fileProviders.isEmpty, !isImportingSongFolder else { return false }
+
+        Task { @MainActor in
+            var folderURLs: [URL] = []
+            for provider in fileProviders {
+                guard let url = await Self.loadFileURL(from: provider) else { continue }
+                var isDirectory: ObjCBool = false
+                if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
+                    folderURLs.append(url)
+                }
+            }
+
+            guard !folderURLs.isEmpty else {
+                songImportFeedback = .failure("Drop a folder containing audio files to add a song.")
+                return
+            }
+
+            importSongsFromDroppedFolders(folderURLs)
+        }
+        return true
+    }
+
+    private static func loadFileURL(from provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                switch item {
+                case let url as URL:
+                    continuation.resume(returning: url)
+                case let data as Data:
+                    continuation.resume(returning: URL(dataRepresentation: data, relativeTo: nil))
+                default:
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
+    private func importSongsFromDroppedFolders(_ folderURLs: [URL]) {
+        guard !isImportingSongFolder else { return }
+
+        isImportingSongFolder = true
+        Task { @MainActor in
+            defer { isImportingSongFolder = false }
+
+            var addedNames: [String] = []
+            var failureMessages: [String] = []
+
+            for folderURL in folderURLs {
+                do {
+                    let importResult = try SongFolderImporter.importFromFolder(
+                        at: folderURL,
+                        context: modelContext
+                    )
+                    addSong(importResult.song, at: workingSetlist.sortedEntries.count)
+                    addedNames.append(importResult.song.name)
+                } catch {
+                    failureMessages.append("\(folderURL.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+
+            if !failureMessages.isEmpty {
+                songImportFeedback = .failure(failureMessages.joined(separator: "\n"))
+            } else if addedNames.count == 1 {
+                songImportFeedback = .success("Added \"\(addedNames[0])\" to the setlist.")
+            } else if addedNames.count > 1 {
+                songImportFeedback = .success("Added \(addedNames.count) songs to the setlist.")
+            }
+        }
+    }
+    #endif
 
     private var setlistSaveFileName: String {
         let raw = (activeSetlist?.name ?? "Setlist")
@@ -1204,7 +1303,7 @@ struct LivePlaybackView: View {
                     AppEmptyState(
                         title: "No Songs in Setlist",
                         systemImage: "music.note.list",
-                        description: "Use the add button to build your setlist."
+                        description: "Drag a song folder here, or use the add button."
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(AppSpacing.md)
@@ -1219,6 +1318,18 @@ struct LivePlaybackView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        #if os(macOS)
+        .overlay {
+            if isTargetedForSongFolderDrop {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(AppColors.accent, lineWidth: 2)
+                    .padding(AppSpacing.xs)
+                    .allowsHitTesting(false)
+            }
+        }
+        // Background fallback for dropping below the last row, or on the empty state.
+        .onDrop(of: [.fileURL], delegate: songFolderDropDelegate())
+        #endif
     }
 
     @ViewBuilder
@@ -1271,7 +1382,7 @@ struct LivePlaybackView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())
         #if os(macOS)
-        .onDrop(of: [.text], delegate: setlistDropDelegate(targetID: nil))
+        .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: nil))
         #endif
         .contextMenu {
             addHeaderContextMenu
@@ -1297,7 +1408,7 @@ struct LivePlaybackView: View {
             }
             .liveSetlistHeaderRowChrome(isDragging: isBeingDragged(entry))
             #if os(macOS)
-            .onDrop(of: [.text], delegate: setlistDropDelegate(targetID: entry.id))
+            .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: entry.id))
             #endif
             #if os(iOS)
             .deleteDisabled(true)
@@ -1362,7 +1473,7 @@ struct LivePlaybackView: View {
         )
         .mappableLiveControl(.goToSong(playbackIndex), cornerRadius: AppRadius.sm)
         #if os(macOS)
-        .onDrop(of: [.text], delegate: setlistDropDelegate(targetID: entry.id))
+        .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: entry.id))
         #endif
         #if os(iOS)
         .deleteDisabled(true)
@@ -1415,14 +1526,30 @@ struct LivePlaybackView: View {
         draggedSetlistEntryID == entry.id
     }
 
-    private func setlistDropDelegate(targetID: PersistentIdentifier?) -> LiveSetlistEntryDropDelegate<PersistentIdentifier> {
-        LiveSetlistEntryDropDelegate(
+    #if os(macOS)
+    /// Combined reorder + folder-drop target for a setlist row (or the list
+    /// background, via `targetID: nil`). See `LiveSetlistRowDropDelegate`'s note
+    /// on why this must be one delegate rather than two stacked `.onDrop`s.
+    private func setlistRowDropDelegate(
+        targetID: PersistentIdentifier?
+    ) -> LiveSetlistRowDropDelegate<PersistentIdentifier> {
+        LiveSetlistRowDropDelegate(
             targetID: targetID,
             draggedID: draggedSetlistEntryID,
             onMove: previewSetlistMove,
-            onCommit: commitSetlistReorder
+            onCommitReorder: commitSetlistReorder,
+            onFolderHover: {
+                isTargetedForSongFolderDrop = true
+            },
+            onFolderExit: {
+                isTargetedForSongFolderDrop = false
+            },
+            onFolderPerform: { providers in
+                performSongFolderDrop(providers)
+            }
         )
     }
+    #endif
 
     private func previewSetlistMove(_ draggedID: PersistentIdentifier, before targetID: PersistentIdentifier) {
         let entries = workingSetlist.sortedEntries
