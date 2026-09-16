@@ -34,7 +34,6 @@ struct EditView: View {
     var onBack: () -> Void = {}
 
     @State private var showingMIDIDevicePicker = false
-    @State private var showingMIDIDeviceEditor = false
     @State private var deviceBeingEdited: MIDIDevice?
     @State private var showingAddTrackOptions = false
     @State private var pendingAddTrackKind: AddTrackKind?
@@ -519,9 +518,12 @@ struct EditView: View {
     }
 
     private func createMIDITrack(for device: MIDIDevice) {
+        for existing in midiTracks {
+            existing.sortOrder += 1
+        }
         let track = MIDITrack(
             displayName: device.name,
-            sortOrder: midiTracks.count
+            sortOrder: 0
         )
         track.device = device
         track.song = song
@@ -674,7 +676,6 @@ struct EditView: View {
             return
         }
         deviceBeingEdited = device
-        showingMIDIDeviceEditor = true
     }
 
     private func deleteMIDITrack(_ track: MIDITrack) {
@@ -860,12 +861,20 @@ struct EditView: View {
                 createMIDITrack(for: device)
             }
         }
-        .sheet(isPresented: $showingMIDIDeviceEditor) {
+        .sheet(item: $deviceBeingEdited) { device in
             NavigationStack {
-                MIDIDeviceEditorView(device: deviceBeingEdited) { _ in
+                MIDIDeviceEditorView(device: device) { _ in
                     commitMIDIConfig()
                 }
             }
+            // `.sheet(item:)` alone can still let the NavigationStack-wrapped
+            // content reuse its previous `@State` (destination, channel,
+            // commands) instead of reinitializing from `device`, since the
+            // NavigationStack's own identity sits between the sheet and the
+            // editor. Keying explicitly by `device.id` forces a genuinely new
+            // view — and fresh `@State` — every time a different device (or
+            // the same one, after a prior edit) is opened.
+            .id(device.id)
         }
         .sheet(isPresented: $showingAddTrackOptions, onDismiss: performPendingAddTrack) {
             AddTrackTypeSheet { kind in
@@ -1824,6 +1833,21 @@ struct EditView: View {
 
     private var trackLanesContent: some View {
         LazyVStack(spacing: TimelineLayout.laneSpacing) {
+            ForEach(midiTracks, id: \.id) { track in
+                MIDILaneView(
+                    track: track,
+                    device: track.device,
+                    timelineDuration: timelineDuration,
+                    timelineContentWidth: timelineContentWidth,
+                    laneHeight: TimelineLayout.laneHeight,
+                    events: $midiEvents,
+                    tempoChanges: normalizedTempoChanges,
+                    timeSignatureChanges: normalizedTimeSignatureChanges,
+                    onCommit: commitMIDIEvents
+                )
+                .frame(width: timelineContentWidth, alignment: .leading)
+            }
+
             ForEach(song.sortedTracks, id: \.id) { track in
                 if let fileURL = FileStore.trackURL(for: song, track: track) {
                 WaveformLaneView(
@@ -1864,21 +1888,6 @@ struct EditView: View {
                 .frame(width: timelineContentWidth, alignment: .leading)
                 }
             }
-
-            ForEach(midiTracks, id: \.id) { track in
-                MIDILaneView(
-                    track: track,
-                    device: track.device,
-                    timelineDuration: timelineDuration,
-                    timelineContentWidth: timelineContentWidth,
-                    laneHeight: TimelineLayout.laneHeight,
-                    events: $midiEvents,
-                    tempoChanges: normalizedTempoChanges,
-                    timeSignatureChanges: normalizedTimeSignatureChanges,
-                    onCommit: commitMIDIEvents
-                )
-                .frame(width: timelineContentWidth, alignment: .leading)
-            }
         }
         .frame(width: timelineContentWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
@@ -1886,6 +1895,22 @@ struct EditView: View {
 
     private var trackHeaderList: some View {
         LazyVStack(spacing: TimelineLayout.laneSpacing) {
+            ForEach(midiTracks, id: \.id) { track in
+                MIDITrackHeaderView(
+                    track: track,
+                    laneHeight: TimelineLayout.laneHeight,
+                    isSelected: selectedTrackID == track.id,
+                    onSelect: {
+                        selectedTrackID = track.id
+                        clipSelection = nil
+                    },
+                    onConfigChange: commitMIDIConfig,
+                    onSendTest: { sendMIDITest(for: track) },
+                    onEditDevice: { editDevice(for: track) },
+                    onDelete: { deleteMIDITrack(track) }
+                )
+            }
+
             ForEach(song.sortedTracks, id: \.id) { track in
                 TrackLaneHeaderView(
                     track: track,
@@ -1915,22 +1940,6 @@ struct EditView: View {
                     onDelete: {
                         deleteAudioTrack(track)
                     }
-                )
-            }
-
-            ForEach(midiTracks, id: \.id) { track in
-                MIDITrackHeaderView(
-                    track: track,
-                    laneHeight: TimelineLayout.laneHeight,
-                    isSelected: selectedTrackID == track.id,
-                    onSelect: {
-                        selectedTrackID = track.id
-                        clipSelection = nil
-                    },
-                    onConfigChange: commitMIDIConfig,
-                    onSendTest: { sendMIDITest(for: track) },
-                    onEditDevice: { editDevice(for: track) },
-                    onDelete: { deleteMIDITrack(track) }
                 )
             }
         }

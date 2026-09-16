@@ -147,14 +147,21 @@ struct MIDIDeviceEditorView: View {
 
     private func commandRow(_ command: Binding<MIDICommand>) -> some View {
         HStack(spacing: 10) {
-            TextField("Name", text: command.name)
-                .textFieldStyle(.roundedBorder)
+            HStack(spacing: 4) {
+                Text("Name")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextField("Name", text: command.name)
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+            }
 
             HStack(spacing: 4) {
                 Text("Note")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextField("Note", value: command.note, format: .number)
+                    .labelsHidden()
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 44)
                     .multilineTextAlignment(.trailing)
@@ -168,30 +175,20 @@ struct MIDIDeviceEditorView: View {
     }
 
     private var destinationPicker: some View {
-        Menu {
-            Button("No Destination") {
-                destinationUniqueID = nil
-                destinationName = nil
-            }
+        Picker("Destination", selection: $destinationUniqueID) {
+            Text("No Destination").tag(Optional<Int32>.none)
             ForEach(destinations) { destination in
-                Button(destination.name) {
-                    destinationUniqueID = destination.uniqueID
-                    destinationName = destination.name
-                }
+                Text(destination.name).tag(Optional(destination.uniqueID))
             }
-        } label: {
-            LabeledContent("Destination", value: destinationLabel)
+            // Keep a saved-but-currently-unreachable destination selectable
+            // (e.g. device unplugged) instead of silently losing the selection.
+            if let destinationUniqueID, !destinations.contains(where: { $0.uniqueID == destinationUniqueID }) {
+                Text(destinationName ?? "Unavailable").tag(Optional(destinationUniqueID))
+            }
         }
-    }
-
-    private var destinationLabel: String {
-        if let destinationName, !destinationName.isEmpty {
-            return destinationName
+        .onChange(of: destinationUniqueID) { _, newValue in
+            destinationName = destinations.first { $0.uniqueID == newValue }?.name
         }
-        if destinationUniqueID != nil {
-            return "Unavailable"
-        }
-        return "No Destination"
     }
 
     private var channelPicker: some View {
