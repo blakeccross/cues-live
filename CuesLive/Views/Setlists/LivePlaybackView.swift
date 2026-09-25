@@ -287,6 +287,9 @@ struct LivePlaybackView: View {
     ) -> some View {
         content
             .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
+                // The song editor owns the shared engine while open and rewires it
+                // itself; dismissing the editor reloads the setlist song with routing.
+                guard songToEditID == nil else { return }
                 coordinator.applyOutputRouting()
             }
             .modifier(LiveRemoteHostSyncModifier(
@@ -378,10 +381,7 @@ struct LivePlaybackView: View {
                     activeSetlistID = setlist.id
                 }
                 coordinator.routingProvider = {
-                    let channelCount = AudioOutputDeviceService.channelCount(
-                        for: OutputRoutingStore.config(in: modelContext).selectedDeviceUID
-                    )
-                    return OutputRoutingStore.snapshot(in: modelContext, channelCount: channelCount)
+                    OutputRoutingStore.currentSnapshot(in: modelContext)
                 }
                 coordinator.groupMixProvider = {
                     GroupMixStore.snapshot(in: modelContext)

@@ -32,7 +32,7 @@ final class AudioEngineManager {
         let timePitchNode: AVAudioUnitTimePitch
         var settings: TrackSettings
         let fileDuration: TimeInterval
-        let groupID: UUID?
+        var groupID: UUID?
         let sourceFormat: AVAudioFormat
 
         var playbackOutputNode: AVAudioNode {
@@ -192,6 +192,25 @@ final class AudioEngineManager {
             teardownTracks()
             throw error
         }
+    }
+
+    /// Rewires loaded tracks to new output routing without reloading audio,
+    /// keeping playback position (and playback, if running). Pass
+    /// `groupIDsByTrackID` when tracks moved between groups.
+    func applyOutputRouting(
+        _ routing: OutputRoutingSnapshot,
+        groupIDsByTrackID: [UUID: UUID?] = [:]
+    ) throws {
+        for (id, groupID) in groupIDsByTrackID {
+            tracks[id]?.groupID = groupID
+        }
+        routingSnapshot = routing
+        guard !tracks.isEmpty else { return }
+
+        let wasPlaying = isPlaying
+        let timeline = wasPlaying ? livePlayheadTime() : currentTime
+        try wireTrackOutputs(routing: routing)
+        restorePlaybackClock(at: timeline, afterGraphChange: wasPlaying)
     }
 
     static func pitchShiftedBuffer(

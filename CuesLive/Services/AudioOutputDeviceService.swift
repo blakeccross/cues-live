@@ -56,8 +56,12 @@ enum AudioOutputDeviceService {
         }
         return false
         #else
-        _ = (uid, engine)
-        return false
+        // iOS has no per-engine device selection — the engine always renders to
+        // the session's current route. Report success when the requested device
+        // *is* that route, otherwise callers treat every iOS device as unbound and
+        // collapse routing to outputs 1-2.
+        _ = engine
+        return iOSDevices().contains { $0.id == uid }
         #endif
     }
 

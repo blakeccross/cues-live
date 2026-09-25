@@ -96,6 +96,9 @@ struct SongDetailView: View {
                 Text(abletonImportSummary ?? "")
             }
             .onAppear(perform: handleAppear)
+            .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
+                viewModel?.applyOutputRouting()
+            }
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 #if os(iOS)
@@ -264,6 +267,7 @@ struct SongDetailView: View {
             canAutoGroup: !activeSong.sortedTracks.isEmpty,
             autoGroup: {
                 TrackGroupStore.autoAssignGroups(for: activeSong, in: modelContext)
+                viewModel?.applyOutputRouting()
             },
             importAbleton: {
                 showingAbletonImporter = true

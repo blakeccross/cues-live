@@ -95,6 +95,15 @@ enum OutputRoutingStore {
         )
     }
 
+    /// Routing for the currently selected output device. Setlist playback and the
+    /// song editor both use this so a group comes out of the same outputs in each.
+    static func currentSnapshot(in context: ModelContext) -> OutputRoutingSnapshot {
+        let channelCount = AudioOutputDeviceService.channelCount(
+            for: config(in: context).selectedDeviceUID
+        )
+        return snapshot(in: context, channelCount: channelCount)
+    }
+
     static func destination(
         for groupID: UUID?,
         snapshot: OutputRoutingSnapshot

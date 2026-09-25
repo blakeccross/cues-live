@@ -197,6 +197,7 @@ struct EditView: View {
 
         snapshot.applyMetadata(to: song)
         let trackIDsBeforeApply = Set(song.sortedTracks.map(\.id))
+        let groupsBeforeApply = trackGroupAssignments()
         snapshot.applyTracks(to: song, context: modelContext)
         let trackIDsChanged = trackIDsBeforeApply != Set(song.sortedTracks.map(\.id))
 
@@ -234,6 +235,9 @@ struct EditView: View {
         for track in song.sortedTracks {
             viewModel.updateMix(for: track, context: modelContext)
             viewModel.updateTrim(for: track, context: modelContext)
+        }
+        if trackGroupAssignments() != groupsBeforeApply {
+            viewModel.applyOutputRouting()
         }
 
         reconfigureMIDI()
@@ -397,6 +401,10 @@ struct EditView: View {
 
     private func persistArrangement() {
         persistProjectState()
+    }
+
+    private func trackGroupAssignments() -> [UUID: UUID?] {
+        Dictionary(uniqueKeysWithValues: song.sortedTracks.map { ($0.id, $0.group?.id) })
     }
 
     private func syncPlayback() {

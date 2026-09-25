@@ -177,7 +177,7 @@ final class SongEditorViewModel {
             do {
                 var payloads = prepared
                 try appendTimecodePayloadIfNeeded(to: &payloads)
-                try audioEngine.loadPreparedTracks(payloads)
+                try audioEngine.loadPreparedTracks(payloads, routing: currentRouting())
                 isLoaded = true
                 loadError = nil
                 syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
@@ -264,6 +264,7 @@ final class SongEditorViewModel {
     func updateGroup(for track: AudioTrack, context: ModelContext) {
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
         try? context.save()
+        applyOutputRouting()
     }
 
     @discardableResult
@@ -274,7 +275,24 @@ final class SongEditorViewModel {
             in: context
         )
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
+        applyOutputRouting()
         return assignedCount
+    }
+
+    /// Re-applies the setlist's output routing, e.g. after routing settings change
+    /// or tracks move between groups. Ungrouped tracks follow the "No Group" route.
+    func applyOutputRouting() {
+        guard isLoaded, let routing = currentRouting() else { return }
+        var groupIDsByTrackID: [UUID: UUID?] = [:]
+        for track in song.sortedTracks {
+            groupIDsByTrackID[track.id] = track.group?.id
+        }
+        try? audioEngine.applyOutputRouting(routing, groupIDsByTrackID: groupIDsByTrackID)
+    }
+
+    private func currentRouting() -> OutputRoutingSnapshot? {
+        guard let modelContext else { return nil }
+        return OutputRoutingStore.currentSnapshot(in: modelContext)
     }
 
     func previewTrim(for track: AudioTrack) {
