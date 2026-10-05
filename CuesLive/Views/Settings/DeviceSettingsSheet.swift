@@ -12,38 +12,33 @@ struct DeviceSettingsSheet: View {
     var body: some View {
         AppSheetContainer {
             NavigationStack {
-                RemoteSessionSettingsView()
-                    .navigationTitle("Settings")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            NavigationLink("Outputs") {
-                                ScrollView {
-                                    OutputRoutingSettingsForm(
-                                        sections: .all,
-                                        onRoutingChanged: onRoutingChanged
-                                    )
-                                    .padding(AppSpacing.lg)
-                                }
-                                .navigationTitle("Manage Outputs")
-                            }
-                        }
-                        ToolbarItem(placement: .topBarLeading) {
-                            NavigationLink("Mappings") {
-                                InputMappingSettingsView()
-                                    .navigationTitle("Mappings")
-                            }
-                        }
-                        ToolbarItem(placement: .topBarLeading) {
-                            NavigationLink("Help") {
-                                HelpSettingsView()
-                                    .navigationTitle("Help")
-                            }
-                        }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { dismiss() }
-                                .foregroundStyle(AppColors.accent)
-                        }
+                List {
+                    NavigationLink("Remote") {
+                        RemoteSessionSettingsView()
+                            .navigationTitle("Remote")
                     }
+                    NavigationLink("Outputs") {
+                        OutputRoutingSettingsForm(
+                            sections: .all,
+                            onRoutingChanged: onRoutingChanged
+                        )
+                        .navigationTitle("Outputs")
+                    }
+                    NavigationLink("Mappings") {
+                        InputMappingSettingsView()
+                            .navigationTitle("Mappings")
+                    }
+                    NavigationLink("Help") {
+                        HelpSettingsView()
+                            .navigationTitle("Help")
+                    }
+                }
+                .navigationTitle("Settings")
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
             }
         }
         .presentationDetents([.large])

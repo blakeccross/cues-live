@@ -63,7 +63,7 @@ struct CuesLiveApp: App {
 
         #if os(macOS)
         Settings {
-            AppSettingsView(updater: sparkleUpdater.updater)
+            AppSettingsView()
                 .modelContainer(modelContainer)
                 .environment(InputMappingController.shared)
         }

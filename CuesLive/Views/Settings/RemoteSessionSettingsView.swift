@@ -11,15 +11,11 @@ struct RemoteSessionSettingsView: View {
     @State private var showingPINPrompt = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                hostSection
-                joinSection
-            }
-            .padding(AppSpacing.lg)
+        Form {
+            hostSection
+            joinSection
         }
-        .scrollContentBackground(.hidden)
-        .background(AppColors.backgroundSecondary)
+        .formStyle(.grouped)
         .onAppear {
             hostSession.syncAdvertising()
             if case .idle = client.phase {
@@ -65,152 +61,113 @@ struct RemoteSessionSettingsView: View {
     }
 
     private var hostSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader(title: "Host Remote Session")
-
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Toggle("Allow Remote Control", isOn: Binding(
-                    get: { settings.isHostingEnabled },
-                    set: { enabled in
-                        hostSession.setHostingEnabled(enabled)
-                    }
-                ))
-
-                LabeledContent("Device Name") {
-                    TextField("Name", text: $settings.displayName)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(maxWidth: 220)
+        Section {
+            Toggle("Allow Remote Control", isOn: Binding(
+                get: { settings.isHostingEnabled },
+                set: { enabled in
+                    hostSession.setHostingEnabled(enabled)
                 }
+            ))
 
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.md) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Password")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.textSecondary)
-                        Text(settings.pin)
-                            .font(.system(.title, design: .monospaced).weight(.semibold))
-                            .tracking(4)
-                    }
+            TextField("Device Name", text: $settings.displayName)
 
-                    Spacer()
-
+            LabeledContent("Password") {
+                HStack(spacing: 8) {
+                    Text(settings.pin)
+                        .font(.body.monospaced())
+                        .textSelection(.enabled)
                     Button("Regenerate") {
                         settings.regeneratePIN()
                     }
-                    .buttonStyle(.bordered)
+                    .controlSize(.small)
                     .disabled(!settings.isHostingEnabled)
                 }
+            }
 
-                if settings.isHostingEnabled {
-                    statusRow(
-                        title: host.isClientAuthenticated
-                            ? "Connected\(host.connectedClientName.map { " · \($0)" } ?? "")"
-                            : (host.statusMessage ?? "Advertising on local network")
-                    )
-                    if host.isClientConnected {
-                        Button("Disconnect Client", role: .destructive) {
-                            hostSession.disconnectClient()
-                        }
-                        .buttonStyle(.bordered)
+            if settings.isHostingEnabled {
+                LabeledContent("Status") {
+                    Text(hostStatus)
+                        .foregroundStyle(.secondary)
+                }
+                if host.isClientConnected {
+                    Button("Disconnect Client", role: .destructive) {
+                        hostSession.disconnectClient()
                     }
                 }
             }
-            .padding(AppSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        } header: {
+            Text("Host")
         }
+    }
+
+    private var hostStatus: String {
+        if host.isClientAuthenticated {
+            if let name = host.connectedClientName {
+                return "Connected · \(name)"
+            }
+            return "Connected"
+        }
+        return host.statusMessage ?? "Advertising on local network"
     }
 
     private var joinSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader(title: "Join Remote Session")
-
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                if client.isConnected {
-                    statusRow(title: "Connected to \(client.hostDisplayName ?? "host")")
-                    if client.snapshot == nil {
-                        Text("Waiting for setlist from host…")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.textSecondary)
+        Section {
+            if client.isConnected {
+                LabeledContent("Status") {
+                    Text("Connected to \(client.hostDisplayName ?? "host")")
+                        .foregroundStyle(.secondary)
+                }
+                if client.snapshot == nil {
+                    Text("Waiting for setlist from host…")
+                        .foregroundStyle(.secondary)
+                }
+                Button("Disconnect", role: .destructive) {
+                    client.disconnect()
+                    client.startBrowsing()
+                }
+            } else {
+                if let status = client.phase.statusText,
+                   client.phase != .browsing,
+                   client.phase != .idle {
+                    LabeledContent("Status") {
+                        Text(status)
+                            .foregroundStyle(.secondary)
                     }
-                    Button("Disconnect", role: .destructive) {
+                }
+
+                if let lastError = client.lastError {
+                    Text(lastError)
+                        .foregroundStyle(.red)
+                }
+
+                switch client.phase {
+                case .connecting, .authenticating:
+                    ProgressView()
+                    Button("Cancel") {
                         client.disconnect()
                         client.startBrowsing()
                     }
-                    .buttonStyle(.bordered)
-                } else {
-                    if let status = client.phase.statusText,
-                       client.phase != .browsing,
-                       client.phase != .idle {
-                        statusRow(title: status)
-                    }
-
-                    if let lastError = client.lastError {
-                        Text(lastError)
-                            .font(.caption)
-                            .foregroundStyle(.red)
-                    }
-
-                    switch client.phase {
-                    case .connecting, .authenticating:
-                        ProgressView()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Button("Cancel") {
-                            client.disconnect()
-                            client.startBrowsing()
-                        }
-                        .buttonStyle(.bordered)
-                    default:
-                        if client.discoveredPeers.isEmpty {
-                            Text("Searching for hosts on this network…")
-                                .font(.callout)
-                                .foregroundStyle(AppColors.textSecondary)
-                        } else {
-                            ForEach(client.discoveredPeers) { peer in
-                                Button {
-                                    selectedPeer = peer
-                                    pinDraft = ""
-                                    showingPINPrompt = true
-                                } label: {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(peer.name)
-                                                .foregroundStyle(AppColors.textPrimary)
-                                            Text("Available")
-                                                .font(.caption)
-                                                .foregroundStyle(AppColors.textSecondary)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(AppColors.textTertiary)
-                                    }
-                                    .padding(.vertical, 4)
-                                }
-                                .buttonStyle(.plain)
+                default:
+                    if client.discoveredPeers.isEmpty {
+                        Text("Searching for hosts on this network…")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(client.discoveredPeers) { peer in
+                            Button(peer.name) {
+                                selectedPeer = peer
+                                pinDraft = ""
+                                showingPINPrompt = true
                             }
                         }
+                    }
 
-                        Button("Refresh") {
-                            client.startBrowsing()
-                        }
-                        .buttonStyle(.bordered)
+                    Button("Refresh") {
+                        client.startBrowsing()
                     }
                 }
             }
-            .padding(AppSpacing.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        }
-    }
-
-    private func statusRow(title: String) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Circle()
-                .fill(AppColors.accent)
-                .frame(width: 8, height: 8)
-            Text(title)
-                .font(.callout)
-                .foregroundStyle(AppColors.textSecondary)
+        } header: {
+            Text("Join")
         }
     }
 

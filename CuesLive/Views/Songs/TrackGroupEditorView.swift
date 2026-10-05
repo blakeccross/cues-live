@@ -24,15 +24,13 @@ struct TrackGroupEditorView: View {
         case .sheet:
             AppSheetContainer {
                 NavigationStack {
-                    editorContent
-                        .padding(AppSpacing.md)
+                    editorForm
                         .navigationTitle("Track Groups")
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Done") {
                                     dismiss()
                                 }
-                                .foregroundStyle(AppColors.accent)
                             }
                         }
                 }
@@ -41,20 +39,14 @@ struct TrackGroupEditorView: View {
             .frame(minWidth: 440, minHeight: 520)
             #endif
         case .settings:
-            editorContent
-                .padding(AppSpacing.lg)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(AppColors.backgroundSecondary)
+            editorForm
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    private var editorContent: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Manage group names, colors, and track-name keywords used for auto-assign. Tracks on a deleted group become unassigned.")
-                .font(.caption)
-                .foregroundStyle(AppColors.textTertiary)
-
-            List {
+    private var editorForm: some View {
+        Form {
+            Section {
                 ForEach(groups) { group in
                     TrackGroupEditorRow(
                         group: group,
@@ -68,31 +60,25 @@ struct TrackGroupEditorView: View {
                     )
                 }
                 .onDelete(perform: deleteGroups)
+            } footer: {
+                Text("Manage group names, colors, and track-name keywords used for auto-assign. Tracks on a deleted group become unassigned.")
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
 
-            HStack(spacing: AppSpacing.xs) {
-                TextField("New group name", text: $newGroupName)
-                    .textFieldStyle(.plain)
-                    .padding(AppSpacing.sm)
-                    .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+            Section {
+                TextField("New Group Name", text: $newGroupName)
                     .onSubmit(addGroup)
-
-                AppPrimaryButton(
-                    title: "Add Group",
-                    isEnabled: !newGroupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ) {
+                Button("Add Group") {
                     addGroup()
                 }
-            }
-
-            if let nameError {
-                Text(nameError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                .disabled(newGroupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            } footer: {
+                if let nameError {
+                    Text(nameError)
+                        .foregroundStyle(.red)
+                }
             }
         }
+        .formStyle(.grouped)
     }
 
     private func addGroup() {
@@ -145,54 +131,40 @@ private struct TrackGroupEditorRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+        DisclosureGroup(isExpanded: Binding(
+            get: { isExpanded },
+            set: { expanded in
+                if expanded != isExpanded {
+                    onToggleExpand()
+                }
+            }
+        )) {
+            colorPicker
+
+            TextField("Keywords", text: $draftKeywords, prompt: Text("piano, organ, glock"), axis: .vertical)
+                .lineLimit(2...4)
+                .focused($focusedField, equals: .keywords)
+                .onSubmit(commitKeywords)
+
+            Text("Comma-separated names that auto-assign tracks to this group, in addition to the group name.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } label: {
             HStack(spacing: AppSpacing.sm) {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .fill(bodyColor)
                     .frame(width: 18, height: 18)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .strokeBorder(AppColors.separator.opacity(0.6), lineWidth: 1)
+                            .strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1)
                     )
+                    .accessibilityHidden(true)
 
-                TextField("Group name", text: $draftName)
-                    .textFieldStyle(.plain)
-                    .foregroundStyle(AppColors.textPrimary)
+                TextField("Group Name", text: $draftName)
                     .focused($focusedField, equals: .name)
                     .onSubmit(commitName)
-
-                Button(action: onToggleExpand) {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.textTertiary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                }
-                .buttonStyle(.plain)
-            }
-
-            if isExpanded {
-                colorPicker
-
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Track name keywords")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.textSecondary)
-
-                    Text("Comma-separated names that auto-assign tracks to this group (in addition to the group name).")
-                        .font(.caption2)
-                        .foregroundStyle(AppColors.textTertiary)
-
-                    TextField("e.g. piano, organ, glock", text: $draftKeywords, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .lineLimit(2...4)
-                        .padding(AppSpacing.sm)
-                        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
-                        .focused($focusedField, equals: .keywords)
-                        .onSubmit(commitKeywords)
-                }
             }
         }
-        .padding(.vertical, AppSpacing.xs)
         .onAppear {
             draftName = group.name
             draftKeywords = group.nameKeywords
