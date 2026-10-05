@@ -489,8 +489,8 @@ struct WaveformLaneView: View {
         let palette = TrackGroupPalette.colors(forPaletteKey: paletteKey)
         let selectedHeaderColor = TrackGroupPalette.selectedHeaderColor(forPaletteKey: paletteKey)
         let selection = matchingClipSelection(for: clipID)
-        let isSelected = selection != nil
         let isWholeSelected = selection?.isWholeClip == true
+        let isSelected = isWholeSelected
         let committedRange = committedSelectionRange(
             clipID: clipID,
             timelineStart: timelineStart,
@@ -804,16 +804,16 @@ struct WaveformLaneView: View {
                         end: range.upperBound
                     )
                 } else {
+                    // Selecting the whole clip is header-only. A click on the
+                    // waveform only moves the playhead.
+                    guard !audioEngine.isPlaying else { return }
                     let time = snappedTimelineTime(
                         atX: startX,
                         clipWidth: clipWidth,
                         timelineStart: timelineStart,
                         timelineEnd: timelineEnd
                     )
-                    if !audioEngine.isPlaying {
-                        onSeek(time)
-                    }
-                    selectWholeClip(clipID: clipID, slotID: slotID, editTime: time)
+                    onSeek(time)
                 }
             }
     }
