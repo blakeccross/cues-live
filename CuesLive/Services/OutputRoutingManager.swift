@@ -30,6 +30,7 @@ enum OutputRoutingManager {
         engine.connect(engine.mainMixerNode, to: engine.outputNode, format: multiChannelFormat)
 
         var connectedTracks = 0
+        var silencedTracks = 0
         for track in tracks {
             let sourceChannels = max(1, Int(track.format.channelCount))
             let map = channelMap(
@@ -37,7 +38,10 @@ enum OutputRoutingManager {
                 outputChannelCount: channelCount,
                 sourceChannelCount: sourceChannels
             )
-            guard map.contains(where: { $0.intValue >= 0 }) else { continue }
+            guard map.contains(where: { $0.intValue >= 0 }) else {
+                silencedTracks += 1
+                continue
+            }
 
             engine.disconnectNodeOutput(track.node)
             track.node.auAudioUnit.channelMap = nil
@@ -49,7 +53,9 @@ enum OutputRoutingManager {
             connectedTracks += 1
         }
 
-        return connectedTracks > 0
+        // A group set to No Output stays disconnected. Falling back to the master
+        // mixer would play it on the default stereo pair.
+        return connectedTracks > 0 || silencedTracks > 0
     }
 
     static func channelMap(
@@ -61,6 +67,8 @@ enum OutputRoutingManager {
         let rightSource = sourceChannels >= 2 ? 1 : 0
         var map = Array(repeating: NSNumber(value: -1), count: outputChannelCount)
         switch destination {
+        case .none:
+            return map
         case .stereoPair(let start):
             let left = start - 1
             let right = start

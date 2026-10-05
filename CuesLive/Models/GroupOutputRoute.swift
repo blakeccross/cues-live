@@ -14,6 +14,9 @@ final class GroupOutputRoute {
         self.groupID = groupID
         self.deviceUID = deviceUID
         switch destination {
+        case .none:
+            destinationKind = "none"
+            destinationChannel = 0
         case .stereoPair(let startChannel):
             destinationKind = "stereo"
             destinationChannel = startChannel
@@ -25,13 +28,20 @@ final class GroupOutputRoute {
 
     var destination: OutputDestination {
         get {
-            if destinationKind == "mono" {
+            switch destinationKind {
+            case "mono":
                 return .mono(channel: destinationChannel)
+            case "none":
+                return .none
+            default:
+                return .stereoPair(startChannel: destinationChannel)
             }
-            return .stereoPair(startChannel: destinationChannel)
         }
         set {
             switch newValue {
+            case .none:
+                destinationKind = "none"
+                destinationChannel = 0
             case .stereoPair(let startChannel):
                 destinationKind = "stereo"
                 destinationChannel = startChannel

@@ -57,7 +57,8 @@ enum OutputRoutingStore {
     static func route(for groupID: UUID, deviceUID: String?, in context: ModelContext) -> OutputDestination {
         let key = deviceKey(deviceUID)
         let routes = (try? context.fetch(FetchDescriptor<GroupOutputRoute>())) ?? []
-        return routes.first { $0.groupID == groupID && $0.deviceUID == key }?.destination ?? .defaultDestination
+        let fallback: OutputDestination = groupID == ungroupedRouteID ? .none : .defaultDestination
+        return routes.first { $0.groupID == groupID && $0.deviceUID == key }?.destination ?? fallback
     }
 
     static func ungroupedRoute(deviceUID: String?, in context: ModelContext) -> OutputDestination {

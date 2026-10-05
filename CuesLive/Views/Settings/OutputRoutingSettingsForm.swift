@@ -29,7 +29,7 @@ struct OutputRoutingSettingsForm: View {
     @State private var selectedDeviceUID: String?
     @State private var channelCount = 2
     @State private var groupDestinations: [UUID: OutputDestination] = [:]
-    @State private var ungroupedDestination: OutputDestination = .defaultDestination
+    @State private var ungroupedDestination: OutputDestination = .none
     @State private var timecodeEnabled = false
     @State private var timecodeMode: TimecodeMode = .resetPerSong
     @State private var timecodeStartingHour = 1
@@ -184,12 +184,16 @@ struct OutputRoutingSettingsForm: View {
                 )
                 scheduleRoutingChange()
                 if outputTester.isTesting(routeID) {
-                    outputTester.start(
-                        routeID: routeID,
-                        destination: newValue,
-                        deviceUID: selectedDeviceUID,
-                        channelCount: channelCount
-                    )
+                    if newValue == .none {
+                        outputTester.stop()
+                    } else {
+                        outputTester.start(
+                            routeID: routeID,
+                            destination: newValue,
+                            deviceUID: selectedDeviceUID,
+                            channelCount: channelCount
+                        )
+                    }
                 }
             }
         )
@@ -219,6 +223,7 @@ struct OutputRoutingSettingsForm: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .fixedSize()
+        .disabled(destination(for: routeID) == .none)
         .accessibilityLabel(isTesting ? "Stop output test" : "Test output")
         .help(isTesting ? "Stop the output test" : "Play this output's name until you stop it")
     }
@@ -228,6 +233,7 @@ struct OutputRoutingSettingsForm: View {
         title: String
     ) -> some View {
         Picker("Destination", selection: selection) {
+            Text("No Output").tag(OutputDestination.none)
             Section("Stereo") {
                 ForEach(stereoDestinations) { destination in
                     Text(destination.displayLabel).tag(destination)

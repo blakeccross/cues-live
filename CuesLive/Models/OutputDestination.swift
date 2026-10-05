@@ -1,11 +1,14 @@
 import Foundation
 
 enum OutputDestination: Codable, Equatable, Hashable, Identifiable {
+    case none
     case stereoPair(startChannel: Int)
     case mono(channel: Int)
 
     var id: String {
         switch self {
+        case .none:
+            return "none"
         case .stereoPair(let startChannel):
             return "stereo-\(startChannel)"
         case .mono(let channel):
@@ -15,6 +18,8 @@ enum OutputDestination: Codable, Equatable, Hashable, Identifiable {
 
     var displayLabel: String {
         switch self {
+        case .none:
+            return "No Output"
         case .stereoPair(let startChannel):
             return "\(startChannel)-\(startChannel + 1)"
         case .mono(let channel):
@@ -25,6 +30,8 @@ enum OutputDestination: Codable, Equatable, Hashable, Identifiable {
     /// Spoken line used while identifying this output from settings.
     var testPhrase: String {
         switch self {
+        case .none:
+            return ""
         case .stereoPair(let startChannel):
             return "Testing Output \(startChannel) and \(startChannel + 1)"
         case .mono(let channel):
@@ -37,6 +44,8 @@ enum OutputDestination: Codable, Equatable, Hashable, Identifiable {
     func testChannelIndexes(outputChannelCount: Int) -> [Int] {
         let count = max(outputChannelCount, 1)
         switch self {
+        case .none:
+            return []
         case .mono(let channel):
             let index = channel - 1
             guard index >= 0, index < count else { return [0] }

@@ -3,6 +3,16 @@ import XCTest
 @testable import CuesLive
 
 final class OutputRoutingManagerTests: XCTestCase {
+    func testNoOutputChannelMapFeedsNoHardwareChannels() {
+        let map = OutputRoutingManager.channelMap(
+            for: .none,
+            outputChannelCount: 2
+        )
+
+        XCTAssertEqual(map.map(\.intValue), [-1, -1])
+        XCTAssertEqual(OutputDestination.none.displayLabel, "No Output")
+    }
+
     func testMonoChannelMapWorksOnStereoOnlyDevice() {
         let map = OutputRoutingManager.channelMap(
             for: .mono(channel: 1),
@@ -224,6 +234,21 @@ final class OutputRoutingManagerTests: XCTestCase {
         XCTAssertTrue(snapshot.hasNonDefaultRouting)
     }
 
+    func testNoGroupDefaultsToNoOutputUntilAssigned() throws {
+        let container = try makeRoutingContainer()
+        let context = container.mainContext
+        OutputRoutingStore.setSelectedDevice(uid: "speakers", in: context)
+
+        XCTAssertEqual(
+            OutputRoutingStore.ungroupedRoute(deviceUID: "speakers", in: context),
+            .none
+        )
+
+        let snapshot = OutputRoutingStore.snapshot(in: context, channelCount: 2)
+        XCTAssertEqual(snapshot.ungroupedDestination, .none)
+        XCTAssertTrue(snapshot.hasNonDefaultRouting)
+    }
+
     func testEachDeviceRemembersItsOwnOutputRoutes() throws {
         let container = try makeRoutingContainer()
         let context = container.mainContext
@@ -255,7 +280,7 @@ final class OutputRoutingManagerTests: XCTestCase {
         )
         XCTAssertEqual(
             OutputRoutingStore.ungroupedRoute(deviceUID: "headphones", in: context),
-            .defaultDestination
+            .none
         )
 
         OutputRoutingStore.setSelectedDevice(uid: "speakers", in: context)
