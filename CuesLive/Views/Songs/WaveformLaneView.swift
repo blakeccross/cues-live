@@ -145,6 +145,7 @@ struct WaveformLaneView: View {
     @Binding var clipGaps: [ArrangementClipGap]
     @Binding var clipRegions: [ClipRegion]
     @Binding var clipSelection: TimelineClipSelection?
+    @Binding var selectedTrackID: UUID?
     let markers: [ArrangementMarker]
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
@@ -302,14 +303,30 @@ struct WaveformLaneView: View {
             Color.clear
                 .frame(width: timelineContentWidth, height: laneHeight)
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    clipSelection = nil
+                .onTapGesture(coordinateSpace: .local) { location in
+                    selectBlankSpace(atContentX: location.x)
                 }
 
             clipLayer
         }
         .frame(width: timelineContentWidth, height: laneHeight)
         .coordinateSpace(name: TimelineDragSpace.name)
+    }
+
+    /// Clicking blank track space clears the clip selection, marks this track as selected,
+    /// and (when stopped) moves the playhead there.
+    private func selectBlankSpace(atContentX x: CGFloat) {
+        clipSelection = nil
+        selectedTrackID = track.id
+
+        let time = MeasureTiming.snapToNearestBeat(
+            timelineTime(atContentX: x),
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        )
+        if !audioEngine.isPlaying {
+            onSeek(time)
+        }
     }
 
     private func timelineTime(atContentX x: CGFloat) -> TimeInterval {
@@ -470,6 +487,7 @@ struct WaveformLaneView: View {
         sourceTrimTrailing: Bool
     ) -> some View {
         let palette = TrackGroupPalette.colors(forPaletteKey: paletteKey)
+        let selectedHeaderColor = TrackGroupPalette.selectedHeaderColor(forPaletteKey: paletteKey)
         let selection = matchingClipSelection(for: clipID)
         let isSelected = selection != nil
         let isWholeSelected = selection?.isWholeClip == true
@@ -491,7 +509,7 @@ struct WaveformLaneView: View {
         return VStack(spacing: 0) {
             clipHeader(
                 title: title,
-                headerColor: palette.header,
+                headerColor: selectedHeaderColor,
                 isSelected: isSelected,
                 clipID: clipID,
                 slotID: slotID,
@@ -551,17 +569,24 @@ struct WaveformLaneView: View {
         }
         .background(palette.body, in: RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous))
         .overlay {
-            let borderWidth = isWholeSelected
-                ? TimelineLayout.clipSelectionBorderWidth
-                : TimelineLayout.clipBorderWidth
-            let borderColor = isWholeSelected
-                ? AppColors.accent
-                : palette.header.opacity(0.6)
-
-            RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
-                .stroke(borderColor, lineWidth: borderWidth)
-                .padding(-borderWidth)
-                .allowsHitTesting(false)
+            if isWholeSelected {
+                // Left, right, and bottom edges in the header's light color; the header itself
+                // is the top edge, so the border and header read as one frame.
+                RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
+                    .strokeBorder(selectedHeaderColor, lineWidth: TimelineLayout.clipSelectionBorderWidth)
+                    .mask {
+                        VStack(spacing: 0) {
+                            Color.clear.frame(height: TimelineLayout.clipHeaderHeight)
+                            Color.black
+                        }
+                    }
+                    .allowsHitTesting(false)
+            } else {
+                RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
+                    .stroke(palette.header.opacity(0.6), lineWidth: TimelineLayout.clipBorderWidth)
+                    .padding(-TimelineLayout.clipBorderWidth)
+                    .allowsHitTesting(false)
+            }
         }
         .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
         .padding(.vertical, TimelineLayout.clipLaneInset)
@@ -592,8 +617,9 @@ struct WaveformLaneView: View {
         sourceTrimLeading: Bool,
         sourceTrimTrailing: Bool
     ) -> some View {
+        // Dark text on the light selected header, like Logic; muted white on the plain header.
         let foregroundColor = isSelected
-            ? Color.white.opacity(0.92)
+            ? Color.black.opacity(0.72)
             : Color.white.opacity(0.65)
 
         return ZStack {

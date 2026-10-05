@@ -1862,6 +1862,7 @@ struct EditView: View {
                     clipGaps: $clipGaps,
                     clipRegions: $clipRegions,
                     clipSelection: $clipSelection,
+                    selectedTrackID: $selectedTrackID,
                     markers: markers,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
