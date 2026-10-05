@@ -125,6 +125,13 @@ enum TrackGroupPalette {
     }
 
     private static let headerDarkenFactor = 0.72
+    private static let selectedHeaderLightenAmount = 0.45
+
+    /// Header (and side/bottom border) color of a selected clip: the track color lightened, so a
+    /// selected clip reads as brighter than its neighbors whatever its palette.
+    static func selectedHeaderColor(forPaletteKey key: String?) -> Color {
+        bodyColor(forPaletteKey: key).lightened(sRGBToward: selectedHeaderLightenAmount)
+    }
 
     static func colors(for group: TrackGroup?) -> (header: Color, body: Color) {
         colors(forPaletteKey: group?.paletteKey)

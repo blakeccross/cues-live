@@ -637,8 +637,12 @@ final class TrackMemoryPlayer {
         renderContext.setPlaybackWindow(offset: offset, endTimeline: endTimeline)
     }
 
-    func consumePeakMeter(decay: Float = 0.55) -> Float {
-        renderContext.peakMeter.consume(decay: decay)
+    func consumePeakMeter() -> Float {
+        renderContext.peakMeter.consume()
+    }
+
+    func resetPeakMeter() {
+        renderContext.peakMeter.reset()
     }
 
     /// Pins the source audio under the loop start so the frames rendered right

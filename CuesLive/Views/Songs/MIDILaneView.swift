@@ -10,10 +10,6 @@ struct MIDITrackHeaderView: View {
     let onEditDevice: () -> Void
     let onDelete: () -> Void
 
-    private var trackColors: (header: Color, body: Color) {
-        TrackGroupPalette.colors(forPaletteKey: nil)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 6) {
@@ -77,15 +73,8 @@ struct MIDITrackHeaderView: View {
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
         .background {
             if isSelected {
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.dawTrackHeaderSelected)
-
-                    Rectangle()
-                        .fill(trackColors.header)
-                        .frame(width: 3)
-                        .padding(.vertical, 6)
-                }
+                Rectangle()
+                    .fill(Color.dawTrackHeaderSelected)
             }
         }
         .contentShape(Rectangle())
