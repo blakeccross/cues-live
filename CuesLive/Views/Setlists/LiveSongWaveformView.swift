@@ -276,7 +276,13 @@ struct LiveSongWaveformView: View {
             }
             .overlay(alignment: .topLeading) {
                 #if os(macOS)
-                if !usesTiledLane {
+                if usesTiledLane {
+                    // Labels stay live text. Painting them into the tiled layer
+                    // rasterizes them at 1× and they look soft on a Retina display.
+                    sectionMarkers(contentWidth: contentWidth, tile: 0...contentWidth)
+                        .frame(width: contentWidth, height: waveformHeight, alignment: .leading)
+                        .allowsHitTesting(false)
+                } else {
                     fullLaneDrawLayer
                 }
                 #else
@@ -385,7 +391,6 @@ struct LiveSongWaveformView: View {
             timelineDuration: safeTimelineDuration,
             peaks: cachedDisplayPeaks,
             sections: sections,
-            loopSlotIDs: loopSlotIDs,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: showsMeasureGrid,

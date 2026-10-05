@@ -11,7 +11,6 @@ struct LiveSongWaveformScrollBacking: NSViewRepresentable {
     var timelineDuration: TimeInterval
     var peaks: [Float]
     var sections: [ArrangementDisplaySection]
-    var loopSlotIDs: Set<UUID>
     var tempoChanges: [TempoChange]
     var timeSignatureChanges: [TimeSignatureChange]
     var showsMeasureGrid: Bool
@@ -50,7 +49,6 @@ struct LiveSongWaveformScrollBacking: NSViewRepresentable {
             timelineDuration: max(timelineDuration, 0.001),
             peaks: peaks,
             sections: sections,
-            loopSlotIDs: loopSlotIDs,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: showsMeasureGrid,
@@ -70,7 +68,6 @@ final class LiveSongWaveformScrollBackingView: NSView {
         var timelineDuration: TimeInterval = 1
         var peaks: [Float] = []
         var sections: [ArrangementDisplaySection] = []
-        var loopSlotIDs: Set<UUID> = []
         var tempoChanges: [TempoChange] = []
         var timeSignatureChanges: [TimeSignatureChange] = []
         var showsMeasureGrid = true
@@ -86,7 +83,6 @@ final class LiveSongWaveformScrollBackingView: NSView {
                 && timelineDuration == other.timelineDuration
                 && peaks == other.peaks
                 && sections == other.sections
-                && loopSlotIDs == other.loopSlotIDs
                 && tempoChanges == other.tempoChanges
                 && timeSignatureChanges == other.timeSignatureChanges
                 && showsMeasureGrid == other.showsMeasureGrid
@@ -175,7 +171,6 @@ final class LiveSongWaveformScrollBackingView: NSView {
             drawMeasureGrid(in: rect)
         }
         drawWaveformBars(in: rect)
-        drawSectionLabels(in: rect)
     }
 
     private func xPosition(for time: TimeInterval) -> CGFloat {
@@ -296,41 +291,6 @@ final class LiveSongWaveformScrollBackingView: NSView {
                 height: barHeight
             )
             NSBezierPath(roundedRect: barRect, xRadius: barWidth / 2, yRadius: barWidth / 2).fill()
-        }
-    }
-
-    private func drawSectionLabels(in rect: NSRect) {
-        guard !model.sections.isEmpty else { return }
-
-        for (index, section) in model.sections.enumerated() {
-            let startX = xPosition(for: section.timelineStartSeconds)
-            let endX = xPosition(for: section.timelineEndSeconds)
-            guard endX >= rect.minX, startX <= rect.maxX else { continue }
-
-            let palette = ArrangementSectionPalette.colors(for: index)
-            let title: String
-            if model.loopSlotIDs.contains(section.id) {
-                title = "↻ \(section.name.uppercased())"
-            } else {
-                title = section.name.uppercased()
-            }
-            let text = NSAttributedString(string: title, attributes: [
-                .font: NSFont.monospacedSystemFont(ofSize: 10, weight: .semibold),
-                .foregroundColor: NSColor(palette.accent),
-            ])
-            let textSize = text.size()
-            let labelOrigin = NSPoint(x: startX + 4, y: 4)
-            let background = NSRect(
-                x: labelOrigin.x,
-                y: labelOrigin.y,
-                width: textSize.width + 10,
-                height: textSize.height + 4
-            )
-            guard background.intersects(rect) else { continue }
-
-            NSColor(AppColors.surfaceElevated).withAlphaComponent(0.92).setFill()
-            NSBezierPath(roundedRect: background, xRadius: 4, yRadius: 4).fill()
-            text.draw(at: NSPoint(x: labelOrigin.x + 5, y: labelOrigin.y + 2))
         }
     }
 }
