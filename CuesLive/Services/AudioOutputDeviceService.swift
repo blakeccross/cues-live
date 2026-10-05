@@ -29,7 +29,9 @@ enum AudioOutputDeviceService {
     static func bindOutputDevice(uid: String, to engine: AVAudioEngine) -> Bool {
         #if os(macOS)
         guard let deviceID = deviceID(forUID: uid) else { return false }
-        engine.prepare()
+        // Do not call `engine.prepare()` here. With nothing connected to the output
+        // node it raises an NSException, and after a connection it can drop that
+        // connection and leave the engine running in silence.
 
         do {
             try engine.outputNode.auAudioUnit.setDeviceID(deviceID)

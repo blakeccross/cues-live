@@ -8,21 +8,16 @@ struct ManageOutputsView: View {
     var body: some View {
         AppSheetContainer {
             NavigationStack {
-                ScrollView {
-                    OutputRoutingSettingsForm(
-                        sections: .all,
-                        onRoutingChanged: onRoutingChanged
-                    )
-                    .padding(AppSpacing.lg)
-                }
-                .scrollContentBackground(.hidden)
+                OutputRoutingSettingsForm(
+                    sections: .all,
+                    onRoutingChanged: onRoutingChanged
+                )
                 .navigationTitle("Manage Outputs")
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") {
                             dismiss()
                         }
-                        .foregroundStyle(AppColors.accent)
                     }
                 }
             }

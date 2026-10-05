@@ -56,15 +56,13 @@ struct AppSettingsView: View {
     }
 
     private var audioPane: some View {
-        SettingsPaneScroll {
-            OutputRoutingSettingsForm(sections: .audio)
-        }
+        OutputRoutingSettingsForm(sections: .audio)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var timecodePane: some View {
-        SettingsPaneScroll {
-            OutputRoutingSettingsForm(sections: .timecodeOnly)
-        }
+        OutputRoutingSettingsForm(sections: .timecodeOnly)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var groupsPane: some View {

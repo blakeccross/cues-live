@@ -34,9 +34,7 @@ struct OutputRoutingSettingsForm: View {
     @State private var timecodeMode: TimecodeMode = .resetPerSong
     @State private var timecodeStartingHour = 1
     @State private var timecodeFrameRate: TimecodeFrameRate = .fps30
-
-    private let groupNameWidth: CGFloat = 92
-    private let destinationControlWidth: CGFloat = 108
+    @State private var outputTester = OutputChannelTestPlayer.shared
 
     private var stereoDestinations: [OutputDestination] {
         OutputRoutingStore.destinations(for: channelCount).stereo
@@ -47,7 +45,7 @@ struct OutputRoutingSettingsForm: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xl) {
+        Form {
             if sections.contains(.device) {
                 deviceSection
             }
@@ -57,187 +55,111 @@ struct OutputRoutingSettingsForm: View {
             if sections.contains(.timecode) {
                 timecodeSection
             }
-            if sections.contains(.footer) {
-                footerText
-            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .formStyle(.grouped)
         .onAppear(perform: loadState)
+        .onDisappear {
+            outputTester.stop()
+        }
     }
 
     private var deviceSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader(title: "Output Device")
-
+        Section {
             if devices.isEmpty {
                 Text("No output devices found.")
-                    .appCaptionText()
+                    .foregroundStyle(.secondary)
             } else {
-                Picker(selection: $selectedDeviceUID) {
+                Picker("Output Device", selection: $selectedDeviceUID) {
                     ForEach(devices) { device in
                         Text(device.name).tag(Optional(device.id))
                     }
-                } label: {
-                    EmptyView()
                 }
-                .labelsHidden()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(AppSpacing.sm)
-                .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
                 .onChange(of: selectedDeviceUID) { _, newValue in
                     applyDeviceSelection(newValue)
                 }
             }
-
-            Text("\(channelCount) output channels available")
-                .appCaptionText()
-
-            #if os(iOS)
-            Text("On iOS, connect a multi-channel USB interface for additional outputs. Device selection follows the current audio route.")
-                .font(.caption)
-                .foregroundStyle(AppColors.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-            #endif
-        }
-    }
-
-    private var groupOutputsSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader(title: "Group Outputs")
-
-            VStack(spacing: 0) {
-                ForEach(groups) { group in
-                    groupRouteRow(title: group.name, routeID: group.id)
-                    if group.id != groups.last?.id {
-                        Rectangle()
-                            .fill(AppColors.separator)
-                            .frame(height: 0.5)
-                            .padding(.leading, AppSpacing.sm)
-                    }
-                }
-
-                if !groups.isEmpty {
-                    Rectangle()
-                        .fill(AppColors.separator)
-                        .frame(height: 0.5)
-                        .padding(.leading, AppSpacing.sm)
-                }
-
-                groupRouteRow(title: "No Group", routeID: OutputRoutingStore.ungroupedRouteID)
-            }
-            .padding(.vertical, AppSpacing.xs)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        }
-    }
-
-    private var footerText: some View {
-        Text("Assign each track group to a stereo pair or mono output channel on the selected device. Route the Timecode group to a dedicated mono output for lighting or video gear.")
-            .font(.caption)
-            .foregroundStyle(AppColors.textTertiary)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var timecodeSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            AppSectionHeader(title: "Timecode (LTC)")
-
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Toggle("Enable LTC", isOn: $timecodeEnabled)
-                    .tint(AppColors.accent)
-                    .onChange(of: timecodeEnabled) { _, _ in
-                        persistTimecodeSettings()
-                    }
-
-                if timecodeEnabled {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("Mode")
-                            .font(.caption)
-                            .foregroundStyle(AppColors.textTertiary)
-
-                        #if os(macOS)
-                        Picker("Timecode Mode", selection: $timecodeMode) {
-                            ForEach(TimecodeMode.allCases) { mode in
-                                Text(mode.displayName).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.radioGroup)
-                        .labelsHidden()
-                        .onChange(of: timecodeMode) { _, _ in
-                            persistTimecodeSettings()
-                        }
-                        #else
-                        Picker("Timecode Mode", selection: $timecodeMode) {
-                            ForEach(TimecodeMode.allCases) { mode in
-                                Text(mode.displayName).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                        .labelsHidden()
-                        .onChange(of: timecodeMode) { _, _ in
-                            persistTimecodeSettings()
-                        }
-                        #endif
-                    }
-
-                    HStack {
-                        Text("Starting hour")
-                            .foregroundStyle(AppColors.textPrimary)
-                        Spacer()
-                        Stepper(
-                            value: $timecodeStartingHour,
-                            in: 0...23
-                        ) {
-                            Text(String(format: "%02d", timecodeStartingHour))
-                                .monospacedDigit()
-                                .foregroundStyle(AppColors.textPrimary)
-                        }
-                        .onChange(of: timecodeStartingHour) { _, _ in
-                            persistTimecodeSettings()
-                        }
-                    }
-
-                    HStack {
-                        Text("Frame rate")
-                            .foregroundStyle(AppColors.textPrimary)
-                        Spacer()
-                        Picker("Frame rate", selection: $timecodeFrameRate) {
-                            ForEach(TimecodeFrameRate.allCases) { rate in
-                                Text(rate.displayName).tag(rate)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 140, alignment: .trailing)
-                        .onChange(of: timecodeFrameRate) { _, _ in
-                            persistTimecodeSettings()
-                        }
-                    }
-                }
-            }
-            .padding(AppSpacing.sm)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        } footer: {
+            deviceFooter
         }
     }
 
     @ViewBuilder
-    private func groupRouteRow(title: String, routeID: UUID) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Text(title)
-                .foregroundStyle(AppColors.textPrimary)
-                .lineLimit(1)
-                .frame(width: groupNameWidth, alignment: .leading)
-
-            Spacer(minLength: 0)
-
-            destinationMenu(
-                selection: binding(for: routeID),
-                label: destinationLabel(for: routeID)
-            )
-            .frame(width: destinationControlWidth, alignment: .trailing)
+    private var deviceFooter: some View {
+        if !devices.isEmpty {
+            Text("\(channelCount) output channels available.")
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        .frame(minHeight: AppSpacing.rowMinHeight)
+        #if os(iOS)
+        Text("On iOS, connect a multi-channel USB interface for additional outputs. Device selection follows the current audio route.")
+        #endif
+    }
+
+    private var groupOutputsSection: some View {
+        Section {
+            ForEach(groups) { group in
+                groupRouteRow(title: group.name, routeID: group.id)
+            }
+            groupRouteRow(title: "No Group", routeID: OutputRoutingStore.ungroupedRouteID)
+        } header: {
+            Text("Group Outputs")
+        } footer: {
+            if sections.contains(.footer) {
+                Text("Assign each track group to a stereo pair or mono output channel on the selected device. Route the Timecode group to a dedicated mono output for lighting or video gear.")
+            }
+        }
+    }
+
+    private var timecodeSection: some View {
+        Section {
+            Toggle("Enable LTC", isOn: $timecodeEnabled)
+                .onChange(of: timecodeEnabled) { _, _ in
+                    persistTimecodeSettings()
+                }
+
+            if timecodeEnabled {
+                Picker("Mode", selection: $timecodeMode) {
+                    ForEach(TimecodeMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                #if os(macOS)
+                .pickerStyle(.radioGroup)
+                #endif
+                .onChange(of: timecodeMode) { _, _ in
+                    persistTimecodeSettings()
+                }
+
+                LabeledContent("Starting Hour") {
+                    Stepper(value: $timecodeStartingHour, in: 0...23) {
+                        Text(String(format: "%02d", timecodeStartingHour))
+                            .monospacedDigit()
+                    }
+                    .fixedSize()
+                }
+                .onChange(of: timecodeStartingHour) { _, _ in
+                    persistTimecodeSettings()
+                }
+
+                Picker("Frame Rate", selection: $timecodeFrameRate) {
+                    ForEach(TimecodeFrameRate.allCases) { rate in
+                        Text(rate.displayName).tag(rate)
+                    }
+                }
+                .onChange(of: timecodeFrameRate) { _, _ in
+                    persistTimecodeSettings()
+                }
+            }
+        } header: {
+            Text("Timecode")
+        }
+    }
+
+    private func groupRouteRow(title: String, routeID: UUID) -> some View {
+        LabeledContent(title) {
+            HStack(spacing: 8) {
+                destinationPicker(selection: binding(for: routeID), title: title)
+                outputTestButton(routeID: routeID)
+            }
+        }
     }
 
     private func binding(for routeID: UUID) -> Binding<OutputDestination> {
@@ -254,69 +176,72 @@ struct OutputRoutingSettingsForm: View {
                 } else {
                     groupDestinations[routeID] = newValue
                 }
-                OutputRoutingStore.setRoute(newValue, for: routeID, in: modelContext)
+                OutputRoutingStore.setRoute(
+                    newValue,
+                    for: routeID,
+                    deviceUID: selectedDeviceUID,
+                    in: modelContext
+                )
                 scheduleRoutingChange()
+                if outputTester.isTesting(routeID) {
+                    outputTester.start(
+                        routeID: routeID,
+                        destination: newValue,
+                        deviceUID: selectedDeviceUID,
+                        channelCount: channelCount
+                    )
+                }
             }
         )
     }
 
-    private func destinationLabel(for routeID: UUID) -> String {
+    private func destination(for routeID: UUID) -> OutputDestination {
         if routeID == OutputRoutingStore.ungroupedRouteID {
-            return ungroupedDestination.displayLabel
+            return ungroupedDestination
         }
-        return (groupDestinations[routeID] ?? .defaultDestination).displayLabel
+        return groupDestinations[routeID] ?? .defaultDestination
     }
 
-    private func destinationMenu(
+    private func outputTestButton(routeID: UUID) -> some View {
+        let isTesting = outputTester.isTesting(routeID)
+        return Button(isTesting ? "Stop" : "Test") {
+            if isTesting {
+                outputTester.stop()
+            } else {
+                outputTester.start(
+                    routeID: routeID,
+                    destination: destination(for: routeID),
+                    deviceUID: selectedDeviceUID,
+                    channelCount: channelCount
+                )
+            }
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .fixedSize()
+        .accessibilityLabel(isTesting ? "Stop output test" : "Test output")
+        .help(isTesting ? "Stop the output test" : "Play this output's name until you stop it")
+    }
+
+    private func destinationPicker(
         selection: Binding<OutputDestination>,
-        label: String
+        title: String
     ) -> some View {
-        Menu {
+        Picker("Destination", selection: selection) {
             Section("Stereo") {
                 ForEach(stereoDestinations) { destination in
-                    Button {
-                        selection.wrappedValue = destination
-                    } label: {
-                        if selection.wrappedValue == destination {
-                            Label(destination.displayLabel, systemImage: "checkmark")
-                        } else {
-                            Text(destination.displayLabel)
-                        }
-                    }
+                    Text(destination.displayLabel).tag(destination)
                 }
             }
-
             Section("Mono") {
                 ForEach(monoDestinations) { destination in
-                    Button {
-                        selection.wrappedValue = destination
-                    } label: {
-                        if selection.wrappedValue == destination {
-                            Label(destination.displayLabel, systemImage: "checkmark")
-                        } else {
-                            Text(destination.displayLabel)
-                        }
-                    }
+                    Text(destination.displayLabel).tag(destination)
                 }
             }
-        } label: {
-            HStack(spacing: AppSpacing.xs) {
-                Text(label)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(AppColors.textTertiary)
-            }
-            .font(.callout)
-            .foregroundStyle(AppColors.textPrimary)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, 5)
-            .frame(maxWidth: .infinity)
-            .background(AppColors.surfaceElevated, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize(horizontal: false, vertical: true)
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel("Destination for \(title)")
     }
 
     private func loadState() {
@@ -331,6 +256,7 @@ struct OutputRoutingSettingsForm: View {
         if let uid = config.selectedDeviceUID, devices.contains(where: { $0.id == uid }) {
             selectedDeviceUID = uid
             channelCount = AudioOutputDeviceService.channelCount(for: uid)
+            OutputRoutingStore.setSelectedDevice(uid: uid, in: modelContext)
         } else if let first = devices.first {
             selectedDeviceUID = first.id
             channelCount = first.channelCount
@@ -340,12 +266,7 @@ struct OutputRoutingSettingsForm: View {
             channelCount = AudioOutputDeviceService.currentSystemChannelCount()
         }
 
-        var loaded: [UUID: OutputDestination] = [:]
-        for group in groups {
-            loaded[group.id] = OutputRoutingStore.route(for: group.id, in: modelContext)
-        }
-        groupDestinations = loaded
-        ungroupedDestination = OutputRoutingStore.ungroupedRoute(in: modelContext)
+        reloadDestinations()
 
         let timecode = TimecodeSettingsStore.settings(in: modelContext)
         timecodeEnabled = timecode.isEnabled
@@ -365,12 +286,30 @@ struct OutputRoutingSettingsForm: View {
     }
 
     private func applyDeviceSelection(_ uid: String?) {
+        outputTester.stop()
         OutputRoutingStore.setSelectedDevice(uid: uid, in: modelContext)
         channelCount = AudioOutputDeviceService.channelCount(for: uid)
+        reloadDestinations()
 
         scheduleRoutingChange {
             AudioEngineManager.shared.selectOutputDevice(uid: uid)
         }
+    }
+
+    private func reloadDestinations() {
+        var loaded: [UUID: OutputDestination] = [:]
+        for group in groups {
+            loaded[group.id] = OutputRoutingStore.route(
+                for: group.id,
+                deviceUID: selectedDeviceUID,
+                in: modelContext
+            )
+        }
+        groupDestinations = loaded
+        ungroupedDestination = OutputRoutingStore.ungroupedRoute(
+            deviceUID: selectedDeviceUID,
+            in: modelContext
+        )
     }
 
     private func scheduleRoutingChange(_ preparation: (() -> Void)? = nil) {
