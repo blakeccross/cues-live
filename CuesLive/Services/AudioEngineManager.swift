@@ -416,6 +416,7 @@ final class AudioEngineManager {
         stopTimer()
         midiScheduler.stop()
         setStreamingReadersActive(false)
+        silenceMeters()
         stopEngineForGraphChanges()
         invalidateAllPlayers()
         detachAllTracks()
@@ -784,19 +785,46 @@ final class AudioEngineManager {
         applyGroupMix(groupMixSnapshot.replacingVolume(groupID: groupID, volume: volume))
     }
 
-    func refreshGroupMeters(decay: Float = 0.55) {
+    func refreshGroupMeters() {
         var groupLevels: [UUID: Float] = [:]
         var trackLevels: [UUID: Float] = [:]
 
         for track in tracks.values {
-            let peak = track.memoryPlayer.consumePeakMeter(decay: decay)
+            let peak = track.memoryPlayer.consumePeakMeter()
+            guard peak > 0.001 else { continue }
             trackLevels[track.trackID] = peak
             let groupKey = track.groupID ?? OutputRoutingStore.ungroupedRouteID
             groupLevels[groupKey] = max(groupLevels[groupKey] ?? 0, peak)
         }
 
+        if trackLevels.isEmpty, groupLevels.isEmpty {
+            guard !trackMeterLevels.isEmpty || !groupMeterLevels.isEmpty else { return }
+            trackMeterLevels = [:]
+            groupMeterLevels = [:]
+            return
+        }
+
         groupMeterLevels = groupLevels
         trackMeterLevels = trackLevels
+    }
+
+    /// True while any meter still has a level worth drawing. The UI keeps
+    /// refreshing after playback stops until this is false, so the release
+    /// can finish instead of freezing the last peak.
+    var hasVisibleMeterLevel: Bool {
+        !trackMeterLevels.isEmpty || !groupMeterLevels.isEmpty
+    }
+
+    private func silenceMeters() {
+        for track in tracks.values {
+            track.memoryPlayer.resetPeakMeter()
+        }
+        for track in overlapTracks.values {
+            track.memoryPlayer.resetPeakMeter()
+        }
+        guard !trackMeterLevels.isEmpty || !groupMeterLevels.isEmpty else { return }
+        trackMeterLevels = [:]
+        groupMeterLevels = [:]
     }
 
     func trackMeterLevel(for trackID: UUID) -> Float {

@@ -66,15 +66,8 @@ struct TrackLaneHeaderView: View {
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
         .background {
             if isSelected {
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.dawTrackHeaderSelected)
-
-                    Rectangle()
-                        .fill(trackColors.header)
-                        .frame(width: 3)
-                        .padding(.vertical, 6)
-                }
+                Rectangle()
+                    .fill(Color.dawTrackHeaderSelected)
             }
         }
         .contentShape(Rectangle())
