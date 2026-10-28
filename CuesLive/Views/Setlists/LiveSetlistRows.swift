@@ -374,6 +374,37 @@ struct LiveSetlistEntryDropDelegate<ID: Hashable>: DropDelegate {
     }
 }
 
+/// Shared Finder-drop parsing for song-folder imports (setlist and song library).
+enum SongFolderDrop {
+    /// Resolves dropped file providers to the URLs of the directories among them.
+    static func folderURLs(from providers: [NSItemProvider]) async -> [URL] {
+        var folderURLs: [URL] = []
+        for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            guard let url = await loadFileURL(from: provider) else { continue }
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
+                folderURLs.append(url)
+            }
+        }
+        return folderURLs
+    }
+
+    private static func loadFileURL(from provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                switch item {
+                case let url as URL:
+                    continuation.resume(returning: url)
+                case let data as Data:
+                    continuation.resume(returning: URL(dataRepresentation: data, relativeTo: nil))
+                default:
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+}
+
 /// Accepts a Finder folder drag anywhere over the setlist. Used on its own only
 /// where nothing else competes for the drop (the setlist container's blank-space
 /// fallback); rows use `LiveSetlistRowDropDelegate` instead — see its note.

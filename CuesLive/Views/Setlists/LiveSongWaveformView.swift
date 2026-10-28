@@ -24,7 +24,13 @@ enum ArrangementSectionPalette {
 
 enum LiveSetlistWaveformMetrics {
     static let appStorageKey = "liveSetlistWaveformHeight"
+    #if os(iOS)
+    /// iOS has no resizable split above the setlist, so the height is fixed: a little taller on
+    /// iPad, where there's room for it.
+    static let defaultWaveformHeight: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? 132 : 96
+    #else
     static let defaultWaveformHeight: CGFloat = 96
+    #endif
     static let defaultWaveformHeightStorageValue = Double(defaultWaveformHeight)
     static let minimumWaveformHeight: CGFloat = 56
     static let maximumWaveformHeight: CGFloat = 200
@@ -1110,7 +1116,15 @@ struct LiveSetlistWaveformScrollView: View {
                 }
             }
         }
+        #if os(macOS)
         .simultaneousGesture(horizontalPinchGesture)
+        #else
+        .modifier(LiveSetlistTouchPinchModifier(
+            fallbackGesture: horizontalPinchGesture,
+            onChanged: pinchChanged,
+            onEnded: pinchEnded
+        ))
+        #endif
         .background {
             GeometryReader { geometry in
                 Color.clear
@@ -1202,21 +1216,25 @@ struct LiveSetlistWaveformScrollView: View {
 
     private var horizontalPinchGesture: some Gesture {
         MagnificationGesture()
-            .onChanged { scale in
-                if pinchStartZoom == nil {
-                    pinchStartZoom = horizontalZoom
-                }
-                guard let pinchStartZoom else { return }
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
-                    horizontalZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
-                }
-            }
-            .onEnded { _ in
-                pinchStartZoom = nil
-                persistHorizontalZoom()
-            }
+            .onChanged(pinchChanged)
+            .onEnded { _ in pinchEnded() }
+    }
+
+    private func pinchChanged(_ scale: CGFloat) {
+        if pinchStartZoom == nil {
+            pinchStartZoom = horizontalZoom
+        }
+        guard let pinchStartZoom else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            horizontalZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
+        }
+    }
+
+    private func pinchEnded() {
+        pinchStartZoom = nil
+        persistHorizontalZoom()
     }
 
     private func setHorizontalZoom(_ proposed: CGFloat) {
@@ -1502,3 +1520,60 @@ struct WaveformSeekGestureModifier: ViewModifier {
         return nil
     }
 }
+
+#if os(iOS)
+/// Pinch-to-zoom on the live waveform for touch screens. A SwiftUI pinch attached around the
+/// horizontal ScrollView loses two-finger touches to the scroll view's own pan recognizer, so on
+/// iOS 18+ a UIKit pinch recognizer runs alongside scrolling instead. iOS 17 keeps the SwiftUI
+/// gesture.
+private struct LiveSetlistTouchPinchModifier<Fallback: Gesture>: ViewModifier {
+    let fallbackGesture: Fallback
+    let onChanged: (CGFloat) -> Void
+    let onEnded: () -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.gesture(LiveSetlistPinchRecognizer(onChanged: onChanged, onEnded: onEnded))
+        } else {
+            content.simultaneousGesture(fallbackGesture)
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct LiveSetlistPinchRecognizer: UIGestureRecognizerRepresentable {
+    let onChanged: (CGFloat) -> Void
+    let onEnded: () -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UIPinchGestureRecognizer {
+        let recognizer = UIPinchGestureRecognizer()
+        recognizer.delegate = context.coordinator
+        return recognizer
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UIPinchGestureRecognizer, context: Context) {
+        switch recognizer.state {
+        case .began, .changed:
+            onChanged(recognizer.scale)
+        case .ended, .cancelled, .failed:
+            onEnded()
+        default:
+            break
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        // Let pinch run alongside the scroll view's pan and the lanes' tap and drag gestures.
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
+    }
+}
+#endif

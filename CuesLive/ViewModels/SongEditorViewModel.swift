@@ -17,6 +17,8 @@ final class SongEditorViewModel {
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var modelContext: ModelContext?
+    /// Set once the editor has applied show routing, so a later reload keeps it.
+    private var monitorsOutputRouting = false
 
     init(song: Song) {
         self.song = song
@@ -177,7 +179,7 @@ final class SongEditorViewModel {
             do {
                 var payloads = prepared
                 try appendTimecodePayloadIfNeeded(to: &payloads)
-                try audioEngine.loadPreparedTracks(payloads)
+                try audioEngine.loadPreparedTracks(payloads, routing: editorRoutingSnapshot())
                 isLoaded = true
                 loadError = nil
                 syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
@@ -263,7 +265,42 @@ final class SongEditorViewModel {
 
     func updateGroup(for track: AudioTrack, context: ModelContext) {
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
+        refreshTrackOutputGroups()
         try? context.save()
+    }
+
+    func applyOutputRoutingChange() {
+        guard let routing = currentRoutingSnapshot() else { return }
+        monitorsOutputRouting = true
+        guard isLoaded else { return }
+        pushTrackGroupsToEngine()
+        audioEngine.applyOutputRoutingKeepingTracks(routing)
+    }
+
+    /// Pushes group assignments into the loaded players and rewires when show routing is active.
+    func refreshTrackOutputGroups() {
+        pushTrackGroupsToEngine()
+        audioEngine.reapplyOutputRoutingIfNeeded()
+    }
+
+    private func pushTrackGroupsToEngine() {
+        for track in song.sortedTracks {
+            audioEngine.updateTrackGroup(id: track.id, groupID: track.group?.id)
+        }
+    }
+
+    /// `nil` until the editor has applied an output change, so opening a song still
+    /// monitors through the master mixer.
+    private func editorRoutingSnapshot() -> OutputRoutingSnapshot? {
+        guard monitorsOutputRouting else { return nil }
+        return currentRoutingSnapshot()
+    }
+
+    private func currentRoutingSnapshot() -> OutputRoutingSnapshot? {
+        guard let modelContext else { return nil }
+        let deviceUID = OutputRoutingStore.config(in: modelContext).selectedDeviceUID
+        let channelCount = AudioOutputDeviceService.channelCount(for: deviceUID)
+        return OutputRoutingStore.snapshot(in: modelContext, channelCount: channelCount)
     }
 
     @discardableResult
@@ -274,6 +311,7 @@ final class SongEditorViewModel {
             in: context
         )
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
+        refreshTrackOutputGroups()
         return assignedCount
     }
 

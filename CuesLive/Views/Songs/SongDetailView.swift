@@ -264,6 +264,9 @@ struct SongDetailView: View {
             canAutoGroup: !activeSong.sortedTracks.isEmpty,
             autoGroup: {
                 TrackGroupStore.autoAssignGroups(for: activeSong, in: modelContext)
+                if viewModel?.song.id == activeSong.id {
+                    viewModel?.refreshTrackOutputGroups()
+                }
             },
             importAbleton: {
                 showingAbletonImporter = true
@@ -403,29 +406,46 @@ struct SongDetailView: View {
             onDismiss: {
                 showingSongLibrary = false
             },
-            onFolderSelected: { folderURL in
-                importSong(from: folderURL)
+            onFoldersSelected: { folderURLs in
+                importSongs(from: folderURLs)
             },
             onAddToSetlist: { _ in },
             isImportInProgress: isImportingSongFolder
         )
     }
 
-    private func importSong(from folderURL: URL) {
-        guard !isImportingSongFolder else { return }
+    private func importSongs(from folderURLs: [URL]) {
+        guard !isImportingSongFolder, !folderURLs.isEmpty else { return }
 
         isImportingSongFolder = true
         Task { @MainActor in
             defer { isImportingSongFolder = false }
 
-            do {
-                let importResult = try SongFolderImporter.importFromFolder(
-                    at: folderURL,
-                    context: modelContext
-                )
-                songImportFeedback = .success(SongFolderImporter.summaryMessage(for: importResult))
-            } catch {
-                songImportFeedback = .failure(error.localizedDescription)
+            var summaries: [String] = []
+            var failureMessages: [String] = []
+
+            for folderURL in folderURLs {
+                do {
+                    let importResult = try SongFolderImporter.importFromFolder(
+                        at: folderURL,
+                        context: modelContext
+                    )
+                    summaries.append(SongFolderImporter.summaryMessage(for: importResult))
+                } catch {
+                    failureMessages.append(
+                        folderURLs.count == 1
+                            ? error.localizedDescription
+                            : "\(folderURL.lastPathComponent): \(error.localizedDescription)"
+                    )
+                }
+            }
+
+            if !failureMessages.isEmpty {
+                songImportFeedback = .failure(failureMessages.joined(separator: "\n"))
+            } else if summaries.count == 1 {
+                songImportFeedback = .success(summaries[0])
+            } else {
+                songImportFeedback = .success("Imported \(summaries.count) songs.")
             }
         }
     }

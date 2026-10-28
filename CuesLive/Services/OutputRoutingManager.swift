@@ -18,19 +18,17 @@ enum OutputRoutingManager {
         outputChannelCount: Int
     ) -> Bool {
         let channelCount = max(outputChannelCount, 2)
-
-        guard let multiChannelFormat = AudioOutputDeviceService.multiChannelFormat(
-            sampleRate: DecodedStemBuffer.engineSampleRate,
-            channelCount: channelCount
-        ) else {
+        guard !tracks.isEmpty,
+              let multiChannelFormat = AudioOutputDeviceService.multiChannelFormat(
+                sampleRate: DecodedStemBuffer.engineSampleRate,
+                channelCount: channelCount
+              ) else {
             return false
         }
 
         engine.disconnectNodeOutput(engine.mainMixerNode)
         engine.connect(engine.mainMixerNode, to: engine.outputNode, format: multiChannelFormat)
 
-        var connectedTracks = 0
-        var silencedTracks = 0
         for track in tracks {
             let sourceChannels = max(1, Int(track.format.channelCount))
             let map = channelMap(
@@ -38,24 +36,18 @@ enum OutputRoutingManager {
                 outputChannelCount: channelCount,
                 sourceChannelCount: sourceChannels
             )
-            guard map.contains(where: { $0.intValue >= 0 }) else {
-                silencedTracks += 1
-                continue
-            }
 
             engine.disconnectNodeOutput(track.node)
             track.node.auAudioUnit.channelMap = nil
             // Connection format must match map length (device channel count).
             // Source/render format stays whatever the node was created with;
             // unused mapped inputs are never referenced for mono stems.
+            // A fully silent map (No Output) stays connected so the node still renders.
             engine.connect(track.node, to: engine.mainMixerNode, format: multiChannelFormat)
             track.node.auAudioUnit.channelMap = map
-            connectedTracks += 1
         }
 
-        // A group set to No Output stays disconnected. Falling back to the master
-        // mixer would play it on the default stereo pair.
-        return connectedTracks > 0 || silencedTracks > 0
+        return true
     }
 
     static func channelMap(

@@ -264,7 +264,7 @@ struct LivePlaybackView: View {
         #if os(iOS)
         .sheet(isPresented: $showingManageOutputs) {
             DeviceSettingsSheet(onRoutingChanged: {
-                coordinator.applyOutputRouting()
+                applyOutputRoutingIfNotEditing()
             })
         }
         .sheet(isPresented: $showingSongLibrary) {
@@ -287,7 +287,7 @@ struct LivePlaybackView: View {
     ) -> some View {
         content
             .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
-                coordinator.applyOutputRouting()
+                applyOutputRoutingIfNotEditing()
             }
             .modifier(LiveRemoteHostSyncModifier(
                 setlist: setlist,
@@ -517,8 +517,8 @@ struct LivePlaybackView: View {
             onDismiss: {
                 showingSongLibrary = false
             },
-            onFolderSelected: { folderURL in
-                importSong(from: folderURL)
+            onFoldersSelected: { folderURLs in
+                importSongs(from: folderURLs)
             },
             onAddToSetlist: { song in
                 addSong(song, at: workingSetlist.sortedEntries.count)
@@ -569,21 +569,41 @@ struct LivePlaybackView: View {
         )
     }
 
-    private func importSong(from folderURL: URL) {
-        guard !isImportingSongFolder else { return }
+    private func importSongs(from folderURLs: [URL]) {
+        guard !isImportingSongFolder, !folderURLs.isEmpty else { return }
 
         isImportingSongFolder = true
         Task { @MainActor in
             defer { isImportingSongFolder = false }
 
-            do {
-                let importResult = try SongFolderImporter.importFromFolder(
-                    at: folderURL,
-                    context: modelContext
-                )
-                songImportFeedback = .success(SongFolderImporter.summaryMessage(for: importResult))
-            } catch {
-                songImportFeedback = .failure(error.localizedDescription)
+            var importedSongs: [Song] = []
+            var summaries: [String] = []
+            var failureMessages: [String] = []
+
+            for folderURL in folderURLs {
+                do {
+                    let importResult = try SongFolderImporter.importFromFolder(
+                        at: folderURL,
+                        context: modelContext
+                    )
+                    importedSongs.append(importResult.song)
+                    summaries.append(SongFolderImporter.summaryMessage(for: importResult))
+                } catch {
+                    failureMessages.append(
+                        folderURLs.count == 1
+                            ? error.localizedDescription
+                            : "\(folderURL.lastPathComponent): \(error.localizedDescription)"
+                    )
+                }
+            }
+
+            if !failureMessages.isEmpty {
+                songImportFeedback = .failure(failureMessages.joined(separator: "\n"))
+            } else if let song = importedSongs.first, importedSongs.count == 1 {
+                // One new song: open it in the editor to get it ready, rather than confirming in an alert.
+                presentSongEditor(for: song)
+            } else {
+                songImportFeedback = .success("Imported \(summaries.count) songs.")
             }
         }
     }
@@ -615,15 +635,7 @@ struct LivePlaybackView: View {
         guard !fileProviders.isEmpty, !isImportingSongFolder else { return false }
 
         Task { @MainActor in
-            var folderURLs: [URL] = []
-            for provider in fileProviders {
-                guard let url = await Self.loadFileURL(from: provider) else { continue }
-                var isDirectory: ObjCBool = false
-                if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                    folderURLs.append(url)
-                }
-            }
-
+            let folderURLs = await SongFolderDrop.folderURLs(from: fileProviders)
             guard !folderURLs.isEmpty else {
                 songImportFeedback = .failure("Drop a folder containing audio files to add a song.")
                 return
@@ -632,21 +644,6 @@ struct LivePlaybackView: View {
             importSongsFromDroppedFolders(folderURLs)
         }
         return true
-    }
-
-    private static func loadFileURL(from provider: NSItemProvider) async -> URL? {
-        await withCheckedContinuation { continuation in
-            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                switch item {
-                case let url as URL:
-                    continuation.resume(returning: url)
-                case let data as Data:
-                    continuation.resume(returning: URL(dataRepresentation: data, relativeTo: nil))
-                default:
-                    continuation.resume(returning: nil)
-                }
-            }
-        }
     }
 
     private func importSongsFromDroppedFolders(_ folderURLs: [URL]) {
@@ -930,6 +927,12 @@ struct LivePlaybackView: View {
         guard songToEditID == nil else { return }
         coordinator.bindPlaybackHandlers()
         coordinator.loadCurrentSong()
+    }
+
+    /// The song editor owns the shared engine while it is open.
+    private func applyOutputRoutingIfNotEditing() {
+        guard songToEditID == nil else { return }
+        coordinator.applyOutputRouting()
     }
 
     private func setlistDisplayName(for setlist: Setlist) -> String {
@@ -1499,6 +1502,10 @@ struct LivePlaybackView: View {
         .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: entry.id))
         #endif
         #if os(iOS)
+        // mappableLiveControl wraps the row in a ZStack, which hides the row background set by
+        // liveSetlistSongRowChrome from the List. iOS then fills the row with its black edit-mode
+        // background; restate the live view's background here so rows match macOS.
+        .listRowBackground(AppColors.backgroundPrimary)
         .deleteDisabled(true)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button("Remove", role: .destructive) {

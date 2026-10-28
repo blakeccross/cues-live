@@ -15,7 +15,8 @@ struct DocsWindowView: View {
     }
 
     private var docsSidebar: some View {
-        List(selection: $selectedTopic) {
+        // iOS only offers List selection through an optional binding.
+        List(selection: Binding<DocsTopic?>(get: { selectedTopic }, set: { if let topic = $0 { selectedTopic = topic } })) {
             ForEach(DocsSection.allCases) { section in
                 let topics = DocsTopic.visibleTopics(in: section)
                 if !topics.isEmpty {

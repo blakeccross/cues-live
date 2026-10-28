@@ -18,7 +18,7 @@ struct SongLibraryPanel: View {
 
     var onEdit: (Song) -> Void
     var onDismiss: () -> Void
-    var onFolderSelected: (URL) -> Void
+    var onFoldersSelected: ([URL]) -> Void
     var onAddToSetlist: (Song) -> Void
     var isImportInProgress = false
 
@@ -31,7 +31,9 @@ struct SongLibraryPanel: View {
     @State private var songPendingDelete: Song?
     @State private var createSongError: String?
     @State private var songActionError: String?
-    #if !os(macOS)
+    #if os(macOS)
+    @State private var isTargetedForFolderDrop = false
+    #else
     @State private var showingFolderImporter = false
     #endif
     @State private var consolidateSummary: String?
@@ -74,6 +76,21 @@ struct SongLibraryPanel: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(AppColors.backgroundSecondary)
+        #if os(macOS)
+        .overlay {
+            if isTargetedForFolderDrop {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(AppColors.accent, lineWidth: 2)
+                    .padding(AppSpacing.xs)
+                    .allowsHitTesting(false)
+            }
+        }
+        .onDrop(of: [.fileURL], delegate: LiveSetlistSongFolderDropDelegate(
+            onHover: { isTargetedForFolderDrop = !isImportInProgress },
+            onExit: { isTargetedForFolderDrop = false },
+            onPerform: performFolderDrop
+        ))
+        #endif
         #if os(iOS)
         .navigationTitle("Songs")
         .navigationBarTitleDisplayMode(.inline)
@@ -519,7 +536,7 @@ struct SongLibraryPanel: View {
             panel.prompt = "Import"
             panel.message = "Choose a song folder with stems (and an optional Ableton Live Set)."
             guard panel.runModal() == .OK, let folderURL = panel.url else { return }
-            onFolderSelected(folderURL)
+            onFoldersSelected([folderURL])
         }
         #else
         showingFolderImporter = true
@@ -533,8 +550,26 @@ struct SongLibraryPanel: View {
             songActionError = error.localizedDescription
         case .success(let urls):
             guard let folderURL = urls.first else { return }
-            onFolderSelected(folderURL)
+            onFoldersSelected([folderURL])
         }
+    }
+    #endif
+
+    #if os(macOS)
+    /// Handles a Finder drag dropped onto the library: each dropped folder is imported as a new song.
+    private func performFolderDrop(_ providers: [NSItemProvider]) -> Bool {
+        isTargetedForFolderDrop = false
+        guard !providers.isEmpty, !isImportInProgress else { return false }
+
+        Task { @MainActor in
+            let folderURLs = await SongFolderDrop.folderURLs(from: providers)
+            guard !folderURLs.isEmpty else {
+                songActionError = "Drop a folder containing audio files to add a song."
+                return
+            }
+            onFoldersSelected(folderURLs)
+        }
+        return true
     }
     #endif
 
@@ -774,7 +809,7 @@ private struct AddClickSongSheet: View {
     SongLibraryPanel(
         onEdit: { _ in },
         onDismiss: {},
-        onFolderSelected: { _ in },
+        onFoldersSelected: { _ in },
         onAddToSetlist: { _ in }
     )
         .frame(width: 300, height: 600)

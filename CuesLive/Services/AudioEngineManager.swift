@@ -32,7 +32,7 @@ final class AudioEngineManager {
         let timePitchNode: AVAudioUnitTimePitch
         var settings: TrackSettings
         let fileDuration: TimeInterval
-        let groupID: UUID?
+        var groupID: UUID?
         let sourceFormat: AVAudioFormat
 
         var playbackOutputNode: AVAudioNode {
@@ -376,7 +376,12 @@ final class AudioEngineManager {
 
     func pause() {
         guard isPlaying else { return }
-        let timeline = livePlayheadTime()
+        pause(at: livePlayheadTime())
+    }
+
+    /// Pauses at an already-known playhead. Use this after the hardware has been
+    /// stopped: sampling host time then falls back to the transport anchor.
+    private func pause(at timeline: TimeInterval) {
         transport.pause(capturingTimeline: timeline)
         isPlaying = false
         stopTimer()
@@ -779,6 +784,44 @@ final class AudioEngineManager {
     func applyGroupMix(_ snapshot: GroupMixSnapshot) {
         groupMixSnapshot = snapshot
         applyAllMixSettings()
+    }
+
+    func updateTrackGroup(id: UUID, groupID: UUID?) {
+        guard var track = tracks[id] else { return }
+        track.groupID = groupID
+        tracks[id] = track
+    }
+
+    /// Rewires the loaded tracks onto `routing` without replacing their players.
+    func applyOutputRoutingKeepingTracks(_ routing: OutputRoutingSnapshot) {
+        guard !tracks.isEmpty else {
+            routingSnapshot = routing
+            return
+        }
+
+        let wasPlaying = isPlaying
+        let preservedTime = currentTime
+        if wasPlaying {
+            pause(at: preservedTime)
+        }
+
+        routingSnapshot = routing
+        do {
+            try wireTrackOutputs(routing: routing)
+        } catch {
+            routingSnapshot = nil
+            connectTracksToMasterMixer()
+            try? startEngineIfNeeded()
+        }
+        applyAllMixSettings()
+
+        guard wasPlaying else { return }
+        play()
+    }
+
+    func reapplyOutputRoutingIfNeeded() {
+        guard let routingSnapshot else { return }
+        applyOutputRoutingKeepingTracks(routingSnapshot)
     }
 
     func applyProvisionalGroupVolume(groupID: UUID?, volume: Float) {

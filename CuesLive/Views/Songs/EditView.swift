@@ -769,6 +769,9 @@ struct EditView: View {
                 isTimelineReady = true
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
+            viewModel.applyOutputRoutingChange()
+        }
         .onChange(of: clipSelection) { _, newValue in
             if let trackID = newValue?.trackID {
                 selectedTrackID = trackID
