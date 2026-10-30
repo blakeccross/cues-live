@@ -50,17 +50,6 @@ final class SetlistViewModel {
         persistSetlist(setlist, context: context)
     }
 
-    /// Reorders in memory only. Saving on every step of a drag would stall on disk writes,
-    /// so callers pair this with `commitEntryOrder` once the drag finishes.
-    func previewMoveEntries(in setlist: Setlist, from source: IndexSet, to destination: Int) {
-        applyMove(in: setlist, from: source, to: destination)
-    }
-
-    func commitEntryOrder(in setlist: Setlist, movedEntries: [SetlistEntry], context: ModelContext) {
-        clearOverlapTransitions(for: movedEntries)
-        persistSetlist(setlist, context: context)
-    }
-
     func setTransition(_ transition: SetlistTransition, for entry: SetlistEntry, context: ModelContext) {
         guard let setlist = entry.setlist else { return }
         entry.transition = transition

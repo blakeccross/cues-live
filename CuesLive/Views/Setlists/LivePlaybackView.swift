@@ -1,6 +1,5 @@
 import SwiftData
 import SwiftUI
-import UniformTypeIdentifiers
 
 #if os(macOS)
 import AppKit
@@ -70,18 +69,15 @@ struct LivePlaybackView: View {
     @State private var showFileDocument: ShowFileDocument?
     @State private var songImportFeedback: SongImportFeedback?
     @State private var isImportingSongFolder = false
-    #if os(macOS)
-    @State private var isTargetedForSongFolderDrop = false
-    #endif
     @State private var infoPanelHeight: CGFloat = 0
     @State private var mixerDetent: LiveGroupMixerDetent = .hidden
     @State private var headerPendingEdit: SetlistEntry?
     @State private var isCreatingHeader = false
+    @State private var isEditingSetlist = false
     @State private var editHeaderTitle = ""
     @State private var editHeaderTimeText = "0:00"
     @State private var overlapEditorContext: SetlistOverlapEditorContext?
-    @State private var draggedSetlistEntryID: PersistentIdentifier?
-    @State private var hasPendingSetlistReorder = false
+    @State private var setlistRowMetrics = SetlistRowMetricsCache()
     @State private var showingMissingMediaAlert = false
     @State private var missingMediaSheet: MissingMediaSheetContext?
     @State private var ignoredMissingMediaPromptForSetlistID: UUID?
@@ -607,78 +603,6 @@ struct LivePlaybackView: View {
             }
         }
     }
-
-    #if os(macOS)
-    /// Drop target for a Finder folder drag anywhere over the setlist (any row,
-    /// or the list background). Kept deliberately simple — no per-row insertion
-    /// preview, since reflowing the list on every hover made the UI feel jittery.
-    /// The dropped folder always becomes a new song appended to the end.
-    private func songFolderDropDelegate() -> LiveSetlistSongFolderDropDelegate {
-        LiveSetlistSongFolderDropDelegate(
-            onHover: {
-                isTargetedForSongFolderDrop = true
-            },
-            onExit: {
-                isTargetedForSongFolderDrop = false
-            },
-            onPerform: { providers in
-                performSongFolderDrop(providers)
-            }
-        )
-    }
-
-    /// Handles a Finder drag dropped onto the setlist: each dropped folder becomes a
-    /// new song in the library, appended to the end of the working setlist.
-    private func performSongFolderDrop(_ providers: [NSItemProvider]) -> Bool {
-        isTargetedForSongFolderDrop = false
-        let fileProviders = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
-        guard !fileProviders.isEmpty, !isImportingSongFolder else { return false }
-
-        Task { @MainActor in
-            let folderURLs = await SongFolderDrop.folderURLs(from: fileProviders)
-            guard !folderURLs.isEmpty else {
-                songImportFeedback = .failure("Drop a folder containing audio files to add a song.")
-                return
-            }
-
-            importSongsFromDroppedFolders(folderURLs)
-        }
-        return true
-    }
-
-    private func importSongsFromDroppedFolders(_ folderURLs: [URL]) {
-        guard !isImportingSongFolder else { return }
-
-        isImportingSongFolder = true
-        Task { @MainActor in
-            defer { isImportingSongFolder = false }
-
-            var addedNames: [String] = []
-            var failureMessages: [String] = []
-
-            for folderURL in folderURLs {
-                do {
-                    let importResult = try SongFolderImporter.importFromFolder(
-                        at: folderURL,
-                        context: modelContext
-                    )
-                    addSong(importResult.song, at: workingSetlist.sortedEntries.count)
-                    addedNames.append(importResult.song.name)
-                } catch {
-                    failureMessages.append("\(folderURL.lastPathComponent): \(error.localizedDescription)")
-                }
-            }
-
-            if !failureMessages.isEmpty {
-                songImportFeedback = .failure(failureMessages.joined(separator: "\n"))
-            } else if addedNames.count == 1 {
-                songImportFeedback = .success("Added \"\(addedNames[0])\" to the setlist.")
-            } else if addedNames.count > 1 {
-                songImportFeedback = .success("Added \(addedNames.count) songs to the setlist.")
-            }
-        }
-    }
-    #endif
 
     private var setlistSaveFileName: String {
         let raw = (activeSetlist?.name ?? "Setlist")
@@ -1320,6 +1244,7 @@ struct LivePlaybackView: View {
     private var setlistSection: some View {
         VStack(spacing: 0) {
             LiveSetlistAddMenu(
+                isEditing: workingSetlist.sortedEntries.isEmpty ? nil : $isEditingSetlist,
                 onAddHeader: addHeader,
                 onAddSong: { showingSongLibrary = true }
             )
@@ -1329,302 +1254,133 @@ struct LivePlaybackView: View {
                     AppEmptyState(
                         title: "No Songs in Setlist",
                         systemImage: "music.note.list",
-                        description: "Drag a song folder here, or use the add button."
+                        description: "Use the add button or Songs library to build the setlist."
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(AppSpacing.md)
                     .contentShape(Rectangle())
                     .contextMenu {
-                        addHeaderContextMenu
+                        Button {
+                            addHeader()
+                        } label: {
+                            Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
+                        }
                     }
                 } else {
-                    setlistList
+                    SetlistListView(
+                        rows: setlistRowModels,
+                        currentIndex: coordinator.currentIndex,
+                        isPlaying: coordinator.isAudiblePlaying,
+                        isEditing: $isEditingSetlist,
+                        actions: setlistRowActions(for:),
+                        onMove: moveSetlistRows,
+                        onAddHeader: addHeader
+                    )
+                    .frame(maxWidth: 720, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.sm)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        #if os(macOS)
-        .overlay {
-            if isTargetedForSongFolderDrop {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .stroke(AppColors.accent, lineWidth: 2)
-                    .padding(AppSpacing.xs)
-                    .allowsHitTesting(false)
-            }
-        }
-        // Background fallback for dropping below the last row, or on the empty state.
-        .onDrop(of: [.fileURL], delegate: songFolderDropDelegate())
-        #endif
-    }
-
-    @ViewBuilder
-    private var addHeaderContextMenu: some View {
-        Button {
-            addHeader()
-        } label: {
-            Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
+        .onChange(of: workingSetlist.sortedEntries.isEmpty) { _, isEmpty in
+            if isEmpty { isEditingSetlist = false }
         }
     }
 
-    private var setlistList: some View {
-        setlistEntryList
-            .frame(maxWidth: 720, maxHeight: .infinity)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.sm)
+    /// Entries that can be shown. A song deleted from the library leaves an entry with neither
+    /// a song nor a header title; those are skipped, so row indices don't match `sortedEntries`.
+    private var visibleSetlistEntries: [SetlistEntry] {
+        workingSetlist.sortedEntries.filter { $0.isHeader || $0.song != nil }
     }
 
-    private var setlistEntryList: some View {
-        List {
-            Section {
-                ForEach(Array(workingSetlist.sortedEntries.enumerated()), id: \.element.id) { _, entry in
-                    if entry.isHeader {
-                        setlistHeaderRow(entry: entry)
-                    } else if let song = entry.song {
-                        setlistEntryRow(song: song, entry: entry)
-                    }
-                }
-                .onDelete { indexSet in
-                    let entries = workingSetlist.sortedEntries
-                    for index in indexSet {
-                        viewModel.removeEntry(entries[index], from: workingSetlist, context: modelContext)
-                    }
-                    coordinator.syncSetlist(workingSetlist)
-                }
-                #if os(iOS)
-                .onMove { source, destination in
-                    viewModel.moveEntries(
-                        in: workingSetlist,
-                        from: source,
-                        to: destination,
-                        context: modelContext
+    private var setlistRowModels: [SetlistRowModel] {
+        let setlist = workingSetlist
+        return visibleSetlistEntries.compactMap { entry in
+            if entry.isHeader {
+                let seconds = entry.headerTimeSeconds ?? 0
+                return SetlistRowModel(
+                    id: entry.persistentModelID,
+                    kind: .header(
+                        title: entry.headerTitle ?? "",
+                        timeText: seconds > 0 ? LiveSetlistDurationFormat.clock(for: seconds) : nil
                     )
-                    coordinator.syncSetlist(workingSetlist)
-                }
-                #endif
+                )
             }
-        }
-        .liveSetlistListChrome()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        #if os(macOS)
-        .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: nil))
-        #endif
-        .contextMenu {
-            addHeaderContextMenu
-        }
-        // Avoid GeometryReader+List: after compact→regular rotation on device the list
-        // can keep a blank content area. Recreate when size class changes.
-        #if os(iOS)
-        .id(verticalSizeClass)
-        #endif
-    }
-
-    private func setlistHeaderRow(entry: SetlistEntry) -> some View {
-        let title = entry.headerTitle ?? ""
-
-        return LiveSetlistHeaderRow(
-            title: title,
-            timeText: LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
-        )
-            .liveSetlistTrailingReorderHandle(accessibilityNoun: "header") {
-                commitSetlistReorder()
-                draggedSetlistEntryID = entry.id
-                return NSItemProvider(object: "setlist-entry" as NSString)
-            }
-            .liveSetlistHeaderRowChrome(isDragging: isBeingDragged(entry))
-            #if os(macOS)
-            .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: entry.id))
-            #endif
-            #if os(iOS)
-            .deleteDisabled(true)
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                Button("Remove", role: .destructive) {
-                    removeFromSetlist(entry)
-                }
-            }
-            #endif
-            .contextMenu {
-                Button {
-                    isCreatingHeader = false
-                    headerPendingEdit = entry
-                    editHeaderTitle = entry.headerTitle ?? ""
-                    editHeaderTimeText = LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
-                } label: {
-                    Label("Edit", systemImage: "pencil")
-                }
-
-                Button("Remove from Setlist", role: .destructive) {
-                    removeFromSetlist(entry)
-                }
-            }
-    }
-
-    private func setlistEntryRow(song: Song, entry: SetlistEntry) -> some View {
-        let playbackIndex = workingSetlist.playbackIndex(for: entry) ?? 0
-        let transition = workingSetlist.hasNextSong(after: entry) ? entry.transition : nil
-
-        let selectSong = {
-            coordinator.goToSong(at: playbackIndex, autoPlay: coordinator.isAudiblePlaying)
-        }
-
-        return LiveSetlistSongRow(
-            song: song,
-            duration: songTimelineDuration(for: song),
-            index: playbackIndex,
-            currentIndex: coordinator.currentIndex,
-            hasMissingMedia: songHasMissingMedia(song),
-            transition: transition,
-            onOverlapBadgeTap: transition == .overlap
-                ? { presentOverlapEditor(for: entry) }
-                : nil
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture(perform: selectSong)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction(named: "Play", selectSong)
-        .appLinkPointer()
-        .liveSetlistTrailingReorderHandle(
-            accessibilityNoun: "song",
-            isCurrent: playbackIndex == coordinator.currentIndex
-        ) {
-            commitSetlistReorder()
-            draggedSetlistEntryID = entry.id
-            return NSItemProvider(object: "setlist-entry" as NSString)
-        }
-        .liveSetlistSongRowChrome(
-            isDragging: isBeingDragged(entry),
-            isCurrent: playbackIndex == coordinator.currentIndex
-        )
-        .mappableLiveControl(.goToSong(playbackIndex), cornerRadius: AppRadius.sm)
-        #if os(macOS)
-        .onDrop(of: [.text, .fileURL], delegate: setlistRowDropDelegate(targetID: entry.id))
-        #endif
-        #if os(iOS)
-        // mappableLiveControl wraps the row in a ZStack, which hides the row background set by
-        // liveSetlistSongRowChrome from the List. iOS then fills the row with its black edit-mode
-        // background; restate the live view's background here so rows match macOS.
-        .listRowBackground(AppColors.backgroundPrimary)
-        .deleteDisabled(true)
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button("Remove", role: .destructive) {
-                removeFromSetlist(entry)
-            }
-        }
-        #endif
-        .contextMenu {
-            Button {
-                coordinator.goToSong(at: playbackIndex, autoPlay: coordinator.isAudiblePlaying)
-            } label: {
-                Label("Play", systemImage: "play.fill")
-            }
-
-            if transition != nil {
-                Menu("Transition to Next") {
-                    ForEach(availableTransitions(for: entry)) { option in
-                        Button {
-                            handleTransitionSelection(option, for: entry)
-                        } label: {
-                            Label(option.label, systemImage: option.systemImage)
-                        }
-                    }
-                }
-            }
-
-            Button {
-                presentSongEditor(for: song)
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-
-            if songHasMissingMedia(song) {
-                Button {
-                    presentMissingMediaRelink(for: song)
-                } label: {
-                    Label("Relink Missing Files…", systemImage: "exclamationmark.triangle")
-                }
-            }
-
-            Button("Remove from Setlist", role: .destructive) {
-                removeFromSetlist(entry)
-            }
-        }
-    }
-
-    private func isBeingDragged(_ entry: SetlistEntry) -> Bool {
-        draggedSetlistEntryID == entry.id
-    }
-
-    #if os(macOS)
-    /// Combined reorder + folder-drop target for a setlist row (or the list
-    /// background, via `targetID: nil`). See `LiveSetlistRowDropDelegate`'s note
-    /// on why this must be one delegate rather than two stacked `.onDrop`s.
-    private func setlistRowDropDelegate(
-        targetID: PersistentIdentifier?
-    ) -> LiveSetlistRowDropDelegate<PersistentIdentifier> {
-        LiveSetlistRowDropDelegate(
-            targetID: targetID,
-            draggedID: draggedSetlistEntryID,
-            onMove: previewSetlistMove,
-            onCommitReorder: commitSetlistReorder,
-            onFolderHover: {
-                isTargetedForSongFolderDrop = true
-            },
-            onFolderExit: {
-                isTargetedForSongFolderDrop = false
-            },
-            onFolderPerform: { providers in
-                performSongFolderDrop(providers)
-            }
-        )
-    }
-    #endif
-
-    private func previewSetlistMove(_ draggedID: PersistentIdentifier, before targetID: PersistentIdentifier) {
-        let entries = workingSetlist.sortedEntries
-        guard let sourceIndex = entries.firstIndex(where: { $0.id == draggedID }),
-              let targetIndex = entries.firstIndex(where: { $0.id == targetID }),
-              sourceIndex != targetIndex else {
-            return
-        }
-
-        let destination = targetIndex > sourceIndex ? targetIndex + 1 : targetIndex
-        hasPendingSetlistReorder = true
-        withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.9)) {
-            viewModel.previewMoveEntries(
-                in: workingSetlist,
-                from: IndexSet(integer: sourceIndex),
-                to: destination
+            guard let song = entry.song else { return nil }
+            return SetlistRowModel(
+                id: entry.persistentModelID,
+                kind: .song(SetlistRowModel.Song(
+                    title: song.name,
+                    durationText: LiveSetlistDurationFormat.clock(for: songTimelineDuration(for: song)),
+                    keyText: song.displayedKeyText,
+                    bpmText: song.bpm.map { String(format: "%.0f BPM", $0.rounded()) },
+                    playbackIndex: setlist.playbackIndex(for: entry) ?? 0,
+                    hasMissingMedia: songHasMissingMedia(song),
+                    transition: setlist.hasNextSong(after: entry) ? entry.transition : nil
+                ))
             )
         }
     }
 
-    private func commitSetlistReorder() {
-        let movedEntry = draggedSetlistEntryID.flatMap { id in
-            workingSetlist.sortedEntries.first { $0.id == id }
+    private func setlistRowActions(for model: SetlistRowModel) -> SetlistRowActions {
+        guard let entry = visibleSetlistEntries.first(where: { AnyHashable($0.persistentModelID) == model.id }) else {
+            return SetlistRowActions(remove: {})
         }
-        draggedSetlistEntryID = nil
 
-        guard hasPendingSetlistReorder else { return }
-        hasPendingSetlistReorder = false
+        guard case .song(let rowSong) = model.kind, let song = entry.song else {
+            return SetlistRowActions(
+                edit: { beginEditingHeader(entry) },
+                remove: { removeFromSetlist(entry) }
+            )
+        }
 
-        viewModel.commitEntryOrder(
+        return SetlistRowActions(
+            play: { coordinator.goToSong(at: rowSong.playbackIndex, autoPlay: coordinator.isAudiblePlaying) },
+            edit: { presentSongEditor(for: song) },
+            relink: rowSong.hasMissingMedia ? { presentMissingMediaRelink(for: song) } : nil,
+            transitions: rowSong.transition == nil ? [] : availableTransitions(for: entry),
+            setTransition: { handleTransitionSelection($0, for: entry) },
+            remove: { removeFromSetlist(entry) }
+        )
+    }
+
+    /// Translates list offsets (visible rows only) into offsets in the full sorted entry list.
+    private func moveSetlistRows(from source: IndexSet, to destination: Int) {
+        let sorted = workingSetlist.sortedEntries
+        let visible = sorted.filter { $0.isHeader || $0.song != nil }
+        let sourceOffsets = IndexSet(source.compactMap { offset in
+            sorted.firstIndex(where: { $0 === visible[offset] })
+        })
+        let destinationOffset = destination < visible.count
+            ? (sorted.firstIndex(where: { $0 === visible[destination] }) ?? sorted.count)
+            : sorted.count
+        viewModel.moveEntries(
             in: workingSetlist,
-            movedEntries: movedEntry.map { [$0] } ?? [],
+            from: sourceOffsets,
+            to: destinationOffset,
             context: modelContext
         )
         coordinator.syncSetlist(workingSetlist)
     }
 
+    private func beginEditingHeader(_ entry: SetlistEntry) {
+        isCreatingHeader = false
+        headerPendingEdit = entry
+        editHeaderTitle = entry.headerTitle ?? ""
+        editHeaderTimeText = LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
+    }
+
     private func songHasMissingMedia(_ song: Song) -> Bool {
-        _ = mediaHealthRevision
-        return SongMediaHealth.hasMissingMedia(song)
+        setlistRowMetrics.hasMissingMedia(song, revision: mediaHealthRevision)
     }
 
     private func songTimelineDuration(for song: Song) -> TimeInterval {
-        coordinator.waveformSnapshot(for: song)?.timelineDuration
-            ?? TimecodePlaybackSupport.timelineDuration(for: song)
+        setlistRowMetrics.timelineDuration(
+            for: song,
+            snapshot: coordinator.waveformSnapshot(for: song)?.timelineDuration
+        )
     }
 
     private func removeFromSetlist(_ entry: SetlistEntry) {
@@ -2067,6 +1823,39 @@ private struct LiveRemoteHostSyncModifier: ViewModifier {
                         .allowsHitTesting(false)
                 }
             }
+    }
+}
+
+/// Row duration and missing-file checks hit the disk, so the first lookup is cached
+/// until media health changes.
+private final class SetlistRowMetricsCache {
+    private var mediaRevision = Int.min
+    private var missingBySongID: [UUID: Bool] = [:]
+    private var durationBySongID: [UUID: TimeInterval] = [:]
+
+    func hasMissingMedia(_ song: Song, revision: Int) -> Bool {
+        if mediaRevision != revision {
+            mediaRevision = revision
+            missingBySongID.removeAll()
+        }
+        if let cached = missingBySongID[song.id] {
+            return cached
+        }
+        let missing = SongMediaHealth.hasMissingMedia(song)
+        missingBySongID[song.id] = missing
+        return missing
+    }
+
+    func timelineDuration(for song: Song, snapshot: TimeInterval?) -> TimeInterval {
+        if let snapshot {
+            return snapshot
+        }
+        if let cached = durationBySongID[song.id] {
+            return cached
+        }
+        let duration = TimecodePlaybackSupport.timelineDuration(for: song)
+        durationBySongID[song.id] = duration
+        return duration
     }
 }
 

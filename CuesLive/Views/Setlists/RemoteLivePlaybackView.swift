@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct RemoteLivePlaybackView: View {
     @Bindable private var client = RemoteSessionClientService.shared
@@ -15,11 +14,10 @@ struct RemoteLivePlaybackView: View {
     @State private var showingSettings = false
     @State private var showingSongLibrary = false
     @State private var showingAddHeaderAlert = false
+    @State private var isEditingSetlist = false
     @State private var newHeaderTitle = "New Header"
     @State private var newHeaderTimeText = "0:00"
     @State private var workingEntries: [RemoteSetlistEntryDTO] = []
-    @State private var draggedSetlistEntryID: UUID?
-    @State private var hasPendingSetlistReorder = false
 
     private var snapshot: RemoteSessionSnapshot? { client.snapshot }
     private var state: RemoteSessionState { client.state }
@@ -368,6 +366,7 @@ struct RemoteLivePlaybackView: View {
     private var setlistSection: some View {
         VStack(spacing: 0) {
             LiveSetlistAddMenu(
+                isEditing: workingEntries.isEmpty ? nil : $isEditingSetlist,
                 onAddHeader: {
                     newHeaderTitle = "New Header"
                     newHeaderTimeText = "0:00"
@@ -401,37 +400,19 @@ struct RemoteLivePlaybackView: View {
                         }
                     }
                 } else if let snapshot {
-                    List {
-                        Section {
-                            ForEach(workingEntries) { entry in
-                                remoteSetlistRow(entry: entry, snapshot: snapshot)
-                            }
-                            .onDelete(perform: deleteWorkingEntries)
-                            #if os(iOS)
-                            .onMove(perform: moveWorkingEntries)
-                            #endif
-                        }
-                    }
-                    .liveSetlistListChrome()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    #if os(macOS)
-                    .onDrop(of: [.text], delegate: remoteSetlistDropDelegate(targetID: nil))
-                    #endif
-                    .contextMenu {
-                        Button {
+                    SetlistListView(
+                        rows: remoteRowModels(snapshot: snapshot),
+                        currentIndex: state.currentIndex,
+                        isPlaying: state.isAudiblePlaying,
+                        isEditing: $isEditingSetlist,
+                        actions: remoteRowActions(for:),
+                        onMove: moveWorkingEntries,
+                        onAddHeader: {
                             newHeaderTitle = "New Header"
                             newHeaderTimeText = "0:00"
                             showingAddHeaderAlert = true
-                        } label: {
-                            Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
                         }
-                    }
-                    // Avoid GeometryReader+List: after compact→regular rotation on device the
-                    // list can keep a blank content area. Recreate when size class changes.
-                    #if os(iOS)
-                    .id(verticalSizeClass)
-                    #endif
+                    )
                     .frame(maxWidth: 720, maxHeight: .infinity)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.sm)
@@ -444,163 +425,74 @@ struct RemoteLivePlaybackView: View {
             syncWorkingEntries(from: snapshot?.entries ?? [])
         }
         .onChange(of: snapshot?.entries) { _, newEntries in
-            guard !hasPendingSetlistReorder, draggedSetlistEntryID == nil else { return }
             syncWorkingEntries(from: newEntries ?? [])
         }
-    }
-
-    @ViewBuilder
-    private func remoteSetlistRow(
-        entry: RemoteSetlistEntryDTO,
-        snapshot: RemoteSessionSnapshot
-    ) -> some View {
-        if let header = entry.headerTitle, entry.songID == nil {
-            LiveSetlistHeaderRow(
-                title: header,
-                timeText: LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
-            )
-                .liveSetlistTrailingReorderHandle(accessibilityNoun: "header") {
-                    commitRemoteSetlistReorder()
-                    draggedSetlistEntryID = entry.id
-                    return NSItemProvider(object: "setlist-entry" as NSString)
-                }
-                .liveSetlistHeaderRowChrome(isDragging: isBeingDragged(entry))
-                #if os(macOS)
-                .onDrop(of: [.text], delegate: remoteSetlistDropDelegate(targetID: entry.id))
-                #endif
-                #if os(iOS)
-                .deleteDisabled(true)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button("Remove", role: .destructive) {
-                        removeWorkingEntry(entry)
-                    }
-                }
-                #endif
-                .contextMenu {
-                    Button("Remove from Setlist", role: .destructive) {
-                        removeWorkingEntry(entry)
-                    }
-                }
-        } else if let songID = entry.songID,
-                  let song = snapshot.songs.first(where: { $0.id == songID }),
-                  let playbackIndex = entry.playbackIndex {
-            let transition = remoteTransition(for: entry, in: workingEntries)
-            let selectSong = {
-                client.send(.goToSong(
-                    index: playbackIndex,
-                    autoPlay: state.isAudiblePlaying
-                ))
-            }
-
-            LiveSetlistSongRow(
-                title: song.name,
-                durationText: LiveSetlistDurationFormat.clock(for: song.timelineDuration),
-                index: playbackIndex,
-                currentIndex: state.currentIndex,
-                keyText: remoteSongKeyText(song),
-                bpmText: remoteSongBPMText(song),
-                transition: transition
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: selectSong)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction(named: "Play", selectSong)
-            .appLinkPointer()
-            .liveSetlistTrailingReorderHandle(
-                accessibilityNoun: "song",
-                isCurrent: playbackIndex == state.currentIndex
-            ) {
-                commitRemoteSetlistReorder()
-                draggedSetlistEntryID = entry.id
-                return NSItemProvider(object: "setlist-entry" as NSString)
-            }
-            .liveSetlistSongRowChrome(
-                isDragging: isBeingDragged(entry),
-                isCurrent: playbackIndex == state.currentIndex
-            )
-            .mappableLiveControl(.goToSong(playbackIndex), cornerRadius: AppRadius.sm)
-            #if os(macOS)
-            .onDrop(of: [.text], delegate: remoteSetlistDropDelegate(targetID: entry.id))
-            #endif
-            #if os(iOS)
-            .deleteDisabled(true)
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                Button("Remove", role: .destructive) {
-                    removeWorkingEntry(entry)
-                }
-            }
-            #endif
-            .contextMenu {
-                Button {
-                    client.send(.goToSong(
-                        index: playbackIndex,
-                        autoPlay: state.isAudiblePlaying
-                    ))
-                } label: {
-                    Label("Play", systemImage: "play.fill")
-                }
-
-                Button("Remove from Setlist", role: .destructive) {
-                    removeWorkingEntry(entry)
-                }
-            }
+        .onChange(of: workingEntries.isEmpty) { _, isEmpty in
+            if isEmpty { isEditingSetlist = false }
         }
     }
 
-    private func isBeingDragged(_ entry: RemoteSetlistEntryDTO) -> Bool {
-        draggedSetlistEntryID == entry.id
+    private func remoteRowModels(snapshot: RemoteSessionSnapshot) -> [SetlistRowModel] {
+        workingEntries.compactMap { entry in
+            if let header = entry.headerTitle, entry.songID == nil {
+                let seconds = entry.headerTimeSeconds ?? 0
+                return SetlistRowModel(
+                    id: entry.id,
+                    kind: .header(
+                        title: header,
+                        timeText: seconds > 0 ? LiveSetlistDurationFormat.clock(for: seconds) : nil
+                    )
+                )
+            }
+            guard let songID = entry.songID,
+                  let song = snapshot.songs.first(where: { $0.id == songID }),
+                  let playbackIndex = entry.playbackIndex else {
+                return nil
+            }
+            return SetlistRowModel(
+                id: entry.id,
+                kind: .song(SetlistRowModel.Song(
+                    title: song.name,
+                    durationText: LiveSetlistDurationFormat.clock(for: song.timelineDuration),
+                    keyText: remoteSongKeyText(song),
+                    bpmText: remoteSongBPMText(song),
+                    playbackIndex: playbackIndex,
+                    transition: remoteTransition(for: entry, in: workingEntries)
+                ))
+            )
+        }
     }
 
-    private func remoteSetlistDropDelegate(targetID: UUID?) -> LiveSetlistEntryDropDelegate<UUID> {
-        LiveSetlistEntryDropDelegate(
-            targetID: targetID,
-            draggedID: draggedSetlistEntryID,
-            onMove: previewRemoteSetlistMove,
-            onCommit: commitRemoteSetlistReorder
+    /// The host protocol only supports play / move / remove, so the remote menu is smaller.
+    private func remoteRowActions(for model: SetlistRowModel) -> SetlistRowActions {
+        guard let entry = workingEntries.first(where: { AnyHashable($0.id) == model.id }) else {
+            return SetlistRowActions(remove: {})
+        }
+        guard case .song(let song) = model.kind else {
+            return SetlistRowActions(remove: { removeWorkingEntry(entry) })
+        }
+        return SetlistRowActions(
+            play: {
+                client.send(.goToSong(index: song.playbackIndex, autoPlay: state.isAudiblePlaying))
+            },
+            remove: { removeWorkingEntry(entry) }
         )
     }
 
-    private func previewRemoteSetlistMove(_ draggedID: UUID, before targetID: UUID) {
-        guard let sourceIndex = workingEntries.firstIndex(where: { $0.id == draggedID }),
-              let targetIndex = workingEntries.firstIndex(where: { $0.id == targetID }),
-              sourceIndex != targetIndex else {
-            return
-        }
-
-        let destination = targetIndex > sourceIndex ? targetIndex + 1 : targetIndex
-        hasPendingSetlistReorder = true
-        withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.9)) {
-            workingEntries.move(fromOffsets: IndexSet(integer: sourceIndex), toOffset: destination)
-            recomputeWorkingEntryIndices()
-        }
-    }
-
-    private func commitRemoteSetlistReorder() {
-        let movedID = draggedSetlistEntryID
-        draggedSetlistEntryID = nil
-
-        guard hasPendingSetlistReorder else { return }
-        hasPendingSetlistReorder = false
-
-        guard let movedID,
-              let toIndex = workingEntries.firstIndex(where: { $0.id == movedID }) else {
-            return
-        }
-        client.send(.moveSetlistEntry(entryID: movedID, toIndex: toIndex))
-    }
-
-    private func deleteWorkingEntries(at offsets: IndexSet) {
-        let entries = offsets.map { workingEntries[$0] }
-        for entry in entries {
-            removeWorkingEntry(entry)
-        }
-    }
-
+    /// Rows skip entries whose song is missing from the snapshot, so translate row offsets
+    /// into offsets in `workingEntries`.
     private func moveWorkingEntries(from source: IndexSet, to destination: Int) {
-        guard let sourceIndex = source.first else { return }
+        guard let snapshot else { return }
+        let visibleIDs = remoteRowModels(snapshot: snapshot).compactMap { $0.id.base as? UUID }
+        guard let visibleSource = source.first, visibleSource < visibleIDs.count,
+              let sourceIndex = workingEntries.firstIndex(where: { $0.id == visibleIDs[visibleSource] }) else {
+            return
+        }
+        let destinationIndex = destination < visibleIDs.count
+            ? (workingEntries.firstIndex(where: { $0.id == visibleIDs[destination] }) ?? workingEntries.count)
+            : workingEntries.count
         let movedID = workingEntries[sourceIndex].id
-        workingEntries.move(fromOffsets: source, toOffset: destination)
+        workingEntries.move(fromOffsets: IndexSet(integer: sourceIndex), toOffset: destinationIndex)
         recomputeWorkingEntryIndices()
         guard let toIndex = workingEntries.firstIndex(where: { $0.id == movedID }) else { return }
         client.send(.moveSetlistEntry(entryID: movedID, toIndex: toIndex))
@@ -872,6 +764,8 @@ private struct RemoteHostSongLibraryPanel: View {
                         Text(order.rawValue).tag(order)
                     }
                 }
+                .pickerStyle(.inline)
+                .labelsHidden()
             } label: {
                 Image(systemName: "line.3.horizontal.decrease.circle")
                     .foregroundStyle(AppColors.textTertiary)
@@ -941,27 +835,17 @@ private struct RemoteHostSongLibraryRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(AppColors.surface)
-                    .frame(width: 36, height: 36)
-                    .overlay {
-                        Image(systemName: "waveform")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(AppColors.textSecondary)
-                    }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(song.name)
-                        .font(.body.weight(.semibold))
-                        .lineLimit(2)
-                        .foregroundStyle(AppColors.textPrimary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.textTertiary)
-                        .lineLimit(1)
-                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(song.name)
+                    .font(.body.weight(.semibold))
+                    .lineLimit(2)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
 

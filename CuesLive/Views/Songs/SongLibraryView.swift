@@ -37,6 +37,8 @@ struct SongLibraryPanel: View {
     @State private var showingFolderImporter = false
     #endif
     @State private var consolidateSummary: String?
+    /// Bumps when a newer import should cancel an in-flight scroll-into-view.
+    @State private var revealGeneration = 0
 
     private var hasActiveSearch: Bool {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -65,10 +67,13 @@ struct SongLibraryPanel: View {
             VStack(spacing: 0) {
                 #if os(macOS)
                 headerBar
+                    .zIndex(1)
                 #endif
                 searchBar
+                    .zIndex(1)
                 songList
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             if isImportInProgress {
                 importProgressOverlay
@@ -290,6 +295,8 @@ struct SongLibraryPanel: View {
                         Text(order.rawValue).tag(order)
                     }
                 }
+                .pickerStyle(.inline)
+                .labelsHidden()
             } label: {
                 Image(systemName: "line.3.horizontal.decrease.circle")
                     .foregroundStyle(AppColors.textTertiary)
@@ -299,6 +306,7 @@ struct SongLibraryPanel: View {
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.bottom, AppSpacing.xs)
+        .background(AppColors.backgroundSecondary)
     }
 
     @ViewBuilder
@@ -320,16 +328,17 @@ struct SongLibraryPanel: View {
             .padding(.top, AppSpacing.sm)
             Spacer(minLength: 0)
         } else {
-            List {
-                ForEach(filteredSongs) { song in
-                    SongLibraryRow(
-                        song: song,
-                        onSelect: { onEdit(song) },
-                        onAddToSetlist: { onAddToSetlist(song) }
-                    )
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+            ScrollViewReader { proxy in
+                List {
+                    ForEach(filteredSongs) { song in
+                        SongLibraryRow(
+                            song: song,
+                            onSelect: { onEdit(song) },
+                            onAddToSetlist: { onAddToSetlist(song) }
+                        )
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                         .contextMenu {
                             songContextMenu(for: song)
                         }
@@ -340,11 +349,69 @@ struct SongLibraryPanel: View {
                                 Label("Remove", systemImage: "trash")
                             }
                         }
+                    }
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .listRowSeparatorTint(AppColors.separator)
+                .contentMargins(.top, 0, for: .scrollContent)
+                .modifier(SongListTopEdgeClipModifier())
+                .scrollClipDisabled(false)
+                // List's minimum height is its content, so a new top row can
+                // overflow upward and draw underneath the search bar.
+                .frame(minHeight: 0, maxHeight: .infinity, alignment: .top)
+                .clipped()
+                .onChange(of: songs.map(\.id)) { previousIDs, currentIDs in
+                    revealInsertedSong(
+                        previousIDs: previousIDs,
+                        currentIDs: currentIDs,
+                        proxy: proxy
+                    )
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .listRowSeparatorTint(AppColors.separator)
+        }
+    }
+
+    /// List keeps the previous scroll offset when a row is inserted at the top, which
+    /// leaves the new song parked under the search bar. Scroll it into the list once
+    /// that adjustment has settled.
+    private func revealInsertedSong(
+        previousIDs: [UUID],
+        currentIDs: [UUID],
+        proxy: ScrollViewProxy
+    ) {
+        let previous = Set(previousIDs)
+        guard let targetID = currentIDs.first(where: { id in
+            !previous.contains(id) && filteredSongs.contains { $0.id == id }
+        }) else { return }
+
+        revealGeneration += 1
+        let generation = revealGeneration
+        let persistentID = filteredSongs.first { $0.id == targetID }?.persistentModelID
+
+        Task { @MainActor in
+            await Task.yield()
+            guard generation == revealGeneration else { return }
+            scrollSongIntoView(targetID, persistentID: persistentID, proxy: proxy)
+
+            try? await Task.sleep(for: .milliseconds(350))
+            guard generation == revealGeneration else { return }
+            scrollSongIntoView(targetID, persistentID: persistentID, proxy: proxy)
+        }
+    }
+
+    private func scrollSongIntoView(
+        _ id: UUID,
+        persistentID: PersistentIdentifier?,
+        proxy: ScrollViewProxy
+    ) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            if let persistentID {
+                proxy.scrollTo(persistentID, anchor: .top)
+            }
+            proxy.scrollTo(id, anchor: .top)
         }
     }
 
@@ -608,6 +675,17 @@ struct SongLibraryPanel: View {
     }
 }
 
+/// Stops list rows from drawing through the soft top edge into the search bar.
+private struct SongListTopEdgeClipModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.hard, for: .top)
+        } else {
+            content
+        }
+    }
+}
+
 private struct SongLibraryRow: View {
     let song: Song
     let onSelect: () -> Void
@@ -623,27 +701,17 @@ private struct SongLibraryRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.sm) {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(AppColors.surface)
-                    .frame(width: 36, height: 36)
-                    .overlay {
-                        Image(systemName: "waveform")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(AppColors.textSecondary)
-                    }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(song.name)
-                        .font(.body.weight(.semibold))
-                        .lineLimit(2)
-                        .foregroundStyle(AppColors.textPrimary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.textTertiary)
-                        .lineLimit(1)
-                }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(song.name)
+                    .font(.body.weight(.semibold))
+                    .lineLimit(2)
+                    .foregroundStyle(AppColors.textPrimary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .onTapGesture {
                 onSelect()

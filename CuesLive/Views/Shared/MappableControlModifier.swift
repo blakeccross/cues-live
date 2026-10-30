@@ -12,37 +12,40 @@ struct MappableLiveControlModifier: ViewModifier {
         let assignmentLabel = assignmentBadgeLabel
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
-        ZStack {
-            content
-                .allowsHitTesting(!isHighlighted)
+        // An overlay (not a ZStack wrapper) keeps `content` as the view's identity, so a List row
+        // still gets its own row background and sizing.
+        content
+            .allowsHitTesting(!isHighlighted)
+            .overlay {
+                if isHighlighted {
+                    ZStack {
+                        shape
+                            .fill(AppColors.accent.opacity(isPending ? 0.22 : 0.08))
+                            .overlay {
+                                shape.strokeBorder(AppColors.accent, lineWidth: isPending ? 3 : 2)
+                            }
+                            .allowsHitTesting(false)
 
-            if isHighlighted {
-                shape
-                    .fill(AppColors.accent.opacity(isPending ? 0.22 : 0.08))
-                    .overlay {
-                        shape.strokeBorder(AppColors.accent, lineWidth: isPending ? 3 : 2)
+                        Color.clear
+                            .contentShape(shape)
+                            .onTapGesture {
+                                mapping.selectAction(action)
+                            }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityLabel(accessibilityLabel(assignment: assignmentLabel))
+
+                        if let assignmentLabel {
+                            MappingAssignmentBadge(title: assignmentLabel)
+                                .padding(AppSpacing.xxs)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                .allowsHitTesting(false)
+                        }
                     }
-                    .allowsHitTesting(false)
-
-                Color.clear
-                    .contentShape(shape)
-                    .onTapGesture {
-                        mapping.selectAction(action)
-                    }
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel(accessibilityLabel(assignment: assignmentLabel))
-
-                if let assignmentLabel {
-                    MappingAssignmentBadge(title: assignmentLabel)
-                        .padding(AppSpacing.xxs)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                        .allowsHitTesting(false)
                 }
             }
-        }
-        .animation(AppAnimation.fadeQuick, value: isHighlighted)
-        .animation(AppAnimation.fadeQuick, value: isPending)
-        .animation(AppAnimation.fadeQuick, value: assignmentLabel)
+            .animation(AppAnimation.fadeQuick, value: isHighlighted)
+            .animation(AppAnimation.fadeQuick, value: isPending)
+            .animation(AppAnimation.fadeQuick, value: assignmentLabel)
     }
 
     private var assignmentBadgeLabel: String? {

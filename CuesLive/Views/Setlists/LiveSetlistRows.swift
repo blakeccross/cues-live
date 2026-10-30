@@ -1,139 +1,372 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-struct LiveSetlistHeaderRow: View {
+// MARK: - Row model
+
+/// Display data for one setlist row. Local (SwiftData) and remote (DTO) setlists both map into this,
+/// so they share a single list implementation.
+struct SetlistRowModel: Identifiable {
+    struct Song {
+        var title: String
+        var durationText: String
+        var keyText: String? = nil
+        var bpmText: String? = nil
+        /// Position among songs only (headers are not counted).
+        var playbackIndex: Int
+        var hasMissingMedia: Bool = false
+        /// Transition to the next song; nil for the last song.
+        var transition: SetlistTransition? = nil
+    }
+
+    enum Kind {
+        case header(title: String, timeText: String?)
+        case song(Song)
+    }
+
+    let id: AnyHashable
+    let kind: Kind
+}
+
+/// What a row can do. Optional closures are hidden from the menu, swipe actions and
+/// context menu when nil, so the remote list can offer a smaller set than the local one.
+struct SetlistRowActions {
+    var play: (() -> Void)?
+    var edit: (() -> Void)?
+    var relink: (() -> Void)?
+    var transitions: [SetlistTransition] = []
+    var setTransition: ((SetlistTransition) -> Void)?
+    var remove: () -> Void
+}
+
+// MARK: - List
+
+/// A plain native list: tap to play, drag to reorder (Edit mode on iOS), and one shared set of
+/// row actions surfaced through the context menu, the trailing "…" button and iOS swipe actions.
+struct SetlistListView: View {
+    let rows: [SetlistRowModel]
+    let currentIndex: Int
+    let isPlaying: Bool
+    @Binding var isEditing: Bool
+    let actions: (SetlistRowModel) -> SetlistRowActions
+    let onMove: (IndexSet, Int) -> Void
+    var onAddHeader: (() -> Void)? = nil
+
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
+
+    var body: some View {
+        List {
+            ForEach(rows) { row in
+                rowView(row)
+            }
+            .onMove(perform: onMove)
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentShape(Rectangle())
+        .contextMenu {
+            if let onAddHeader {
+                Button(action: onAddHeader) {
+                    Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
+                }
+            }
+        }
+        #if os(iOS)
+        .environment(\.editMode, editModeBinding)
+        // Avoid GeometryReader+List: after compact→regular rotation on device the list
+        // can keep a blank content area. Recreate when size class changes.
+        .id(verticalSizeClass)
+        #endif
+    }
+
+    #if os(iOS)
+    private var editModeBinding: Binding<EditMode> {
+        Binding(
+            get: { isEditing ? .active : .inactive },
+            set: { isEditing = $0.isEditing }
+        )
+    }
+    #endif
+
+    @ViewBuilder
+    private func rowView(_ row: SetlistRowModel) -> some View {
+        let rowActions = actions(row)
+
+        switch row.kind {
+        case .header(let title, let timeText):
+            SetlistHeaderRowView(
+                title: title,
+                timeText: timeText,
+                showsMenu: !isEditing,
+                menu: { SetlistRowMenuContent(model: row, actions: rowActions) }
+            )
+            .listRowInsets(EdgeInsets(top: 0, leading: AppSpacing.sm, bottom: 0, trailing: AppSpacing.sm))
+            .listRowSeparator(.hidden)
+            .listRowBackground(AppColors.backgroundSecondary)
+            .setlistSwipeActions(actions: rowActions)
+            .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions) }
+
+        case .song(let song):
+            let isCurrent = song.playbackIndex == currentIndex
+            SetlistSongRowView(
+                song: song,
+                isCurrent: isCurrent,
+                isFinished: song.playbackIndex < currentIndex,
+                isPlaying: isPlaying,
+                showsMenu: !isEditing,
+                menu: { SetlistRowMenuContent(model: row, actions: rowActions) }
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                guard !isEditing else { return }
+                rowActions.play?()
+            }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(named: "Play") { rowActions.play?() }
+            .appLinkPointer()
+            .mappableLiveControl(.goToSong(song.playbackIndex), cornerRadius: AppRadius.sm)
+            .listRowBackground(isCurrent ? AppColors.accent.opacity(0.18) : Color.clear)
+            .setlistSwipeActions(actions: rowActions)
+            .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions) }
+        }
+    }
+}
+
+private extension View {
+    /// Swipe to play (leading) or remove / edit (trailing). iOS only; macOS uses the menu.
+    @ViewBuilder
+    func setlistSwipeActions(actions: SetlistRowActions) -> some View {
+        #if os(iOS)
+        self
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                if let play = actions.play {
+                    Button(action: play) {
+                        Label("Play", systemImage: "play.fill")
+                    }
+                    .tint(AppColors.accent)
+                }
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive, action: actions.remove) {
+                    Label("Remove", systemImage: "trash")
+                }
+                if let edit = actions.edit {
+                    Button(action: edit) {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .tint(.blue)
+                }
+            }
+        #else
+        self
+        #endif
+    }
+}
+
+// MARK: - Row menu
+
+/// The single source of truth for row actions: used by the context menu and the "…" button.
+private struct SetlistRowMenuContent: View {
+    let model: SetlistRowModel
+    let actions: SetlistRowActions
+
+    var body: some View {
+        if let play = actions.play {
+            Button(action: play) {
+                Label("Play", systemImage: "play.fill")
+            }
+        }
+
+        if case .song(let song) = model.kind,
+           let current = song.transition,
+           let setTransition = actions.setTransition,
+           !actions.transitions.isEmpty {
+            Menu {
+                ForEach(actions.transitions) { option in
+                    Button {
+                        setTransition(option)
+                    } label: {
+                        Label(option.label, systemImage: option == current ? "checkmark" : option.systemImage)
+                    }
+                }
+            } label: {
+                Label("Transition to Next", systemImage: current.systemImage)
+            }
+        }
+
+        if let edit = actions.edit {
+            Button(action: edit) {
+                Label("Edit", systemImage: "pencil")
+            }
+        }
+
+        if let relink = actions.relink {
+            Button(action: relink) {
+                Label("Relink Missing Files…", systemImage: "exclamationmark.triangle")
+            }
+        }
+
+        Button(role: .destructive, action: actions.remove) {
+            Label("Remove from Setlist", systemImage: "trash")
+        }
+    }
+}
+
+private struct SetlistRowMenuButton<MenuContent: View>: View {
+    @ViewBuilder let menu: () -> MenuContent
+
+    var body: some View {
+        SwiftUI.Menu {
+            menu()
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(AppColors.textSecondary)
+                .frame(width: 32, height: 32)
+                .contentShape(Rectangle())
+        }
+        .menuIndicator(.hidden)
+        .menuStyle(.borderlessButton)
+        .buttonStyle(.plain)
+        .fixedSize()
+        .setlistMenuFittedSizing()
+        .appLinkPointer()
+        .accessibilityLabel("More actions")
+    }
+}
+
+// MARK: - Rows
+
+private struct SetlistHeaderRowView<MenuContent: View>: View {
     let title: String
-    var timeText: String = "0:00"
+    let timeText: String?
+    let showsMenu: Bool
+    @ViewBuilder let menu: () -> MenuContent
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            Text(timeText)
-                .font(.subheadline.monospaced())
-                .foregroundStyle(AppColors.textTertiary)
-                .frame(width: 52, alignment: .trailing)
-                .accessibilityLabel("Time \(timeText)")
-
             Text(title)
                 .font(.caption.weight(.semibold))
                 .tracking(0.6)
                 .textCase(.uppercase)
                 .foregroundStyle(AppColors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let timeText {
+                Text(timeText)
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(AppColors.textTertiary)
+                    .accessibilityLabel("Time \(timeText)")
+            }
+
+            if showsMenu {
+                SetlistRowMenuButton(menu: menu)
+            }
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        .frame(minHeight: 40, alignment: .leading)
+        .frame(minHeight: 40)
     }
 }
 
-struct LiveSetlistSongRow: View {
-    let title: String
-    let durationText: String
-    let index: Int
-    let currentIndex: Int
-    var keyText: String? = nil
-    var bpmText: String? = nil
-    var hasMissingMedia: Bool = false
-    var transition: SetlistTransition? = nil
-    var onOverlapBadgeTap: (() -> Void)? = nil
+private struct SetlistSongRowView<MenuContent: View>: View {
+    let song: SetlistRowModel.Song
+    let isCurrent: Bool
+    let isFinished: Bool
+    let isPlaying: Bool
+    let showsMenu: Bool
+    @ViewBuilder let menu: () -> MenuContent
 
-    private var isFinished: Bool {
-        index < currentIndex
-    }
-
-    private var isCurrent: Bool {
-        index == currentIndex
+    private var detailText: String? {
+        let parts = [song.keyText, song.bpmText].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            Text(durationText)
-                .font(.subheadline.monospaced().weight(isCurrent ? .semibold : .regular))
-                .foregroundStyle(isCurrent ? AppColors.textSecondary : AppColors.textTertiary)
-                .frame(width: 52, alignment: .trailing)
-                .accessibilityLabel("Duration \(durationText)")
+            leadingIndicator
+                .frame(width: 28)
 
-            HStack(spacing: AppSpacing.xs) {
-                Text(title)
-                    .font(isCurrent ? .headline.weight(.semibold) : .body.weight(.medium))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(song.title)
+                    .font(.body.weight(isCurrent ? .semibold : .medium))
                     .foregroundStyle(isFinished ? AppColors.textTertiary : AppColors.textPrimary)
                     .lineLimit(2)
-                    .layoutPriority(1)
 
-                if let keyText {
-                    AppBadge(title: keyText, style: .neutral)
-                        .accessibilityLabel("Key \(keyText)")
+                if let detailText {
+                    Text(detailText)
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textTertiary)
+                        .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if hasMissingMedia {
+            if song.hasMissingMedia {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
                     .font(.caption)
                     .accessibilityLabel("Missing audio files")
-                    .help("Missing audio files — use Relink Missing Files in the context menu")
+                    .help("Missing audio files — use Relink Missing Files in the menu")
             }
 
-            Text(bpmText ?? "")
-                .font(.caption.monospaced().weight(.medium))
-                .foregroundStyle(isCurrent ? AppColors.textSecondary : AppColors.textTertiary)
-                .frame(width: 64, alignment: .trailing)
-                .accessibilityLabel(bpmText.map { "\($0)" } ?? "")
-                .accessibilityHidden(bpmText == nil)
+            if let transition = song.transition {
+                Image(systemName: transition.systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(transition.badgeColor)
+                    .accessibilityLabel("Transition to next: \(transition.label)")
+                    .help("Transition to next: \(transition.label)")
+            }
 
-            if let transition {
-                SetlistTransitionBadge(
-                    transition: transition,
-                    size: 24,
-                    onTap: onOverlapBadgeTap
-                )
+            Text(song.durationText)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(isCurrent ? AppColors.textSecondary : AppColors.textTertiary)
+                .accessibilityLabel("Duration \(song.durationText)")
+
+            if showsMenu {
+                SetlistRowMenuButton(menu: menu)
             }
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.sm)
-        .frame(maxWidth: .infinity, minHeight: isCurrent ? 64 : 56, alignment: .leading)
-        .contentShape(Rectangle())
+        .frame(minHeight: AppSpacing.rowMinHeight)
         .opacity(isFinished ? 0.55 : 1)
     }
-}
 
-extension LiveSetlistSongRow {
-    init(
-        song: Song,
-        duration: TimeInterval,
-        index: Int,
-        currentIndex: Int,
-        hasMissingMedia: Bool = false,
-        transition: SetlistTransition? = nil,
-        onOverlapBadgeTap: (() -> Void)? = nil
-    ) {
-        let bpmText: String? = {
-            guard let bpm = song.bpm else { return nil }
-            return String(format: "%.0f BPM", bpm.rounded())
-        }()
-        self.init(
-            title: song.name,
-            durationText: LiveSetlistDurationFormat.clock(for: duration),
-            index: index,
-            currentIndex: currentIndex,
-            keyText: song.displayedKeyText,
-            bpmText: bpmText,
-            hasMissingMedia: hasMissingMedia,
-            transition: transition,
-            onOverlapBadgeTap: onOverlapBadgeTap
-        )
+    @ViewBuilder
+    private var leadingIndicator: some View {
+        if isCurrent {
+            Image(systemName: "speaker.wave.2.fill")
+                .font(.subheadline)
+                .foregroundStyle(AppColors.accent)
+                .symbolEffect(.variableColor.iterative, isActive: isPlaying)
+                .accessibilityLabel("Now playing")
+        } else {
+            Text("\(song.playbackIndex + 1)")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(AppColors.textTertiary)
+                .accessibilityHidden(true)
+        }
     }
 }
 
 // MARK: - Shared setlist chrome
 
 struct LiveSetlistAddMenu: View {
+    /// iOS only: shows an Edit/Done button that toggles drag-to-reorder. Pass nil when there is nothing to edit.
+    var isEditing: Binding<Bool>? = nil
     var onAddHeader: () -> Void
     var onAddSong: () -> Void
 
     var body: some View {
         HStack {
+            #if os(iOS)
+            if let isEditing {
+                Button(isEditing.wrappedValue ? "Done" : "Edit") {
+                    withAnimation { isEditing.wrappedValue.toggle() }
+                }
+                .font(.body)
+                .accessibilityLabel(isEditing.wrappedValue ? "Done reordering" : "Edit setlist order")
+            }
+            #endif
+
             Spacer(minLength: 0)
 
             Menu {
@@ -154,7 +387,7 @@ struct LiveSetlistAddMenu: View {
             .menuStyle(.borderlessButton)
             .buttonStyle(.plain)
             .fixedSize()
-            .liveSetlistAddMenuFittedSizing()
+            .setlistMenuFittedSizing()
             .appLinkPointer()
             .accessibilityLabel("Add to setlist")
             .help("Add to Setlist")
@@ -169,7 +402,7 @@ struct LiveSetlistAddMenu: View {
 private extension View {
     /// iOS 26+ Menu defaults to flexible (full-width) button sizing.
     @ViewBuilder
-    func liveSetlistAddMenuFittedSizing() -> some View {
+    func setlistMenuFittedSizing() -> some View {
         if #available(iOS 26.0, macOS 26.0, *) {
             buttonSizing(.fitted)
         } else {
@@ -225,156 +458,7 @@ enum LiveSetlistDurationFormat {
     }
 }
 
-private struct LiveSetlistReorderHandle: View {
-    let accessibilityNoun: String
-    var isCurrent: Bool = false
-    let onDragBegan: () -> NSItemProvider
-
-    var body: some View {
-        Image(systemName: "line.3.horizontal")
-            .font(.body.weight(.semibold))
-            .foregroundStyle(isCurrent ? AppColors.textSecondary : AppColors.textTertiary)
-            .frame(width: 36)
-            .frame(maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .accessibilityLabel("Reorder \(accessibilityNoun)")
-            .help("Drag to reorder")
-            .onDrag(onDragBegan) {
-                // The list reorders in place, so the floating drag image would only be noise.
-                Color.clear.frame(width: 1, height: 1)
-            }
-    }
-}
-
-/// Keeps a stable HStack row root on both platforms (needed so iOS List reorder
-/// isn't fighting a Button as the row's root). Trailing grip is macOS-only;
-/// iOS uses the native edit-mode control in the same trailing slot.
-private struct LiveSetlistTrailingReorderHandleModifier: ViewModifier {
-    let accessibilityNoun: String
-    var isCurrent: Bool = false
-    let onDragBegan: () -> NSItemProvider
-
-    func body(content: Content) -> some View {
-        HStack(spacing: 0) {
-            content
-            #if os(macOS)
-            LiveSetlistReorderHandle(
-                accessibilityNoun: accessibilityNoun,
-                isCurrent: isCurrent,
-                onDragBegan: onDragBegan
-            )
-            #endif
-        }
-    }
-}
-
-/// Shared list styling used by local and remote live setlist panes.
-struct LiveSetlistListChromeModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .environment(\.defaultMinListRowHeight, 1)
-            #if os(iOS)
-            .listSectionSpacing(0)
-            .contentMargins(.vertical, 0, for: .scrollContent)
-            // Native trailing reorder control (custom onDrag/onDrop is unreliable in iOS List).
-            .environment(\.editMode, .constant(.active))
-            #endif
-    }
-}
-
-private struct LiveSetlistSongRowChromeModifier: ViewModifier {
-    let isDragging: Bool
-    let isCurrent: Bool
-    @State private var isHovered = false
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(isDragging ? 0.3 : 1)
-            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-            .listRowSeparator(.hidden)
-            .listRowBackground(rowBackground)
-            .onHover { isHovered = $0 }
-    }
-
-    private var rowBackground: Color {
-        if isCurrent {
-            return AppColors.accent
-        }
-        if isHovered {
-            return AppColors.surface
-        }
-        return Color.clear
-    }
-}
-
-extension View {
-    func liveSetlistListChrome() -> some View {
-        modifier(LiveSetlistListChromeModifier())
-    }
-
-    func liveSetlistTrailingReorderHandle(
-        accessibilityNoun: String,
-        isCurrent: Bool = false,
-        onDragBegan: @escaping () -> NSItemProvider
-    ) -> some View {
-        modifier(
-            LiveSetlistTrailingReorderHandleModifier(
-                accessibilityNoun: accessibilityNoun,
-                isCurrent: isCurrent,
-                onDragBegan: onDragBegan
-            )
-        )
-    }
-
-    func liveSetlistHeaderRowChrome(isDragging: Bool) -> some View {
-        self
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .opacity(isDragging ? 0.3 : 1)
-            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-            .listRowSeparator(.hidden)
-            .listRowBackground(AppColors.backgroundSecondary)
-    }
-
-    func liveSetlistSongRowChrome(isDragging: Bool, isCurrent: Bool) -> some View {
-        modifier(
-            LiveSetlistSongRowChromeModifier(
-                isDragging: isDragging,
-                isCurrent: isCurrent
-            )
-        )
-    }
-}
-
-/// Reorders live as the drag passes over a row. A nil `targetID` marks the list background,
-/// which only needs to commit whatever order the drag left behind.
-struct LiveSetlistEntryDropDelegate<ID: Hashable>: DropDelegate {
-    let targetID: ID?
-    let draggedID: ID?
-    let onMove: (ID, ID) -> Void
-    let onCommit: () -> Void
-
-    func validateDrop(info: DropInfo) -> Bool {
-        draggedID != nil
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let draggedID, let targetID, draggedID != targetID else { return }
-        onMove(draggedID, targetID)
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        onCommit()
-        return true
-    }
-}
-
-/// Shared Finder-drop parsing for song-folder imports (setlist and song library).
+/// Shared Finder-drop parsing for song-folder imports.
 enum SongFolderDrop {
     /// Resolves dropped file providers to the URLs of the directories among them.
     static func folderURLs(from providers: [NSItemProvider]) async -> [URL] {
@@ -405,11 +489,7 @@ enum SongFolderDrop {
     }
 }
 
-/// Accepts a Finder folder drag anywhere over the setlist. Used on its own only
-/// where nothing else competes for the drop (the setlist container's blank-space
-/// fallback); rows use `LiveSetlistRowDropDelegate` instead — see its note.
-/// Dropped folders always append to the end of the setlist — no per-row
-/// insertion tracking, which made the list reflow (and feel jittery) on hover.
+/// Accepts a Finder folder drag on the song library.
 struct LiveSetlistSongFolderDropDelegate: DropDelegate {
     let onHover: () -> Void
     let onExit: () -> Void
@@ -433,53 +513,5 @@ struct LiveSetlistSongFolderDropDelegate: DropDelegate {
 
     func performDrop(info: DropInfo) -> Bool {
         onPerform(info.itemProviders(for: [.fileURL]))
-    }
-}
-
-/// Combines setlist-entry reordering and Finder folder-drop handling in a single
-/// delegate. A row can only usefully register for one `.onDrop` at a time: two
-/// separately-typed `.onDrop` modifiers stacked on the same view fight over which
-/// one AppKit treats as the row's drag destination, so the second (folder) one
-/// loses hover tracking the moment the drag enters a row. Declaring both the
-/// `.text` (reorder) and `.fileURL` (folder) types on one `.onDrop` and
-/// dispatching inside `DropInfo` avoids that conflict.
-struct LiveSetlistRowDropDelegate<ID: Hashable>: DropDelegate {
-    let targetID: ID?
-    let draggedID: ID?
-    let onMove: (ID, ID) -> Void
-    let onCommitReorder: () -> Void
-
-    let onFolderHover: () -> Void
-    let onFolderExit: () -> Void
-    let onFolderPerform: ([NSItemProvider]) -> Bool
-
-    func validateDrop(info: DropInfo) -> Bool {
-        draggedID != nil || info.hasItemsConforming(to: [.fileURL])
-    }
-
-    func dropEntered(info: DropInfo) {
-        if let draggedID, let targetID, draggedID != targetID {
-            onMove(draggedID, targetID)
-            return
-        }
-        guard draggedID == nil, info.hasItemsConforming(to: [.fileURL]) else { return }
-        onFolderHover()
-    }
-
-    func dropExited(info: DropInfo) {
-        guard draggedID == nil else { return }
-        onFolderExit()
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: draggedID != nil ? .move : .copy)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        if draggedID != nil {
-            onCommitReorder()
-            return true
-        }
-        return onFolderPerform(info.itemProviders(for: [.fileURL]))
     }
 }
