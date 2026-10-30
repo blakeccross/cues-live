@@ -7,20 +7,7 @@ struct TransportStatusSnapshot {
     let key: String
 }
 
-enum SharedTransportStripChrome: Equatable {
-    /// Metadata + transport buttons + position readout (landscape / macOS toolbar).
-    case full
-    /// Portrait bottom bar: song info above shared transport buttons.
-    case portraitBottom
-
-    var showsControls: Bool { true }
-
-    var stacksInfoAboveControls: Bool {
-        self == .portraitBottom
-    }
-}
-
-/// Single stop / play / fade / loop cluster used by toolbar and portrait bottom bar.
+/// Single stop / play / fade / loop cluster used by the shared transport.
 struct SharedTransportControlButtons: View {
     let buttonSize: CGFloat
     let isPlaying: Bool
@@ -161,7 +148,6 @@ struct SharedTransportStrip<BPMPopover: View, MeterPopover: View, KeyPopover: Vi
     var isFading: Bool = false
     var onToggleFade: (() -> Void)? = nil
     var onReadoutHeightChange: ((CGFloat) -> Void)? = nil
-    var chrome: SharedTransportStripChrome = .full
     var enablesInputMapping: Bool = false
 
     @Binding private var showingBPMPopover: Bool
@@ -189,7 +175,6 @@ struct SharedTransportStrip<BPMPopover: View, MeterPopover: View, KeyPopover: Vi
         isFading: Bool = false,
         onToggleFade: (() -> Void)? = nil,
         onReadoutHeightChange: ((CGFloat) -> Void)? = nil,
-        chrome: SharedTransportStripChrome = .full,
         enablesInputMapping: Bool = false,
         showingBPMPopover: Binding<Bool> = .constant(false),
         showingMeterPopover: Binding<Bool> = .constant(false),
@@ -212,7 +197,6 @@ struct SharedTransportStrip<BPMPopover: View, MeterPopover: View, KeyPopover: Vi
         self.isFading = isFading
         self.onToggleFade = onToggleFade
         self.onReadoutHeightChange = onReadoutHeightChange
-        self.chrome = chrome
         self.enablesInputMapping = enablesInputMapping
         _showingBPMPopover = showingBPMPopover
         _showingMeterPopover = showingMeterPopover
@@ -226,32 +210,65 @@ struct SharedTransportStrip<BPMPopover: View, MeterPopover: View, KeyPopover: Vi
     }
 
     var body: some View {
-        if chrome.stacksInfoAboveControls {
-            VStack(spacing: AppSpacing.sm) {
-                songInfoRow
-                HStack {
-                    Spacer(minLength: 0)
+        Group {
+            if isWide {
+                HStack(spacing: AppSpacing.sm) {
+                    transportMetadata
                     controlButtons
-                    Spacer(minLength: 0)
+                    positionReadout
+                }
+                .fixedSize(horizontal: true, vertical: false)
+            } else {
+                VStack(spacing: AppSpacing.sm) {
+                    transportMetadata
+                    controlButtons
+                    Color.clear
+                        .frame(width: 0, height: 0)
+                        .accessibilityLabel("Position \(snapshot.position)")
                 }
             }
-            .frame(maxWidth: .infinity)
-        } else {
-            HStack(alignment: .center, spacing: AppSpacing.sm) {
-                transportMetadata
-                controlButtons
-                positionReadout
-            }
+        }
+        .frame(maxWidth: .infinity)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            availableWidth = width
+            updateWideLayout()
+        }
+        .background {
+            TransportStatusReadout(position: snapshot.position)
+                .fixedSize()
+                .hidden()
+                .accessibilityHidden(true)
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.width
+                } action: { width in
+                    readoutWidth = width
+                    updateWideLayout()
+                }
         }
     }
 
-    private var songInfoRow: some View {
-        HStack(alignment: .center, spacing: AppSpacing.sm) {
-            Spacer(minLength: 0)
-            transportMetadata
-            Spacer(minLength: 0)
+    @State private var availableWidth: CGFloat = 0
+    @State private var metadataWidth: CGFloat = 0
+    @State private var readoutWidth: CGFloat = 0
+    @State private var isWide = false
+
+    /// Tempo, meter, key, buttons, and measure stay one centered row.
+    private var wideLayoutThreshold: CGFloat {
+        metadataWidth + readoutWidth + (buttonSize * 4) + (AppSpacing.sm * 2)
+    }
+
+    private func updateWideLayout() {
+        guard availableWidth > 0, metadataWidth > 0, readoutWidth > 0 else { return }
+        let threshold = wideLayoutThreshold
+        if isWide {
+            if availableWidth < threshold - 16 {
+                isWide = false
+            }
+        } else if availableWidth >= threshold + 16 {
+            isWide = true
         }
-        .frame(maxWidth: .infinity)
     }
 
     private var positionReadout: some View {
@@ -346,6 +363,13 @@ struct SharedTransportStrip<BPMPopover: View, MeterPopover: View, KeyPopover: Vi
             .accessibilityLabel("Key \(snapshot.key)")
         }
         .fixedSize()
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            guard width > 0 else { return }
+            metadataWidth = width
+            updateWideLayout()
+        }
     }
 
     private func metadataText(_ value: String) -> some View {
@@ -380,7 +404,6 @@ extension SharedTransportStrip where BPMPopover == EmptyView, MeterPopover == Em
         isFading: Bool = false,
         onToggleFade: (() -> Void)? = nil,
         onReadoutHeightChange: ((CGFloat) -> Void)? = nil,
-        chrome: SharedTransportStripChrome = .full,
         enablesInputMapping: Bool = false
     ) {
         self.init(
@@ -398,7 +421,6 @@ extension SharedTransportStrip where BPMPopover == EmptyView, MeterPopover == Em
             isFading: isFading,
             onToggleFade: onToggleFade,
             onReadoutHeightChange: onReadoutHeightChange,
-            chrome: chrome,
             enablesInputMapping: enablesInputMapping,
             showingBPMPopover: .constant(false),
             showingMeterPopover: .constant(false),
@@ -410,30 +432,10 @@ extension SharedTransportStrip where BPMPopover == EmptyView, MeterPopover == Em
     }
 }
 
-/// iPhone portrait: compact width + regular height. Landscape phones use compact height.
+/// Transport stays in the bottom bar. `macOSPlacesControlsAtBottom` is the macOS editor toggle.
 enum LiveTransportLayout {
-    /// macOS experiment: the transport lives in a bottom bar (like iPhone portrait) instead of
-    /// the toolbar. Set to false to restore the toolbar transport.
+    /// Set to false to put the macOS song-editor transport back in the toolbar.
     static let macOSPlacesControlsAtBottom = true
-
-    static func placesControlsAtBottom(
-        verticalSizeClass: UserInterfaceSizeClass?,
-        horizontalSizeClass: UserInterfaceSizeClass?
-    ) -> Bool {
-        #if os(iOS)
-        verticalSizeClass == .regular && horizontalSizeClass == .compact
-        #else
-        macOSPlacesControlsAtBottom
-        #endif
-    }
-
-    static func showsToolbarTransport(placesControlsAtBottom: Bool) -> Bool {
-        !placesControlsAtBottom
-    }
-
-    static func bottomBarChrome(placesControlsAtBottom: Bool) -> SharedTransportStripChrome {
-        placesControlsAtBottom ? .portraitBottom : .full
-    }
 }
 
 /// Shared bottom-bar chrome for portrait transport controls.

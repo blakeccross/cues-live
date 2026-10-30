@@ -41,10 +41,6 @@ private struct MissingMediaSheetContext: Identifiable {
 struct LivePlaybackView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(InputMappingController.self) private var mapping
-    #if os(iOS)
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    #endif
     @Query(sort: \Song.name) private var allSongs: [Song]
     @Query(sort: \Setlist.lastOpenedAt, order: .reverse) private var allSetlists: [Setlist]
 
@@ -61,6 +57,8 @@ struct LivePlaybackView: View {
     @State private var sectionAnnouncer = SectionAnnouncer()
     @State private var showingSongLibrary = false
     @State private var songToEditID: UUID?
+    /// Song to open once the library sheet has dismissed, so the editor pushes as a screen.
+    @State private var songPendingEditorID: UUID?
     @State private var showingManageOutputs = false
     @State private var showingShowFileImporter = false
     @State private var showingSetlistPackageExporter = false
@@ -84,17 +82,6 @@ struct LivePlaybackView: View {
     @State private var mediaHealthRevision = 0
     @Bindable private var remoteHost = RemoteSessionHostService.shared
     private var remoteHostController: RemoteHostSessionController { .shared }
-
-    #if os(iOS)
-    private var placesTransportControlsAtBottom: Bool {
-        LiveTransportLayout.placesControlsAtBottom(
-            verticalSizeClass: verticalSizeClass,
-            horizontalSizeClass: horizontalSizeClass
-        )
-    }
-    #else
-    private var placesTransportControlsAtBottom: Bool { LiveTransportLayout.macOSPlacesControlsAtBottom }
-    #endif
 
     private var activeSetlist: Setlist? {
         if let activeSetlistID,
@@ -267,9 +254,6 @@ struct LivePlaybackView: View {
             AppSheetContainer {
                 NavigationStack {
                     songLibraryPanel()
-                        .navigationDestination(isPresented: songEditorDestination) {
-                            songEditorDestinationContent(for: setlist)
-                        }
                 }
             }
             .presentationDetents([.large])
@@ -394,15 +378,16 @@ struct LivePlaybackView: View {
             }
             .onChange(of: activeSetlistID) { _, _ in
                 showingSongLibrary = false
+                songPendingEditorID = nil
                 songToEditID = nil
             }
-            #if os(iOS)
             .onChange(of: showingSongLibrary) { _, isShowing in
-                if !isShowing {
-                    songToEditID = nil
+                guard !isShowing, let pendingID = songPendingEditorID else { return }
+                songPendingEditorID = nil
+                Task { @MainActor in
+                    songToEditID = pendingID
                 }
             }
-            #endif
             .onDisappear {
                 stopPlayback()
             }
@@ -421,11 +406,9 @@ struct LivePlaybackView: View {
             .liveInputMappingSession(arePlaybackActionsEnabled: songToEditID == nil) { action in
                 handleMappedLiveAction(action)
             }
-            #if os(macOS)
             .navigationDestination(isPresented: songEditorDestination) {
                 songEditorDestinationContent(for: setlist)
             }
-            #endif
     }
 
     private var playbackMainLayout: some View {
@@ -442,10 +425,8 @@ struct LivePlaybackView: View {
                 // The transport sits inside the main pane so the mixer panel opens below it.
                 VStack(spacing: 0) {
                     playbackMainSection
-                    if placesTransportControlsAtBottom {
-                        LiveTransportBottomBar {
-                            transportStrip(chrome: .full)
-                        }
+                    LiveTransportBottomBar {
+                        transportStrip
                     }
                 }
             }
@@ -463,10 +444,8 @@ struct LivePlaybackView: View {
                 )
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                if placesTransportControlsAtBottom {
-                    LiveTransportBottomBar {
-                        transportStrip(chrome: .portraitBottom)
-                    }
+                LiveTransportBottomBar {
+                    transportStrip
                 }
             }
         #endif
@@ -481,7 +460,7 @@ struct LivePlaybackView: View {
     }
     #endif
 
-    private func transportStrip(chrome: SharedTransportStripChrome) -> some View {
+    private var transportStrip: some View {
         LiveSetlistNowPlayingInfoView(
             coordinator: coordinator,
             sectionLoop: sectionLoop,
@@ -493,8 +472,7 @@ struct LivePlaybackView: View {
             onPlay: coordinator.play,
             onPause: coordinator.pause,
             onToggleLoop: toggleSectionLoop,
-            onToggleFade: toggleGroupMixFade,
-            chrome: chrome
+            onToggleFade: toggleGroupMixFade
         )
     }
 
@@ -509,7 +487,7 @@ struct LivePlaybackView: View {
     private func songLibraryPanel() -> some View {
         SongLibraryPanel(
             onEdit: { song in
-                songToEditID = song.id
+                presentSongEditor(for: song)
             },
             onDismiss: {
                 showingSongLibrary = false
@@ -526,7 +504,11 @@ struct LivePlaybackView: View {
 
     private func presentSongEditor(for song: Song) {
         #if os(iOS)
-        showingSongLibrary = true
+        if showingSongLibrary {
+            songPendingEditorID = song.id
+            showingSongLibrary = false
+            return
+        }
         #endif
         songToEditID = song.id
     }
@@ -549,20 +531,9 @@ struct LivePlaybackView: View {
                 #endif
             },
             coordinator: coordinator,
-            sectionLoop: sectionLoop,
-            groupMixFade: groupMixFade,
-            isLoaded: coordinator.isLoaded && !coordinator.isLoadingSong,
-            canLoop: !loopSections.isEmpty,
-            onStop: stopPlayback,
-            onPlay: coordinator.play,
-            onPause: coordinator.pause,
-            onToggleLoop: toggleSectionLoop,
-            onToggleFade: toggleGroupMixFade,
             showingSongLibrary: $showingSongLibrary,
             showingManageOutputs: $showingManageOutputs,
-            mixerDetent: $mixerDetent,
-            infoPanelHeight: $infoPanelHeight,
-            transportChrome: placesTransportControlsAtBottom ? nil : .full
+            mixerDetent: $mixerDetent
         )
     }
 
@@ -1587,20 +1558,9 @@ private struct LivePlaybackMonitorSupport: View {
 private struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ViewBuilder let setlistSwitcher: Switcher
     let coordinator: PlaybackCoordinator
-    @Bindable var sectionLoop: SectionLoopController
-    @Bindable var groupMixFade: GroupMixFadeController
-    let isLoaded: Bool
-    let canLoop: Bool
-    let onStop: () -> Void
-    let onPlay: () -> Void
-    let onPause: () -> Void
-    let onToggleLoop: () -> Void
-    let onToggleFade: () -> Void
     @Binding var showingSongLibrary: Bool
     @Binding var showingManageOutputs: Bool
     @Binding var mixerDetent: LiveGroupMixerDetent
-    @Binding var infoPanelHeight: CGFloat
-    var transportChrome: SharedTransportStripChrome? = .full
 
     #if os(macOS)
     @Environment(\.openSettings) private var openSettings
@@ -1615,14 +1575,10 @@ private struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         .cuesHideSharedBackground()
 
         ToolbarItem(placement: .principal) {
-            if transportChrome != nil {
-                transportInfoBar
-            } else {
-                LiveToolbarSongTitle(
-                    title: coordinator.currentSong?.name ?? "",
-                    upNext: coordinator.nextSong?.name
-                )
-            }
+            LiveToolbarSongTitle(
+                title: coordinator.currentSong?.name ?? "",
+                upNext: coordinator.nextSong?.name
+            )
         }
         .cuesHideSharedBackground()
 
@@ -1645,12 +1601,6 @@ private struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
             setlistSwitcher
         }
 
-        if let transportChrome {
-            ToolbarItem(placement: .principal) {
-                transportInfoBar(chrome: transportChrome)
-            }
-        }
-
         ToolbarItem(placement: .topBarTrailing) {
             InputMappingToolbarMenu()
         }
@@ -1663,29 +1613,6 @@ private struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
             manageOutputsButton
         }
         #endif
-    }
-
-    #if os(macOS)
-    private var transportInfoBar: some View {
-        transportInfoBar(chrome: .full)
-    }
-    #endif
-
-    private func transportInfoBar(chrome: SharedTransportStripChrome) -> some View {
-        LiveSetlistNowPlayingInfoView(
-            coordinator: coordinator,
-            sectionLoop: sectionLoop,
-            groupMixFade: groupMixFade,
-            isLoaded: isLoaded,
-            canLoop: canLoop,
-            infoPanelHeight: $infoPanelHeight,
-            onStop: onStop,
-            onPlay: onPlay,
-            onPause: onPause,
-            onToggleLoop: onToggleLoop,
-            onToggleFade: onToggleFade,
-            chrome: chrome
-        )
     }
 
     private var songsButton: some View {

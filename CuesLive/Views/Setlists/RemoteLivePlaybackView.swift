@@ -3,10 +3,6 @@ import SwiftUI
 struct RemoteLivePlaybackView: View {
     @Bindable private var client = RemoteSessionClientService.shared
     @Environment(InputMappingController.self) private var mapping
-    #if os(iOS)
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    #endif
 
     @State private var mixerVisible = false
     @State private var infoPanelHeight: CGFloat = 44
@@ -22,17 +18,6 @@ struct RemoteLivePlaybackView: View {
     private var snapshot: RemoteSessionSnapshot? { client.snapshot }
     private var state: RemoteSessionState { client.state }
     private var librarySongs: [RemoteLibrarySongDTO] { snapshot?.librarySongs ?? [] }
-
-    #if os(iOS)
-    private var placesTransportControlsAtBottom: Bool {
-        LiveTransportLayout.placesControlsAtBottom(
-            verticalSizeClass: verticalSizeClass,
-            horizontalSizeClass: horizontalSizeClass
-        )
-    }
-    #else
-    private var placesTransportControlsAtBottom: Bool { LiveTransportLayout.macOSPlacesControlsAtBottom }
-    #endif
 
     /// macOS `.primaryAction` is the leading edge, so these controls use `.automatic`.
     private var trailingToolbarPlacement: ToolbarItemPlacement {
@@ -96,28 +81,14 @@ struct RemoteLivePlaybackView: View {
             .cuesHideSharedBackground()
             #endif
 
-            if LiveTransportLayout.showsToolbarTransport(
-                placesControlsAtBottom: placesTransportControlsAtBottom
-            ) {
-                ToolbarItem(placement: .principal) {
-                    transportBar(chrome: .full)
-                }
-                #if os(macOS)
-                .cuesHideSharedBackground()
-                #endif
-            }
             #if os(macOS)
-            if !LiveTransportLayout.showsToolbarTransport(
-                placesControlsAtBottom: placesTransportControlsAtBottom
-            ) {
-                ToolbarItem(placement: .principal) {
-                    LiveToolbarSongTitle(
-                        title: resolvedCurrentSong?.name ?? "",
-                        upNext: song(atPlaybackIndex: state.currentIndex + 1)?.name
-                    )
-                }
-                .cuesHideSharedBackground()
+            ToolbarItem(placement: .principal) {
+                LiveToolbarSongTitle(
+                    title: resolvedCurrentSong?.name ?? "",
+                    upNext: song(atPlaybackIndex: state.currentIndex + 1)?.name
+                )
             }
+            .cuesHideSharedBackground()
             #endif
             ToolbarItem(placement: trailingToolbarPlacement) {
                 InputMappingToolbarMenu()
@@ -253,14 +224,8 @@ struct RemoteLivePlaybackView: View {
         #endif
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
-                if placesTransportControlsAtBottom {
-                    LiveTransportBottomBar {
-                        #if os(macOS)
-                        transportBar(chrome: .full)
-                        #else
-                        transportBar(chrome: .portraitBottom)
-                        #endif
-                    }
+                LiveTransportBottomBar {
+                    transportBar
                 }
                 #if os(macOS)
                 if mixerVisible {
@@ -274,7 +239,6 @@ struct RemoteLivePlaybackView: View {
         #if os(macOS)
         .animation(AppAnimation.fadeQuick, value: mixerVisible)
         #endif
-        .animation(AppAnimation.fadeQuick, value: placesTransportControlsAtBottom)
     }
 
     private var songsLibraryButton: some View {
@@ -324,7 +288,7 @@ struct RemoteLivePlaybackView: View {
         }
     }
 
-    private func transportBar(chrome: SharedTransportStripChrome) -> some View {
+    private var transportBar: some View {
         SharedTransportStrip(
             snapshot: transportStatus,
             buttonSize: max(infoPanelHeight, 44),
@@ -340,7 +304,6 @@ struct RemoteLivePlaybackView: View {
             isFading: state.isFading,
             onToggleFade: { client.send(.toggleFade) },
             onReadoutHeightChange: { infoPanelHeight = $0 },
-            chrome: chrome,
             enablesInputMapping: true
         )
     }

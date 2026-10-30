@@ -68,9 +68,14 @@ struct SongDetailView: View {
             #endif
         }
             .appBackground(.primary)
-            .navigationTitle("")
             #if os(iOS)
+            .navigationTitle(activeSong.name)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(AppColors.backgroundPrimary, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .locksInterfaceOrientations(.landscape)
+            #else
+            .navigationTitle("")
             #endif
             .fileImporter(
                 isPresented: $showingAbletonImporter,
@@ -97,31 +102,6 @@ struct SongDetailView: View {
             }
             .onAppear(perform: handleAppear)
             .navigationBarBackButtonHidden(true)
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarLeading) {
-                    backButton
-                }
-
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        undoController.undo()
-                    } label: {
-                        Image(systemName: "arrow.uturn.backward")
-                    }
-                    .disabled(!undoController.canUndo)
-                    .accessibilityLabel(undoController.undoActionName.map { "Undo \($0)" } ?? "Undo")
-
-                    Button {
-                        undoController.redo()
-                    } label: {
-                        Image(systemName: "arrow.uturn.forward")
-                    }
-                    .disabled(!undoController.canRedo)
-                    .accessibilityLabel(undoController.redoActionName.map { "Redo \($0)" } ?? "Redo")
-                }
-                #endif
-            }
             .sheet(isPresented: $showingBakeSheet) {
                 BakeSongSheet(song: activeSong)
             }
@@ -150,16 +130,6 @@ struct SongDetailView: View {
                 AudioEngineManager.shared.stop()
                 persistSongState()
             }
-    }
-
-    private var backButton: some View {
-        Button {
-            attemptDismiss()
-        } label: {
-            Label("Back", systemImage: "chevron.backward")
-                .labelStyle(.iconOnly)
-        }
-        .help("Back")
     }
 
     private var activeSong: Song {

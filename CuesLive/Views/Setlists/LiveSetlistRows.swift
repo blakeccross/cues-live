@@ -101,7 +101,6 @@ struct SetlistListView: View {
                 showsMenu: !isEditing,
                 menu: { SetlistRowMenuContent(model: row, actions: rowActions) }
             )
-            .listRowInsets(EdgeInsets(top: 0, leading: AppSpacing.sm, bottom: 0, trailing: AppSpacing.sm))
             .listRowSeparator(.hidden)
             .listRowBackground(AppColors.backgroundSecondary)
             .setlistSwipeActions(actions: rowActions)

@@ -12,7 +12,6 @@ struct LiveSetlistNowPlayingInfoView: View {
     let onPause: () -> Void
     let onToggleLoop: () -> Void
     let onToggleFade: () -> Void
-    var chrome: SharedTransportStripChrome = .full
 
     var body: some View {
         Group {
@@ -44,7 +43,6 @@ struct LiveSetlistNowPlayingInfoView: View {
             onReadoutHeightChange: { height in
                 infoPanelHeight = height
             },
-            chrome: chrome,
             enablesInputMapping: true
         )
     }

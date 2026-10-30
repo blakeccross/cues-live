@@ -734,31 +734,7 @@ struct EditView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-#if os(macOS)
-            EditTransportStatusStrip(viewModel: viewModel)
-#else
-            transportBar
-#endif
-
-        if hasTimelineContent {
-            if isTimelineReady {
-                dawTimeline
-            } else {
-                timelineLoadingPlaceholder
-            }
-        } else {
-            emptyTracksPlaceholder
-        }
-
-        #if os(macOS)
-        if LiveTransportLayout.macOSPlacesControlsAtBottom {
-            LiveTransportBottomBar {
-                editorTransportCluster
-            }
-        }
-        #endif
-    }
+        editorRoot
         .background(Color.dawTimelineBackground)
         .focusable()
         .focused($isTimelineFocused)
@@ -1613,7 +1589,39 @@ struct EditView: View {
     }
     #endif
 
-    private var transportBar: some View {
+    @ViewBuilder
+    private var editorRoot: some View {
+        #if os(macOS)
+        VStack(spacing: 0) {
+            EditTransportStatusStrip(viewModel: viewModel)
+            editorTimeline
+            if LiveTransportLayout.macOSPlacesControlsAtBottom {
+                LiveTransportBottomBar {
+                    editorTransportCluster
+                }
+            }
+        }
+        #else
+        transportChrome {
+            editorTimeline
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    private var editorTimeline: some View {
+        if hasTimelineContent {
+            if isTimelineReady {
+                dawTimeline
+            } else {
+                timelineLoadingPlaceholder
+            }
+        } else {
+            emptyTracksPlaceholder
+        }
+    }
+
+    private func transportChrome<Chrome: View>(@ViewBuilder content: () -> Chrome) -> some View {
         EditTransportBar(
             viewModel: viewModel,
             markers: markers,
@@ -1669,7 +1677,10 @@ struct EditView: View {
                         applySnapshot(snapshot)
                     }
                 )
-            }
+            },
+            onBack: onBack,
+            undoController: undoController,
+            content: content()
         )
     }
 
@@ -2354,11 +2365,6 @@ private struct EditSongToolbarContent: ToolbarContent {
         }
         .cuesHideSharedBackground()
 
-        ToolbarItem(placement: .navigation) {
-            songsButton
-        }
-        .cuesHideSharedBackground()
-
         ToolbarItem(placement: .principal) {
             if LiveTransportLayout.macOSPlacesControlsAtBottom {
                 LiveToolbarSongTitle(title: song.name, upNext: nil)
@@ -2424,17 +2430,6 @@ private struct EditSongToolbarContent: ToolbarContent {
         )
     }
 
-    private var songsButton: some View {
-        Button {
-            showingSongLibrary.toggle()
-        } label: {
-            Label("Songs", systemImage: "music.note.list")
-                .labelStyle(.iconOnly)
-        }
-        .tint(showingSongLibrary ? AppColors.accent : nil)
-        .help("Songs")
-    }
-
     private var backButton: some View {
         Button(action: onBack) {
             Label("Back", systemImage: "chevron.backward")
@@ -2495,7 +2490,7 @@ private struct EditSongToolbarContent: ToolbarContent {
 }
 #endif
 
-private struct EditTransportBar: View {
+private struct EditTransportBar<Chrome: View>: View {
     let viewModel: SongEditorViewModel
     let markers: [ArrangementMarker]
     @Bindable var song: Song
@@ -2526,40 +2521,167 @@ private struct EditTransportBar: View {
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+    let onBack: () -> Void
+    let undoController: SongUndoController
+    let content: Chrome
 
     @State private var showingTempoToolbarEditor = false
     @State private var showingKeyToolbarEditor = false
+    @State private var showingClickEditor = false
+    @State private var showingCueEditor = false
     @State private var groupMixFade = GroupMixFadeController()
     @Bindable private var audioEngine = AudioEngineManager.shared
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                if audioEngine.isPlaying {
-                    TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
-                        transportStrip(at: audioEngine.currentTime)
-                    }
-                } else {
-                    transportStrip(at: audioEngine.currentTime)
-                }
-
-                HStack(alignment: .center, spacing: AppSpacing.md) {
-                    leadingControls
-                    Spacer(minLength: 0)
-                    trailingControls
-                }
-            }
-            .padding(.horizontal)
-
+        VStack(spacing: 0) {
             if let loadError = viewModel.loadError {
                 Text(loadError)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppColors.textTertiary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal)
+                    .padding(.vertical, 6)
+                    .background(AppColors.surfaceElevated)
+            }
+            content
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            LiveTransportBottomBar {
+                transportCluster
             }
         }
-        .padding(.vertical, AppSpacing.sm)
-        .background(AppColors.surfaceElevated)
+        #if os(iOS)
+        .toolbar {
+            editorToolbar
+        }
+        #endif
+        .sheet(isPresented: $showingClickEditor) {
+            ClickTrackEditorButton(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: registerUndo,
+                chrome: .sheet
+            )
+        }
+        .sheet(isPresented: $showingCueEditor) {
+            CueTrackEditorButton(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: registerUndo,
+                chrome: .sheet
+            )
+        }
+        .sheet(isPresented: $showingArrangementEditor) {
+            ArrangementEditorMenu(
+                slots: $arrangementSlots,
+                clipTrims: $clipTrims,
+                removedClips: $removedClips,
+                clipGaps: $clipGaps,
+                clipRegions: $clipRegions,
+                loopSlotIDs: $loopSlotIDs,
+                markers: markers,
+                onPersist: onPersistArrangement,
+                onUndoableChange: onUndoableChange
+            )
+            .padding(AppSpacing.md)
+        }
+    }
+
+    #if os(iOS)
+    @ToolbarContentBuilder
+    private var editorToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            backButton
+        }
+
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            Button {
+                undoController.undo()
+            } label: {
+                Image(systemName: "arrow.uturn.backward")
+            }
+            .disabled(!undoController.canUndo)
+            .accessibilityLabel(undoController.undoActionName.map { "Undo \($0)" } ?? "Undo")
+
+            Button {
+                undoController.redo()
+            } label: {
+                Image(systemName: "arrow.uturn.forward")
+            }
+            .disabled(!undoController.canRedo)
+            .accessibilityLabel(undoController.redoActionName.map { "Redo \($0)" } ?? "Redo")
+
+            overflowMenu
+        }
+    }
+
+    private var overflowMenu: some View {
+        Menu {
+            Button {
+                showingChangeKey = true
+            } label: {
+                Label("Change Key", systemImage: "key")
+            }
+            .disabled(song.sortedTracks.isEmpty)
+
+            Button {
+                showingClickEditor = true
+            } label: {
+                Label("Click Track", systemImage: "metronome")
+            }
+
+            Button {
+                showingCueEditor = true
+            } label: {
+                Label("Cue Track", systemImage: "person.wave.2")
+            }
+
+            if !markers.isEmpty {
+                Button {
+                    showingArrangementEditor = true
+                } label: {
+                    Label("Arrangement", systemImage: "list.bullet.rectangle")
+                }
+            }
+
+            Divider()
+
+            Button("Manage Groups…") {
+                showingGroupEditor = true
+            }
+
+            Button("Bake Tracks…") {
+                showingBakeSheet = true
+            }
+            .disabled(song.sortedTracks.isEmpty)
+        } label: {
+            Label("More", systemImage: "ellipsis.circle")
+                .labelStyle(.iconOnly)
+        }
+    }
+
+    private var backButton: some View {
+        Button(action: onBack) {
+            Label("Back", systemImage: "chevron.backward")
+                .labelStyle(.iconOnly)
+        }
+        .help("Back")
+    }
+    #endif
+
+    private var transportCluster: some View {
+        Group {
+            if audioEngine.isPlaying {
+                TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
+                    transportStrip(at: audioEngine.currentTime)
+                }
+            } else {
+                transportStrip(at: audioEngine.currentTime)
+            }
+        }
     }
 
     private func transportStrip(at time: TimeInterval) -> some View {
@@ -2617,35 +2739,6 @@ private struct EditTransportBar: View {
         )
     }
 
-    private var leadingControls: some View {
-        HStack(spacing: 8) {
-            songsButton
-        }
-    }
-
-    @ViewBuilder
-    private var trailingControls: some View {
-        HStack(spacing: 8) {
-            changeKeyButton
-            ClickTrackEditorButton(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo
-            )
-            CueTrackEditorButton(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo
-            )
-            if !markers.isEmpty {
-                arrangementEditorButton
-            }
-            moreMenu
-        }
-    }
-
     private func displaySnapshot(at time: TimeInterval) -> TransportStatusSnapshot {
         let position = MeasureTiming.position(
             at: time,
@@ -2673,88 +2766,6 @@ private struct EditTransportBar: View {
     private func sectionLoopIsActive(at time: TimeInterval) -> Bool {
         guard let section = currentSectionAtTime(time) else { return false }
         return loopSlotIDs.contains(section.id)
-    }
-
-    private var changeKeyButton: some View {
-        Button {
-            showingChangeKey = true
-        } label: {
-            Label("Change Key", systemImage: "key")
-                .labelStyle(.iconOnly)
-        }
-        .disabled(song.sortedTracks.isEmpty)
-        .help("Change Key")
-    }
-
-    private var timeSignatureEditorButton: some View {
-        Button {
-            showingTimeSignatureEditor = true
-        } label: {
-            Label(
-                song.timeSignatureDisplay ?? "4/4",
-                systemImage: "music.quarternote.3"
-            )
-            .labelStyle(.titleAndIcon)
-        }
-        .appEditorToolbarPill()
-        .popover(isPresented: $showingTimeSignatureEditor, arrowEdge: .bottom) {
-            TimeSignatureEditorMenu(
-                song: song,
-                timeSignatureChanges: $timeSignatureChanges,
-                normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-                onPersist: onPersistTimeSignatureChanges
-            )
-        }
-    }
-
-    private var arrangementEditorButton: some View {
-        Button {
-            showingArrangementEditor = true
-        } label: {
-            Label("Arrangement", systemImage: "list.bullet.rectangle")
-                .labelStyle(.iconOnly)
-        }
-        .help("Arrangement")
-        .popover(isPresented: $showingArrangementEditor, arrowEdge: .bottom) {
-            ArrangementEditorMenu(
-                slots: $arrangementSlots,
-                clipTrims: $clipTrims,
-                removedClips: $removedClips,
-                clipGaps: $clipGaps,
-                clipRegions: $clipRegions,
-                loopSlotIDs: $loopSlotIDs,
-                markers: markers,
-                onPersist: onPersistArrangement,
-                onUndoableChange: onUndoableChange
-            )
-        }
-    }
-
-    private var moreMenu: some View {
-        Menu {
-            Button("Manage Groups…") {
-                showingGroupEditor = true
-            }
-            Button("Bake Tracks…") {
-                showingBakeSheet = true
-            }
-            .disabled(song.sortedTracks.isEmpty)
-        } label: {
-            Label("More", systemImage: "ellipsis.circle")
-                .labelStyle(.iconOnly)
-        }
-        .help("More")
-    }
-
-    private var songsButton: some View {
-        Button {
-            showingSongLibrary.toggle()
-        } label: {
-            Label("Songs", systemImage: "music.note.list")
-                .labelStyle(.iconOnly)
-        }
-        .tint(showingSongLibrary ? AppColors.accent : nil)
-        .help("Songs")
     }
 
 }
@@ -4105,11 +4116,18 @@ private struct TimelineTempoRulerView: View {
 }
 
 private struct CueTrackEditorButton: View {
+    enum Chrome {
+        case toolbar
+        case sheet
+    }
+
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Bindable var song: Song
     let viewModel: SongEditorViewModel
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+    var chrome: Chrome = .toolbar
 
     @State private var showingEditor = false
     @State private var editStartSnapshot: SongEditSnapshot?
@@ -4117,6 +4135,21 @@ private struct CueTrackEditorButton: View {
     @State private var generateError: String?
 
     var body: some View {
+        switch chrome {
+        case .toolbar:
+            toolbarButton
+        case .sheet:
+            editorMenu
+                .onAppear {
+                    editStartSnapshot = captureSnapshot()
+                }
+                .onDisappear {
+                    commitUndoIfNeeded()
+                }
+        }
+    }
+
+    private var toolbarButton: some View {
         Button {
             editStartSnapshot = captureSnapshot()
             showingEditor = true
@@ -4127,22 +4160,38 @@ private struct CueTrackEditorButton: View {
         .tint(CueTrackFileGenerator.hasCueTrack(in: song) ? AppColors.accent : nil)
         .help("Cue Track")
         .popover(isPresented: $showingEditor, arrowEdge: .bottom) {
-            CueTrackEditorMenu(
-                song: song,
-                viewModel: viewModel,
-                isGenerating: $isGenerating,
-                generateError: $generateError,
-                onGenerate: generateCues
-            )
+            editorMenu
         }
         .onChange(of: showingEditor) { _, isShowing in
-            guard !isShowing, let before = editStartSnapshot else { return }
-            let after = captureSnapshot()
-            if before != after {
-                registerUndo("Generate Cue Track", before, after)
-            }
-            editStartSnapshot = nil
-            generateError = nil
+            guard !isShowing else { return }
+            commitUndoIfNeeded()
+        }
+    }
+
+    private var editorMenu: some View {
+        CueTrackEditorMenu(
+            song: song,
+            viewModel: viewModel,
+            isGenerating: $isGenerating,
+            generateError: $generateError,
+            onGenerate: generateCues
+        )
+    }
+
+    private func commitUndoIfNeeded() {
+        guard let before = editStartSnapshot else { return }
+        let after = captureSnapshot()
+        if before != after {
+            registerUndo("Generate Cue Track", before, after)
+        }
+        editStartSnapshot = nil
+        generateError = nil
+    }
+
+    private func closeEditor() {
+        showingEditor = false
+        if chrome == .sheet {
+            dismiss()
         }
     }
 
@@ -4162,7 +4211,7 @@ private struct CueTrackEditorButton: View {
                     }
                 )
                 viewModel.reloadSongAfterMediaChange()
-                showingEditor = false
+                closeEditor()
             } catch {
                 generateError = error.localizedDescription
             }
@@ -4233,11 +4282,18 @@ private struct CueTrackEditorMenu: View {
 }
 
 private struct ClickTrackEditorButton: View {
+    enum Chrome {
+        case toolbar
+        case sheet
+    }
+
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Bindable var song: Song
     let viewModel: SongEditorViewModel
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+    var chrome: Chrome = .toolbar
 
     @State private var showingEditor = false
     @State private var editStartSnapshot: SongEditSnapshot?
@@ -4245,6 +4301,21 @@ private struct ClickTrackEditorButton: View {
     @State private var generateError: String?
 
     var body: some View {
+        switch chrome {
+        case .toolbar:
+            toolbarButton
+        case .sheet:
+            editorMenu
+                .onAppear {
+                    editStartSnapshot = captureSnapshot()
+                }
+                .onDisappear {
+                    commitUndoIfNeeded()
+                }
+        }
+    }
+
+    private var toolbarButton: some View {
         Button {
             editStartSnapshot = captureSnapshot()
             showingEditor = true
@@ -4255,22 +4326,38 @@ private struct ClickTrackEditorButton: View {
         .tint(ClickTrackFileGenerator.hasClickTrack(in: song) ? AppColors.accent : nil)
         .help("Click Track")
         .popover(isPresented: $showingEditor, arrowEdge: .bottom) {
-            ClickTrackEditorMenu(
-                song: song,
-                viewModel: viewModel,
-                isGenerating: $isGenerating,
-                generateError: $generateError,
-                onGenerate: generateClick
-            )
+            editorMenu
         }
         .onChange(of: showingEditor) { _, isShowing in
-            guard !isShowing, let before = editStartSnapshot else { return }
-            let after = captureSnapshot()
-            if before != after {
-                registerUndo("Generate Click Track", before, after)
-            }
-            editStartSnapshot = nil
-            generateError = nil
+            guard !isShowing else { return }
+            commitUndoIfNeeded()
+        }
+    }
+
+    private var editorMenu: some View {
+        ClickTrackEditorMenu(
+            song: song,
+            viewModel: viewModel,
+            isGenerating: $isGenerating,
+            generateError: $generateError,
+            onGenerate: generateClick
+        )
+    }
+
+    private func commitUndoIfNeeded() {
+        guard let before = editStartSnapshot else { return }
+        let after = captureSnapshot()
+        if before != after {
+            registerUndo("Generate Click Track", before, after)
+        }
+        editStartSnapshot = nil
+        generateError = nil
+    }
+
+    private func closeEditor() {
+        showingEditor = false
+        if chrome == .sheet {
+            dismiss()
         }
     }
 
@@ -4289,7 +4376,7 @@ private struct ClickTrackEditorButton: View {
                 }
             )
             viewModel.reloadSongAfterMediaChange()
-            showingEditor = false
+            closeEditor()
         } catch {
             generateError = error.localizedDescription
         }
