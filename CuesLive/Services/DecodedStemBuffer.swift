@@ -196,6 +196,7 @@ final class DecodedStemBuffer: StemSampleSource, @unchecked Sendable {
         )
     }
 
+    @discardableResult
     func copy(
         channel: Int,
         startingFrame: Int,

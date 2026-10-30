@@ -282,31 +282,29 @@ enum AudioOutputDeviceService {
     }
 
     private static func deviceUID(for deviceID: AudioDeviceID) -> String? {
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyDeviceUID,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        var uid: CFString = "" as CFString
-        var size = UInt32(MemoryLayout<CFString>.size)
-        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &uid) == noErr else {
-            return nil
-        }
-        return uid as String
+        deviceString(kAudioDevicePropertyDeviceUID, deviceID: deviceID)
     }
 
     private static func deviceName(for deviceID: AudioDeviceID) -> String? {
+        deviceString(kAudioDevicePropertyDeviceNameCFString, deviceID: deviceID)
+    }
+
+    /// Core Audio writes a +1 `CFString` into the out-pointer. `Unmanaged` is the
+    /// type that can receive that pointer without treating it as a Swift object.
+    private static func deviceString(
+        _ selector: AudioObjectPropertySelector,
+        deviceID: AudioDeviceID
+    ) -> String? {
         var address = AudioObjectPropertyAddress(
-            mSelector: kAudioDevicePropertyDeviceNameCFString,
+            mSelector: selector,
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
-        var name: CFString = "" as CFString
-        var size = UInt32(MemoryLayout<CFString>.size)
-        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &name) == noErr else {
-            return nil
-        }
-        return name as String
+        var value: Unmanaged<CFString>?
+        var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &value)
+        guard status == noErr, let value else { return nil }
+        return value.takeRetainedValue() as String
     }
     #else
     private static func iOSDevices() -> [AudioOutputDevice] {

@@ -17,7 +17,7 @@ enum AppColors {
 
     /// Brand orange (#E25303) — reserved for current/active state.
     static let accent = Color.accentColor
-    static let separator = Color("Separator")
+    static let separator = Color("AppSeparator")
 
     static let soloActive = Color("SoloActive")
     static let muteActive = Color("MuteActive")

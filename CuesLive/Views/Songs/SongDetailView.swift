@@ -302,7 +302,7 @@ struct SongDetailView: View {
             viewModel = model
         }
 
-        try? SongProjectBridge.ensureProjectFile(for: song, context: modelContext)
+        _ = try? SongProjectBridge.ensureProjectFile(for: song, context: modelContext)
 
         guard let projectState = try? SongProjectBridge.loadProjectState(for: song) else {
             return

@@ -42,8 +42,8 @@ final class InputMappingController {
     private var statusClearTask: Task<Void, Never>?
     private(set) var endsSessionAfterAssign = false
 
-    init(store: InputMappingStore = .shared, bindsHardware: Bool = true) {
-        self.store = store
+    init(store: InputMappingStore? = nil, bindsHardware: Bool = true) {
+        self.store = store ?? .shared
         guard bindsHardware else { return }
         MIDIInputService.shared.onNoteOn = { [weak self] binding in
             self?.handleMIDI(binding)

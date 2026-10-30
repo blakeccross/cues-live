@@ -443,7 +443,7 @@ enum SongProjectBridge {
         }
 
         for url in urls where url.pathExtension == ProjectUTType.showProjectExtension {
-            try? importShow(from: url, into: context)
+            _ = try? importShow(from: url, into: context)
         }
     }
 

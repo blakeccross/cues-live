@@ -26,8 +26,8 @@ enum SongGroupBaker {
     var totalGroups: Int
   }
 
-  struct BakePlan: Sendable {
-    struct Group: Sendable {
+  struct BakePlan {
+    struct Group {
       let groupID: UUID?
       let tracks: [AudioTrack]
     }
@@ -194,7 +194,7 @@ enum SongGroupBaker {
   ) async throws -> DecodedStemBuffer {
     try await Task.detached(priority: .userInitiated) {
       let frameCount = max(1, Int((timelineDuration * DecodedStemBuffer.engineSampleRate).rounded(.up)))
-      var output = try DecodedStemBuffer.silent(
+      let output = try DecodedStemBuffer.silent(
         frameCount: frameCount,
         sampleRate: DecodedStemBuffer.engineSampleRate,
         channelCount: 2

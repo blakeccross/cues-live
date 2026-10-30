@@ -779,7 +779,6 @@ struct LiveSongWaveformView: View {
             width: Self.gridLineWidth,
             height: height
         )
-        var context = context
         context.fill(Path(rect), with: .color(color))
     }
 

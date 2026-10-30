@@ -67,7 +67,13 @@ final class OutputChannelTestPlayer {
         tapNode.installTap(onBus: 0, bufferSize: 4096, format: tapFormat) { buffer, _ in
             meter.observe(buffer)
         }
-        player.scheduleBuffer(playback, at: nil, options: []) {}
+        player.scheduleBuffer(
+            playback,
+            at: nil,
+            options: [],
+            completionCallbackType: .dataConsumed,
+            completionHandler: nil
+        )
         player.play()
         try? await Task.sleep(nanoseconds: 700_000_000)
         tapNode.removeTap(onBus: 0)

@@ -296,7 +296,7 @@ final class AudioEngineManager {
     /// the Mac's system-wide default device.
     func selectOutputDevice(uid: String?) {
         stopEngineForGraphChanges()
-        adoptOutputDevice(uid)
+        _ = adoptOutputDevice(uid)
     }
 
     func setArrangement(
@@ -951,7 +951,7 @@ final class AudioEngineManager {
     }
 
     private func refreshTrackMapper(for trackID: UUID) {
-        guard var track = tracks[trackID] else { return }
+        guard let track = tracks[trackID] else { return }
         let mapper = makeMapper(
             trackID: trackID,
             settings: track.settings,
@@ -1276,7 +1276,7 @@ final class AudioEngineManager {
             compensationCents = 0
         }
 
-        if let timeline,
+        if timeline != nil,
            let lastAppliedPitchCompensationCents,
            abs(lastAppliedPitchCompensationCents - compensationCents) < 0.01 {
             return
