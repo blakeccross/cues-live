@@ -1205,13 +1205,18 @@ struct LiveSetlistWaveformScrollView: View {
     }
 
     private func transitionBadge(_ transition: SetlistTransition, playbackIndex: Int) -> some View {
-        SetlistTransitionBadge(
-            transition: transition,
-            onTap: transition == .overlap
-                ? { onOverlapBadgeTapped?(playbackIndex) }
-                : nil
-        )
-        .frame(height: waveformHeight)
+        VStack(spacing: 0) {
+            SetlistTransitionBadge(
+                transition: transition,
+                onTap: transition == .overlap
+                    ? { onOverlapBadgeTapped?(playbackIndex) }
+                    : nil
+            )
+            .frame(height: waveformHeight)
+            if midiLanesExtraHeight > 0 {
+                Color.clear.frame(height: midiLanesExtraHeight)
+            }
+        }
     }
 
     private var horizontalPinchGesture: some Gesture {
@@ -1308,6 +1313,7 @@ struct LiveSetlistWaveformScrollView: View {
                 waveformLane(snapshot: snapshot, isCurrent: isCurrent)
             } else {
                 LiveSetlistWaveformLanePlaceholder(isCurrent: isCurrent)
+                    .frame(minHeight: waveformHeight + midiLanesExtraHeight, alignment: .top)
                     .task(id: songID) {
                         ensureWaveformSnapshotForSongID(songID)
                     }
@@ -1362,6 +1368,9 @@ struct LiveSetlistWaveformScrollView: View {
                 )
             }
         }
+        // Songs with fewer MIDI lanes still occupy the tallest lane's height,
+        // so every waveform stays on the same vertical line.
+        .frame(minHeight: waveformHeight + midiLanesExtraHeight, alignment: .top)
         .opacity(isCurrent ? 1 : 0.72)
     }
 }
