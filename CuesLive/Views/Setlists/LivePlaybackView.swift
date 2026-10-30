@@ -93,7 +93,7 @@ struct LivePlaybackView: View {
         )
     }
     #else
-    private var placesTransportControlsAtBottom: Bool { false }
+    private var placesTransportControlsAtBottom: Bool { LiveTransportLayout.macOSPlacesControlsAtBottom }
     #endif
 
     private var activeSetlist: Setlist? {
@@ -439,16 +439,17 @@ struct LivePlaybackView: View {
                 coordinator.updateGroupMix(context: modelContext)
             },
             mainContent: {
-                playbackMainSection
-            }
-        )
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if placesTransportControlsAtBottom {
-                LiveTransportBottomBar {
-                    transportStrip(chrome: .portraitBottom)
+                // The transport sits inside the main pane so the mixer panel opens below it.
+                VStack(spacing: 0) {
+                    playbackMainSection
+                    if placesTransportControlsAtBottom {
+                        LiveTransportBottomBar {
+                            transportStrip(chrome: .full)
+                        }
+                    }
                 }
             }
-        }
+        )
         #else
         playbackMainSection
             .navigationDestination(isPresented: mixerScreenPresented) {
@@ -1614,7 +1615,14 @@ private struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         .cuesHideSharedBackground()
 
         ToolbarItem(placement: .principal) {
-            transportInfoBar
+            if transportChrome != nil {
+                transportInfoBar
+            } else {
+                LiveToolbarSongTitle(
+                    title: coordinator.currentSong?.name ?? "",
+                    upNext: coordinator.nextSong?.name
+                )
+            }
         }
         .cuesHideSharedBackground()
 
@@ -1628,7 +1636,7 @@ private struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         }
         .cuesHideSharedBackground()
 
-        ToolbarItem(placement: .primaryAction) {
+        ToolbarItem(placement: .automatic) {
             settingsButton
         }
         .cuesHideSharedBackground()

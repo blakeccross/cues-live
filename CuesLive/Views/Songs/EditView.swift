@@ -741,16 +741,24 @@ struct EditView: View {
             transportBar
 #endif
 
-            if hasTimelineContent {
-                if isTimelineReady {
-                    dawTimeline
-                } else {
-                    timelineLoadingPlaceholder
-                }
+        if hasTimelineContent {
+            if isTimelineReady {
+                dawTimeline
             } else {
-                emptyTracksPlaceholder
+                timelineLoadingPlaceholder
+            }
+        } else {
+            emptyTracksPlaceholder
+        }
+
+        #if os(macOS)
+        if LiveTransportLayout.macOSPlacesControlsAtBottom {
+            LiveTransportBottomBar {
+                editorTransportCluster
             }
         }
+        #endif
+    }
         .background(Color.dawTimelineBackground)
         .focusable()
         .focused($isTimelineFocused)
@@ -918,7 +926,6 @@ struct EditView: View {
                         persistTimeSignatureChanges()
                     }
                 },
-                tempoChanges: $tempoChanges,
                 normalizedTempoChanges: normalizedTempoChanges,
                 onApplyTempo: applyReferenceTempo,
                 onApplyBaseKey: applyBaseKey,
@@ -933,7 +940,6 @@ struct EditView: View {
                 showingBakeSheet: $showingBakeSheet,
                 showingGroupEditor: $showingGroupEditor,
                 onBack: onBack,
-                onClearMarkerCue: { clearMarkerCue() },
                 currentSectionAtTime: { time in
                     displaySections.section(atTimeline: time)
                 },
@@ -1575,6 +1581,38 @@ struct EditView: View {
         }
     }
 
+    #if os(macOS)
+    private var editorTransportCluster: some View {
+        EditSongTransportCluster(
+            viewModel: viewModel,
+            song: song,
+            timeSignatureChanges: $timeSignatureChanges,
+            normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
+            onPersistTimeSignatureChanges: {
+                performUndoableChange("Edit Time Signature") {
+                    persistTimeSignatureChanges()
+                }
+            },
+            normalizedTempoChanges: normalizedTempoChanges,
+            onApplyTempo: applyReferenceTempo,
+            onApplyBaseKey: applyBaseKey,
+            showingTimeSignatureEditor: $showingTimeSignatureEditor,
+            loopSlotIDs: loopSlotIDs,
+            currentSectionAtTime: { time in
+                displaySections.section(atTimeline: time)
+            },
+            onStopTransport: {
+                clearMarkerCue()
+                viewModel.stop()
+            },
+            onToggleLoopAtTime: { time in
+                guard let section = displaySections.section(atTimeline: time) else { return }
+                toggleLoopSection(section)
+            }
+        )
+    }
+    #endif
+
     private var transportBar: some View {
         EditTransportBar(
             viewModel: viewModel,
@@ -2162,38 +2200,20 @@ private struct EditTransportStatusStrip: View {
 }
 
 #if os(macOS)
-private struct EditSongToolbarContent: ToolbarContent {
+private struct EditSongTransportCluster: View {
     let viewModel: SongEditorViewModel
-    let markers: [ArrangementMarker]
     @Bindable var song: Song
-    @Binding var showingArrangementEditor: Bool
-    @Binding var showingTimeSignatureEditor: Bool
     @Binding var timeSignatureChanges: [TimeSignatureChange]
     let normalizedTimeSignatureChanges: [TimeSignatureChange]
     let onPersistTimeSignatureChanges: () -> Void
-    @Binding var tempoChanges: [TempoChange]
     let normalizedTempoChanges: [TempoChange]
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
-    @Binding var showingChangeKey: Bool
-    @Binding var arrangementSlots: [ArrangementSlot]
-    @Binding var clipTrims: [ArrangementClipTrim]
-    @Binding var removedClips: [ArrangementRemovedClip]
-    @Binding var clipGaps: [ArrangementClipGap]
-    @Binding var clipRegions: [ClipRegion]
-    @Binding var loopSlotIDs: Set<UUID>
-    @Binding var showingSongLibrary: Bool
-    @Binding var showingBakeSheet: Bool
-    @Binding var showingGroupEditor: Bool
-    let onBack: () -> Void
-    let onClearMarkerCue: () -> Void
+    @Binding var showingTimeSignatureEditor: Bool
+    let loopSlotIDs: Set<UUID>
     let currentSectionAtTime: (TimeInterval) -> ArrangementDisplaySection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
-    let onPersistArrangement: () -> Void
-    let onUndoableChange: UndoableChangeHandler
-    let captureSnapshot: () -> SongEditSnapshot
-    let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
 
     @State private var showingTempoToolbarEditor = false
     @State private var showingKeyToolbarEditor = false
@@ -2201,59 +2221,16 @@ private struct EditSongToolbarContent: ToolbarContent {
     @Bindable private var audioEngine = AudioEngineManager.shared
     @Environment(\.modelContext) private var modelContext
 
-    @ToolbarContentBuilder
-    var body: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            backButton
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .navigation) {
-            songsButton
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .principal) {
-            transportStrip(at: audioEngine.currentTime)
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .primaryAction) {
-            changeKeyButton
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .primaryAction) {
-            ClickTrackEditorButton(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo
-            )
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .primaryAction) {
-            CueTrackEditorButton(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo
-            )
-        }
-        .cuesHideSharedBackground()
-
-        if !markers.isEmpty {
-            ToolbarItem(placement: .primaryAction) {
-                arrangementEditorButton
+    var body: some View {
+        Group {
+            if audioEngine.isPlaying {
+                TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
+                    transportStrip(at: audioEngine.currentTime)
+                }
+            } else {
+                transportStrip(at: audioEngine.currentTime)
             }
-            .cuesHideSharedBackground()
         }
-
-        ToolbarItem(placement: .primaryAction) {
-            moreMenu
-        }
-        .cuesHideSharedBackground()
     }
 
     private func transportStrip(at time: TimeInterval) -> some View {
@@ -2309,25 +2286,6 @@ private struct EditSongToolbarContent: ToolbarContent {
         )
     }
 
-    private var songsButton: some View {
-        Button {
-            showingSongLibrary.toggle()
-        } label: {
-            Label("Songs", systemImage: "music.note.list")
-                .labelStyle(.iconOnly)
-        }
-        .tint(showingSongLibrary ? AppColors.accent : nil)
-        .help("Songs")
-    }
-
-    private var backButton: some View {
-        Button(action: onBack) {
-            Label("Back", systemImage: "chevron.backward")
-                .labelStyle(.iconOnly)
-        }
-        .help("Back")
-    }
-
     private func displaySnapshot(at time: TimeInterval) -> TransportStatusSnapshot {
         let position = MeasureTiming.position(
             at: time,
@@ -2355,6 +2313,134 @@ private struct EditSongToolbarContent: ToolbarContent {
     private func sectionLoopIsActive(at time: TimeInterval) -> Bool {
         guard let section = currentSectionAtTime(time) else { return false }
         return loopSlotIDs.contains(section.id)
+    }
+}
+
+private struct EditSongToolbarContent: ToolbarContent {
+    let viewModel: SongEditorViewModel
+    let markers: [ArrangementMarker]
+    @Bindable var song: Song
+    @Binding var showingArrangementEditor: Bool
+    @Binding var showingTimeSignatureEditor: Bool
+    @Binding var timeSignatureChanges: [TimeSignatureChange]
+    let normalizedTimeSignatureChanges: [TimeSignatureChange]
+    let onPersistTimeSignatureChanges: () -> Void
+    let normalizedTempoChanges: [TempoChange]
+    let onApplyTempo: (Double) -> Void
+    let onApplyBaseKey: (String?) -> Void
+    @Binding var showingChangeKey: Bool
+    @Binding var arrangementSlots: [ArrangementSlot]
+    @Binding var clipTrims: [ArrangementClipTrim]
+    @Binding var removedClips: [ArrangementRemovedClip]
+    @Binding var clipGaps: [ArrangementClipGap]
+    @Binding var clipRegions: [ClipRegion]
+    @Binding var loopSlotIDs: Set<UUID>
+    @Binding var showingSongLibrary: Bool
+    @Binding var showingBakeSheet: Bool
+    @Binding var showingGroupEditor: Bool
+    let onBack: () -> Void
+    let currentSectionAtTime: (TimeInterval) -> ArrangementDisplaySection?
+    let onStopTransport: () -> Void
+    let onToggleLoopAtTime: (TimeInterval) -> Void
+    let onPersistArrangement: () -> Void
+    let onUndoableChange: UndoableChangeHandler
+    let captureSnapshot: () -> SongEditSnapshot
+    let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+
+    @ToolbarContentBuilder
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            backButton
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .navigation) {
+            songsButton
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .principal) {
+            if LiveTransportLayout.macOSPlacesControlsAtBottom {
+                LiveToolbarSongTitle(title: song.name, upNext: nil)
+            } else {
+                editorTransportCluster
+            }
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .automatic) {
+            changeKeyButton
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .automatic) {
+            ClickTrackEditorButton(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: registerUndo
+            )
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .automatic) {
+            CueTrackEditorButton(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: registerUndo
+            )
+        }
+        .cuesHideSharedBackground()
+
+        if !markers.isEmpty {
+            ToolbarItem(placement: .automatic) {
+                arrangementEditorButton
+            }
+            .cuesHideSharedBackground()
+        }
+
+        ToolbarItem(placement: .automatic) {
+            moreMenu
+        }
+        .cuesHideSharedBackground()
+    }
+
+    private var editorTransportCluster: some View {
+        EditSongTransportCluster(
+            viewModel: viewModel,
+            song: song,
+            timeSignatureChanges: $timeSignatureChanges,
+            normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
+            onPersistTimeSignatureChanges: onPersistTimeSignatureChanges,
+            normalizedTempoChanges: normalizedTempoChanges,
+            onApplyTempo: onApplyTempo,
+            onApplyBaseKey: onApplyBaseKey,
+            showingTimeSignatureEditor: $showingTimeSignatureEditor,
+            loopSlotIDs: loopSlotIDs,
+            currentSectionAtTime: currentSectionAtTime,
+            onStopTransport: onStopTransport,
+            onToggleLoopAtTime: onToggleLoopAtTime
+        )
+    }
+
+    private var songsButton: some View {
+        Button {
+            showingSongLibrary.toggle()
+        } label: {
+            Label("Songs", systemImage: "music.note.list")
+                .labelStyle(.iconOnly)
+        }
+        .tint(showingSongLibrary ? AppColors.accent : nil)
+        .help("Songs")
+    }
+
+    private var backButton: some View {
+        Button(action: onBack) {
+            Label("Back", systemImage: "chevron.backward")
+                .labelStyle(.iconOnly)
+        }
+        .help("Back")
     }
 
     private var changeKeyButton: some View {

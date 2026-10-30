@@ -412,6 +412,10 @@ extension SharedTransportStrip where BPMPopover == EmptyView, MeterPopover == Em
 
 /// iPhone portrait: compact width + regular height. Landscape phones use compact height.
 enum LiveTransportLayout {
+    /// macOS experiment: the transport lives in a bottom bar (like iPhone portrait) instead of
+    /// the toolbar. Set to false to restore the toolbar transport.
+    static let macOSPlacesControlsAtBottom = true
+
     static func placesControlsAtBottom(
         verticalSizeClass: UserInterfaceSizeClass?,
         horizontalSizeClass: UserInterfaceSizeClass?
@@ -419,7 +423,7 @@ enum LiveTransportLayout {
         #if os(iOS)
         verticalSizeClass == .regular && horizontalSizeClass == .compact
         #else
-        false
+        macOSPlacesControlsAtBottom
         #endif
     }
 

@@ -31,8 +31,17 @@ struct RemoteLivePlaybackView: View {
         )
     }
     #else
-    private var placesTransportControlsAtBottom: Bool { false }
+    private var placesTransportControlsAtBottom: Bool { LiveTransportLayout.macOSPlacesControlsAtBottom }
     #endif
+
+    /// macOS `.primaryAction` is the leading edge, so these controls use `.automatic`.
+    private var trailingToolbarPlacement: ToolbarItemPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .primaryAction
+        #endif
+    }
 
     private var resolvedCurrentSong: RemoteSongDTO? {
         guard let snapshot else { return nil }
@@ -97,14 +106,27 @@ struct RemoteLivePlaybackView: View {
                 .cuesHideSharedBackground()
                 #endif
             }
-            ToolbarItem(placement: .primaryAction) {
+            #if os(macOS)
+            if !LiveTransportLayout.showsToolbarTransport(
+                placesControlsAtBottom: placesTransportControlsAtBottom
+            ) {
+                ToolbarItem(placement: .principal) {
+                    LiveToolbarSongTitle(
+                        title: resolvedCurrentSong?.name ?? "",
+                        upNext: song(atPlaybackIndex: state.currentIndex + 1)?.name
+                    )
+                }
+                .cuesHideSharedBackground()
+            }
+            #endif
+            ToolbarItem(placement: trailingToolbarPlacement) {
                 InputMappingToolbarMenu()
             }
             #if os(macOS)
             .cuesHideSharedBackground()
             #endif
 
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: trailingToolbarPlacement) {
                 Button {
                     #if os(macOS)
                     mixerVisible.toggle()
@@ -123,7 +145,7 @@ struct RemoteLivePlaybackView: View {
             .cuesHideSharedBackground()
             #endif
 
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: trailingToolbarPlacement) {
                 Button {
                     showingSettings = true
                 } label: {
@@ -233,7 +255,11 @@ struct RemoteLivePlaybackView: View {
             VStack(spacing: 0) {
                 if placesTransportControlsAtBottom {
                     LiveTransportBottomBar {
+                        #if os(macOS)
+                        transportBar(chrome: .full)
+                        #else
                         transportBar(chrome: .portraitBottom)
+                        #endif
                     }
                 }
                 #if os(macOS)
