@@ -9,10 +9,10 @@ struct RemoteLivePlaybackView: View {
     @State private var cueFlashPhase = false
     @State private var showingSettings = false
     @State private var showingSongLibrary = false
-    @State private var showingAddHeaderAlert = false
+    @State private var showingAddHeaderSheet = false
     @State private var isEditingSetlist = false
     @State private var newHeaderTitle = "New Header"
-    @State private var newHeaderTimeText = "0:00"
+    @State private var newHeaderTimeSeconds: TimeInterval = 0
     @State private var workingEntries: [RemoteSetlistEntryDTO] = []
 
     private var snapshot: RemoteSessionSnapshot? { client.snapshot }
@@ -181,15 +181,18 @@ struct RemoteLivePlaybackView: View {
             .presentationDetents([.large])
         }
         #endif
-        .alert("New Header", isPresented: $showingAddHeaderAlert) {
-            TextField("Header title", text: $newHeaderTitle)
-            TextField("Time", text: $newHeaderTimeText)
-            Button("Add") {
-                addHeaderToSetlist()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Headers divide the setlist into sections. Time uses m:ss or h:mm:ss.")
+        .sheet(isPresented: $showingAddHeaderSheet) {
+            SetlistHeaderEditorSheet(
+                navigationTitle: "New Header",
+                confirmTitle: "Add",
+                headerTitle: $newHeaderTitle,
+                timeSeconds: $newHeaderTimeSeconds,
+                onCancel: { showingAddHeaderSheet = false },
+                onConfirm: {
+                    addHeaderToSetlist()
+                    showingAddHeaderSheet = false
+                }
+            )
         }
     }
 
@@ -203,14 +206,29 @@ struct RemoteLivePlaybackView: View {
             }
 
             #if os(macOS)
-            if snapshot != nil, !(snapshot?.entries.isEmpty ?? true) {
-                VSplitView {
-                    waveformSection
-                    setlistSection
+            Group {
+                if snapshot != nil, !(snapshot?.entries.isEmpty ?? true) {
+                    VSplitView {
+                        waveformSection
+                        setlistSection
+                    }
+                } else {
+                    VStack(spacing: 0) {
+                        waveformSection
+                        setlistSection
+                    }
                 }
-            } else {
-                waveformSection
-                setlistSection
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            if mixerVisible {
+                RemoteGroupMixerView(client: client)
+                    .frame(height: 220)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            LiveTransportBottomBar {
+                transportBar
             }
             #else
             waveformSection
@@ -221,21 +239,12 @@ struct RemoteLivePlaybackView: View {
         .navigationDestination(isPresented: $mixerVisible) {
             RemoteGroupMixerScreen(client: client)
         }
-        #endif
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 0) {
-                LiveTransportBottomBar {
-                    transportBar
-                }
-                #if os(macOS)
-                if mixerVisible {
-                    RemoteGroupMixerView(client: client)
-                        .frame(height: 220)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-                #endif
+            LiveTransportBottomBar {
+                transportBar
             }
         }
+        #endif
         #if os(macOS)
         .animation(AppAnimation.fadeQuick, value: mixerVisible)
         #endif
@@ -262,11 +271,16 @@ struct RemoteLivePlaybackView: View {
         )
     }
 
+    private func beginAddingHeader() {
+        newHeaderTitle = "New Header"
+        newHeaderTimeSeconds = 0
+        showingAddHeaderSheet = true
+    }
+
     private func addHeaderToSetlist() {
         let trimmed = newHeaderTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let timeSeconds = LiveSetlistDurationFormat.seconds(fromClock: newHeaderTimeText) ?? 0
-        client.send(.addSetlistHeader(title: trimmed, atIndex: nil, timeSeconds: timeSeconds))
+        client.send(.addSetlistHeader(title: trimmed, atIndex: nil, timeSeconds: newHeaderTimeSeconds))
     }
 
     private func handleMappedLiveAction(_ action: MappableLiveAction) {
@@ -356,11 +370,7 @@ struct RemoteLivePlaybackView: View {
         VStack(spacing: 0) {
             LiveSetlistAddMenu(
                 isEditing: workingEntries.isEmpty ? nil : $isEditingSetlist,
-                onAddHeader: {
-                    newHeaderTitle = "New Header"
-                    newHeaderTimeText = "0:00"
-                    showingAddHeaderAlert = true
-                },
+                onAddHeader: beginAddingHeader,
                 onAddSong: { showingSongLibrary = true }
             )
 
@@ -375,11 +385,7 @@ struct RemoteLivePlaybackView: View {
                     .padding(AppSpacing.md)
                     .contentShape(Rectangle())
                     .contextMenu {
-                        Button {
-                            newHeaderTitle = "New Header"
-                            newHeaderTimeText = "0:00"
-                            showingAddHeaderAlert = true
-                        } label: {
+                        Button(action: beginAddingHeader) {
                             Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
                         }
                         Button {
@@ -396,11 +402,7 @@ struct RemoteLivePlaybackView: View {
                         isEditing: $isEditingSetlist,
                         actions: remoteRowActions(for:),
                         onMove: moveWorkingEntries,
-                        onAddHeader: {
-                            newHeaderTitle = "New Header"
-                            newHeaderTimeText = "0:00"
-                            showingAddHeaderAlert = true
-                        }
+                        onAddHeader: beginAddingHeader
                     )
                     .frame(maxWidth: 720, maxHeight: .infinity)
                     .frame(maxWidth: .infinity)

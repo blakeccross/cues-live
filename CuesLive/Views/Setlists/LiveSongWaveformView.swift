@@ -217,7 +217,6 @@ struct LiveSongWaveformView: View {
     @State private var sourcePeaks: [Float] = []
     @State private var cachedDisplayPeaks: [Float] = []
 
-    private static let unplayedWaveformOpacity: Double = 0.32
     /// Above this lane width, use tiled AppKit drawing (macOS) / viewport tiles (iOS).
     private static let tiledLaneMinContentWidth: CGFloat = 1_600
     /// Beat grids are too dense for long songs.
@@ -336,24 +335,21 @@ struct LiveSongWaveformView: View {
                 onSeek: onSeek
             ))
             .onAppear {
-                refreshDisplayPeaks(contentWidth: contentWidth)
-            }
-            .onChange(of: contentWidth) { _, newWidth in
-                refreshDisplayPeaks(contentWidth: newWidth)
+                refreshDisplayPeaks()
             }
             .onChange(of: sourcePeaks.count) { _, _ in
-                refreshDisplayPeaks(contentWidth: contentWidth)
+                refreshDisplayPeaks()
             }
             .onChange(of: sections.map(\.id)) { _, _ in
-                refreshDisplayPeaks(contentWidth: contentWidth)
+                refreshDisplayPeaks()
             }
             .onChange(of: peakSections.map(\.id)) { _, _ in
-                refreshDisplayPeaks(contentWidth: contentWidth)
+                refreshDisplayPeaks()
             }
             .task(id: peaksLoadIdentity) {
                 if let precomputedSourcePeaks {
                     sourcePeaks = precomputedSourcePeaks
-                    refreshDisplayPeaks(contentWidth: contentWidth)
+                    refreshDisplayPeaks()
                     return
                 }
                 guard !trackSources.isEmpty else {
@@ -366,7 +362,7 @@ struct LiveSongWaveformView: View {
                 } else {
                     sourcePeaks = await WaveformCache.shared.summedPeaks(for: trackSources)
                 }
-                refreshDisplayPeaks(contentWidth: contentWidth)
+                refreshDisplayPeaks()
             }
     }
 
@@ -562,10 +558,8 @@ struct LiveSongWaveformView: View {
                         bars: tileBars,
                         showsEmptyBaseline: isLoadingWaveform || showsFullSourceWaveform,
                         fillColor: .white,
-                        style: .voiceMemosBars,
+                        style: .filledEnvelope,
                         playheadFraction: fraction,
-                        playedColor: .white,
-                        unplayedColor: .white.opacity(Self.unplayedWaveformOpacity),
                         usesDrawingGroup: false
                     )
                 }
@@ -574,10 +568,8 @@ struct LiveSongWaveformView: View {
                     bars: tileBars,
                     showsEmptyBaseline: isLoadingWaveform || showsFullSourceWaveform,
                     fillColor: .white,
-                    style: .voiceMemosBars,
+                    style: .filledEnvelope,
                     playheadFraction: playheadFraction,
-                    playedColor: .white,
-                    unplayedColor: .white.opacity(Self.unplayedWaveformOpacity),
                     usesDrawingGroup: contentWidth <= Self.tiledLaneMinContentWidth
                 )
             }
@@ -920,25 +912,20 @@ struct LiveSongWaveformView: View {
         return AudioEngineManager.shared.isPlaying
     }
 
-    private func refreshDisplayPeaks(contentWidth: CGFloat) {
-        guard contentWidth > 0 else { return }
+    private func refreshDisplayPeaks() {
+        guard !sourcePeaks.isEmpty else {
+            cachedDisplayPeaks = []
+            return
+        }
 
         if showsFullSourceWaveform {
-            cachedDisplayPeaks = WaveformPeakResampler.displayPeaks(
-                from: sourcePeaks,
-                contentWidth: contentWidth,
-                minimumBarSlotWidth: WaveformPeakResampler.voiceMemosBarSlotWidth,
-                maximumBars: nil
-            )
+            cachedDisplayPeaks = sourcePeaks
         } else {
-            cachedDisplayPeaks = WaveformPeakResampler.arrangedDisplayPeaks(
+            cachedDisplayPeaks = WaveformPeakResampler.timelinePeaks(
                 from: sourcePeaks,
                 fileDuration: fileDuration,
                 sections: peakSections,
-                timelineDuration: safeTimelineDuration,
-                contentWidth: contentWidth,
-                minimumBarSlotWidth: WaveformPeakResampler.voiceMemosBarSlotWidth,
-                maximumBars: nil
+                timelineDuration: safeTimelineDuration
             )
         }
     }

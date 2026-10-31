@@ -322,6 +322,37 @@ enum WaveformPeakResampler {
         return result
     }
 
+    /// Lays source peaks on the timeline at the source's own resolution.
+    /// The result does not depend on view width, so zoom scales this shape instead of rebuilding it.
+    static func timelinePeaks(
+        from source: [Float],
+        fileDuration: TimeInterval,
+        sections: [ArrangementDisplaySection],
+        timelineDuration: TimeInterval
+    ) -> [Float] {
+        guard !source.isEmpty else { return [] }
+        guard fileDuration > 0, !sections.isEmpty else { return source }
+
+        let safeTimelineDuration = max(timelineDuration, 0.001)
+        let sortedSections = sections.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        let sampleCount = source.count
+        var result = [Float](repeating: 0, count: sampleCount)
+
+        for index in 0..<sampleCount {
+            let arrangementTime = safeTimelineDuration * (Double(index) + 0.5) / Double(sampleCount)
+            guard let section = section(containing: arrangementTime, in: sortedSections) else {
+                continue
+            }
+
+            let sourceTime = section.sourceStartSeconds + (arrangementTime - section.timelineStartSeconds)
+            let sourceIndex = Int((sourceTime / fileDuration) * Double(source.count))
+            let clampedIndex = min(max(0, sourceIndex), source.count - 1)
+            result[index] = source[clampedIndex]
+        }
+
+        return result
+    }
+
     static func displayPeaks(
         from source: [Float],
         fileDuration: TimeInterval,

@@ -95,29 +95,64 @@ struct LogicStyleVolumeSlider: View {
 }
 
 enum MixerFaderScale {
+    /// Top of the group fader. Unity (0 dB) sits one step below this.
+    static let maxBoostDB: Double = 6
     static let maxAttenuationDB: Double = 60
+    static let markerStepDB: Double = 6
+    /// Matches the fader cap so scale marks line up with the thumb center.
+    static let thumbHeight: CGFloat = 28
 
-    static func linearGain(forAttenuationDB db: Double) -> Double {
-        pow(10, -db / 20)
+    static var spanDB: Double { maxBoostDB + maxAttenuationDB }
+
+    /// +6, 0, −6, −12 … −60.
+    static var markerDecibels: [Int] {
+        Array(stride(from: Int(maxBoostDB), through: -Int(maxAttenuationDB), by: -Int(markerStepDB)))
     }
 
-    static func attenuationDB(forLinearGain gain: Double) -> Double {
-        guard gain > 0.000_001 else { return maxAttenuationDB }
-        return min(maxAttenuationDB, max(0, -20 * log10(gain)))
+    static func decibels(forLinearGain gain: Double) -> Double {
+        guard gain > 0.000_001 else { return -maxAttenuationDB }
+        let db = 20 * log10(gain)
+        return min(maxBoostDB, max(-maxAttenuationDB, db))
+    }
+
+    static func linearGain(forDecibels db: Double) -> Double {
+        let clamped = min(maxBoostDB, max(-maxAttenuationDB, db))
+        return pow(10, clamped / 20)
+    }
+
+    static func normalizedPosition(forDecibels db: Double) -> Double {
+        let clamped = min(maxBoostDB, max(-maxAttenuationDB, db))
+        return (maxBoostDB - clamped) / spanDB
     }
 
     static func normalizedPosition(forLinearGain gain: Double) -> Double {
-        attenuationDB(forLinearGain: gain) / maxAttenuationDB
+        normalizedPosition(forDecibels: decibels(forLinearGain: gain))
     }
 
     static func linearGain(forNormalizedPosition position: Double) -> Double {
-        linearGain(forAttenuationDB: position * maxAttenuationDB)
+        let clamped = min(1, max(0, position))
+        let db = maxBoostDB - clamped * spanDB
+        return linearGain(forDecibels: db)
     }
 
+    /// Horizontal track meters: 0 dBFS fills the bar.
     static func meterFillFraction(forPeak peak: Float) -> CGFloat {
         guard peak > 0.000_001 else { return 0 }
         let db = min(maxAttenuationDB, max(0, -20 * log10(Double(peak))))
         return CGFloat(1 - (db / maxAttenuationDB))
+    }
+
+    /// Group fader meters, on the same +6…−60 scale as the numbered marks.
+    static func faderMeterFillFraction(forPeak peak: Float) -> CGFloat {
+        guard peak > 0.000_001 else { return 0 }
+        let db = min(maxBoostDB, max(-maxAttenuationDB, 20 * log10(Double(peak))))
+        return CGFloat((db + maxAttenuationDB) / spanDB)
+    }
+
+    static func markerLabel(for db: Int) -> String {
+        if db > 0 { return "+\(db)" }
+        if db == 0 { return "0" }
+        return "−\(abs(db))"
     }
 }
 
@@ -134,11 +169,16 @@ struct MixerFaderColumn: View {
 
     private let trackWidth: CGFloat = 4
     private let thumbWidth: CGFloat = 52
-    private let thumbHeight: CGFloat = 28
+    private let thumbHeight: CGFloat = MixerFaderScale.thumbHeight
     private let meterWidth: CGFloat = 5
-    private let tickCount = 10
+    private let labelWidth: CGFloat = 22
+    private let labelGap: CGFloat = 2
     private let tickWidth: CGFloat = 8
     private let tickGapFromTrack: CGFloat = 4
+
+    private var columnWidth: CGFloat {
+        labelWidth + labelGap + thumbWidth
+    }
 
     private var displayedValue: Double {
         isDragging ? dragValue : value
@@ -157,24 +197,26 @@ struct MixerFaderColumn: View {
         GeometryReader { geometry in
             let trackHeight = geometry.size.height
             let travel = max(trackHeight - thumbHeight, 1)
+            let trackCenterX = labelWidth + labelGap + thumbWidth / 2
             let thumbCenterY = markY(
                 forNormalized: MixerFaderScale.normalizedPosition(forLinearGain: displayedValue),
                 in: trackHeight
             )
             let thumbY = thumbCenterY - thumbHeight / 2
 
-            ZStack(alignment: .top) {
-                scaleTicks(in: trackHeight)
+            ZStack(alignment: .topLeading) {
+                scaleLabels(in: trackHeight)
+                scaleTicks(in: trackHeight, trackCenterX: trackCenterX)
 
                 RoundedRectangle(cornerRadius: trackWidth / 2, style: .continuous)
                     .fill(AppColors.separator)
-                    .frame(width: trackWidth)
-                    .frame(maxHeight: .infinity)
+                    .frame(width: trackWidth, height: trackHeight)
+                    .offset(x: trackCenterX - trackWidth / 2)
 
                 faderThumb
-                    .offset(y: thumbY)
+                    .offset(x: labelWidth + labelGap, y: thumbY)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: columnWidth, height: trackHeight, alignment: .topLeading)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -194,7 +236,7 @@ struct MixerFaderColumn: View {
                     }
             )
         }
-        .frame(width: thumbWidth)
+        .frame(width: columnWidth)
         .transaction { transaction in
             if isDragging {
                 transaction.disablesAnimations = true
@@ -224,30 +266,83 @@ struct MixerFaderColumn: View {
             .frame(width: thumbWidth, height: thumbHeight)
     }
 
-    private func scaleTicks(in trackHeight: CGFloat) -> some View {
-        let centerX = thumbWidth / 2
-        let trackHalf = trackWidth / 2
-        let tickColor = AppColors.textTertiary.opacity(0.6)
+    private func scaleLabels(in trackHeight: CGFloat) -> some View {
+        let labelHeight: CGFloat = 10
+        let marks = visibleMarkerLabels(in: trackHeight, labelHeight: labelHeight)
 
         return ZStack(alignment: .topLeading) {
-            ForEach(0..<tickCount, id: \.self) { index in
+            ForEach(marks, id: \.self) { db in
                 let y = markY(
-                    forNormalized: Double(index) / Double(tickCount - 1),
+                    forNormalized: MixerFaderScale.normalizedPosition(forDecibels: Double(db)),
                     in: trackHeight
                 )
+                let isUnity = db == 0
 
-                Rectangle()
-                    .fill(tickColor)
-                    .frame(width: tickWidth, height: 1)
-                    .offset(x: centerX - trackHalf - tickGapFromTrack - tickWidth, y: y)
-
-                Rectangle()
-                    .fill(tickColor)
-                    .frame(width: tickWidth, height: 1)
-                    .offset(x: centerX + trackHalf + tickGapFromTrack, y: y)
+                Text(MixerFaderScale.markerLabel(for: db))
+                    .font(.system(size: 8, weight: isUnity ? .bold : .medium, design: .rounded))
+                    .foregroundStyle(isUnity ? AppColors.textSecondary : AppColors.textTertiary)
+                    .frame(width: labelWidth, height: labelHeight, alignment: .trailing)
+                    .offset(y: y - labelHeight / 2)
             }
         }
-        .frame(width: thumbWidth, height: trackHeight, alignment: .topLeading)
+        .frame(width: labelWidth, height: trackHeight, alignment: .topLeading)
+    }
+
+    /// Every 6 dB gets a tick. Labels that would collide are dropped, except +6 and 0.
+    private func visibleMarkerLabels(in trackHeight: CGFloat, labelHeight: CGFloat) -> [Int] {
+        let minGap = labelHeight + 1
+        var chosen: [(db: Int, y: CGFloat)] = []
+
+        for db in MixerFaderScale.markerDecibels {
+            let y = markY(
+                forNormalized: MixerFaderScale.normalizedPosition(forDecibels: Double(db)),
+                in: trackHeight
+            )
+            let pinned = db == Int(MixerFaderScale.maxBoostDB) || db == 0
+            if let last = chosen.last, y - last.y < minGap {
+                if pinned, last.db != Int(MixerFaderScale.maxBoostDB), last.db != 0 {
+                    chosen.removeLast()
+                    chosen.append((db, y))
+                }
+                continue
+            }
+            chosen.append((db, y))
+        }
+
+        return chosen.map(\.db)
+    }
+
+    private func scaleTicks(in trackHeight: CGFloat, trackCenterX: CGFloat) -> some View {
+        let trackHalf = trackWidth / 2
+
+        return ZStack(alignment: .topLeading) {
+            ForEach(MixerFaderScale.markerDecibels, id: \.self) { db in
+                let y = markY(
+                    forNormalized: MixerFaderScale.normalizedPosition(forDecibels: Double(db)),
+                    in: trackHeight
+                )
+                let isUnity = db == 0
+                let width = isUnity ? tickWidth + 4 : tickWidth
+                let tickColor = isUnity ? AppColors.textSecondary : AppColors.textTertiary.opacity(0.6)
+
+                Rectangle()
+                    .fill(tickColor)
+                    .frame(width: width, height: 1)
+                    .offset(
+                        x: trackCenterX - trackHalf - tickGapFromTrack - width,
+                        y: y - 0.5
+                    )
+
+                Rectangle()
+                    .fill(tickColor)
+                    .frame(width: width, height: 1)
+                    .offset(
+                        x: trackCenterX + trackHalf + tickGapFromTrack,
+                        y: y - 0.5
+                    )
+            }
+        }
+        .frame(width: columnWidth, height: trackHeight, alignment: .topLeading)
     }
 
     private func markY(forNormalized normalized: Double, in trackHeight: CGFloat) -> CGFloat {
@@ -275,14 +370,19 @@ private struct GroupPeakMeterBar: View {
         let meterLevel = audioEngine.groupMeterLevel(for: groupID)
 
         GeometryReader { geometry in
+            let inset = MixerFaderScale.thumbHeight / 2
+            let travel = max(geometry.size.height - MixerFaderScale.thumbHeight, 1)
+            let fill = travel * MixerFaderScale.faderMeterFillFraction(forPeak: meterLevel)
+
             ZStack(alignment: .bottom) {
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(AppColors.separator)
 
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(mixerMeterGreen.opacity(0.85))
-                    .frame(height: geometry.size.height * MixerFaderScale.meterFillFraction(forPeak: meterLevel))
+                    .frame(height: fill)
             }
+            .padding(.vertical, inset)
         }
         .frame(width: width, height: height)
     }

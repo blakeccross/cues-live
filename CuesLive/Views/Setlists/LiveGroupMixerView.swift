@@ -403,7 +403,6 @@ struct LiveGroupMixerView: View {
                 .padding(.bottom, AppSpacing.xxs)
             }
         }
-        .safeAreaPadding(.bottom, 4)
         .background {
             GroupMeterRefreshTicker()
         }
@@ -450,7 +449,7 @@ struct LiveGroupChannelStrip: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(minHeight: 60)
+            .frame(minHeight: 60, maxHeight: .infinity)
             .frame(width: stripWidth)
 
             TrackMixButton(
@@ -477,5 +476,6 @@ struct LiveGroupChannelStrip: View {
         .frame(width: stripWidth)
         .padding(.horizontal, AppSpacing.xxs)
         .padding(.vertical, AppSpacing.xxs)
+        .frame(height: stripHeight, alignment: .top)
     }
 }

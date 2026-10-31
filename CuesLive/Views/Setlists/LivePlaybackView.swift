@@ -73,7 +73,7 @@ struct LivePlaybackView: View {
     @State private var isCreatingHeader = false
     @State private var isEditingSetlist = false
     @State private var editHeaderTitle = ""
-    @State private var editHeaderTimeText = "0:00"
+    @State private var editHeaderTimeSeconds: TimeInterval = 0
     @State private var overlapEditorContext: SetlistOverlapEditorContext?
     @State private var setlistRowMetrics = SetlistRowMetricsCache()
     @State private var showingMissingMediaAlert = false
@@ -147,46 +147,15 @@ struct LivePlaybackView: View {
             get: { headerPendingEdit != nil },
             set: { if !$0 { dismissHeaderEdit() } }
         )) {
-            headerEditorSheet
+            SetlistHeaderEditorSheet(
+                navigationTitle: isCreatingHeader ? "New Header" : "Edit Header",
+                confirmTitle: "Save",
+                headerTitle: $editHeaderTitle,
+                timeSeconds: $editHeaderTimeSeconds,
+                onCancel: dismissHeaderEdit,
+                onConfirm: saveHeaderEdit
+            )
         }
-    }
-
-    private var headerEditorSheet: some View {
-        NavigationStack {
-            Form {
-                TextField("Title", text: $editHeaderTitle)
-                TextField("Time", text: $editHeaderTimeText)
-                Text("Time uses m:ss or h:mm:ss (same column as song durations).")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            #if os(macOS)
-            .formStyle(.grouped)
-            .frame(minWidth: 340, idealWidth: 380, minHeight: 180)
-            #endif
-            .navigationTitle(isCreatingHeader ? "New Header" : "Edit Header")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismissHeaderEdit()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveHeaderEdit()
-                    }
-                    .disabled(!canSaveHeaderEdit)
-                }
-            }
-        }
-    }
-
-    private var canSaveHeaderEdit: Bool {
-        !editHeaderTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && LiveSetlistDurationFormat.seconds(fromClock: editHeaderTimeText) != nil
     }
 
     private var missingMediaAlertMessage: String {
@@ -413,24 +382,25 @@ struct LivePlaybackView: View {
 
     private var playbackMainLayout: some View {
         #if os(macOS)
-        LivePlaybackMixerSplitLayout(
-            mixerDetent: $mixerDetent,
-            onLiveVolumeChange: { groupID, volume in
-                coordinator.applyProvisionalGroupVolume(groupID: groupID, volume: volume)
-            },
-            onMixChange: {
-                coordinator.updateGroupMix(context: modelContext)
-            },
-            mainContent: {
-                // The transport sits inside the main pane so the mixer panel opens below it.
-                VStack(spacing: 0) {
+        VStack(spacing: 0) {
+            LivePlaybackMixerSplitLayout(
+                mixerDetent: $mixerDetent,
+                onLiveVolumeChange: { groupID, volume in
+                    coordinator.applyProvisionalGroupVolume(groupID: groupID, volume: volume)
+                },
+                onMixChange: {
+                    coordinator.updateGroupMix(context: modelContext)
+                },
+                mainContent: {
                     playbackMainSection
-                    LiveTransportBottomBar {
-                        transportStrip
-                    }
                 }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            LiveTransportBottomBar {
+                transportStrip
             }
-        )
+        }
         #else
         playbackMainSection
             .navigationDestination(isPresented: mixerScreenPresented) {
@@ -1341,7 +1311,7 @@ struct LivePlaybackView: View {
         isCreatingHeader = false
         headerPendingEdit = entry
         editHeaderTitle = entry.headerTitle ?? ""
-        editHeaderTimeText = LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
+        editHeaderTimeSeconds = entry.headerTimeSeconds ?? 0
     }
 
     private func songHasMissingMedia(_ song: Song) -> Bool {
@@ -1422,19 +1392,18 @@ struct LivePlaybackView: View {
             isCreatingHeader = true
             headerPendingEdit = entry
             editHeaderTitle = entry.headerTitle ?? "New Header"
-            editHeaderTimeText = LiveSetlistDurationFormat.clock(for: entry.headerTimeSeconds ?? 0)
+            editHeaderTimeSeconds = entry.headerTimeSeconds ?? 0
         }
     }
 
     private func saveHeaderEdit() {
         guard let entry = headerPendingEdit else { return }
-        guard let timeSeconds = LiveSetlistDurationFormat.seconds(fromClock: editHeaderTimeText) else {
-            return
-        }
+        let trimmed = editHeaderTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
         viewModel.updateHeader(
             entry,
-            title: editHeaderTitle,
-            timeSeconds: timeSeconds,
+            title: trimmed,
+            timeSeconds: editHeaderTimeSeconds,
             context: modelContext
         )
         dismissHeaderEdit()

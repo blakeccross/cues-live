@@ -256,11 +256,7 @@ final class LiveSongWaveformScrollBackingView: NSView {
 
     private func drawWaveformBars(in rect: NSRect) {
         let midY = bounds.midY
-        let maxBarHeight = bounds.height * 0.88
-        let playheadX: CGFloat? = {
-            guard model.showsPlayheadSplit, let playheadTime = model.playheadTime else { return nil }
-            return xPosition(for: min(playheadTime, model.timelineDuration))
-        }()
+        let maxBarHeight = (bounds.height / 2) * 0.92
 
         if model.peaks.isEmpty {
             guard model.isLoading else { return }
@@ -270,28 +266,46 @@ final class LiveSongWaveformScrollBackingView: NSView {
         }
 
         let barCount = model.peaks.count
-        let barSlotWidth = model.contentWidth / CGFloat(barCount)
-        let barWidth = min(max(1.5, barSlotWidth * 0.55), 4.0)
-        let startIndex = max(0, Int(floor(rect.minX / barSlotWidth)) - 1)
-        let endIndex = min(barCount - 1, Int(ceil(rect.maxX / barSlotWidth)) + 1)
-        guard startIndex <= endIndex else { return }
+        let barWidth = model.contentWidth / CGFloat(barCount)
+        let startIndex = max(0, Int(floor(rect.minX / barWidth)) - 1)
+        let endIndex = min(barCount - 1, Int(ceil(rect.maxX / barWidth)) + 1)
+        guard startIndex <= endIndex, barWidth > 0 else { return }
 
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: CGFloat(startIndex) * barWidth, y: midY))
         for index in startIndex...endIndex {
-            let centerX = CGFloat(index) * barSlotWidth + barSlotWidth * 0.5
-            let barHeight = max(2, CGFloat(model.peaks[index]) * maxBarHeight)
-            let alpha: CGFloat = {
-                guard let playheadX else { return 1 }
-                return centerX <= playheadX ? 1 : model.unplayedOpacity
-            }()
-            NSColor.white.withAlphaComponent(alpha).setFill()
-            let barRect = NSRect(
-                x: centerX - barWidth / 2,
-                y: midY - barHeight / 2,
-                width: barWidth,
-                height: barHeight
-            )
-            NSBezierPath(roundedRect: barRect, xRadius: barWidth / 2, yRadius: barWidth / 2).fill()
+            let centerX = CGFloat(index) * barWidth + barWidth * 0.5
+            let barHeight = max(1, CGFloat(model.peaks[index]) * maxBarHeight)
+            path.line(to: NSPoint(x: centerX, y: midY - barHeight))
         }
+        path.line(to: NSPoint(x: CGFloat(endIndex + 1) * barWidth, y: midY))
+        for index in stride(from: endIndex, through: startIndex, by: -1) {
+            let centerX = CGFloat(index) * barWidth + barWidth * 0.5
+            let barHeight = max(1, CGFloat(model.peaks[index]) * maxBarHeight)
+            path.line(to: NSPoint(x: centerX, y: midY + barHeight))
+        }
+        path.close()
+
+        let playheadX: CGFloat? = {
+            guard model.showsPlayheadSplit, let playheadTime = model.playheadTime else { return nil }
+            return xPosition(for: min(playheadTime, model.timelineDuration))
+        }()
+
+        NSGraphicsContext.current?.saveGraphicsState()
+        NSBezierPath(rect: rect).addClip()
+        if let playheadX {
+            NSColor.white.withAlphaComponent(model.unplayedOpacity).setFill()
+            path.fill()
+            NSGraphicsContext.current?.saveGraphicsState()
+            NSBezierPath(rect: NSRect(x: 0, y: 0, width: max(0, playheadX), height: bounds.height)).addClip()
+            NSColor.white.setFill()
+            path.fill()
+            NSGraphicsContext.current?.restoreGraphicsState()
+        } else {
+            NSColor.white.setFill()
+            path.fill()
+        }
+        NSGraphicsContext.current?.restoreGraphicsState()
     }
 }
 #endif

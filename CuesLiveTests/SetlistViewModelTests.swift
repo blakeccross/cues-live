@@ -87,3 +87,38 @@ final class SetlistViewModelTests: XCTestCase {
         XCTAssertEqual(setlist.sortedEntries.map(\.sortOrder), [0, 1])
     }
 }
+
+final class LiveSetlistDurationFormatTests: XCTestCase {
+    func testHeaderDurationRoundTripsThroughMinutesAndSeconds() {
+        let samples = [0, 36, 5 * 60 + 36, 90 * 60, LiveSetlistDurationFormat.maximumMinutes * 60 + 59]
+        for sample in samples {
+            let parts = LiveSetlistDurationFormat.components(from: TimeInterval(sample))
+            XCTAssertEqual(
+                LiveSetlistDurationFormat.seconds(minutes: parts.minutes, seconds: parts.seconds),
+                TimeInterval(sample)
+            )
+        }
+    }
+
+    func testFinalCutDigitEntryReadsFromTheRight() {
+        XCTAssertEqual(LiveSetlistDurationFormat.seconds(fromFinalCutDigits: "536"), 5 * 60 + 36)
+        XCTAssertEqual(LiveSetlistDurationFormat.seconds(fromFinalCutDigits: "5"), 5)
+        XCTAssertEqual(LiveSetlistDurationFormat.seconds(fromFinalCutDigits: "300"), 3 * 60)
+        XCTAssertEqual(LiveSetlistDurationFormat.seconds(fromFinalCutDigits: "30000"), 3 * 3600)
+        XCTAssertEqual(LiveSetlistDurationFormat.seconds(fromFinalCutDigits: "13000"), 3600 + 30 * 60)
+        XCTAssertEqual(LiveSetlistDurationFormat.seconds(fromFinalCutDigits: "90"), 90)
+        XCTAssertEqual(LiveSetlistDurationFormat.finalCutDisplay(for: 5 * 60 + 36), "00:05:36")
+        XCTAssertEqual(LiveSetlistDurationFormat.finalCutDisplay(for: 90), "00:01:30")
+        XCTAssertEqual(LiveSetlistDurationFormat.finalCutEntryDisplay(digits: "90"), "00:00:90")
+        XCTAssertEqual(LiveSetlistDurationFormat.finalCutEntryDisplay(digits: "536"), "00:05:36")
+    }
+
+    func testHeaderDurationClampsMinutesAndSeconds() {
+        XCTAssertEqual(LiveSetlistDurationFormat.components(from: -4).minutes, 0)
+        XCTAssertEqual(LiveSetlistDurationFormat.components(from: -4).seconds, 0)
+        XCTAssertEqual(
+            LiveSetlistDurationFormat.seconds(minutes: 5_000, seconds: 80),
+            TimeInterval(LiveSetlistDurationFormat.maximumMinutes * 60 + 59)
+        )
+    }
+}

@@ -60,6 +60,7 @@ struct EditView: View {
     @State private var showingTimeSignatureMarkerEditor = false
     @State private var editingTimeSignatureMarkerID: UUID?
     @State private var sectionPendingRename: ArrangementDisplaySection?
+    @State private var sectionNamePromptTitle = "Rename Section"
     @State private var trackPendingRename: AudioTrack?
     @State private var renameTrackName = ""
     @State private var clipSelection: TimelineClipSelection?
@@ -871,7 +872,7 @@ struct EditView: View {
         }
         .modifier(addTrackFlowModifier)
         .sheet(item: $sectionPendingRename) { section in
-            RenameSectionSheet(currentName: section.name) { newName in
+            RenameSectionSheet(title: sectionNamePromptTitle, currentName: section.name) { newName in
                 applySectionRename(newName)
             }
         }
@@ -1482,12 +1483,107 @@ struct EditView: View {
             syncPlayback()
 
             if let section = displaySections.first(where: { $0.markerID == newMarker.id }) {
+                sectionNamePromptTitle = "Name Section"
                 sectionPendingRename = section
             }
         }
     }
 
+    private func addSection(from rawStart: TimeInterval, to rawEnd: TimeInterval) {
+        let snapped = MeasureTiming.snapTimelineRangeToGrid(
+            start: rawStart,
+            end: rawEnd,
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges
+        )
+        let songDuration = max(sourceDuration, 0)
+        let start = min(max(0, snapped.start), songDuration)
+        let end = min(max(0, snapped.end), songDuration)
+        guard let plan = SectionRangeInsertion.plan(
+            markers: markers,
+            start: start,
+            end: end,
+            songDuration: songDuration,
+            newSectionName: "Section \(markers.count + 1)"
+        ) else { return }
+
+        performUndoableChange("Add Section") {
+            applySectionRangeInsertion(plan)
+        }
+    }
+
+    private func applySectionRangeInsertion(_ plan: SectionRangeInsertion) {
+        let removedMarkerIDs = Set(plan.removedMarkerIDs)
+        let removedSlotIDs = Set(
+            arrangementSlots
+                .filter { removedMarkerIDs.contains($0.markerID) }
+                .map(\.id)
+        )
+
+        if let cuedSectionID,
+           displaySections.contains(where: {
+               $0.id == cuedSectionID && removedMarkerIDs.contains($0.markerID)
+           }) {
+            clearMarkerCue()
+        }
+
+        for slotID in removedSlotIDs {
+            loopSlotIDs.remove(slotID)
+        }
+        for section in displaySections where removedMarkerIDs.contains(section.markerID) {
+            loopSlotIDs.remove(section.id)
+            loopSlotIDs.remove(section.slotID)
+        }
+
+        clipTrims.removeAll { removedSlotIDs.contains($0.slotID) }
+        removedClips.removeAll { removedSlotIDs.contains($0.slotID) }
+        clipGaps.removeAll { removedSlotIDs.contains($0.slotID) }
+        clipRegions.removeAll { removedSlotIDs.contains($0.slotID) }
+
+        let wasIdentity = SongArrangementStore.isIdentitySlotSequence(
+            arrangementSlots,
+            markers: markers
+        )
+        var slotsByMarkerID: [UUID: ArrangementSlot] = [:]
+        if wasIdentity {
+            for slot in arrangementSlots where slotsByMarkerID[slot.markerID] == nil {
+                slotsByMarkerID[slot.markerID] = slot
+            }
+        }
+
+        arrangementMarkers = plan.markers
+
+        if wasIdentity {
+            arrangementSlots = plan.markers.map { marker in
+                slotsByMarkerID[marker.id] ?? ArrangementSlot(markerID: marker.id)
+            }
+        } else {
+            arrangementSlots.removeAll { removedMarkerIDs.contains($0.markerID) }
+            let existingMarkerIDs = Set(arrangementSlots.map(\.markerID))
+            let additions = plan.markers.filter { !existingMarkerIDs.contains($0.id) }
+            for marker in additions {
+                let index = arrangementSlots.firstIndex { slot in
+                    guard let existing = plan.markers.first(where: { $0.id == slot.markerID }) else {
+                        return false
+                    }
+                    return existing.startSeconds > marker.startSeconds + 0.001
+                } ?? arrangementSlots.count
+                arrangementSlots.insert(ArrangementSlot(markerID: marker.id), at: index)
+            }
+        }
+
+        refreshTimelineLayout()
+        persistArrangement()
+        syncPlayback()
+
+        if let section = displaySections.first(where: { $0.markerID == plan.sectionMarkerID }) {
+            sectionNamePromptTitle = "Name Section"
+            sectionPendingRename = section
+        }
+    }
+
     private func beginRenameSection(_ section: ArrangementDisplaySection) {
+        sectionNamePromptTitle = "Rename Section"
         sectionPendingRename = section
     }
 
@@ -1800,6 +1896,15 @@ struct EditView: View {
             onCueSection: cueSection,
             onToggleLoopSection: toggleLoopSection,
             onAddSection: addSection,
+            onAddSectionRange: addSection(from:to:),
+            snapSectionRange: { start, end in
+                MeasureTiming.snapTimelineRangeToGrid(
+                    start: start,
+                    end: end,
+                    tempoChanges: normalizedTempoChanges,
+                    timeSignatureChanges: normalizedTimeSignatureChanges
+                )
+            },
             onRenameSection: beginRenameSection,
             onDeleteSection: deleteSection,
             onTimeSignatureRulerTap: handleTimeSignatureRulerTap,
@@ -3374,6 +3479,8 @@ private struct TimelineRulerView: View {
     let onCueSection: (ArrangementDisplaySection) -> Void
     let onToggleLoopSection: (ArrangementDisplaySection) -> Void
     let onAddSection: (TimeInterval) -> Void
+    let onAddSectionRange: (TimeInterval, TimeInterval) -> Void
+    let snapSectionRange: (TimeInterval, TimeInterval) -> (TimeInterval, TimeInterval)
     let onRenameSection: (ArrangementDisplaySection) -> Void
     let onDeleteSection: (ArrangementDisplaySection) -> Void
     let onTimeSignatureRulerTap: (TimeInterval) -> Void
@@ -3543,6 +3650,8 @@ private struct TimelineRulerView: View {
             onCueSection: onCueSection,
             onToggleLoopSection: onToggleLoopSection,
             onAddSection: onAddSection,
+            onAddSectionRange: onAddSectionRange,
+            snapSectionRange: snapSectionRange,
             onRenameSection: onRenameSection,
             onDeleteSection: onDeleteSection
         )
@@ -3569,11 +3678,26 @@ private struct TimelineSectionMarkerRowView: View {
     let onCueSection: (ArrangementDisplaySection) -> Void
     let onToggleLoopSection: (ArrangementDisplaySection) -> Void
     let onAddSection: (TimeInterval) -> Void
+    let onAddSectionRange: (TimeInterval, TimeInterval) -> Void
+    let snapSectionRange: (TimeInterval, TimeInterval) -> (TimeInterval, TimeInterval)
     let onRenameSection: (ArrangementDisplaySection) -> Void
     let onDeleteSection: (ArrangementDisplaySection) -> Void
 
+    @State private var draftSectionRange: SectionDragDraft?
+
+    private struct SectionDragDraft: Equatable {
+        var start: TimeInterval
+        var end: TimeInterval
+    }
+
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
+    }
+
+    /// Trailing boundary markers created only to end a dragged section have no name.
+    /// They still set the previous section's end, and stay out of the colored row.
+    private var visibleSections: [ArrangementDisplaySection] {
+        sections.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     var body: some View {
@@ -3581,7 +3705,7 @@ private struct TimelineSectionMarkerRowView: View {
             Color.clear
                 .frame(width: displayWidth, height: height)
 
-            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+            ForEach(Array(visibleSections.enumerated()), id: \.element.id) { index, section in
                 TimelineSectionMarkerSegmentView(
                     section: section,
                     index: index,
@@ -3600,6 +3724,28 @@ private struct TimelineSectionMarkerRowView: View {
                 )
             }
 
+            if let draftSectionRange {
+                let startX = TimelineLayout.xPosition(
+                    for: draftSectionRange.start,
+                    duration: safeDuration,
+                    contentWidth: contentWidth
+                )
+                let endX = TimelineLayout.xPosition(
+                    for: draftSectionRange.end,
+                    duration: safeDuration,
+                    contentWidth: contentWidth
+                )
+                Rectangle()
+                    .fill(Color.accentColor.opacity(0.35))
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.accentColor, lineWidth: 1)
+                    }
+                    .frame(width: max(1, endX - startX), height: height)
+                    .offset(x: startX)
+                    .allowsHitTesting(false)
+            }
+
             ForEach(sections) { section in
                 let x = TimelineLayout.xPosition(
                     for: section.timelineStartSeconds,
@@ -3614,6 +3760,7 @@ private struct TimelineSectionMarkerRowView: View {
         }
         .frame(width: displayWidth, height: height)
         .contentShape(Rectangle())
+        .highPriorityGesture(createSectionDrag)
         .onTapGesture(count: 2, coordinateSpace: .local) { location in
             let time = timelineTime(at: location.x)
             if isPlaying, let section = section(atTimeline: time) {
@@ -3622,6 +3769,36 @@ private struct TimelineSectionMarkerRowView: View {
                 onAddSection(time)
             }
         }
+        #if os(macOS)
+        .onHover { hovering in
+            if hovering {
+                NSCursor.crosshair.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+        #endif
+    }
+
+    private var createSectionDrag: some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .local)
+            .onChanged { value in
+                draftSectionRange = sectionDragDraft(from: value.startLocation.x, to: value.location.x)
+            }
+            .onEnded { value in
+                let draft = sectionDragDraft(from: value.startLocation.x, to: value.location.x)
+                draftSectionRange = nil
+                guard let draft else { return }
+                onAddSectionRange(draft.start, draft.end)
+            }
+    }
+
+    private func sectionDragDraft(from startX: CGFloat, to endX: CGFloat) -> SectionDragDraft? {
+        let snapped = snapSectionRange(timelineTime(at: startX), timelineTime(at: endX))
+        let start = min(max(0, snapped.0), safeDuration)
+        let end = min(max(0, snapped.1), safeDuration)
+        guard end - start >= SectionRangeInsertion.minimumDuration else { return nil }
+        return SectionDragDraft(start: start, end: end)
     }
 
     private func timelineTime(at x: CGFloat) -> TimeInterval {
@@ -3704,18 +3881,12 @@ private struct TimelineSectionMarkerSegmentView: View {
             Button("Rename") {
                 onRenameSection(section)
             }
+            Button(isLoopSection ? "Remove Loop" : "Loop Section") {
+                onToggleLoopSection(section)
+            }
             if isPlaying {
                 Button("Cue Section") {
                     onCueSection(section)
-                }
-                if isLoopSection {
-                    Button("Remove Loop") {
-                        onToggleLoopSection(section)
-                    }
-                } else {
-                    Button("Loop Section") {
-                        onToggleLoopSection(section)
-                    }
                 }
             }
             Button("Delete Section", role: .destructive) {
@@ -3733,15 +3904,6 @@ private struct TimelineSectionMarkerSegmentView: View {
             }
         }
         .offset(x: startX)
-        #if os(macOS)
-        .onHover { hovering in
-            if hovering {
-                NSCursor.pointingHand.push()
-            } else {
-                NSCursor.pop()
-            }
-        }
-        #endif
     }
 }
 
@@ -4440,6 +4602,7 @@ private struct ClickTrackEditorMenu: View {
 struct RenameSectionSheet: View {
     @Environment(\.dismiss) private var dismiss
 
+    var title: String = "Rename Section"
     let currentName: String
     let onRename: (String) -> Void
 
@@ -4497,7 +4660,7 @@ struct RenameSectionSheet: View {
                     .padding(AppSpacing.md)
                 }
                 .frame(minWidth: 380, minHeight: 360)
-                .navigationTitle("Rename Section")
+                .navigationTitle(title)
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif

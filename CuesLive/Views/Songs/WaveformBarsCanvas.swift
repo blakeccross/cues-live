@@ -45,6 +45,29 @@ struct WaveformBarsCanvas: View, Equatable {
     }
 
     private func drawFilledEnvelopeWaveform(in context: inout GraphicsContext, size: CGSize) {
+        let playheadX = playheadFraction.map { min(max(0, $0), 1) * size.width }
+        guard let playheadX else {
+            drawFilledEnvelopeBody(in: &context, size: size, fillColor: fillColor)
+            return
+        }
+
+        let usesCustomFill = fillColor != Color.dawWaveformFill
+        let playedFill = usesCustomFill ? fillColor : playedColor
+        let unplayedFill = usesCustomFill ? fillColor.opacity(0.32) : unplayedColor
+        drawFilledEnvelopeBody(in: &context, size: size, fillColor: unplayedFill)
+
+        var playedContext = context
+        playedContext.clip(
+            to: Path(CGRect(x: 0, y: 0, width: max(0, playheadX), height: size.height))
+        )
+        drawFilledEnvelopeBody(in: &playedContext, size: size, fillColor: playedFill)
+    }
+
+    private func drawFilledEnvelopeBody(
+        in context: inout GraphicsContext,
+        size: CGSize,
+        fillColor: Color
+    ) {
         let bodyHeight = max(1, size.height - headerHeight)
         let midY = headerHeight + bodyHeight / 2
 

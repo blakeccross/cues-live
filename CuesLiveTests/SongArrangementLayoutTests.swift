@@ -571,3 +571,113 @@ final class SongArrangementLayoutTests: XCTestCase {
         XCTAssertEqual(mapper.sourceSeconds(atMasterTimeline: 55) ?? -1, 59, accuracy: 0.001)
     }
 }
+
+final class SectionRangeInsertionTests: XCTestCase {
+    func testDragInsideSectionSplitsHeadAndTail() {
+        let verse = ArrangementMarker(name: "Verse", startSeconds: 0, sortOrder: 0)
+        let plan = SectionRangeInsertion.plan(
+            markers: [verse],
+            start: 10,
+            end: 20,
+            songDuration: 40,
+            newSectionName: "Section 1"
+        )
+
+        XCTAssertEqual(plan?.markers.map(\.name), ["Verse", "Section 1", "Verse"])
+        XCTAssertEqual(plan?.markers.map(\.startSeconds), [0, 10, 20])
+        XCTAssertEqual(plan?.markers.map(\.sortOrder), [0, 1, 2])
+        XCTAssertEqual(plan?.sectionMarkerID, plan?.markers[1].id)
+        XCTAssertEqual(plan?.markers[0].id, verse.id)
+        XCTAssertEqual(plan?.removedMarkerIDs, [])
+    }
+
+    func testDragAcrossSectionsKeepsTheNameAtTheEnd() {
+        let verse = ArrangementMarker(name: "Verse", startSeconds: 0, sortOrder: 0)
+        let chorus = ArrangementMarker(name: "Chorus", startSeconds: 10, sortOrder: 1)
+        let bridge = ArrangementMarker(name: "Bridge", startSeconds: 30, sortOrder: 2)
+        let plan = SectionRangeInsertion.plan(
+            markers: [verse, chorus, bridge],
+            start: 5,
+            end: 40,
+            songDuration: 60,
+            newSectionName: "Solo"
+        )
+
+        XCTAssertEqual(plan?.markers.map(\.name), ["Verse", "Solo", "Bridge"])
+        XCTAssertEqual(plan?.markers.map(\.startSeconds), [0, 5, 40])
+        XCTAssertEqual(plan?.sectionMarkerID, plan?.markers[1].id)
+        XCTAssertEqual(plan?.removedMarkerIDs, [chorus.id, bridge.id])
+        XCTAssertEqual(plan?.markers[0].id, verse.id)
+    }
+
+    func testDragEndingOnExistingMarkerDoesNotAddAnother() {
+        let verse = ArrangementMarker(name: "Verse", startSeconds: 0, sortOrder: 0)
+        let chorus = ArrangementMarker(name: "Chorus", startSeconds: 20, sortOrder: 1)
+        let plan = SectionRangeInsertion.plan(
+            markers: [verse, chorus],
+            start: 5,
+            end: 20,
+            songDuration: 40,
+            newSectionName: "Section 1"
+        )
+
+        XCTAssertEqual(plan?.markers.map(\.name), ["Verse", "Section 1", "Chorus"])
+        XCTAssertEqual(plan?.markers.map(\.startSeconds), [0, 5, 20])
+        XCTAssertEqual(plan?.markers[2].id, chorus.id)
+        XCTAssertEqual(plan?.removedMarkerIDs, [])
+    }
+
+    func testDragFromExistingMarkerReusesItAndCopiesItsNameForward() {
+        let verse = ArrangementMarker(name: "Verse", startSeconds: 0, sortOrder: 0)
+        let plan = SectionRangeInsertion.plan(
+            markers: [verse],
+            start: 0,
+            end: 20,
+            songDuration: 40,
+            newSectionName: "Section 1"
+        )
+
+        XCTAssertEqual(plan?.sectionMarkerID, verse.id)
+        XCTAssertEqual(plan?.markers.map(\.name), ["Verse", "Verse"])
+        XCTAssertEqual(plan?.markers.map(\.startSeconds), [0, 20])
+        XCTAssertEqual(plan?.markers[0].id, verse.id)
+    }
+
+    func testDragToSongEndDoesNotAddTrailingMarker() {
+        let plan = SectionRangeInsertion.plan(
+            markers: [],
+            start: 10,
+            end: 40,
+            songDuration: 40,
+            newSectionName: "Section 1"
+        )
+
+        XCTAssertEqual(plan?.markers.map(\.name), ["Section 1"])
+        XCTAssertEqual(plan?.markers.map(\.startSeconds), [10])
+    }
+
+    func testDragOnEmptySongBoundsTheSection() {
+        let plan = SectionRangeInsertion.plan(
+            markers: [],
+            start: 10,
+            end: 30,
+            songDuration: 60,
+            newSectionName: "Section 1"
+        )
+
+        XCTAssertEqual(plan?.markers.map(\.name), ["Section 1", ""])
+        XCTAssertEqual(plan?.markers.map(\.startSeconds), [10, 30])
+        XCTAssertEqual(plan?.sectionMarkerID, plan?.markers[0].id)
+    }
+
+    func testCollapsedRangeIsRejected() {
+        let plan = SectionRangeInsertion.plan(
+            markers: [],
+            start: 10,
+            end: 10.01,
+            songDuration: 60,
+            newSectionName: "Section 1"
+        )
+        XCTAssertNil(plan)
+    }
+}
