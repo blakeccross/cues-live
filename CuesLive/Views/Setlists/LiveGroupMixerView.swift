@@ -354,10 +354,10 @@ struct LiveGroupMixerView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let stripHeight = geometry.size.height - AppSpacing.xs - AppSpacing.xxs
+            let stripHeight = geometry.size.height - AppSpacing.xs
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: AppSpacing.xxs) {
+                HStack(alignment: .bottom, spacing: 0) {
                     ForEach(mixableGroups) { group in
                         LiveGroupChannelStrip(
                             title: group.name,
@@ -400,8 +400,8 @@ struct LiveGroupMixerView: View {
                 }
                 .padding(.horizontal, AppSpacing.sm)
                 .padding(.top, AppSpacing.xs)
-                .padding(.bottom, AppSpacing.xxs)
             }
+            .contentMargins(.bottom, 0, for: .scrollContent)
         }
         .background {
             GroupMeterRefreshTicker()
@@ -436,46 +436,43 @@ struct LiveGroupChannelStrip: View {
     let onMixChange: () -> Void
 
     var body: some View {
-        VStack(spacing: AppSpacing.xxs) {
-            GeometryReader { geometry in
-                MixerFaderColumn(
-                    value: $volume,
-                    groupID: groupID,
-                    height: max(60, geometry.size.height),
-                    onLiveVolumeChange: { liveVolume in
-                        onLiveVolumeChange(groupID, liveVolume)
-                    },
-                    onEditingEnded: onMixChange
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .frame(minHeight: 60, maxHeight: .infinity)
-            .frame(width: stripWidth)
+        VStack(spacing: 0) {
+            VStack(spacing: AppSpacing.xxs) {
+                GeometryReader { geometry in
+                    MixerFaderColumn(
+                        value: $volume,
+                        groupID: groupID,
+                        height: max(60, geometry.size.height),
+                        onLiveVolumeChange: { liveVolume in
+                            onLiveVolumeChange(groupID, liveVolume)
+                        },
+                        onEditingEnded: onMixChange
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(minHeight: 60, maxHeight: .infinity)
 
-            TrackMixButton(
-                label: "M",
-                isActive: isMuted,
-                activeColor: .dawMuteActive
-            ) {
-                isMuted.toggle()
-                onMixChange()
+                TrackMixButton(
+                    label: "M",
+                    isActive: isMuted,
+                    activeColor: .dawMuteActive
+                ) {
+                    isMuted.toggle()
+                    onMixChange()
+                }
             }
+            .padding(.horizontal, AppSpacing.xxs)
+            .padding(.top, AppSpacing.xxs)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             Text(title)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.white)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(width: stripWidth, alignment: .center)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
+                .frame(maxWidth: .infinity, minHeight: 18, alignment: .center)
                 .background(titleColor)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
         }
-        .frame(width: stripWidth)
-        .padding(.horizontal, AppSpacing.xxs)
-        .padding(.vertical, AppSpacing.xxs)
-        .frame(height: stripHeight, alignment: .top)
+        .frame(width: stripWidth, height: stripHeight, alignment: .bottom)
     }
 }

@@ -23,6 +23,8 @@ final class TrackMemoryPlayer {
         var playbackEndTimeline: TimeInterval?
         let peakMeter = PeakMeterHolder()
         private var isInvalidated = false
+        private var gainRamp = GainRamp()
+        private let gainRampFrames: Int
         private var stateLock = os_unfair_lock()
 
         init(
@@ -34,6 +36,7 @@ final class TrackMemoryPlayer {
             self.buffer = buffer
             self.mapper = mapper
             self.sampleRate = buffer.sampleRate
+            self.gainRampFrames = max(1, Int(buffer.sampleRate * GainRamp.defaultRampSeconds))
         }
 
         func invalidate() {
@@ -51,6 +54,11 @@ final class TrackMemoryPlayer {
         func updateMix(volume: Float, isAudible: Bool) {
             os_unfair_lock_lock(&stateLock)
             mix = MixState(volume: volume, isAudible: isAudible)
+            // Nothing is audible while stopped, so land on the new gain instead of
+            // ramping into the start of the next play (a muted track would leak).
+            if !transport.isPlaying {
+                gainRamp.snap(to: Self.targetGain(for: mix))
+            }
             os_unfair_lock_unlock(&stateLock)
         }
 
@@ -70,28 +78,50 @@ final class TrackMemoryPlayer {
 
             clearOutput(outputBuffer, frameCount: frameCount)
 
-            os_unfair_lock_lock(&stateLock)
-            guard !isInvalidated else {
-                os_unfair_lock_unlock(&stateLock)
-                return
-            }
-            guard mix.isAudible else {
-                os_unfair_lock_unlock(&stateLock)
-                return
-            }
             // Hold the lock for the full render so mapper/mix cannot tear on the main thread.
+            os_unfair_lock_lock(&stateLock)
             defer { os_unfair_lock_unlock(&stateLock) }
+            guard !isInvalidated else { return }
 
+            let targetGain = Self.targetGain(for: mix)
+            // A muted track that has finished ramping out renders nothing.
+            guard targetGain > 0 || gainRamp.current > 0 else { return }
+
+            guard renderPlayback(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputBuffer) else {
+                // Silent block: keep the gain current so the next audible block
+                // does not ramp from a stale value.
+                gainRamp.snap(to: targetGain)
+                return
+            }
+
+            // Stems render at unity and the ramp is applied once over the block, so a
+            // fader, mute or solo change never steps the waveform.
+            gainRamp.apply(
+                target: targetGain,
+                to: UnsafeMutableAudioBufferListPointer(outputBuffer),
+                frameCount: Int(frameCount),
+                rampFrames: gainRampFrames
+            )
+            peakMeter.report(Self.peakAmplitude(in: outputBuffer, frameCount: frameCount))
+        }
+
+        /// Fills `outputBuffer` at unity gain. Returns `false` when nothing was
+        /// rendered (transport stopped, or the track has not started / has ended).
+        private func renderPlayback(
+            frameCount: AVAudioFrameCount,
+            hostTime: UInt64,
+            outputBuffer: UnsafeMutablePointer<AudioBufferList>
+        ) -> Bool {
             let transportState = transport.renderTimeline(atHostTime: hostTime, captureAnchor: true)
-            guard transportState.isPlaying else { return }
+            guard transportState.isPlaying else { return false }
 
             let masterStart = transportState.timelineSeconds
             if let endTimeline = playbackEndTimeline, masterStart >= endTimeline {
-                return
+                return false
             }
 
             let effectiveStart = masterStart - playbackTimelineOffset
-            guard effectiveStart >= 0 else { return }
+            guard effectiveStart >= 0 else { return false }
 
             let ratio = transportState.playbackRatio
 
@@ -111,10 +141,7 @@ final class TrackMemoryPlayer {
                     transportMasterStart: masterStart
                 )
             }
-
-            if mix.isAudible {
-                peakMeter.report(Self.peakAmplitude(in: outputBuffer, frameCount: frameCount))
-            }
+            return true
         }
 
         private func regionRunFrames(
@@ -163,7 +190,6 @@ final class TrackMemoryPlayer {
             outputBuffer: UnsafeMutablePointer<AudioBufferList>,
             transportMasterStart: TimeInterval
         ) {
-            let (leftGain, rightGain) = Self.channelGains(for: mix)
             let loop = loopFrameBounds()
             let totalFrames = Int(frameCount)
 
@@ -226,9 +252,7 @@ final class TrackMemoryPlayer {
                         ),
                         frameCount: runFrames,
                         into: outputBuffer,
-                        outputFrameOffset: renderedFrames,
-                        leftGain: leftGain,
-                        rightGain: rightGain
+                        outputFrameOffset: renderedFrames
                     )
                 }
 
@@ -247,7 +271,6 @@ final class TrackMemoryPlayer {
             let outputFrames = Int(frameCount)
             guard outputFrames > 0 else { return }
 
-            let (leftGain, rightGain) = Self.channelGains(for: mix)
             let outputBuffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
             let outputChannelCount = outputBuffers.count
             guard outputChannelCount > 0 else { return }
@@ -262,9 +285,7 @@ final class TrackMemoryPlayer {
                     sourceFrameStep: ratio,
                     outputFrames: outputFrames,
                     outputBuffers: outputBuffers,
-                    outputChannelCount: outputChannelCount,
-                    leftGain: leftGain,
-                    rightGain: rightGain
+                    outputChannelCount: outputChannelCount
                 )
                 return
             }
@@ -275,8 +296,6 @@ final class TrackMemoryPlayer {
                 outputFrames: outputFrames,
                 outputBuffers: outputBuffers,
                 outputChannelCount: outputChannelCount,
-                leftGain: leftGain,
-                rightGain: rightGain,
                 transportMasterStart: transportMasterStart
             )
         }
@@ -287,9 +306,7 @@ final class TrackMemoryPlayer {
             sourceFrameStep: Double,
             outputFrames: Int,
             outputBuffers: UnsafeMutableAudioBufferListPointer,
-            outputChannelCount: Int,
-            leftGain: Float,
-            rightGain: Float
+            outputChannelCount: Int
         ) {
             var sourceFrame = startSourceFrame
 
@@ -299,9 +316,7 @@ final class TrackMemoryPlayer {
                     sourceFrame: sourceFrame,
                     outputFrame: outputFrame,
                     outputBuffers: outputBuffers,
-                    outputChannelCount: outputChannelCount,
-                    leftGain: leftGain,
-                    rightGain: rightGain
+                    outputChannelCount: outputChannelCount
                 )
                 sourceFrame += sourceFrameStep
             }
@@ -313,8 +328,6 @@ final class TrackMemoryPlayer {
             outputFrames: Int,
             outputBuffers: UnsafeMutableAudioBufferListPointer,
             outputChannelCount: Int,
-            leftGain: Float,
-            rightGain: Float,
             transportMasterStart: TimeInterval
         ) {
             var renderedFrames = 0
@@ -384,9 +397,7 @@ final class TrackMemoryPlayer {
                             sourceFrame: sourceFrame,
                             outputFrame: renderedFrames + offset,
                             outputBuffers: outputBuffers,
-                            outputChannelCount: outputChannelCount,
-                            leftGain: leftGain,
-                            rightGain: rightGain
+                            outputChannelCount: outputChannelCount
                         )
                         sourceFrame += masterStep
                     }
@@ -401,13 +412,11 @@ final class TrackMemoryPlayer {
             sourceFrame: Double,
             outputFrame: Int,
             outputBuffers: UnsafeMutableAudioBufferListPointer,
-            outputChannelCount: Int,
-            leftGain: Float,
-            rightGain: Float
+            outputChannelCount: Int
         ) {
             if buffer.channelCount == 1 {
                 guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
-                let sample = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * leftGain
+                let sample = buffer.interpolatedSample(channel: 0, frame: sourceFrame)
                 outputData[outputFrame] = sample
                 for channel in 1..<outputChannelCount {
                     guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
@@ -418,17 +427,17 @@ final class TrackMemoryPlayer {
 
             if outputChannelCount >= 2, buffer.channelCount >= 2 {
                 if let leftOutput = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) {
-                    leftOutput[outputFrame] = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * leftGain
+                    leftOutput[outputFrame] = buffer.interpolatedSample(channel: 0, frame: sourceFrame)
                 }
                 if let rightOutput = outputBuffers[1].mData?.assumingMemoryBound(to: Float.self) {
-                    rightOutput[outputFrame] = buffer.interpolatedSample(channel: 1, frame: sourceFrame) * rightGain
+                    rightOutput[outputFrame] = buffer.interpolatedSample(channel: 1, frame: sourceFrame)
                 }
                 return
             }
 
             for channel in 0..<min(buffer.channelCount, outputChannelCount) {
                 guard let outputData = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
-                outputData[outputFrame] = buffer.interpolatedSample(channel: channel, frame: sourceFrame) * mix.volume
+                outputData[outputFrame] = buffer.interpolatedSample(channel: channel, frame: sourceFrame)
             }
         }
 
@@ -436,9 +445,7 @@ final class TrackMemoryPlayer {
             startingFrame: Int,
             frameCount: Int,
             into outputBufferList: UnsafeMutablePointer<AudioBufferList>,
-            outputFrameOffset: Int,
-            leftGain: Float,
-            rightGain: Float
+            outputFrameOffset: Int
         ) {
             let outputBuffers = UnsafeMutableAudioBufferListPointer(outputBufferList)
             let outputChannelCount = outputBuffers.count
@@ -448,7 +455,6 @@ final class TrackMemoryPlayer {
             // duplicate mono into additional channels so channel maps that
             // dual-route ch0 stay valid without reading missing inputs.
             if buffer.channelCount == 1 {
-                let gain = leftGain
                 guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
                 _ = buffer.copy(
                     channel: 0,
@@ -456,7 +462,7 @@ final class TrackMemoryPlayer {
                     frameCount: frameCount,
                     into: outputData,
                     destinationOffset: outputFrameOffset,
-                    gain: gain
+                    gain: 1
                 )
                 for channel in 1..<outputChannelCount {
                     guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
@@ -475,7 +481,7 @@ final class TrackMemoryPlayer {
                         frameCount: frameCount,
                         into: leftOutput,
                         destinationOffset: outputFrameOffset,
-                        gain: leftGain
+                        gain: 1
                     )
                 }
 
@@ -486,7 +492,7 @@ final class TrackMemoryPlayer {
                         frameCount: frameCount,
                         into: rightOutput,
                         destinationOffset: outputFrameOffset,
-                        gain: rightGain
+                        gain: 1
                     )
                 }
                 return
@@ -500,7 +506,7 @@ final class TrackMemoryPlayer {
                     frameCount: frameCount,
                     into: outputData,
                     destinationOffset: outputFrameOffset,
-                    gain: mix.volume
+                    gain: 1
                 )
             }
         }
@@ -514,9 +520,8 @@ final class TrackMemoryPlayer {
             _ = frameCount
         }
 
-        private static func channelGains(for mix: MixState) -> (left: Float, right: Float) {
-            guard mix.isAudible, mix.volume > 0 else { return (0, 0) }
-            return (mix.volume, mix.volume)
+        private static func targetGain(for mix: MixState) -> Float {
+            mix.isAudible ? max(mix.volume, 0) : 0
         }
 
         private static func peakAmplitude(

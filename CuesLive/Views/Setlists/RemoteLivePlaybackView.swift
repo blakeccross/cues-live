@@ -574,10 +574,10 @@ struct RemoteGroupMixerView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let stripHeight = max(140, geometry.size.height - AppSpacing.xs - AppSpacing.xxs)
+            let stripHeight = max(140, geometry.size.height - AppSpacing.xs)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: AppSpacing.xxs) {
+                HStack(alignment: .bottom, spacing: 0) {
                     ForEach(groups) { group in
                         LiveGroupChannelStrip(
                             title: group.name,
@@ -626,8 +626,8 @@ struct RemoteGroupMixerView: View {
                 }
                 .padding(.horizontal, AppSpacing.sm)
                 .padding(.top, AppSpacing.xs)
-                .padding(.bottom, AppSpacing.xxs)
             }
+            .contentMargins(.bottom, 0, for: .scrollContent)
         }
         .background(AppColors.backgroundSecondary)
         .overlay(alignment: .top) {

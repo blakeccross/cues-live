@@ -44,6 +44,8 @@
 		AA0000010000000000000023 /* TimelinePlayheadOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */; };
 		AA0000010000000000000026 /* DecodedStemBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000026 /* DecodedStemBuffer.swift */; };
 		AA0000010000000000000027 /* TrackMemoryPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000027 /* TrackMemoryPlayer.swift */; };
+		AA00000100000000000004A1 /* GainRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A1 /* GainRamp.swift */; };
+		AA00000100000000000004A2 /* GainRampTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A2 /* GainRampTests.swift */; };
 		AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
 		AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000028 /* LiveSongWaveformView.swift */; };
 		AA0000010000000000000029 /* SetlistTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000029 /* SetlistTransition.swift */; };
@@ -254,6 +256,8 @@
 		AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePlayheadOverlay.swift; sourceTree = "<group>"; };
 		AA0000020000000000000026 /* DecodedStemBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodedStemBuffer.swift; sourceTree = "<group>"; };
 		AA0000020000000000000027 /* TrackMemoryPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMemoryPlayer.swift; sourceTree = "<group>"; };
+		AA00000200000000000004A1 /* GainRamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRamp.swift; sourceTree = "<group>"; };
+		AA00000200000000000004A2 /* GainRampTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRampTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformScrollBacking.swift; sourceTree = "<group>"; };
 		AA0000020000000000000028 /* LiveSongWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000029 /* SetlistTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistTransition.swift; sourceTree = "<group>"; };
@@ -564,6 +568,7 @@
 				AA0000020000000000000026 /* DecodedStemBuffer.swift */,
 				AA000002000000000000003A /* RubberBandPitchProcessor.swift */,
 				AA0000020000000000000027 /* TrackMemoryPlayer.swift */,
+				AA00000200000000000004A1 /* GainRamp.swift */,
 				AA0000020000000000000008 /* PlaybackCoordinator.swift */,
 				AA00000200000000000000B4 /* OverlapPreviewEngine.swift */,
 				AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */,
@@ -723,6 +728,7 @@
 				AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */,
 				AA00000200000000000000C7 /* AudioTimelineMathTests.swift */,
 				AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */,
+				AA00000200000000000004A2 /* GainRampTests.swift */,
 				AA00000200000000000000D5 /* SongBakeFingerprintTests.swift */,
 				AA00000200000000000000D8 /* SongEditSnapshotTests.swift */,
 				AA000002000000000000012B /* SongMusicalKeyTests.swift */,
@@ -1027,6 +1033,7 @@
 				AA0000010000000000000021 /* AudioPlaybackTransport.swift in Sources */,
 				AA0000010000000000000026 /* DecodedStemBuffer.swift in Sources */,
 				AA0000010000000000000027 /* TrackMemoryPlayer.swift in Sources */,
+				AA00000100000000000004A1 /* GainRamp.swift in Sources */,
 				AA0000010000000000000023 /* TimelinePlayheadOverlay.swift in Sources */,
 				AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */,
 				AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */,
@@ -1107,6 +1114,7 @@
 				AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */,
 				AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */,
 				AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */,
+				AA00000100000000000004A2 /* GainRampTests.swift in Sources */,
 				AA00000100000000000000D5 /* SongBakeFingerprintTests.swift in Sources */,
 				AA00000100000000000000D8 /* SongEditSnapshotTests.swift in Sources */,
 				AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */,
