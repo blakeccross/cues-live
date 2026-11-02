@@ -1204,6 +1204,11 @@ struct LivePlaybackView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(AppSpacing.md)
                     .contentShape(Rectangle())
+                    .dropDestination(for: String.self) { items, _ in
+                        let ids = items.compactMap(SongDragPayload.songID(from:))
+                        insertDroppedSongs(at: 0, songIDs: ids)
+                        return !ids.isEmpty
+                    }
                     .contextMenu {
                         Button {
                             addHeader()
@@ -1219,7 +1224,8 @@ struct LivePlaybackView: View {
                         isEditing: $isEditingSetlist,
                         actions: setlistRowActions(for:),
                         onMove: moveSetlistRows,
-                        onAddHeader: addHeader
+                        onAddHeader: addHeader,
+                        onInsertSongs: insertDroppedSongs
                     )
                     .frame(maxWidth: 720, maxHeight: .infinity)
                     .frame(maxWidth: .infinity)
@@ -1293,6 +1299,21 @@ struct LivePlaybackView: View {
     }
 
     /// Translates list offsets (visible rows only) into offsets in the full sorted entry list.
+    /// `rowIndex` is a position among the visible rows; map it to `sortedEntries` like `moveSetlistRows`.
+    private func insertDroppedSongs(at rowIndex: Int, songIDs: [UUID]) {
+        let sorted = workingSetlist.sortedEntries
+        let visible = sorted.filter { $0.isHeader || $0.song != nil }
+        var index = rowIndex < visible.count
+            ? (sorted.firstIndex(where: { $0 === visible[rowIndex] }) ?? sorted.count)
+            : sorted.count
+        for id in songIDs {
+            let descriptor = FetchDescriptor<Song>(predicate: #Predicate { $0.id == id })
+            guard let song = try? modelContext.fetch(descriptor).first else { continue }
+            addSong(song, at: index)
+            index += 1
+        }
+    }
+
     private func moveSetlistRows(from source: IndexSet, to destination: Int) {
         let sorted = workingSetlist.sortedEntries
         let visible = sorted.filter { $0.isHeader || $0.song != nil }

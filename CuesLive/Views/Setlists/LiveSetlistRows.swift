@@ -45,6 +45,38 @@ struct SetlistRowActions {
     var remove: () -> Void
 }
 
+// MARK: - Song drag payload
+
+/// Carries a library song across a drag from the sidebar into the setlist. A tagged string keeps
+/// it a plain `Transferable` without needing a custom exported UTType.
+enum SongDragPayload {
+    private static let prefix = "cueslive-song:"
+
+    static func string(for songID: UUID) -> String {
+        prefix + songID.uuidString
+    }
+
+    static func songID(from string: String) -> UUID? {
+        guard string.hasPrefix(prefix) else { return nil }
+        return UUID(uuidString: String(string.dropFirst(prefix.count)))
+    }
+
+    static func songIDs(from providers: [NSItemProvider]) async -> [UUID] {
+        var ids: [UUID] = []
+        for provider in providers where provider.canLoadObject(ofClass: String.self) {
+            let string: String? = await withCheckedContinuation { continuation in
+                _ = provider.loadObject(ofClass: String.self) { value, _ in
+                    continuation.resume(returning: value)
+                }
+            }
+            if let string, let id = songID(from: string) {
+                ids.append(id)
+            }
+        }
+        return ids
+    }
+}
+
 // MARK: - List
 
 /// A plain native list: tap to play, drag to reorder (Edit mode on iOS), and one shared set of
@@ -57,6 +89,8 @@ struct SetlistListView: View {
     let actions: (SetlistRowModel) -> SetlistRowActions
     let onMove: (IndexSet, Int) -> Void
     var onAddHeader: (() -> Void)? = nil
+    /// Called with the row index to insert at when a library song is dropped on the list.
+    var onInsertSongs: ((Int, [UUID]) -> Void)? = nil
 
     #if os(iOS)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -68,6 +102,13 @@ struct SetlistListView: View {
                 rowView(row)
             }
             .onMove(perform: onMove)
+            .onInsert(of: [.plainText]) { index, providers in
+                guard let onInsertSongs else { return }
+                Task { @MainActor in
+                    let ids = await SongDragPayload.songIDs(from: providers)
+                    if !ids.isEmpty { onInsertSongs(index, ids) }
+                }
+            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)

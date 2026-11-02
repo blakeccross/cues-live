@@ -218,7 +218,7 @@ struct SongLibraryPanel: View {
         } label: {
             Image(systemName: "plus")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(AppColors.accent)
+                .foregroundStyle(AppColors.textSecondary)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
@@ -331,6 +331,9 @@ struct SongLibraryPanel: View {
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
+                        #if os(macOS)
+                        .draggable(SongDragPayload.string(for: song.id))
+                        #endif
                         .contextMenu {
                             songContextMenu(for: song)
                         }
@@ -724,6 +727,7 @@ private struct SongLibraryRow: View {
             } label: {
                 Image(systemName: "plus")
                     .font(.body.weight(.semibold))
+                    .foregroundStyle(AppColors.textSecondary)
                     .frame(width: 32, height: 32)
                     .contentShape(Rectangle())
             }
