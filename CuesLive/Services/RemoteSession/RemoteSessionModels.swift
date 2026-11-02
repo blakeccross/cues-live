@@ -420,7 +420,7 @@ enum RemoteSessionCommand: Codable, Sendable {
     case seek(TimeInterval)
     case nextSong(autoPlay: Bool)
     case previousSong(autoPlay: Bool)
-    case goToSong(index: Int, autoPlay: Bool)
+    case goToSong(index: Int, autoPlay: Bool, startTime: TimeInterval? = nil)
     case setGroupVolume(groupID: UUID?, volume: Double, provisional: Bool)
     case setGroupMuted(groupID: UUID?, muted: Bool)
     case toggleFade

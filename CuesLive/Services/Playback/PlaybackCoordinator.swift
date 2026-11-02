@@ -540,10 +540,11 @@ final class PlaybackCoordinator {
         reloadAndMaybePlay(autoPlay: autoPlay)
     }
 
-    func goToSong(at index: Int, autoPlay: Bool = false) {
+    /// Jumps to a song; `startTime` positions the playhead there once it loads (e.g. a tapped section).
+    func goToSong(at index: Int, autoPlay: Bool = false, startTime: TimeInterval? = nil) {
         guard songs.indices.contains(index), index != currentIndex else { return }
         currentIndex = index
-        reloadAndMaybePlay(autoPlay: autoPlay)
+        reloadAndMaybePlay(autoPlay: autoPlay, startTime: startTime)
     }
 
     private func advanceToNextSong(autoPlay: Bool) {
@@ -552,7 +553,7 @@ final class PlaybackCoordinator {
         reloadAndMaybePlay(autoPlay: autoPlay)
     }
 
-    private func reloadAndMaybePlay(autoPlay: Bool) {
+    private func reloadAndMaybePlay(autoPlay: Bool, startTime: TimeInterval? = nil) {
         audioEngine.cancelScheduledOverlapStart()
         audioEngine.cancelOverlapPlayback()
         clearIncomingPrefetch()
@@ -572,7 +573,8 @@ final class PlaybackCoordinator {
         }
 
         audioEngine.suspendHardware()
-        loadCurrentSong(autoPlay: autoPlay)
+        // The song's waveform is unchanged by navigating to it; keep its cached lane on screen.
+        loadCurrentSong(autoPlay: autoPlay, preservedTime: startTime, invalidatesWaveformSnapshot: false)
     }
 
     func applyOutputRouting() {
@@ -690,11 +692,8 @@ final class PlaybackCoordinator {
 
                 applySongEngineState(for: song)
                 applyGroupMixFromProvider()
-                if let snapshot = Self.makeWaveformSnapshot(for: song) {
-                    _ = storeWaveformSnapshot(snapshot, warmingPeaksIfNeeded: true)
-                } else {
-                    currentWaveformSnapshot = nil
-                }
+                // Reuse the cached lane when present so switching songs doesn't rebuild it.
+                currentWaveformSnapshot = resolveWaveformSnapshot(for: song)
                 loadedSongID = song.id
                 isLoaded = true
                 loadError = nil

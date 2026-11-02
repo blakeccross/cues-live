@@ -317,10 +317,11 @@ struct RemoteLivePlaybackView: View {
             cueFlashPhase: cueFlashPhase,
             onSeek: { client.send(.seek($0)) },
             onCueSection: { client.send(.cueSection(sectionID: $0.id)) },
-            onSelectSong: { index in
+            onSelectSong: { index, startTime in
                 client.send(.goToSong(
                     index: index,
-                    autoPlay: state.isAudiblePlaying
+                    autoPlay: state.isAudiblePlaying,
+                    startTime: startTime
                 ))
             }
         )

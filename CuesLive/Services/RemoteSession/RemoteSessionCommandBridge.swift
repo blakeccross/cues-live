@@ -41,8 +41,8 @@ final class RemoteSessionCommandBridge {
             host.coordinator.goToNextSong(autoPlay: autoPlay)
         case .previousSong(let autoPlay):
             host.coordinator.goToPreviousSong(autoPlay: autoPlay)
-        case .goToSong(let index, let autoPlay):
-            host.coordinator.goToSong(at: index, autoPlay: autoPlay)
+        case .goToSong(let index, let autoPlay, let startTime):
+            host.coordinator.goToSong(at: index, autoPlay: autoPlay, startTime: startTime)
         case .setGroupVolume(let groupID, let volume, let provisional):
             applyVolume(groupID: groupID, volume: volume, provisional: provisional, host: host)
         case .setGroupMuted(let groupID, let muted):

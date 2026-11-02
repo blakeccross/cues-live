@@ -974,8 +974,8 @@ struct LiveSetlistWaveformScrollView: View {
     let onSeek: (TimeInterval) -> Void
     let onCueSection: (ArrangementDisplaySection) -> Void
     var onOverlapBadgeTapped: ((Int) -> Void)?
-    /// When set, tapping a non-current song lane selects that song (remote client).
-    var onSelectSong: ((Int) -> Void)?
+    /// When set, tapping a non-current song lane jumps to that song, at the tapped section's start when one was hit.
+    var onSelectSong: ((Int, TimeInterval?) -> Void)?
     /// Largest MIDI device lane count across the setlist's songs, so every
     /// song's row reserves the same height and switching songs doesn't jump.
     var maxMIDILaneCount: Int = 0
@@ -1054,7 +1054,11 @@ struct LiveSetlistWaveformScrollView: View {
                 attemptFollowRelatch()
             }
             .onChange(of: isUserScrolling) { _, scrolling in
-                if !scrolling {
+                if scrolling {
+                    // Playhead updates are ignored mid-scroll, so the last value goes stale.
+                    // Drop it; relatching on it when the scroll ends would snap back to follow.
+                    playheadViewportX = nil
+                } else {
                     attemptFollowRelatch()
                 }
             }
@@ -1279,9 +1283,10 @@ struct LiveSetlistWaveformScrollView: View {
     @ViewBuilder
     private func songLane(songID: UUID, playbackIndex: Int) -> some View {
         let isCurrent = playbackIndex == currentPlaybackIndex
+        let laneSnapshot = waveformSnapshotForSongID(songID)
 
         Group {
-            if let snapshot = waveformSnapshotForSongID(songID) {
+            if let snapshot = laneSnapshot {
                 waveformLane(snapshot: snapshot, isCurrent: isCurrent)
             } else {
                 LiveSetlistWaveformLanePlaceholder(isCurrent: isCurrent)
@@ -1293,7 +1298,10 @@ struct LiveSetlistWaveformScrollView: View {
         }
         .modifier(NonCurrentSongSelectTapModifier(
             isEnabled: !isCurrent && onSelectSong != nil,
-            onSelect: { onSelectSong?(playbackIndex) }
+            contentWidth: laneSnapshot.map { laneContentWidth(for: $0) } ?? 0,
+            duration: laneSnapshot?.timelineDuration ?? 0,
+            sections: laneSnapshot?.sections ?? [],
+            onSelect: { onSelectSong?(playbackIndex, $0) }
         ))
     }
 
@@ -1364,16 +1372,36 @@ private struct LiveSetlistWaveformLanePlaceholder: View {
     }
 }
 
+/// Tapping a lane for a song that isn't cued selects it; a tap inside a section also
+/// reports that section's start so playback lands there.
 private struct NonCurrentSongSelectTapModifier: ViewModifier {
     let isEnabled: Bool
-    let onSelect: () -> Void
+    let contentWidth: CGFloat
+    let duration: TimeInterval
+    let sections: [ArrangementDisplaySection]
+    let onSelect: (TimeInterval?) -> Void
 
     func body(content: Content) -> some View {
         if isEnabled {
-            content.onTapGesture(perform: onSelect)
+            content
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    SpatialTapGesture()
+                        .onEnded { event in
+                            onSelect(sectionStart(atX: event.location.x))
+                        }
+                )
         } else {
             content
         }
+    }
+
+    private func sectionStart(atX x: CGFloat) -> TimeInterval? {
+        guard contentWidth > 0, duration > 0, !sections.isEmpty else { return nil }
+        let time = TimelineLayout.time(at: x, duration: duration, contentWidth: contentWidth)
+        let hit = sections.first { time >= $0.timelineStartSeconds && time < $0.timelineEndSeconds }
+            ?? sections.last.flatMap { time >= $0.timelineStartSeconds && time <= $0.timelineEndSeconds ? $0 : nil }
+        return hit?.timelineStartSeconds
     }
 }
 

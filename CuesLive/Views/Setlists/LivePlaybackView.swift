@@ -1127,6 +1127,15 @@ struct LivePlaybackView: View {
                 onOverlapBadgeTapped: { playbackIndex in
                     presentOverlapEditor(forPlaybackIndex: playbackIndex)
                 },
+                onSelectSong: { index, startTime in
+                    clearMarkerCue()
+                    sectionLoop.endLoopIfActive()
+                    coordinator.goToSong(
+                        at: index,
+                        autoPlay: coordinator.isAudiblePlaying,
+                        startTime: startTime
+                    )
+                },
                 maxMIDILaneCount: coordinator.maxMIDILaneCount
             )
             .overlay {
