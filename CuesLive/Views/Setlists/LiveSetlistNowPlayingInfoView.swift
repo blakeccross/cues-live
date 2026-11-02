@@ -105,5 +105,8 @@ struct LiveToolbarSongTitle: View {
                     .truncationMode(.tail)
             }
         }
+        // An empty title (no song loaded) would measure as zero-sized, which AppKit
+        // logs as an ambiguous toolbar item.
+        .frame(minWidth: 1, minHeight: 1)
     }
 }

@@ -41,7 +41,7 @@ final class OverlapPreviewEngine {
 
         let outgoingSnapshot = PlaybackCoordinator.makeWaveformSnapshot(for: outgoingSong)
         let incomingSnapshot = PlaybackCoordinator.makeWaveformSnapshot(for: incomingSong)
-        guard let outgoingSnapshot, let incomingSnapshot else {
+        guard let outgoingSnapshot, incomingSnapshot != nil else {
             loadError = "Unable to load song waveforms."
             return
         }

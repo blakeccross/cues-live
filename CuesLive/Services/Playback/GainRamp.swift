@@ -1,5 +1,6 @@
 import Accelerate
 import AudioToolbox
+import CoreAudio
 import Foundation
 
 /// Per-track gain smoother for the audio thread.
