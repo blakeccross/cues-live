@@ -51,7 +51,7 @@ struct SongDetailView: View {
     @State private var midiEvents: [MIDIEvent] = []
     @State private var undoController = SongUndoController()
     @State private var selectedSongID: UUID?
-    @State private var showingSongLibrary = false
+    @State private var showingSongLibrary = SongSidebarPreference.initialVisibility
     @State private var isImportingSongFolder = false
     @State private var songImportFeedback: SongImportFeedback?
 

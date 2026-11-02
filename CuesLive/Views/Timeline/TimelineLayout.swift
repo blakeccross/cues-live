@@ -127,8 +127,8 @@ enum MeasureTiming {
 
         // Estimate stride from the first measure so we never allocate every
         // measure for multi‑hour songs just to throw most of them away.
-        let firstMeasureTime = timeAtStartOfMeasure(
-            2,
+        let firstMeasureTime = measureDuration(
+            atMeasure: 1,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges
         )
@@ -140,38 +140,33 @@ enum MeasureTiming {
         let rangeEnd = min(timeLimit, visibleTimeRange?.upperBound ?? timeLimit)
         guard rangeEnd > rangeStart else { return [] }
 
-        // Jump near the visible window instead of walking from measure 1.
-        var measure = 1 + stride
-        if rangeStart > firstMeasureTime {
-            let estimated = Int(rangeStart / max(firstMeasureTime, 0.0001))
-            measure = max(1 + stride, (estimated / stride) * stride)
-        }
-
-        // Walk backward one stride so the first visible line is included.
-        if measure > 1 + stride {
-            measure = max(1 + stride, measure - stride)
-        }
-
         let visiblePixelWidth = max(
             1,
             CGFloat((rangeEnd - rangeStart) / safeDuration) * contentWidth
         )
         let hardCap = Int(visiblePixelWidth / 4) + 8
 
+        // Walk the measures once, accumulating time, rather than recomputing each
+        // boundary from measure 1. Lines sit on measures 1 + k * stride, so tiles
+        // drawn independently agree on which ones to show.
         var boundaries: [TimeInterval] = []
-        while true {
-            let time = timeAtStartOfMeasure(
-                measure,
+        var time: TimeInterval = 0
+        for measure in 1..<1_000_000 {
+            if measure > 1, (measure - 1) % stride == 0 {
+                guard time < timeLimit - 0.0001, time <= rangeEnd + firstMeasureTime else { break }
+                if time >= rangeStart - firstMeasureTime {
+                    boundaries.append(time)
+                    if boundaries.count > hardCap { break }
+                }
+            }
+
+            let duration = measureDuration(
+                atMeasure: measure,
                 tempoChanges: tempoChanges,
                 timeSignatureChanges: timeSignatureChanges
             )
-            guard time < timeLimit - 0.0001 else { break }
-            if time > rangeEnd + firstMeasureTime { break }
-            if time >= rangeStart - firstMeasureTime {
-                boundaries.append(time)
-            }
-            measure += stride
-            if boundaries.count > hardCap { break }
+            guard duration > 0 else { break }
+            time += duration
         }
         return boundaries
     }
@@ -221,7 +216,7 @@ enum MeasureTiming {
         _ measure: Int,
         changes: [TimeSignatureChange]
     ) -> (numerator: Int, denominator: Int) {
-        let signature = changes.sortedByMeasure.active(atMeasure: measure)
+        let signature = changes.active(atMeasure: measure)
         return (
             signature?.numerator ?? defaultNumerator,
             signature?.denominator ?? defaultDenominator
@@ -262,10 +257,22 @@ enum MeasureTiming {
             tempoChanges: tempos,
             timeSignatureChanges: signatures
         )
-        let bpm = bpmForMeasure(measure, tempoChanges: tempos)
-        let signature = numeratorDenominatorForMeasure(measure, changes: signatures)
         return measureDuration(
-            bpm: bpm,
+            atMeasure: measure,
+            tempoChanges: tempos,
+            timeSignatureChanges: signatures
+        )
+    }
+
+    /// Duration of `measure` under the tempo and meter in effect there.
+    static func measureDuration(
+        atMeasure measure: Int,
+        tempoChanges: [TempoChange],
+        timeSignatureChanges: [TimeSignatureChange]
+    ) -> TimeInterval {
+        let signature = numeratorDenominatorForMeasure(measure, changes: timeSignatureChanges)
+        return measureDuration(
+            bpm: bpmForMeasure(measure, tempoChanges: tempoChanges),
             numerator: signature.numerator,
             denominator: signature.denominator
         )
@@ -275,7 +282,7 @@ enum MeasureTiming {
         _ measure: Int,
         tempoChanges: [TempoChange]
     ) -> Double {
-        tempoChanges.sortedByMeasure.active(atMeasure: measure)?.bpm ?? TempoChange.defaultBPM
+        tempoChanges.activeBPM(atMeasure: measure)
     }
 
     static func timeAtStartOfMeasure(
@@ -287,12 +294,10 @@ enum MeasureTiming {
 
         var time: TimeInterval = 0
         for index in 1..<measure {
-            let bpm = bpmForMeasure(index, tempoChanges: tempoChanges)
-            let signature = numeratorDenominatorForMeasure(index, changes: timeSignatureChanges)
             time += measureDuration(
-                bpm: bpm,
-                numerator: signature.numerator,
-                denominator: signature.denominator
+                atMeasure: index,
+                tempoChanges: tempoChanges,
+                timeSignatureChanges: timeSignatureChanges
             )
         }
         return time
@@ -309,12 +314,10 @@ enum MeasureTiming {
         var elapsed: TimeInterval = 0
 
         while measure < 1_000_000 {
-            let bpm = bpmForMeasure(measure, tempoChanges: tempoChanges)
-            let signature = numeratorDenominatorForMeasure(measure, changes: timeSignatureChanges)
             let duration = measureDuration(
-                bpm: bpm,
-                numerator: signature.numerator,
-                denominator: signature.denominator
+                atMeasure: measure,
+                tempoChanges: tempoChanges,
+                timeSignatureChanges: timeSignatureChanges
             )
             guard duration > 0 else { return measure }
             if time < elapsed + duration - 0.0001 {

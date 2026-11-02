@@ -6,8 +6,20 @@ import UIKit
 #endif
 
 enum AppColors {
-    static let backgroundPrimary = Color("BackgroundPrimary")
+    /// Window/content background. macOS uses the system window background because the
+    /// toolbar and sidebar materials are tuned to blend with it; a custom near-black makes
+    /// the header read as a lighter bar, most visibly in full screen.
+    static let backgroundPrimary: Color = {
+        #if os(macOS)
+        Color(nsColor: .windowBackgroundColor)
+        #else
+        Color("BackgroundPrimary")
+        #endif
+    }()
     static let backgroundSecondary = Color("BackgroundSecondary")
+    /// Setlist section header band. A translucent white lift rather than a fixed gray so it stays
+    /// lighter than the content background on macOS, where that background is a system color.
+    static let headerBand = Color.white.opacity(0.05)
     static let surface = Color("Surface")
     static let surfaceElevated = Color("SurfaceElevated")
 

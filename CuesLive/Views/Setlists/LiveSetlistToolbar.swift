@@ -3,7 +3,6 @@ import SwiftUI
 struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ViewBuilder let setlistSwitcher: Switcher
     let coordinator: PlaybackCoordinator
-    @Binding var showingSongLibrary: Bool
     @Binding var showingManageOutputs: Bool
     @Binding var mixerDetent: LiveGroupMixerDetent
 
@@ -14,11 +13,6 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ToolbarContentBuilder
     var body: some ToolbarContent {
         #if os(macOS)
-        ToolbarItem(placement: .navigation) {
-            songsButton
-        }
-        .cuesHideSharedBackground()
-
         ToolbarItem(placement: .principal) {
             LiveToolbarSongTitle(
                 title: coordinator.currentSong?.name ?? "",
@@ -58,17 +52,6 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
             manageOutputsButton
         }
         #endif
-    }
-
-    private var songsButton: some View {
-        Button {
-            showingSongLibrary.toggle()
-        } label: {
-            Label("Songs", systemImage: "music.note.list")
-                .labelStyle(.iconOnly)
-        }
-        .tint(showingSongLibrary ? AppColors.accent : nil)
-        .help("Songs")
     }
 
     #if os(macOS)
@@ -111,15 +94,3 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         .help("Group Mixer")
     }
 }
-
-#if os(macOS)
-struct LivePlaybackMacToolbarBackgroundVisibilityModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 15.0, *) {
-            content.toolbarBackgroundVisibility(.visible, for: .windowToolbar)
-        } else {
-            content
-        }
-    }
-}
-#endif

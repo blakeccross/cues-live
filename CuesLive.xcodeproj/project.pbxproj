@@ -61,6 +61,7 @@
 		AA00000100000000000004A1 /* GainRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A1 /* GainRamp.swift */; };
 		AA00000100000000000004A3 /* OutputRecoveryBackoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */; };
 		AA00000100000000000004A2 /* GainRampTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A2 /* GainRampTests.swift */; };
+		AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B01 /* MeasureBoundaryTests.swift */; };
 		AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */; };
 		AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
 		AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000028 /* LiveSongWaveformView.swift */; };
@@ -78,6 +79,7 @@
 		AA0000010000000000000033 /* ManageOutputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000033 /* ManageOutputsView.swift */; };
 		AA0000010000000000000034 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
+		AA0000010000000000000B02 /* MeasureAnchoredChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B02 /* MeasureAnchoredChange.swift */; };
 		AA0000010000000000000037 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000037 /* ChangeKeyDialog.swift */; };
 		AA0000010000000000000038 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000039 /* PitchShiftBridge.mm */; };
 		AA000001000000000000003A /* RubberBandPitchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003A /* RubberBandPitchProcessor.swift */; };
@@ -291,6 +293,7 @@
 		AA00000200000000000004A1 /* GainRamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRamp.swift; sourceTree = "<group>"; };
 		AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRecoveryBackoff.swift; sourceTree = "<group>"; };
 		AA00000200000000000004A2 /* GainRampTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRampTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B01 /* MeasureBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureBoundaryTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRecoveryBackoffTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformScrollBacking.swift; sourceTree = "<group>"; };
 		AA0000020000000000000028 /* LiveSongWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformView.swift; sourceTree = "<group>"; };
@@ -308,6 +311,7 @@
 		AA0000020000000000000033 /* ManageOutputsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageOutputsView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000034 /* SongFolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderImporter.swift; sourceTree = "<group>"; };
 		AA0000020000000000000035 /* TimeSignatureChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSignatureChange.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B02 /* MeasureAnchoredChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureAnchoredChange.swift; sourceTree = "<group>"; };
 		AA0000020000000000000037 /* ChangeKeyDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeKeyDialog.swift; sourceTree = "<group>"; };
 		AA0000020000000000000038 /* PitchShiftBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PitchShiftBridge.h; sourceTree = "<group>"; };
 		AA0000020000000000000039 /* PitchShiftBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PitchShiftBridge.mm; sourceTree = "<group>"; };
@@ -546,6 +550,7 @@
 				AA0000020000000000000019 /* ArrangementMarker.swift */,
 				AA00000200000000000000F3 /* SongSectionPresets.swift */,
 				AA0000020000000000000035 /* TimeSignatureChange.swift */,
+				AA0000020000000000000B02 /* MeasureAnchoredChange.swift */,
 				AA000002000000000000003E /* TempoChange.swift */,
 				AA0000020000000000000047 /* ClickTrackSubdivision.swift */,
 				AA000002000000000000001E /* ArrangementSlot.swift */,
@@ -710,6 +715,7 @@
 				AA00000200000000000000C7 /* AudioTimelineMathTests.swift */,
 				AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */,
 				AA00000200000000000004A2 /* GainRampTests.swift */,
+				AA0000020000000000000B01 /* MeasureBoundaryTests.swift */,
 				AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */,
 				AA00000200000000000000D5 /* SongBakeFingerprintTests.swift */,
 				AA00000200000000000000D8 /* SongEditSnapshotTests.swift */,
@@ -1123,6 +1129,7 @@
 				AA0000010000000000000017 /* DAWColors.swift in Sources */,
 				AA0000010000000000000018 /* ArrangementMarker.swift in Sources */,
 				AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */,
+				AA0000010000000000000B02 /* MeasureAnchoredChange.swift in Sources */,
 				AA0000010000000000000019 /* AbletonProjectImporter.swift in Sources */,
 				AA000001000000000000001A /* PersistenceController.swift in Sources */,
 				AA000001000000000000003C /* TempoChange.swift in Sources */,
@@ -1274,6 +1281,7 @@
 				AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */,
 				AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */,
 				AA00000100000000000004A2 /* GainRampTests.swift in Sources */,
+				AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */,
 				AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */,
 				AA00000100000000000000D5 /* SongBakeFingerprintTests.swift in Sources */,
 				AA00000100000000000000D8 /* SongEditSnapshotTests.swift in Sources */,

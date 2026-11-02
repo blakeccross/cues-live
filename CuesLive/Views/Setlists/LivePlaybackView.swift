@@ -54,7 +54,7 @@ struct LivePlaybackView: View {
     @State private var sectionLoop = SectionLoopController()
     @State private var groupMixFade = GroupMixFadeController()
     @State private var sectionAnnouncer = SectionAnnouncer()
-    @State private var showingSongLibrary = false
+    @State private var showingSongLibrary = SongSidebarPreference.initialVisibility
     @State private var songToEditID: UUID?
     /// Song to open once the library sheet has dismissed, so the editor pushes as a screen.
     @State private var songPendingEditorID: UUID?
@@ -181,11 +181,11 @@ struct LivePlaybackView: View {
     private func playbackBodyChrome(for setlist: Setlist) -> some View {
         Group {
             #if os(macOS)
-            LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
-                InputMappingPanel()
+            LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
+                songLibraryPanel()
             } mainContent: {
-                LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
-                    songLibraryPanel()
+                LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
+                    InputMappingPanel()
                 } mainContent: {
                     playbackMainLayout
                 }
@@ -207,8 +207,6 @@ struct LivePlaybackView: View {
             playbackToolbar(for: setlist)
         }
         #if os(macOS)
-        .toolbarBackground(AppColors.backgroundPrimary, for: .windowToolbar)
-        .modifier(LivePlaybackMacToolbarBackgroundVisibilityModifier())
         .appLockToolbarDisplayMode()
         #endif
         .appBackground(.primary)
@@ -350,7 +348,9 @@ struct LivePlaybackView: View {
                 promptForMissingMediaIfNeeded(in: setlist)
             }
             .onChange(of: activeSetlistID) { _, _ in
+                #if os(iOS)
                 showingSongLibrary = false
+                #endif
                 songPendingEditorID = nil
                 songToEditID = nil
             }
@@ -505,7 +505,6 @@ struct LivePlaybackView: View {
                 #endif
             },
             coordinator: coordinator,
-            showingSongLibrary: $showingSongLibrary,
             showingManageOutputs: $showingManageOutputs,
             mixerDetent: $mixerDetent
         )

@@ -267,22 +267,33 @@ final class LiveSongWaveformScrollBackingView: NSView {
 
         let barCount = model.peaks.count
         let barWidth = model.contentWidth / CGFloat(barCount)
-        let startIndex = max(0, Int(floor(rect.minX / barWidth)) - 1)
-        let endIndex = min(barCount - 1, Int(ceil(rect.maxX / barWidth)) + 1)
-        guard startIndex <= endIndex, barWidth > 0 else { return }
+        guard barWidth > 0 else { return }
+
+        // Long songs carry far more peaks than points of width. Filling a polygon with
+        // several vertices per pixel makes CoreGraphics' antialiasing crawl, and tiles
+        // draw on the main thread, so collapse peaks to roughly one vertex per point.
+        // Groups are aligned to multiples of `groupSize` so neighbouring tiles agree.
+        let groupSize = max(1, Int(ceil(1 / barWidth)))
+        let groupWidth = barWidth * CGFloat(groupSize)
+        let firstGroup = max(0, Int(floor(rect.minX / groupWidth)) - 1)
+        let lastGroup = Int(ceil(rect.maxX / groupWidth)) + 1
+        let heights = WaveformPeakResampler
+            .groupedMaxima(of: model.peaks, groupSize: groupSize, groups: firstGroup...lastGroup)
+            .map { max(1, CGFloat($0) * maxBarHeight) }
+        guard !heights.isEmpty else { return }
+
+        func centerX(ofBarAt offset: Int) -> CGFloat {
+            (CGFloat(firstGroup + offset) + 0.5) * groupWidth
+        }
 
         let path = NSBezierPath()
-        path.move(to: NSPoint(x: CGFloat(startIndex) * barWidth, y: midY))
-        for index in startIndex...endIndex {
-            let centerX = CGFloat(index) * barWidth + barWidth * 0.5
-            let barHeight = max(1, CGFloat(model.peaks[index]) * maxBarHeight)
-            path.line(to: NSPoint(x: centerX, y: midY - barHeight))
+        path.move(to: NSPoint(x: CGFloat(firstGroup) * groupWidth, y: midY))
+        for (offset, height) in heights.enumerated() {
+            path.line(to: NSPoint(x: centerX(ofBarAt: offset), y: midY - height))
         }
-        path.line(to: NSPoint(x: CGFloat(endIndex + 1) * barWidth, y: midY))
-        for index in stride(from: endIndex, through: startIndex, by: -1) {
-            let centerX = CGFloat(index) * barWidth + barWidth * 0.5
-            let barHeight = max(1, CGFloat(model.peaks[index]) * maxBarHeight)
-            path.line(to: NSPoint(x: centerX, y: midY + barHeight))
+        path.line(to: NSPoint(x: CGFloat(firstGroup + heights.count) * groupWidth, y: midY))
+        for (offset, height) in heights.enumerated().reversed() {
+            path.line(to: NSPoint(x: centerX(ofBarAt: offset), y: midY + height))
         }
         path.close()
 

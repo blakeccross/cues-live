@@ -8,7 +8,7 @@ struct RemoteLivePlaybackView: View {
     @State private var infoPanelHeight: CGFloat = 44
     @State private var cueFlashPhase = false
     @State private var showingSettings = false
-    @State private var showingSongLibrary = false
+    @State private var showingSongLibrary = SongSidebarPreference.initialVisibility
     @State private var showingAddHeaderSheet = false
     @State private var isEditingSetlist = false
     @State private var newHeaderTitle = "New Header"
@@ -54,11 +54,11 @@ struct RemoteLivePlaybackView: View {
     var body: some View {
         Group {
             #if os(macOS)
-            LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
-                InputMappingPanel()
+            LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
+                remoteSongLibraryPanel
             } mainContent: {
-                LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
-                    remoteSongLibraryPanel
+                LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
+                    InputMappingPanel()
                 } mainContent: {
                     remotePlaybackMain
                 }
@@ -74,13 +74,6 @@ struct RemoteLivePlaybackView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         #endif
         .toolbar {
-            #if os(macOS)
-            ToolbarItem(placement: .navigation) {
-                songsLibraryButton
-            }
-            .cuesHideSharedBackground()
-            #endif
-
             #if os(macOS)
             ToolbarItem(placement: .principal) {
                 LiveToolbarSongTitle(
@@ -129,7 +122,6 @@ struct RemoteLivePlaybackView: View {
             #endif
         }
         #if os(macOS)
-        .toolbarBackground(AppColors.backgroundPrimary, for: .windowToolbar)
         .appLockToolbarDisplayMode()
         #endif
         .appBackground(.primary)
@@ -248,17 +240,6 @@ struct RemoteLivePlaybackView: View {
         #if os(macOS)
         .animation(AppAnimation.fadeQuick, value: mixerVisible)
         #endif
-    }
-
-    private var songsLibraryButton: some View {
-        Button {
-            showingSongLibrary.toggle()
-        } label: {
-            Label("Songs", systemImage: "music.note.list")
-                .labelStyle(.iconOnly)
-        }
-        .tint(showingSongLibrary ? AppColors.accent : nil)
-        .help("Songs")
     }
 
     private var remoteSongLibraryPanel: some View {
@@ -701,15 +682,12 @@ private struct RemoteHostSongLibraryPanel: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            #if os(macOS)
-            headerBar
-            #endif
             searchBar
             songList
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(AppColors.backgroundSecondary)
         #if os(iOS)
+        .background(AppColors.backgroundSecondary)
         .navigationTitle("Songs")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -726,15 +704,6 @@ private struct RemoteHostSongLibraryPanel: View {
             }
         }
         #endif
-    }
-
-    private var headerBar: some View {
-        Text("Songs")
-            .appLargeTitle()
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.top, AppSpacing.sm)
-            .padding(.bottom, AppSpacing.xs)
     }
 
     private var searchBar: some View {
@@ -763,9 +732,12 @@ private struct RemoteHostSongLibraryPanel: View {
                     .foregroundStyle(AppColors.textTertiary)
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
             .accessibilityLabel("Sort songs")
         }
         .padding(.horizontal, AppSpacing.sm)
+        .padding(.top, AppSpacing.xs)
         .padding(.bottom, AppSpacing.xs)
     }
 
@@ -817,6 +789,10 @@ private struct RemoteHostSongLibraryRow: View {
     let song: RemoteLibrarySongDTO
     let onAddToSetlist: () -> Void
 
+    #if os(macOS)
+    @State private var isHovering = false
+    #endif
+
     private var subtitle: String {
         let trackText = song.trackCount == 0 ? "No tracks" : "\(song.trackCount) tracks"
         if let bpm = song.bpm {
@@ -857,10 +833,19 @@ private struct RemoteHostSongLibraryRow: View {
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.vertical, AppSpacing.xs)
+        #if os(macOS)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isHovering ? AppColors.textPrimary.opacity(0.08) : .clear)
+        )
+        .padding(.horizontal, AppSpacing.xs)
+        .onHover { isHovering = $0 }
+        #else
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(AppColors.separator)
                 .frame(height: 0.5)
         }
+        #endif
     }
 }

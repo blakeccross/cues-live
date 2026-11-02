@@ -109,7 +109,7 @@ struct SetlistListView: View {
                 menu: { SetlistRowMenuContent(model: row, actions: rowActions) }
             )
             .listRowSeparator(.hidden)
-            .listRowBackground(AppColors.backgroundSecondary)
+            .listRowBackground(AppColors.headerBand)
             .setlistSwipeActions(actions: rowActions)
             .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions) }
 

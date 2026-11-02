@@ -1,8 +1,5 @@
 import SwiftData
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
 
 enum LiveGroupMixerDetent: Equatable {
     case hidden
@@ -116,78 +113,63 @@ private struct LivePlaybackSidebarResizeHandle: View {
     }
 }
 
+/// Persists whether the song sidebar is open so it survives navigating between
+/// the live view and the song editor, and relaunches. On iOS the library is a sheet
+/// and always starts closed.
+enum SongSidebarPreference {
+    static let storageKey = "songSidebarVisible"
+
+    static var initialVisibility: Bool {
+        #if os(macOS)
+        UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true
+        #else
+        false
+        #endif
+    }
+}
+
+#if os(macOS)
+/// Native macOS sidebar (`NavigationSplitView`): the system supplies the toggle next
+/// to the traffic lights, the vibrant sidebar material, and drag-to-resize.
 struct LivePlaybackSidebarLayout<Sidebar: View, MainContent: View>: View {
     @Binding var isVisible: Bool
     @ViewBuilder let sidebar: () -> Sidebar
     @ViewBuilder let mainContent: () -> MainContent
 
-    @AppStorage(LivePlaybackSidebarMetrics.appStorageKey)
-    private var storedSidebarWidth = LivePlaybackSidebarMetrics.defaultSidebarWidthStorageValue
-
-    @State private var sidebarWidth = LivePlaybackSidebarMetrics.defaultSidebarWidth
-
-    var body: some View {
-        GeometryReader { geometry in
-            let clampedWidth = LivePlaybackSidebarMetrics.clampedSidebarWidth(
-                sidebarWidth,
-                totalWidth: geometry.size.width
-            )
-
-            HStack(spacing: 0) {
-                if isVisible {
-                    sidebar()
-                        .frame(width: clampedWidth)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .leading).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
-
-                    Rectangle()
-                        .fill(AppColors.separator)
-                        .frame(width: 0.5)
-                }
-
-                mainContent()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .overlay(alignment: .topLeading) {
-                if isVisible {
-                    LivePlaybackSidebarResizeHandle(
-                        width: $sidebarWidth,
-                        totalWidth: geometry.size.width,
-                        edge: .leading,
-                        accessibilityLabel: "Song library width",
-                        onResizeEnded: {
-                            persistSidebarWidth(totalWidth: geometry.size.width)
-                        }
-                    )
-                    .offset(
-                        x: clampedWidth + 0.25 - (LivePlaybackSidebarMetrics.resizeHitAreaWidth / 2)
-                    )
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .onChange(of: geometry.size.width) { _, newWidth in
-                let clamped = LivePlaybackSidebarMetrics.clampedSidebarWidth(sidebarWidth, totalWidth: newWidth)
-                guard clamped != sidebarWidth else { return }
-                sidebarWidth = clamped
-                persistSidebarWidth(totalWidth: newWidth)
-            }
-        }
-        .animation(AppAnimation.springSmooth, value: isVisible)
-        .animation(.none, value: sidebarWidth)
-        .onAppear {
-            sidebarWidth = LivePlaybackSidebarMetrics.sidebarWidth(fromStorage: storedSidebarWidth)
-        }
-    }
-
-    private func persistSidebarWidth(totalWidth: CGFloat) {
-        storedSidebarWidth = LivePlaybackSidebarMetrics.storageValue(
-            forWidth: sidebarWidth,
-            totalWidth: totalWidth
+    private var columnVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { isVisible ? .all : .detailOnly },
+            set: { isVisible = $0 != .detailOnly }
         )
     }
+
+    var body: some View {
+        NavigationSplitView(columnVisibility: columnVisibility) {
+            sidebar()
+                .toolbarBackground(.hidden, for: .windowToolbar)
+                .navigationSplitViewColumnWidth(
+                    min: LivePlaybackSidebarMetrics.minimumSidebarWidth,
+                    ideal: LivePlaybackSidebarMetrics.defaultSidebarWidth,
+                    max: LivePlaybackSidebarMetrics.maximumSidebarWidth
+                )
+        } detail: {
+            // The floating sidebar overlaps the detail column and the system answers
+            // with a leading safe area. Horizontal scroll views pick that up as a
+            // negative content inset, which stops the waveform's CATiledLayer from
+            // painting. Take the overlap as plain padding instead.
+            GeometryReader { proxy in
+                mainContent()
+                    .padding(.leading, proxy.safeAreaInsets.leading)
+                    .ignoresSafeArea(.container, edges: .leading)
+            }
+            .toolbarBackground(.hidden, for: .windowToolbar)
+        }
+        .onChange(of: isVisible) { _, newValue in
+            UserDefaults.standard.set(newValue, forKey: SongSidebarPreference.storageKey)
+        }
+    }
 }
+#endif
 
 struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View {
     var isVisible: Bool

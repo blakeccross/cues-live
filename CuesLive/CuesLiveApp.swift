@@ -56,7 +56,7 @@ struct CuesLiveApp: App {
             height: AppWindowMetrics.defaultHeight
         )
         .windowResizability(.contentMinSize)
-        .windowToolbarStyle(.expanded)
+        .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(after: .appInfo) {
                 if let updater = sparkleUpdater?.updater {

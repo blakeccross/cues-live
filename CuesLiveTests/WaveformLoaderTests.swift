@@ -64,4 +64,28 @@ final class WaveformLoaderTests: XCTestCase {
         }
         XCTAssertEqual(refined, WaveformLoader.loadPeaks(from: url))
     }
+
+    func testGroupedMaximaKeepsEachGroupsPeak() {
+        let peaks: [Float] = [0.1, 0.5, 0.2, 0.9, 0.3, 0.4, 0.8]
+        XCTAssertEqual(
+            WaveformPeakResampler.groupedMaxima(of: peaks, groupSize: 3, groups: 0...2),
+            [0.5, 0.9, 0.8]
+        )
+    }
+
+    func testGroupedMaximaOmitsGroupsPastTheEnd() {
+        let peaks: [Float] = [0.1, 0.5, 0.2, 0.9]
+        XCTAssertEqual(
+            WaveformPeakResampler.groupedMaxima(of: peaks, groupSize: 2, groups: 1...5),
+            [0.9]
+        )
+    }
+
+    func testGroupedMaximaOfSizeOneIsIdentity() {
+        let peaks: [Float] = [0.1, 0.5, 0.2]
+        XCTAssertEqual(
+            WaveformPeakResampler.groupedMaxima(of: peaks, groupSize: 1, groups: 0...2),
+            peaks
+        )
+    }
 }

@@ -65,10 +65,6 @@ struct SongLibraryPanel: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                #if os(macOS)
-                headerBar
-                    .zIndex(1)
-                #endif
                 searchBar
                     .zIndex(1)
                 songList
@@ -80,7 +76,9 @@ struct SongLibraryPanel: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        #if os(iOS)
         .background(AppColors.backgroundSecondary)
+        #endif
         #if os(macOS)
         .overlay {
             if isTargetedForFolderDrop {
@@ -214,49 +212,34 @@ struct SongLibraryPanel: View {
         }
     }
 
-    private var headerBar: some View {
-        ZStack {
-            Text("Songs")
-                .appLargeTitle()
-
-            HStack {
-                Spacer()
-
-                Button {
-                    showingAddSongOptions = true
-                } label: {
-                    headerIcon("plus")
-                }
-                .buttonStyle(.plain)
-                .appLinkPointer()
-                .disabled(isImportInProgress)
-                .accessibilityLabel("Add song")
-                .confirmationDialog(
-                    "Add Song",
-                    isPresented: $showingAddSongOptions,
-                    titleVisibility: .visible
-                ) {
-                    Button("Add Click") {
-                        showingAddClickSheet = true
-                    }
-                    Button("Import from Folder") {
-                        presentFolderImporter()
-                    }
-                    Button("Cancel", role: .cancel) {}
-                }
-            }
+    private var addSongButton: some View {
+        Button {
+            showingAddSongOptions = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(AppColors.accent)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.top, AppSpacing.sm)
-        .padding(.bottom, AppSpacing.xs)
-    }
-
-    private func headerIcon(_ systemImage: String) -> some View {
-        Image(systemName: systemImage)
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(AppColors.accent)
-            .frame(width: 32, height: 32)
-            .contentShape(Rectangle())
+        .buttonStyle(.plain)
+        .appLinkPointer()
+        .disabled(isImportInProgress)
+        .help("Add song")
+        .accessibilityLabel("Add song")
+        .confirmationDialog(
+            "Add Song",
+            isPresented: $showingAddSongOptions,
+            titleVisibility: .visible
+        ) {
+            Button("Add Click") {
+                showingAddClickSheet = true
+            }
+            Button("Import from Folder") {
+                presentFolderImporter()
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     private var importProgressOverlay: some View {
@@ -302,11 +285,20 @@ struct SongLibraryPanel: View {
                     .foregroundStyle(AppColors.textTertiary)
             }
             .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
             .accessibilityLabel("Sort songs")
+
+            #if os(macOS)
+            addSongButton
+            #endif
         }
         .padding(.horizontal, AppSpacing.sm)
+        .padding(.top, AppSpacing.xs)
         .padding(.bottom, AppSpacing.xs)
+        #if os(iOS)
         .background(AppColors.backgroundSecondary)
+        #endif
     }
 
     @ViewBuilder
@@ -691,6 +683,10 @@ private struct SongLibraryRow: View {
     let onSelect: () -> Void
     let onAddToSetlist: () -> Void
 
+    #if os(macOS)
+    @State private var isHovering = false
+    #endif
+
     private var subtitle: String {
         let trackText = song.tracks.isEmpty ? "No tracks" : "\(song.tracks.count) tracks"
         if let bpm = song.bpm {
@@ -737,11 +733,20 @@ private struct SongLibraryRow: View {
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.vertical, AppSpacing.xs)
+        #if os(macOS)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(isHovering ? AppColors.textPrimary.opacity(0.08) : .clear)
+        )
+        .padding(.horizontal, AppSpacing.xs)
+        .onHover { isHovering = $0 }
+        #else
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(AppColors.separator)
                 .frame(height: 0.5)
         }
+        #endif
     }
 }
 

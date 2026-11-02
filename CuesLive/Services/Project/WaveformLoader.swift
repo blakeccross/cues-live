@@ -404,6 +404,21 @@ enum WaveformPeakResampler {
         return result
     }
 
+    /// Collapses `peaks` into consecutive groups of `groupSize`, keeping each group's maximum.
+    /// `groups` are group indices; ones that start past the end of `peaks` are omitted.
+    static func groupedMaxima(
+        of peaks: [Float],
+        groupSize: Int,
+        groups: ClosedRange<Int>
+    ) -> [Float] {
+        let size = max(1, groupSize)
+        return groups.compactMap { group in
+            let start = group * size
+            guard start >= 0, start < peaks.count else { return nil }
+            return peaks[start..<min(start + size, peaks.count)].max()
+        }
+    }
+
     /// Lays source peaks on the timeline at the source's own resolution.
     /// The result does not depend on view width, so zoom scales this shape instead of rebuilding it.
     static func timelinePeaks(

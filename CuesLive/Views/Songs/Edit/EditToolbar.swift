@@ -1,18 +1,6 @@
 import SwiftData
 import SwiftUI
 
-#if os(macOS)
-struct EditViewMacToolbarBackgroundVisibilityModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(macOS 15.0, *) {
-            content.toolbarBackgroundVisibility(.visible, for: .windowToolbar)
-        } else {
-            content
-        }
-    }
-}
-#endif
-
 struct EditTransportStatusStrip: View {
     let viewModel: SongEditorViewModel
 

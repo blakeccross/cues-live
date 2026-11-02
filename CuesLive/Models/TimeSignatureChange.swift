@@ -63,21 +63,6 @@ struct TimeSignatureChange: Codable, Identifiable, Hashable {
 }
 
 extension Array where Element == TimeSignatureChange {
-    var sortedByMeasure: [TimeSignatureChange] {
-        sorted { lhs, rhs in
-            if lhs.startMeasure != rhs.startMeasure {
-                return lhs.startMeasure < rhs.startMeasure
-            }
-            return lhs.sortOrder < rhs.sortOrder
-        }
-    }
-
-    func active(atMeasure measure: Int) -> TimeSignatureChange? {
-        let sorted = sortedByMeasure
-        guard !sorted.isEmpty else { return nil }
-        return sorted.last(where: { $0.startMeasure <= measure }) ?? sorted.first
-    }
-
     var referenceNumerator: Int {
         sortedByMeasure.first?.numerator ?? TimeSignatureChange.defaultNumerator
     }

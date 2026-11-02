@@ -23,21 +23,6 @@ struct TempoChange: Codable, Identifiable, Hashable {
 }
 
 extension Array where Element == TempoChange {
-    var sortedByMeasure: [TempoChange] {
-        sorted { lhs, rhs in
-            if lhs.startMeasure != rhs.startMeasure {
-                return lhs.startMeasure < rhs.startMeasure
-            }
-            return lhs.sortOrder < rhs.sortOrder
-        }
-    }
-
-    func active(atMeasure measure: Int) -> TempoChange? {
-        let sorted = sortedByMeasure
-        guard !sorted.isEmpty else { return nil }
-        return sorted.last(where: { $0.startMeasure <= measure }) ?? sorted.first
-    }
-
     func activeBPM(atMeasure measure: Int) -> Double {
         active(atMeasure: measure)?.bpm ?? TempoChange.defaultBPM
     }
