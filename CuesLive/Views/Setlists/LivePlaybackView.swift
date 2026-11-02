@@ -320,7 +320,7 @@ struct LivePlaybackView: View {
                 groupMixFade.cancel()
                 prepareSectionAnnouncements()
             }
-            .onChange(of: coordinator.currentSong?.dynamicCuesEnabled ?? false) { _, _ in
+            .onChange(of: coordinator.currentSong?.smartGuideEnabled ?? false) { _, _ in
                 prepareSectionAnnouncements()
             }
             .task(id: sectionAnnouncementTaskID) {
@@ -709,7 +709,7 @@ struct LivePlaybackView: View {
             cuedSectionID: cuedSectionID,
             cueFireTime: cueFireTime,
             onFireMarkerCue: fireMarkerCue,
-            dynamicCuesEnabled: coordinator.currentSong?.dynamicCuesEnabled ?? false,
+            smartGuideEnabled: coordinator.currentSong?.smartGuideEnabled ?? false,
             sections: loopSections,
             announcer: sectionAnnouncer,
             sectionLoop: sectionLoop,
@@ -721,7 +721,7 @@ struct LivePlaybackView: View {
     }
 
     private func prepareSectionAnnouncements() {
-        guard coordinator.currentSong?.dynamicCuesEnabled == true else { return }
+        guard coordinator.currentSong?.smartGuideEnabled == true else { return }
         sectionAnnouncer.prepare(names: loopSections.map(\.name))
     }
 
@@ -781,7 +781,7 @@ struct LivePlaybackView: View {
 
     private var remoteLibrarySignature: String {
         allSongs.map { song in
-            "\(song.id.uuidString)|\(song.name)|\(song.tracks.count)|\(song.bpm ?? -1)|\(song.createdAt.timeIntervalSinceReferenceDate)"
+            "\(song.id.uuidString)|\(song.name)|\(song.tracks.count)|\(song.bpm ?? -1)|\(song.createdAt.timeIntervalSinceReferenceDate)|\(song.smartGuideEnabled)"
         }
         .joined(separator: ";")
     }
@@ -1264,6 +1264,7 @@ struct LivePlaybackView: View {
                     bpmText: song.bpm.map { String(format: "%.0f BPM", $0.rounded()) },
                     playbackIndex: setlist.playbackIndex(for: entry) ?? 0,
                     hasMissingMedia: songHasMissingMedia(song),
+                    hasSmartGuide: song.smartGuideEnabled,
                     transition: setlist.hasNextSong(after: entry) ? entry.transition : nil
                 ))
             )
@@ -1428,7 +1429,7 @@ struct LivePlaybackView: View {
 
     private var sectionAnnouncementTaskID: String {
         let songID = coordinator.currentSong?.id.uuidString ?? "none"
-        let enabled = coordinator.currentSong?.dynamicCuesEnabled == true
+        let enabled = coordinator.currentSong?.smartGuideEnabled == true
         let names = loopSections.map(\.name).joined(separator: "|")
         return "\(songID)-\(enabled)-\(names)"
     }

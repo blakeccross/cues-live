@@ -1,11 +1,11 @@
-import AVFoundation
 import Foundation
 
-/// Pre-renders section names from bundled guide samples and plays them through the shared audio engine.
+/// Loads section names from bundled guide samples and plays them through the shared audio engine
+/// on the Cues output route.
 @Observable
 @MainActor
 final class SectionAnnouncer {
-    private var cache: [String: AVAudioPCMBuffer] = [:]
+    private var cache: [String: DecodedStemBuffer] = [:]
     private var preparedNames: Set<String> = []
     private var pendingNames: [String] = []
     private var pendingNameSet: Set<String> = []
@@ -80,7 +80,7 @@ final class SectionAnnouncer {
             pendingNameSet.remove(name)
 
             if cache[name] == nil,
-               let buffer = await SpeechSampleRenderer.renderAnnouncementBuffer(for: name),
+               let buffer = await SpeechSampleRenderer.renderMonoStem(for: name),
                preparedNames.contains(name) || playbackRequests.contains(name) {
                 cache[name] = buffer
             }

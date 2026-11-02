@@ -234,6 +234,7 @@ final class OutputRoutingManagerTests: XCTestCase {
         XCTAssertTrue(snapshot.hasNonDefaultRouting)
     }
 
+    @MainActor
     func testNoGroupDefaultsToNoOutputUntilAssigned() throws {
         let container = try makeRoutingContainer()
         let context = container.mainContext
@@ -249,6 +250,7 @@ final class OutputRoutingManagerTests: XCTestCase {
         XCTAssertTrue(snapshot.hasNonDefaultRouting)
     }
 
+    @MainActor
     func testEachDeviceRemembersItsOwnOutputRoutes() throws {
         let container = try makeRoutingContainer()
         let context = container.mainContext
@@ -290,6 +292,7 @@ final class OutputRoutingManagerTests: XCTestCase {
         XCTAssertEqual(snapshot.ungroupedDestination, .stereoPair(startChannel: 3))
     }
 
+    @MainActor
     func testRoutesSavedBeforePerDeviceMemoryStayWithTheSelectedDevice() throws {
         let container = try makeRoutingContainer()
         let context = container.mainContext

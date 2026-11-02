@@ -98,7 +98,8 @@ enum RemoteSessionSnapshotBuilder {
                 name: song.name,
                 bpm: song.bpm,
                 trackCount: song.tracks.count,
-                createdAt: song.createdAt
+                createdAt: song.createdAt,
+                smartGuideEnabled: song.smartGuideEnabled
             )
         }
     }
@@ -205,7 +206,8 @@ enum RemoteSessionSnapshotBuilder {
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: snapshot?.showsMeasureGrid ?? (song.bpm != nil),
-            peaks: peaks
+            peaks: peaks,
+            smartGuideEnabled: song.smartGuideEnabled
         )
     }
 

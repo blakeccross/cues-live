@@ -25,7 +25,7 @@ struct SongMetadataSnapshot: Equatable, Hashable {
     var baseKeyRaw: String?
     var transposeSemitones: Int
     var transposeHighQuality: Bool
-    var dynamicCuesEnabled: Bool
+    var smartGuideEnabled: Bool
 }
 
 struct SongEditSnapshot: Equatable {
@@ -73,7 +73,7 @@ struct SongEditSnapshot: Equatable {
                 baseKeyRaw: song.baseKeyRaw,
                 transposeSemitones: song.transposeSemitones,
                 transposeHighQuality: song.transposeHighQuality,
-                dynamicCuesEnabled: song.dynamicCuesEnabled
+                smartGuideEnabled: song.smartGuideEnabled
             ),
             tracks: song.sortedTracks.map { track in
                 TrackEditSnapshot(
@@ -103,7 +103,7 @@ struct SongEditSnapshot: Equatable {
         song.baseKeyRaw = songMetadata.baseKeyRaw
         song.transposeSemitones = songMetadata.transposeSemitones
         song.transposeHighQuality = songMetadata.transposeHighQuality
-        song.dynamicCuesEnabled = songMetadata.dynamicCuesEnabled
+        song.smartGuideEnabled = songMetadata.smartGuideEnabled
     }
 
     func applyTracks(to song: Song, context: ModelContext) {

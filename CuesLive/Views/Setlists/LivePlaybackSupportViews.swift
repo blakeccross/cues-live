@@ -4,7 +4,7 @@ struct LivePlaybackMonitorSupport: View {
     let cuedSectionID: UUID?
     let cueFireTime: TimeInterval?
     let onFireMarkerCue: () -> Void
-    let dynamicCuesEnabled: Bool
+    let smartGuideEnabled: Bool
     let sections: [ArrangementDisplaySection]
     let announcer: SectionAnnouncer
     @Bindable var sectionLoop: SectionLoopController
@@ -20,10 +20,11 @@ struct LivePlaybackMonitorSupport: View {
             onFire: onFireMarkerCue
         )
         SectionAnnounceMonitor(
-            enabled: dynamicCuesEnabled,
+            enabled: smartGuideEnabled,
             sections: sections,
             cuedSectionID: cuedSectionID,
             cueFireTime: cueFireTime,
+            loopSection: sectionLoop.activeSection(in: loopSections, loopSlotIDs: loopSlotIDs),
             announcer: announcer
         )
         SectionLoopPlaybackSupport(

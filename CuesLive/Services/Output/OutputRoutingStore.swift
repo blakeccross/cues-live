@@ -6,6 +6,8 @@ struct OutputRoutingSnapshot {
     let routesByGroupID: [UUID: OutputDestination]
     let ungroupedDestination: OutputDestination
     let channelCount: Int
+    /// The "Cues" track group. Smart Guide callouts follow its destination, fader, and mute.
+    var guideGroupID: UUID?
 
     /// True when any group (or the ungrouped bus) is routed somewhere other than
     /// the default full stereo pair — e.g. pinned to a single mono channel. On a
@@ -106,8 +108,23 @@ enum OutputRoutingStore {
             deviceUID: config.selectedDeviceUID,
             routesByGroupID: routesByGroupID,
             ungroupedDestination: ungroupedRoute(deviceUID: config.selectedDeviceUID, in: context),
-            channelCount: max(channelCount, 2)
+            channelCount: max(channelCount, 2),
+            guideGroupID: guideGroupID(in: context)
         )
+    }
+
+    /// Group that carries Smart Guide audio, matched by name like the default "Cues" group.
+    static func guideGroupID(in context: ModelContext) -> UUID? {
+        let groups = (try? context.fetch(FetchDescriptor<TrackGroup>())) ?? []
+        return groups.first {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                .caseInsensitiveCompare(TrackGroupStore.guideGroupName) == .orderedSame
+        }?.id
+    }
+
+    static func guideDestination(snapshot: OutputRoutingSnapshot) -> OutputDestination {
+        guard let guideGroupID = snapshot.guideGroupID else { return .defaultDestination }
+        return destination(for: guideGroupID, snapshot: snapshot)
     }
 
     private static func deviceKey(_ uid: String?) -> String {

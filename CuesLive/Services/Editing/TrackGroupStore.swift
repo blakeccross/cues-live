@@ -2,6 +2,9 @@ import Foundation
 import SwiftData
 
 enum TrackGroupStore {
+    /// Group that carries guide audio (the Cues track group and Smart Guide callouts).
+    static let guideGroupName = "Cues"
+
     static let defaultNames = [
         "Drums",
         "Percussion",

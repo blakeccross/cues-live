@@ -211,7 +211,7 @@ struct EditSongToolbarContent: ToolbarContent {
         .cuesHideSharedBackground()
 
         ToolbarItem(placement: .automatic) {
-            CueTrackEditorButton(
+            SmartGuideEditorButton(
                 song: song,
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,

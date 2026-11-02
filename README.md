@@ -1,6 +1,6 @@
 # cues.live
 
-Live multitrack stem playback for worship and stage teams, built with SwiftUI for macOS and iPadOS. Import stems, arrange sections, add click and spoken cue tracks, and run a setlist from one screen.
+Live multitrack stem playback for worship and stage teams, built with SwiftUI for macOS and iPadOS. Import stems, arrange sections, add a click track and Smart Guide section call-outs, and run a setlist from one screen.
 
 Requires macOS 14+ or iOS/iPadOS 17+.
 
@@ -10,7 +10,7 @@ Requires macOS 14+ or iOS/iPadOS 17+.
 - Import stems (`.wav`, `.aiff`, `.mp3`, `.m4a`), a folder of stems, or an Ableton Live set
 - Timeline editor with non-destructive trims, gaps and clip regions, plus undo/redo
 - Arrangement sections with tempo and time-signature maps, and a section-loop mode
-- Generated click tracks and spoken cue tracks (section call-outs)
+- Generated click tracks and Smart Guide, a live voice that calls sections one measure early and on every loop pass
 - MIDI lanes that send cues to external devices
 - Key changes by transposing selected tracks, either live or with high-quality offline processing ([Rubber Band](https://breakfastquay.com/rubberband/))
 - Track groups with colors, per-group mix, and optional baking to rendered stems
@@ -65,7 +65,7 @@ CuesLive/
 ├── Services/
 │   ├── Playback/     Audio engine, transport, coordinator, buffers, overlaps
 │   ├── Output/       Device discovery and per-group output routing
-│   ├── GuideTracks/  Click and spoken-cue track generation and scheduling
+│   ├── GuideTracks/  Click track generation and scheduling, bundled section-name voice samples
 │   ├── Timecode/     LTC generation and timecode settings
 │   ├── MIDI/         MIDI input, output and cue scheduling
 │   ├── Input/        Key and MIDI mapping

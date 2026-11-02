@@ -29,7 +29,7 @@ final class SongUndoControllerTests: XCTestCase {
                 baseKeyRaw: nil,
                 transposeSemitones: 0,
                 transposeHighQuality: false,
-                dynamicCuesEnabled: false
+                smartGuideEnabled: false
             ),
             tracks: []
         )

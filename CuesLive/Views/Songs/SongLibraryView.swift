@@ -486,7 +486,7 @@ struct SongLibraryPanel: View {
         copy.baseKeyRaw = source.baseKeyRaw
         copy.transposeSemitones = source.transposeSemitones
         copy.transposeHighQuality = source.transposeHighQuality
-        copy.dynamicCuesEnabled = source.dynamicCuesEnabled
+        copy.smartGuideEnabled = source.smartGuideEnabled
         modelContext.insert(copy)
 
         var trackIDMap: [UUID: UUID] = [:]
@@ -718,6 +718,10 @@ private struct SongLibraryRow: View {
             }
 
             Spacer(minLength: 0)
+
+            if song.smartGuideEnabled {
+                SmartGuideBadge()
+            }
 
             Button {
                 onAddToSetlist()

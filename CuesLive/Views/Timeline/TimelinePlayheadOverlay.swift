@@ -315,17 +315,18 @@ struct SectionCueMonitor: View {
     }
 }
 
-/// Speaks the upcoming section name one measure before its boundary.
+/// Smart Guide: speaks the upcoming section name one measure before its boundary,
+/// or the looping section's own name one measure before each wrap.
 struct SectionAnnounceMonitor: View {
     @Bindable private var audioEngine = AudioEngineManager.shared
     let enabled: Bool
     let sections: [ArrangementDisplaySection]
     let cuedSectionID: UUID?
     let cueFireTime: TimeInterval?
+    let loopSection: ArrangementDisplaySection?
     let announcer: SectionAnnouncer
 
-    @State private var lastAnnouncedBoundary: TimeInterval?
-    @State private var lastSeenTime: TimeInterval = 0
+    @State private var planner = SmartGuideCallPlanner()
 
     var body: some View {
         Color.clear
@@ -334,98 +335,55 @@ struct SectionAnnounceMonitor: View {
                 evaluate(at: time)
             }
             .onChange(of: enabled) { _, isEnabled in
-                if !isEnabled {
-                    resetTracking()
-                } else {
+                resetTracking()
+                if isEnabled {
                     evaluate(at: audioEngine.currentTime)
                 }
             }
             .onChange(of: cuedSectionID) { _, _ in
-                handleManualCueChange()
+                evaluate(at: audioEngine.currentTime)
             }
             .onChange(of: cueFireTime) { _, _ in
-                handleManualCueChange()
+                evaluate(at: audioEngine.currentTime)
+            }
+            .onChange(of: loopSection) { _, _ in
+                evaluate(at: audioEngine.currentTime)
             }
             .onChange(of: audioEngine.isPlaying) { _, isPlaying in
-                if !isPlaying {
-                    resetTracking()
-                } else {
+                resetTracking()
+                if isPlaying {
                     evaluate(at: audioEngine.currentTime)
                 }
             }
     }
 
     private func resetTracking() {
-        lastAnnouncedBoundary = nil
-        lastSeenTime = audioEngine.currentTime
+        planner.reset(at: audioEngine.currentTime)
     }
 
-    /// When the user cues a section, only schedule a spoken call if a full measure
-    /// of lead time remains. Cueing inside that final measure skips a late call.
-    private func handleManualCueChange() {
-        lastSeenTime = audioEngine.currentTime
-        lastAnnouncedBoundary = nil
-
-        guard enabled,
-              audioEngine.isPlaying,
-              let cueFireTime,
-              cuedSectionID != nil else {
-            return
-        }
-
-        let lead = audioEngine.measureLeadDuration(endingAt: cueFireTime)
-        let announceAt = max(0, cueFireTime - lead)
-        if audioEngine.currentTime + 0.001 >= announceAt {
-            // Not enough runway for a true one-measure-early call.
-            lastAnnouncedBoundary = cueFireTime
-            return
-        }
-
-        evaluate(at: audioEngine.currentTime)
-    }
-
+    /// Calls only fire when playback crosses the one-measure mark. A cue queued, a loop engaged,
+    /// or a seek landing inside that final measure is too late for a call and stays silent.
     private func evaluate(at time: TimeInterval) {
-        defer { lastSeenTime = time }
-
         guard enabled, audioEngine.isPlaying else { return }
 
-        // Detect seeks / backward jumps so the same boundary can announce again.
-        if time + 0.05 < lastSeenTime {
-            lastAnnouncedBoundary = nil
+        let call = planner.evaluate(
+            at: time,
+            sections: sections,
+            cue: queuedCue,
+            loop: loopSection,
+            leadDuration: { audioEngine.measureLeadDuration(endingAt: $0) }
+        )
+        if let call {
+            announcer.announce(name: call.name)
         }
-
-        guard let target = nextAnnouncementTarget(at: time) else { return }
-
-        let lead = audioEngine.measureLeadDuration(endingAt: target.boundary)
-        let announceAt = max(0, target.boundary - lead)
-
-        guard time >= announceAt else { return }
-        guard lastAnnouncedBoundary != target.boundary else { return }
-
-        // Manual cues only speak when we reach the one-measure mark with time to spare.
-        // If we somehow evaluate after the boundary, skip rather than calling late.
-        if target.isManualCue, time + 0.001 >= target.boundary {
-            lastAnnouncedBoundary = target.boundary
-            return
-        }
-
-        lastAnnouncedBoundary = target.boundary
-        announcer.announce(name: target.name)
     }
 
-    private func nextAnnouncementTarget(
-        at time: TimeInterval
-    ) -> (name: String, boundary: TimeInterval, isManualCue: Bool)? {
-        if let cuedSectionID,
-           let cueFireTime,
-           cueFireTime > time + 0.001,
-           let section = sections.first(where: { $0.id == cuedSectionID }) {
-            return (section.name, cueFireTime, true)
-        }
-
-        guard let next = sections.first(where: { $0.timelineStartSeconds > time + 0.001 }) else {
+    private var queuedCue: SmartGuideCallPlanner.Cue? {
+        guard let cuedSectionID,
+              let cueFireTime,
+              let section = sections.first(where: { $0.id == cuedSectionID }) else {
             return nil
         }
-        return (next.name, next.timelineStartSeconds, false)
+        return SmartGuideCallPlanner.Cue(name: section.name, fireTime: cueFireTime)
     }
 }

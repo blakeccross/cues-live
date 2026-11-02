@@ -12,10 +12,11 @@ enum SpeechSampleRenderer {
         monoStem(for: text)
     }
 
-    /// Returns a stereo engine-rate PCM buffer for live announcement playback, or nil when no sample exists.
-    static func renderAnnouncementBuffer(for text: String) async -> AVAudioPCMBuffer? {
-        guard let stem = monoStem(for: text) else { return nil }
-        return stereoPCMBuffer(from: stem)
+    /// True when a bundled guide sample exists for `text`.
+    static func hasSample(for text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return urlsByNormalizedKey()[SongSectionNameNormalizer.lookupKey(trimmed)] != nil
     }
 
     static func resetCache() {
@@ -116,40 +117,5 @@ enum SpeechSampleRenderer {
         }
 
         return try DecodedStemBuffer.monoStem(from: pcm, targetSampleRate: buffer.sampleRate)
-    }
-
-    private static func stereoPCMBuffer(from stem: DecodedStemBuffer) -> AVAudioPCMBuffer? {
-        guard let format = AVAudioFormat(
-            standardFormatWithSampleRate: stem.sampleRate,
-            channels: 2
-        ) else {
-            return nil
-        }
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(stem.frameCount)
-        ), let channels = buffer.floatChannelData else {
-            return nil
-        }
-
-        buffer.frameLength = AVAudioFrameCount(stem.frameCount)
-        let frames = stem.frameCount
-        stem.copy(
-            channel: 0,
-            startingFrame: 0,
-            frameCount: frames,
-            into: channels[0],
-            destinationOffset: 0,
-            gain: 1
-        )
-        stem.copy(
-            channel: 0,
-            startingFrame: 0,
-            frameCount: frames,
-            into: channels[1],
-            destinationOffset: 0,
-            gain: 1
-        )
-        return buffer
     }
 }

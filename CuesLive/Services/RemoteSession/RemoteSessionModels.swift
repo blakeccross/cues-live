@@ -139,6 +139,7 @@ struct RemoteLibrarySongDTO: Codable, Hashable, Identifiable, Sendable {
     var bpm: Double?
     var trackCount: Int
     var createdAt: Date
+    var smartGuideEnabled: Bool
 }
 
 struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
@@ -156,6 +157,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
     var showsMeasureGrid: Bool
     /// Downsampled summed peaks for remote waveform display (no media transfer).
     var peaks: [Float]
+    var smartGuideEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -170,6 +172,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         case timeSignatureChanges
         case showsMeasureGrid
         case peaks
+        case smartGuideEnabled
     }
 
     init(
@@ -184,7 +187,8 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         showsMeasureGrid: Bool,
-        peaks: [Float]
+        peaks: [Float],
+        smartGuideEnabled: Bool
     ) {
         self.id = id
         self.name = name
@@ -198,6 +202,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         self.timeSignatureChanges = timeSignatureChanges
         self.showsMeasureGrid = showsMeasureGrid
         self.peaks = peaks
+        self.smartGuideEnabled = smartGuideEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -216,6 +221,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         showsMeasureGrid = try container.decodeIfPresent(Bool.self, forKey: .showsMeasureGrid)
             ?? !tempoChanges.isEmpty
         peaks = try container.decodeIfPresent([Float].self, forKey: .peaks) ?? []
+        smartGuideEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartGuideEnabled) ?? false
     }
 }
 

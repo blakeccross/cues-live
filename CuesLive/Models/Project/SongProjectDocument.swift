@@ -8,7 +8,7 @@ struct SongProjectMetadata: Codable, Hashable {
     var baseKeyRaw: String?
     var transposeSemitones: Int
     var transposeHighQuality: Bool
-    var dynamicCuesEnabled: Bool
+    var smartGuideEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
         case bpm
@@ -17,7 +17,7 @@ struct SongProjectMetadata: Codable, Hashable {
         case baseKeyRaw
         case transposeSemitones
         case transposeHighQuality
-        case dynamicCuesEnabled
+        case smartGuideEnabled
     }
 
     init(from song: Song) {
@@ -27,7 +27,7 @@ struct SongProjectMetadata: Codable, Hashable {
         baseKeyRaw = song.baseKeyRaw
         transposeSemitones = song.transposeSemitones
         transposeHighQuality = song.transposeHighQuality
-        dynamicCuesEnabled = song.dynamicCuesEnabled
+        smartGuideEnabled = song.smartGuideEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -38,7 +38,7 @@ struct SongProjectMetadata: Codable, Hashable {
         baseKeyRaw = try container.decodeIfPresent(String.self, forKey: .baseKeyRaw)
         transposeSemitones = try container.decodeIfPresent(Int.self, forKey: .transposeSemitones) ?? 0
         transposeHighQuality = try container.decodeIfPresent(Bool.self, forKey: .transposeHighQuality) ?? false
-        dynamicCuesEnabled = try container.decodeIfPresent(Bool.self, forKey: .dynamicCuesEnabled) ?? false
+        smartGuideEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartGuideEnabled) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -49,7 +49,7 @@ struct SongProjectMetadata: Codable, Hashable {
         try container.encodeIfPresent(baseKeyRaw, forKey: .baseKeyRaw)
         try container.encode(transposeSemitones, forKey: .transposeSemitones)
         try container.encode(transposeHighQuality, forKey: .transposeHighQuality)
-        try container.encode(dynamicCuesEnabled, forKey: .dynamicCuesEnabled)
+        try container.encode(smartGuideEnabled, forKey: .smartGuideEnabled)
     }
 
     func apply(to song: Song) {
@@ -59,7 +59,7 @@ struct SongProjectMetadata: Codable, Hashable {
         song.baseKeyRaw = baseKeyRaw
         song.transposeSemitones = transposeSemitones
         song.transposeHighQuality = transposeHighQuality
-        song.dynamicCuesEnabled = dynamicCuesEnabled
+        song.smartGuideEnabled = smartGuideEnabled
     }
 }
 

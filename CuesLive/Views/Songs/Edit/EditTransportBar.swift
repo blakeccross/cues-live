@@ -39,7 +39,7 @@ struct EditTransportBar<Chrome: View>: View {
     @State private var showingTempoToolbarEditor = false
     @State private var showingKeyToolbarEditor = false
     @State private var showingClickEditor = false
-    @State private var showingCueEditor = false
+    @State private var showingSmartGuideEditor = false
     @State private var groupMixFade = GroupMixFadeController()
     @Bindable private var audioEngine = AudioEngineManager.shared
     @Environment(\.modelContext) private var modelContext
@@ -76,8 +76,8 @@ struct EditTransportBar<Chrome: View>: View {
                 chrome: .sheet
             )
         }
-        .sheet(isPresented: $showingCueEditor) {
-            CueTrackEditorButton(
+        .sheet(isPresented: $showingSmartGuideEditor) {
+            SmartGuideEditorButton(
                 song: song,
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
@@ -145,9 +145,9 @@ struct EditTransportBar<Chrome: View>: View {
             }
 
             Button {
-                showingCueEditor = true
+                showingSmartGuideEditor = true
             } label: {
-                Label("Cue Track", systemImage: "person.wave.2")
+                Label("Smart Guide", systemImage: "person.wave.2")
             }
 
             if !markers.isEmpty {

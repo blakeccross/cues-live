@@ -13,7 +13,7 @@ final class Song {
     var baseKeyRaw: String?
     var transposeSemitones: Int
     var transposeHighQuality: Bool
-    var dynamicCuesEnabled: Bool = false
+    var smartGuideEnabled: Bool = false
     var projectFilePath: String?
 
     @Relationship(deleteRule: .cascade, inverse: \AudioTrack.song)
@@ -32,7 +32,7 @@ final class Song {
         baseKeyRaw = nil
         transposeSemitones = 0
         transposeHighQuality = false
-        dynamicCuesEnabled = false
+        smartGuideEnabled = false
         projectFilePath = nil
         tracks = []
         midiTracks = []

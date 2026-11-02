@@ -43,7 +43,7 @@ final class AudioEngineManager {
 
     private let engine = AVAudioEngine()
     private let masterMixer = AVAudioMixerNode()
-    private let announcementPlayer = AVAudioPlayerNode()
+    private let announcementSource = AnnouncementSource()
     private var isAnnouncementPlayerWired = false
     private let transport = AudioPlaybackTransport()
     private let midiScheduler: MIDIScheduler
@@ -124,27 +124,36 @@ final class AudioEngineManager {
         )
     }
 
-    func playAnnouncement(_ buffer: AVAudioPCMBuffer) {
-        guard !isOutputLost else { return }
+    /// Speaks a Smart Guide callout. It follows the Cues group's output routing and fader.
+    func playAnnouncement(_ stem: DecodedStemBuffer) {
+        guard !isOutputLost, let announcementSource else { return }
         wireAnnouncementPlayerIfNeeded()
         try? startEngineIfNeeded()
-
-        announcementPlayer.stop()
-        announcementPlayer.scheduleBuffer(buffer, at: nil, options: [])
-        announcementPlayer.play()
+        applyAnnouncementGain()
+        announcementSource.play(stem)
     }
 
     private func wireAnnouncementPlayerIfNeeded() {
-        guard !isAnnouncementPlayerWired else { return }
-        if announcementPlayer.engine == nil {
-            engine.attach(announcementPlayer)
+        guard !isAnnouncementPlayerWired, let announcementSource else { return }
+        if announcementSource.sourceNode.engine == nil {
+            engine.attach(announcementSource.sourceNode)
         }
-        let format = AVAudioFormat(
-            standardFormatWithSampleRate: DecodedStemBuffer.engineSampleRate,
-            channels: 2
-        )
-        engine.connect(announcementPlayer, to: masterMixer, format: format)
+        engine.disconnectNodeOutput(announcementSource.sourceNode)
+        OutputRoutingManager.clearChannelMap(on: announcementSource.sourceNode)
+        engine.connect(announcementSource.sourceNode, to: masterMixer, format: announcementSource.format)
         isAnnouncementPlayerWired = true
+    }
+
+    /// Smart Guide shares the Cues group's fader and mute with the Cues track group.
+    private func applyAnnouncementGain() {
+        guard let announcementSource else { return }
+        let snapshot = groupMixSnapshot
+        guard let guideGroupID = routingSnapshot?.guideGroupID else {
+            announcementSource.setGain(1)
+            return
+        }
+        let muted = snapshot.mutedGroupIDs.contains(guideGroupID)
+        announcementSource.setGain(muted ? 0 : (snapshot.volumeByGroupID[guideGroupID] ?? 1))
     }
 
     #if os(iOS)
@@ -955,6 +964,7 @@ final class AudioEngineManager {
                 isAudible: isAudible
             )
         }
+        applyAnnouncementGain()
     }
 
     private var usesArrangement: Bool {
@@ -1329,13 +1339,25 @@ final class AudioEngineManager {
                 )
             }
 
+            var allRoutes = routeTracks
+            if !routeTracks.isEmpty, let announcementSource {
+                if announcementSource.sourceNode.engine == nil {
+                    engine.attach(announcementSource.sourceNode)
+                }
+                allRoutes.append((
+                    node: announcementSource.sourceNode as AVAudioNode,
+                    format: announcementSource.format,
+                    destination: OutputRoutingStore.guideDestination(snapshot: routing)
+                ))
+            }
+
             if OutputRoutingManager.applyChannelMapRouting(
                 engine: engine,
-                tracks: routeTracks,
+                tracks: allRoutes,
                 outputChannelCount: max(channelCount, 2)
             ) {
-                isAnnouncementPlayerWired = false
-                wireAnnouncementPlayerIfNeeded()
+                // The callout node is now routed directly with the track nodes.
+                isAnnouncementPlayerWired = true
                 return
             }
         }

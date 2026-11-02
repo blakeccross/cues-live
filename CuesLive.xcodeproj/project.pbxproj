@@ -159,6 +159,8 @@
 		AA00000100000000000000F0 /* StemAudioWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F0 /* StemAudioWriter.swift */; };
 		AA00000100000000000000F1 /* ClickTrackFileGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */; };
 		AA00000100000000000000F2 /* SectionAnnouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F2 /* SectionAnnouncer.swift */; };
+		AA00000100000000000005A1 /* SmartGuideCallPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */; };
+		AA00000100000000000005A3 /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
 		AA00000100000000000000F3 /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
 		AA00000100000000000000F4 /* SongSectionNameNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */; };
 		AA00000100000000000000F5 /* SongSectionNameNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */; };
@@ -167,16 +169,12 @@
 		AA00000100000000000004F2 /* MixerFaderScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F2 /* MixerFaderScaleTests.swift */; };
 		AA00000100000000000000F6 /* AbletonProjectImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */; };
 		AA00000100000000000000F7 /* SpeechSampleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F7 /* SpeechSampleRenderer.swift */; };
-		AA00000100000000000000F8 /* CueTrackScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F8 /* CueTrackScheduler.swift */; };
-		AA00000100000000000000F9 /* CueTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F9 /* CueTrackGenerator.swift */; };
-		AA00000100000000000000FA /* CueTrackFileGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FA /* CueTrackFileGenerator.swift */; };
-		AA00000100000000000000FB /* CueTrackSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FB /* CueTrackSchedulerTests.swift */; };
-		AA00000100000000000000FC /* CueTrackGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FC /* CueTrackGeneratorTests.swift */; };
 		AA00000100000000000000FD /* ClickSongCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FD /* ClickSongCreator.swift */; };
 		AA00000100000000000000FE /* ClickSongCreatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FE /* ClickSongCreatorTests.swift */; };
 		AA0000010000000000000100 /* SongSections in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000100 /* SongSections */; };
 		AA0000010000000000000102 /* SpeechSampleRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000102 /* SpeechSampleRendererTests.swift */; };
 		AA0000010000000000000103 /* SectionLoopTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000103 /* SectionLoopTimingTests.swift */; };
+		AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */; };
 		AA0000010000000000000104 /* StreamingStemBufferLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */; };
 		AA0000010000000000000110 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
 		AA0000010000000000000111 /* TimecodeSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000111 /* TimecodeSettingsStore.swift */; };
@@ -391,6 +389,8 @@
 		AA00000200000000000000F0 /* StemAudioWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemAudioWriter.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackFileGenerator.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F2 /* SectionAnnouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionAnnouncer.swift; sourceTree = "<group>"; };
+		AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlanner.swift; sourceTree = "<group>"; };
+		AA00000200000000000005A3 /* AnnouncementSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementSource.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F3 /* SongSectionPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionPresets.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizer.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizerTests.swift; sourceTree = "<group>"; };
@@ -399,16 +399,12 @@
 		AA00000200000000000004F2 /* MixerFaderScaleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerFaderScaleTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbletonProjectImporterTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F7 /* SpeechSampleRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSampleRenderer.swift; sourceTree = "<group>"; };
-		AA00000200000000000000F8 /* CueTrackScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueTrackScheduler.swift; sourceTree = "<group>"; };
-		AA00000200000000000000F9 /* CueTrackGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueTrackGenerator.swift; sourceTree = "<group>"; };
-		AA00000200000000000000FA /* CueTrackFileGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueTrackFileGenerator.swift; sourceTree = "<group>"; };
-		AA00000200000000000000FB /* CueTrackSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueTrackSchedulerTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000000FC /* CueTrackGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueTrackGeneratorTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000FD /* ClickSongCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickSongCreator.swift; sourceTree = "<group>"; };
 		AA00000200000000000000FE /* ClickSongCreatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickSongCreatorTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000100 /* SongSections */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SongSections; sourceTree = "<group>"; };
 		AA0000020000000000000102 /* SpeechSampleRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSampleRendererTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000103 /* SectionLoopTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionLoopTimingTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlannerTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingStemBufferLoopTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000110 /* TimecodeSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeSettings.swift; sourceTree = "<group>"; };
 		AA0000020000000000000111 /* TimecodeSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeSettingsStore.swift; sourceTree = "<group>"; };
@@ -699,6 +695,7 @@
 				AA0000020000000000000050 /* ClickTrackSchedulerTests.swift */,
 				AA00000200000000000000FE /* ClickSongCreatorTests.swift */,
 				AA0000020000000000000103 /* SectionLoopTimingTests.swift */,
+				AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */,
 				AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */,
 				AA0000020000000000000049 /* SongArrangementLayoutTests.swift */,
 				AA000002000000000000004B /* ClipRegionStoreTests.swift */,
@@ -717,8 +714,6 @@
 				AA00000200000000000004F1 /* SetlistViewModelTests.swift */,
 				AA00000200000000000004F2 /* MixerFaderScaleTests.swift */,
 				AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */,
-				AA00000200000000000000FB /* CueTrackSchedulerTests.swift */,
-				AA00000200000000000000FC /* CueTrackGeneratorTests.swift */,
 				AA0000020000000000000102 /* SpeechSampleRendererTests.swift */,
 				AA0000020000000000000329 /* InputMappingStoreTests.swift */,
 				AA000002000000000000032A /* InputMappingControllerTests.swift */,
@@ -827,6 +822,8 @@
 				AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */,
 				AA000002000000000000004C /* SectionLoopController.swift */,
 				AA00000200000000000000F2 /* SectionAnnouncer.swift */,
+				AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */,
+				AA00000200000000000005A3 /* AnnouncementSource.swift */,
 				AA000002000000000000003A /* RubberBandPitchProcessor.swift */,
 			);
 			path = Playback;
@@ -851,9 +848,6 @@
 				AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */,
 				AA0000020000000000000043 /* ClickTrackGenerator.swift */,
 				AA000002000000000000004E /* ClickTrackScheduler.swift */,
-				AA00000200000000000000FA /* CueTrackFileGenerator.swift */,
-				AA00000200000000000000F9 /* CueTrackGenerator.swift */,
-				AA00000200000000000000F8 /* CueTrackScheduler.swift */,
 				AA00000200000000000000F7 /* SpeechSampleRenderer.swift */,
 			);
 			path = GuideTracks;
@@ -1137,10 +1131,9 @@
 				AA0000010000000000000115 /* TimecodePlaybackSupport.swift in Sources */,
 				AA00000100000000000000FD /* ClickSongCreator.swift in Sources */,
 				AA00000100000000000000F7 /* SpeechSampleRenderer.swift in Sources */,
-				AA00000100000000000000F8 /* CueTrackScheduler.swift in Sources */,
-				AA00000100000000000000F9 /* CueTrackGenerator.swift in Sources */,
-				AA00000100000000000000FA /* CueTrackFileGenerator.swift in Sources */,
 				AA00000100000000000000F2 /* SectionAnnouncer.swift in Sources */,
+				AA00000100000000000005A1 /* SmartGuideCallPlanner.swift in Sources */,
+				AA00000100000000000005A3 /* AnnouncementSource.swift in Sources */,
 				AA00000100000000000000F3 /* SongSectionPresets.swift in Sources */,
 				AA00000100000000000000F4 /* SongSectionNameNormalizer.swift in Sources */,
 				AA0000010000000000000201 /* SparkleUpdater.swift in Sources */,
@@ -1262,6 +1255,7 @@
 				AA0000010000000000000050 /* ClickTrackSchedulerTests.swift in Sources */,
 				AA00000100000000000000FE /* ClickSongCreatorTests.swift in Sources */,
 				AA0000010000000000000103 /* SectionLoopTimingTests.swift in Sources */,
+				AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */,
 				AA0000010000000000000104 /* StreamingStemBufferLoopTests.swift in Sources */,
 				AA0000010000000000000049 /* SongArrangementLayoutTests.swift in Sources */,
 				AA000001000000000000004B /* ClipRegionStoreTests.swift in Sources */,
@@ -1280,8 +1274,6 @@
 				AA00000100000000000004F1 /* SetlistViewModelTests.swift in Sources */,
 				AA00000100000000000004F2 /* MixerFaderScaleTests.swift in Sources */,
 				AA00000100000000000000F6 /* AbletonProjectImporterTests.swift in Sources */,
-				AA00000100000000000000FB /* CueTrackSchedulerTests.swift in Sources */,
-				AA00000100000000000000FC /* CueTrackGeneratorTests.swift in Sources */,
 				AA0000010000000000000102 /* SpeechSampleRendererTests.swift in Sources */,
 				AA0000010000000000000329 /* InputMappingStoreTests.swift in Sources */,
 				AA000001000000000000032A /* InputMappingControllerTests.swift in Sources */,

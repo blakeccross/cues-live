@@ -769,7 +769,7 @@ struct EditView: View {
             refreshTimelineLayout()
             prepareSectionAnnouncements()
         }
-        .onChange(of: song.dynamicCuesEnabled) { _, _ in
+        .onChange(of: song.smartGuideEnabled) { _, _ in
             prepareSectionAnnouncements()
         }
         .onChange(of: timelineDuration) { _, _ in
@@ -785,10 +785,11 @@ struct EditView: View {
                 onFire: fireMarkerCue
             )
             SectionAnnounceMonitor(
-                enabled: song.dynamicCuesEnabled,
+                enabled: song.smartGuideEnabled,
                 sections: displaySections,
                 cuedSectionID: cuedSectionID,
                 cueFireTime: cueFireTime,
+                loopSection: sectionLoop.activeSection(in: displaySections, loopSlotIDs: loopSlotIDs),
                 announcer: sectionAnnouncer
             )
             SectionLoopPlaybackSupport(
@@ -1382,7 +1383,7 @@ struct EditView: View {
     }
 
     private func prepareSectionAnnouncements() {
-        guard song.dynamicCuesEnabled else { return }
+        guard song.smartGuideEnabled else { return }
         sectionAnnouncer.prepare(names: displaySections.map(\.name))
     }
 

@@ -20,6 +20,7 @@ struct SetlistRowModel: Identifiable {
         /// Position among songs only (headers are not counted).
         var playbackIndex: Int
         var hasMissingMedia: Bool = false
+        var hasSmartGuide: Bool = false
         /// Transition to the next song; nil for the last song.
         var transition: SetlistTransition? = nil
     }
@@ -314,6 +315,10 @@ private struct SetlistSongRowView<MenuContent: View>: View {
                     .help("Missing audio files — use Relink Missing Files in the menu")
             }
 
+            if song.hasSmartGuide {
+                SmartGuideBadge()
+            }
+
             if let transition = song.transition {
                 Image(systemName: transition.systemImage)
                     .font(.caption.weight(.semibold))
@@ -349,6 +354,17 @@ private struct SetlistSongRowView<MenuContent: View>: View {
                 .foregroundStyle(AppColors.textTertiary)
                 .accessibilityHidden(true)
         }
+    }
+}
+
+/// Marks songs that have Smart Guide section call-outs turned on.
+struct SmartGuideBadge: View {
+    var body: some View {
+        Image(systemName: "person.wave.2.fill")
+            .font(.caption)
+            .foregroundStyle(AppColors.accent)
+            .accessibilityLabel("Smart Guide on")
+            .help("Smart Guide on")
     }
 }
 

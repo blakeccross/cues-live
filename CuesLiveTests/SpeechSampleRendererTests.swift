@@ -39,10 +39,10 @@ final class SpeechSampleRendererTests: XCTestCase {
         XCTAssertGreaterThan(buffer?.frameCount ?? 0, 0)
     }
 
-    func testAnnouncementBufferIsStereo() async {
-        let buffer = await SpeechSampleRenderer.renderAnnouncementBuffer(for: "Verse")
-        XCTAssertNotNil(buffer)
-        XCTAssertEqual(buffer?.format.channelCount, 2)
-        XCTAssertGreaterThan(buffer?.frameLength ?? 0, 0)
+    @MainActor
+    func testHasSampleMatchesBundledSectionNames() {
+        XCTAssertTrue(SpeechSampleRenderer.hasSample(for: "Verse"))
+        XCTAssertFalse(SpeechSampleRenderer.hasSample(for: "Definitely Not A Section"))
+        XCTAssertFalse(SpeechSampleRenderer.hasSample(for: "  "))
     }
 }

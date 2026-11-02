@@ -448,6 +448,7 @@ struct RemoteLivePlaybackView: View {
                     keyText: remoteSongKeyText(song),
                     bpmText: remoteSongBPMText(song),
                     playbackIndex: playbackIndex,
+                    hasSmartGuide: song.smartGuideEnabled,
                     transition: remoteTransition(for: entry, in: workingEntries)
                 ))
             )
@@ -839,6 +840,10 @@ private struct RemoteHostSongLibraryRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
+
+            if song.smartGuideEnabled {
+                SmartGuideBadge()
+            }
 
             Button(action: onAddToSetlist) {
                 Image(systemName: "plus")
