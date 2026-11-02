@@ -270,7 +270,10 @@ struct WaveformLaneView: View {
                 isLoadingWaveformPeaks = true
                 defer { isLoadingWaveformPeaks = false }
 
-                sourcePeaks = await WaveformCache.shared.peaks(for: fileURL)
+                sourcePeaks = await WaveformCache.shared.peaks(for: fileURL) { partial in
+                    sourcePeaks = partial
+                    refreshCachedDisplayPeaks()
+                }
                 refreshCachedDisplayPeaks()
             }
             .onChange(of: displayPeaksCacheKey) { _, _ in
@@ -523,14 +526,6 @@ struct WaveformLaneView: View {
                 )
                 .equatable()
                 .allowsHitTesting(false)
-
-                if isLoadingWaveformPeaks, sourcePeaks.isEmpty {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(.white.opacity(0.8))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .allowsHitTesting(false)
-                }
 
                 if let dragRange {
                     selectionOverlay(

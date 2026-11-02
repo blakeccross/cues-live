@@ -24,6 +24,8 @@ struct EditTransportBar<Chrome: View>: View {
     @Binding var showingSongLibrary: Bool
     @Binding var showingBakeSheet: Bool
     @Binding var showingGroupEditor: Bool
+    let isDetectingSections: Bool
+    let onDetectSections: () -> Void
     let onClearMarkerCue: () -> Void
     let onPersistArrangement: () -> Void
     let onUndoableChange: UndoableChangeHandler
@@ -159,6 +161,15 @@ struct EditTransportBar<Chrome: View>: View {
             }
 
             Divider()
+
+            if SongSectionDetector.isAvailable {
+                Button {
+                    onDetectSections()
+                } label: {
+                    Label(isDetectingSections ? "Detecting Sections…" : "Detect Sections", systemImage: "wand.and.stars")
+                }
+                .disabled(isDetectingSections || SongSectionDetector.analysisTracks(in: song).isEmpty)
+            }
 
             Button("Manage Groups…") {
                 showingGroupEditor = true

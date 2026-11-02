@@ -34,6 +34,9 @@ struct EditView: View {
     @State private var showingTrackImporter = false
     @State private var showingAbletonImporter = false
     @State private var importError: String?
+    @State private var isDetectingSections = false
+    @State private var sectionDetectionError: String?
+    @State private var showingDetectSectionsConfirm = false
     @State private var abletonImportSummary: String?
     @State private var timelineZoom: CGFloat = 1
     @State private var timelineViewportWidth: CGFloat = 0
@@ -728,6 +731,14 @@ struct EditView: View {
         )
     }
 
+    private var detectSectionsModifier: DetectSectionsFlowModifier {
+        DetectSectionsFlowModifier(
+            showingReplaceConfirm: $showingDetectSectionsConfirm,
+            error: $sectionDetectionError,
+            onConfirmReplace: detectSections
+        )
+    }
+
     var body: some View {
         editorRoot
         .background(Color.dawTimelineBackground)
@@ -871,6 +882,7 @@ struct EditView: View {
                 applySectionRename(newName)
             }
         }
+        .modifier(detectSectionsModifier)
         .alert("Rename Track", isPresented: Binding(
             get: { trackPendingRename != nil },
             set: { if !$0 { trackPendingRename = nil } }
@@ -911,6 +923,8 @@ struct EditView: View {
                 showingSongLibrary: $showingSongLibrary,
                 showingBakeSheet: $showingBakeSheet,
                 showingGroupEditor: $showingGroupEditor,
+                isDetectingSections: isDetectingSections,
+                onDetectSections: requestDetectSections,
                 onBack: onBack,
                 currentSectionAtTime: { time in
                     displaySections.section(atTimeline: time)
@@ -1577,6 +1591,56 @@ struct EditView: View {
         }
     }
 
+    private func requestDetectSections() {
+        guard !isDetectingSections else { return }
+        if markers.count > 1 {
+            showingDetectSectionsConfirm = true
+        } else {
+            detectSections()
+        }
+    }
+
+    private func detectSections() {
+        guard !isDetectingSections else { return }
+        let urls = SongSectionDetector.analysisTracks(in: song)
+            .compactMap { FileStore.trackURL(for: song, track: $0) }
+        let songDuration = sourceDuration
+        isDetectingSections = true
+
+        Task {
+            defer { isDetectingSections = false }
+            do {
+                let starts = try await SongSectionDetector.detectSectionStarts(from: urls)
+                let detected = SongSectionDetector.markers(
+                    fromSectionStarts: starts,
+                    songDuration: songDuration
+                )
+                guard detected.count > 1 else { throw SongSectionDetectorError.noSectionsFound }
+                performUndoableChange("Detect Sections") {
+                    applyDetectedSections(detected)
+                }
+            } catch {
+                sectionDetectionError = error.localizedDescription
+            }
+        }
+    }
+
+    /// Replaces every section, which also drops the per-section clip edits and loops that pointed at them.
+    private func applyDetectedSections(_ detected: [ArrangementMarker]) {
+        clearMarkerCue()
+        arrangementMarkers = detected
+        arrangementSlots = detected.map { ArrangementSlot(markerID: $0.id) }
+        clipTrims = []
+        removedClips = []
+        clipGaps = []
+        clipRegions = []
+        loopSlotIDs = []
+
+        refreshTimelineLayout()
+        persistArrangement()
+        syncPlayback()
+    }
+
     private func beginRenameSection(_ section: ArrangementDisplaySection) {
         sectionNamePromptTitle = "Rename Section"
         sectionPendingRename = section
@@ -1740,6 +1804,8 @@ struct EditView: View {
             showingSongLibrary: $showingSongLibrary,
             showingBakeSheet: $showingBakeSheet,
             showingGroupEditor: $showingGroupEditor,
+            isDetectingSections: isDetectingSections,
+            onDetectSections: requestDetectSections,
             onClearMarkerCue: { clearMarkerCue() },
             onPersistArrangement: {
                 performUndoableChange("Edit Arrangement") {

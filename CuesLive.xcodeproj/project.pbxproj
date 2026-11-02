@@ -163,7 +163,10 @@
 		AA00000100000000000005A3 /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
 		AA00000100000000000000F3 /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
 		AA00000100000000000000F4 /* SongSectionNameNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */; };
+		AA0000010000000000000A01 /* SongSectionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A01 /* SongSectionDetector.swift */; };
 		AA00000100000000000000F5 /* SongSectionNameNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */; };
+		AA0000010000000000000A02 /* SongSectionDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A02 /* SongSectionDetectorTests.swift */; };
+		AA0000010000000000000A03 /* WaveformLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A03 /* WaveformLoaderTests.swift */; };
 		AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012E /* TrackGroupStoreTests.swift */; };
 		AA00000100000000000004F1 /* SetlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F1 /* SetlistViewModelTests.swift */; };
 		AA00000100000000000004F2 /* MixerFaderScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F2 /* MixerFaderScaleTests.swift */; };
@@ -393,7 +396,10 @@
 		AA00000200000000000005A3 /* AnnouncementSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementSource.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F3 /* SongSectionPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionPresets.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizer.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A01 /* SongSectionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionDetector.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizerTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A02 /* SongSectionDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionDetectorTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A03 /* WaveformLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLoaderTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000012E /* TrackGroupStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroupStoreTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000004F1 /* SetlistViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistViewModelTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000004F2 /* MixerFaderScaleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerFaderScaleTests.swift; sourceTree = "<group>"; };
@@ -710,6 +716,8 @@
 				AA000002000000000000012B /* SongMusicalKeyTests.swift */,
 				AA00000200000000000000D9 /* SongUndoControllerTests.swift */,
 				AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */,
+				AA0000020000000000000A02 /* SongSectionDetectorTests.swift */,
+				AA0000020000000000000A03 /* WaveformLoaderTests.swift */,
 				AA000002000000000000012E /* TrackGroupStoreTests.swift */,
 				AA00000200000000000004F1 /* SetlistViewModelTests.swift */,
 				AA00000200000000000004F2 /* MixerFaderScaleTests.swift */,
@@ -925,6 +933,7 @@
 				AA000002000000000000004A /* ClipRegionStore.swift */,
 				AA000002000000000000001F /* SongArrangementStore.swift */,
 				AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */,
+				AA0000020000000000000A01 /* SongSectionDetector.swift */,
 				AA00000200000000000000D7 /* SongUndoController.swift */,
 				AA00000200000000000000A0 /* TimelineRippleStore.swift */,
 				AA000002000000000000002B /* TrackGroupStore.swift */,
@@ -1136,6 +1145,7 @@
 				AA00000100000000000005A3 /* AnnouncementSource.swift in Sources */,
 				AA00000100000000000000F3 /* SongSectionPresets.swift in Sources */,
 				AA00000100000000000000F4 /* SongSectionNameNormalizer.swift in Sources */,
+				AA0000010000000000000A01 /* SongSectionDetector.swift in Sources */,
 				AA0000010000000000000201 /* SparkleUpdater.swift in Sources */,
 				AA0000010000000000000202 /* ToolbarSharedBackground.swift in Sources */,
 				AA000001000000000000001C /* TimelineLayout.swift in Sources */,
@@ -1270,6 +1280,8 @@
 				AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */,
 				AA00000100000000000000D9 /* SongUndoControllerTests.swift in Sources */,
 				AA00000100000000000000F5 /* SongSectionNameNormalizerTests.swift in Sources */,
+				AA0000010000000000000A02 /* SongSectionDetectorTests.swift in Sources */,
+				AA0000010000000000000A03 /* WaveformLoaderTests.swift in Sources */,
 				AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */,
 				AA00000100000000000004F1 /* SetlistViewModelTests.swift in Sources */,
 				AA00000100000000000004F2 /* MixerFaderScaleTests.swift in Sources */,

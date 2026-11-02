@@ -170,6 +170,8 @@ struct EditSongToolbarContent: ToolbarContent {
     @Binding var showingSongLibrary: Bool
     @Binding var showingBakeSheet: Bool
     @Binding var showingGroupEditor: Bool
+    let isDetectingSections: Bool
+    let onDetectSections: () -> Void
     let onBack: () -> Void
     let currentSectionAtTime: (TimeInterval) -> ArrangementDisplaySection?
     let onStopTransport: () -> Void
@@ -295,6 +297,13 @@ struct EditSongToolbarContent: ToolbarContent {
 
     private var moreMenu: some View {
         Menu {
+            if SongSectionDetector.isAvailable {
+                Button(isDetectingSections ? "Detecting Sections…" : "Detect Sections") {
+                    onDetectSections()
+                }
+                .disabled(isDetectingSections || SongSectionDetector.analysisTracks(in: song).isEmpty)
+                Divider()
+            }
             Button("Manage Groups…") {
                 showingGroupEditor = true
             }
@@ -310,3 +319,31 @@ struct EditSongToolbarContent: ToolbarContent {
     }
 }
 #endif
+
+struct DetectSectionsFlowModifier: ViewModifier {
+    @Binding var showingReplaceConfirm: Bool
+    @Binding var error: String?
+    let onConfirmReplace: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                "Replace existing sections?",
+                isPresented: $showingReplaceConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Replace Sections", role: .destructive, action: onConfirmReplace)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Detected sections replace the current ones and reset arrangement edits such as reordered, trimmed or looped sections. You can undo this.")
+            }
+            .alert("Couldn’t Detect Sections", isPresented: Binding(
+                get: { error != nil },
+                set: { if !$0 { error = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(error ?? "")
+            }
+    }
+}

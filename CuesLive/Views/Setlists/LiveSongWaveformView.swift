@@ -369,18 +369,17 @@ struct LiveSongWaveformView: View {
     #if os(macOS)
     @ViewBuilder
     private var scrollBackingLayer: some View {
-        if resolvedIsPlaying, showsPlayhead {
-            TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { _ in
+        // The TimelineView stays mounted (just paused) when playback stops. Swapping it for a
+        // bare view on play/pause rebuilds the tiled layer, which blanks until tiles re-render.
+        if showsPlayhead {
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: !resolvedIsPlaying)) { _ in
                 scrollBacking(
-                    playheadTime: resolvedPlayheadTime(live: true),
+                    playheadTime: resolvedPlayheadTime(live: resolvedIsPlaying),
                     showsPlayheadSplit: true
                 )
             }
         } else {
-            scrollBacking(
-                playheadTime: showsPlayhead ? resolvedPlayheadTime(live: false) : nil,
-                showsPlayheadSplit: showsPlayhead
-            )
+            scrollBacking(playheadTime: nil, showsPlayheadSplit: false)
         }
     }
 
@@ -541,17 +540,11 @@ struct LiveSongWaveformView: View {
             return cachedDisplayPeaks
         }()
 
-        let playheadFraction: CGFloat? = {
-            guard showsPlayhead else { return nil }
-            let time = resolvedPlayheadTime(live: resolvedIsPlaying)
-            let span = max(0.0001, timelineEnd - timelineStart)
-            return CGFloat((time - timelineStart) / span)
-        }()
-
+        // Same identity whether playing or paused, so toggling playback never rebuilds the canvas.
         Group {
-            if resolvedIsPlaying, showsPlayhead {
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { _ in
-                    let time = resolvedPlayheadTime(live: true)
+            if showsPlayhead {
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !resolvedIsPlaying)) { _ in
+                    let time = resolvedPlayheadTime(live: resolvedIsPlaying)
                     let span = max(0.0001, timelineEnd - timelineStart)
                     let fraction = CGFloat((time - timelineStart) / span)
                     WaveformBarsCanvas(
@@ -569,7 +562,7 @@ struct LiveSongWaveformView: View {
                     showsEmptyBaseline: isLoadingWaveform || showsFullSourceWaveform,
                     fillColor: .white,
                     style: .filledEnvelope,
-                    playheadFraction: playheadFraction,
+                    playheadFraction: nil,
                     usesDrawingGroup: contentWidth <= Self.tiledLaneMinContentWidth
                 )
             }
@@ -807,16 +800,9 @@ struct LiveSongWaveformView: View {
 
     @ViewBuilder
     private func playheadOverlay(contentWidth: CGFloat) -> some View {
-        if resolvedIsPlaying {
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { _ in
-                playheadMarker(
-                    at: resolvedPlayheadTime(live: true),
-                    contentWidth: contentWidth
-                )
-            }
-        } else {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !resolvedIsPlaying)) { _ in
             playheadMarker(
-                at: resolvedPlayheadTime(live: false),
+                at: resolvedPlayheadTime(live: resolvedIsPlaying),
                 contentWidth: contentWidth
             )
         }
