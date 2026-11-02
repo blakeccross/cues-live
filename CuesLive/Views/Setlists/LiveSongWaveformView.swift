@@ -1083,7 +1083,7 @@ struct LiveSetlistWaveformScrollView: View {
             }
             .background {
                 if isFollowing {
-                    TimelineView(.animation(minimumInterval: 1.0 / 12.0)) { context in
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
                         LiveSetlistFollowScrollDriver(date: context.date) {
                             guard isPlayingProvider() else { return }
                             scrollToFollowPlayhead(proxy, requirePlaying: true)
