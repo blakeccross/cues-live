@@ -148,6 +148,19 @@ final class PlaybackCoordinator {
         audioEngine.isPlaying
     }
 
+    /// True while any engine is waiting for its audio output device to come back.
+    var isAudioOutputLost: Bool {
+        audioEngine.isOutputLost || clockEngine.isOutputLost || incomingAudioEngine?.isOutputLost == true
+    }
+
+    /// True when the lost output will not come back by itself: the device is listed but
+    /// CoreAudio cannot start it.
+    var isAudioOutputUnresponsive: Bool {
+        audioEngine.isOutputUnresponsive
+            || clockEngine.isOutputUnresponsive
+            || incomingAudioEngine?.isOutputUnresponsive == true
+    }
+
     var currentTime: TimeInterval {
         audioEngine.currentTime
     }

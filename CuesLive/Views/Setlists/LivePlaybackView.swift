@@ -235,6 +235,11 @@ struct LivePlaybackView: View {
         content: Content
     ) -> some View {
         content
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if coordinator.isAudioOutputLost {
+                    AudioOutputLostBanner(isUnresponsive: coordinator.isAudioOutputUnresponsive)
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
                 applyOutputRoutingIfNotEditing()
             }

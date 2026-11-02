@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import Observation
+import os
 
 @Observable
 final class AudioEngineManager {
@@ -65,6 +66,18 @@ final class AudioEngineManager {
     private var timeSignatureChanges: [TimeSignatureChange] = []
     private var lastAppliedPitchCompensationCents: Float?
 
+    private static let outputLogger = Logger(subsystem: "live.cues", category: "AudioOutput")
+    private static let outputProbeQueue = DispatchQueue(label: "live.cues.output-probe", qos: .utility)
+    private static let outputProbeUnresponsiveAfter: TimeInterval = 6
+
+    @ObservationIgnored private var configurationChangeObserver: NSObjectProtocol?
+    @ObservationIgnored private var outputRecoveryTimer: Timer?
+    @ObservationIgnored private var outputProbeWatchdog: Timer?
+    @ObservationIgnored private var failedOutputRecoveryAttempts = 0
+    @ObservationIgnored private var outputRecoveryGeneration = 0
+    /// Set by `suspendHardware()`: the engine is stopped on purpose, not lost.
+    @ObservationIgnored private var isHardwareSuspended = false
+
     private(set) var groupMeterLevels: [UUID: Float] = [:]
     private(set) var trackMeterLevels: [UUID: Float] = [:]
 
@@ -73,6 +86,12 @@ final class AudioEngineManager {
     }
 
     private(set) var isPlaying = false
+    /// True while the output device is gone and the graph has not been rebuilt yet.
+    /// Playback is held paused meanwhile.
+    private(set) var isOutputLost = false
+    /// True when a device probe has gone unanswered for a while: the device is listed
+    /// but CoreAudio cannot start it, so waiting will not fix it.
+    private(set) var isOutputUnresponsive = false
     private(set) var currentTime: TimeInterval = 0
     private(set) var duration: TimeInterval = 0
 
@@ -90,6 +109,7 @@ final class AudioEngineManager {
         configureAudioSession()
         #endif
         applyStableMaximumFramesToRender()
+        observeEngineConfigurationChanges()
     }
 
     /// Duration of one measure ending at `timelineSeconds`, using the active tempo/meter.
@@ -105,6 +125,7 @@ final class AudioEngineManager {
     }
 
     func playAnnouncement(_ buffer: AVAudioPCMBuffer) {
+        guard !isOutputLost else { return }
         wireAnnouncementPlayerIfNeeded()
         try? startEngineIfNeeded()
 
@@ -161,6 +182,7 @@ final class AudioEngineManager {
         _ payloads: [PreparedTrackPayload],
         routing: OutputRoutingSnapshot? = nil
     ) throws {
+        clearOutputLoss()
         cancelOverlapPlayback()
         stop()
         stopEngineForGraphChanges()
@@ -177,11 +199,17 @@ final class AudioEngineManager {
             }
             tracks = loadedTracks
 
-            if let routing {
-                try wireTrackOutputs(routing: routing)
-            } else {
-                connectTracksToMasterMixer()
-                try startEngineIfNeeded()
+            // A missing device must not fail the load; recovery waits for the output.
+            do {
+                if let routing {
+                    try wireTrackOutputs(routing: routing)
+                } else {
+                    connectTracksToMasterMixer()
+                    try startEngineIfNeeded()
+                }
+            } catch {
+                Self.outputLogger.error("Engine failed to start while loading: \(error.localizedDescription, privacy: .public)")
+                beginOutputRecoveryIfNeeded()
             }
 
             applyAllMixSettings()
@@ -359,8 +387,13 @@ final class AudioEngineManager {
     }
 
     func play() {
-        guard canPlay, !isPlaying else { return }
-        try? startEngineIfNeeded()
+        guard canPlay, !isPlaying, !isOutputLost else { return }
+        do {
+            try startEngineIfNeeded()
+        } catch {
+            beginOutputRecoveryIfNeeded()
+            return
+        }
 
         let startTime = quantizeTimelineTime(transport.pausedTimelineSeconds())
         applyTrackPitch(at: startTime)
@@ -405,6 +438,8 @@ final class AudioEngineManager {
     /// Stops the underlying `AVAudioEngine` without clearing the loaded graph.
     /// Used when another engine (e.g. overlap preview) needs exclusive hardware access.
     func suspendHardware() {
+        clearOutputLoss()
+        isHardwareSuspended = true
         stopEngineForGraphChanges()
         invalidateAllPlayers()
     }
@@ -412,6 +447,7 @@ final class AudioEngineManager {
     /// Fully stops transport and tears down the graph. Use for disposable engine
     /// instances (for example overlap handoff engines) before releasing them.
     func shutdown() {
+        clearOutputLoss()
         cancelScheduledOverlapStart()
         cancelOverlapPlayback()
         didNotifyPlaybackFinished = false
@@ -429,6 +465,11 @@ final class AudioEngineManager {
     }
 
     deinit {
+        if let configurationChangeObserver {
+            NotificationCenter.default.removeObserver(configurationChangeObserver)
+        }
+        outputRecoveryTimer?.invalidate()
+        outputProbeWatchdog?.invalidate()
         stopEngineForGraphChanges()
         invalidateAllPlayers()
     }
@@ -1113,10 +1154,132 @@ final class AudioEngineManager {
     }
 
     private func startEngineIfNeeded() throws {
+        isHardwareSuspended = false
         applyStableMaximumFramesToRender()
         if !engine.isRunning {
             try engine.start()
         }
+        if isOutputLost {
+            clearOutputLoss()
+        }
+    }
+
+    // MARK: - Output loss recovery
+
+    /// `AVAudioEngine` stops itself when its output device disappears or changes format.
+    private func observeEngineConfigurationChanges() {
+        configurationChangeObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: .main
+        ) { [weak self] _ in
+            self?.beginOutputRecoveryIfNeeded()
+        }
+    }
+
+    /// Pauses playback and starts rebuilding the output. Ignored when the engine is
+    /// running, has nothing loaded, or was stopped on purpose.
+    ///
+    /// Runs on the main thread during device removal, so it must not call into CoreAudio.
+    private func beginOutputRecoveryIfNeeded() {
+        guard !isOutputLost, !isHardwareSuspended, !tracks.isEmpty, !engine.isRunning else { return }
+        Self.outputLogger.notice("Audio output lost; holding playback")
+
+        // Resuming is left to the performer: restarting mid-song after a gap is rarely wanted.
+        if isPlaying {
+            pause(at: currentTime)
+        }
+        isOutputLost = true
+        failedOutputRecoveryAttempts = 0
+        scheduleOutputRecoveryAttempt(after: OutputRecoveryBackoff.delay(beforeAttempt: 0))
+    }
+
+    private func scheduleOutputRecoveryAttempt(after delay: TimeInterval) {
+        outputRecoveryTimer?.invalidate()
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            self?.attemptOutputRecovery()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        outputRecoveryTimer = timer
+    }
+
+    private func scheduleOutputRecoveryRetry() {
+        failedOutputRecoveryAttempts += 1
+        scheduleOutputRecoveryAttempt(after: OutputRecoveryBackoff.delay(beforeAttempt: failedOutputRecoveryAttempts))
+    }
+
+    private func attemptOutputRecovery() {
+        outputRecoveryTimer?.invalidate()
+        outputRecoveryTimer = nil
+        guard isOutputLost else { return }
+
+        // Starting the real engine on a half-dead device blocks for about 10 s, and
+        // rewiring against a missing device falls back to the system default output.
+        // A throwaway engine on a background queue proves the bound device first; the
+        // next attempt is only scheduled once the probe answers, so stalls don't pile up.
+        let deviceUID = routingSnapshot?.deviceUID
+        let generation = outputRecoveryGeneration
+        armOutputProbeWatchdog(generation: generation)
+        Self.outputProbeQueue.async { [weak self] in
+            let canStart = AudioOutputDeviceService.canStartOutput(uid: deviceUID)
+            DispatchQueue.main.async {
+                guard let self, self.isOutputLost, self.outputRecoveryGeneration == generation else { return }
+                self.disarmOutputProbeWatchdog()
+                if canStart {
+                    self.rebuildOutput()
+                } else {
+                    self.scheduleOutputRecoveryRetry()
+                }
+            }
+        }
+    }
+
+    private func armOutputProbeWatchdog(generation: Int) {
+        outputProbeWatchdog?.invalidate()
+        let timer = Timer(timeInterval: Self.outputProbeUnresponsiveAfter, repeats: false) { [weak self] _ in
+            guard let self, self.isOutputLost, self.outputRecoveryGeneration == generation else { return }
+            Self.outputLogger.error("Audio device is not responding to a start request")
+            self.isOutputUnresponsive = true
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        outputProbeWatchdog = timer
+    }
+
+    private func disarmOutputProbeWatchdog() {
+        outputProbeWatchdog?.invalidate()
+        outputProbeWatchdog = nil
+        isOutputUnresponsive = false
+    }
+
+    private func rebuildOutput() {
+        Self.outputLogger.notice("Rebuilding audio output")
+        do {
+            if let routing = routingSnapshot {
+                try wireTrackOutputs(routing: routing)
+            } else {
+                stopEngineForGraphChanges()
+                connectTracksToMasterMixer()
+                try startEngineIfNeeded()
+            }
+        } catch {
+            Self.outputLogger.error("Output rebuild failed: \(error.localizedDescription, privacy: .public)")
+            scheduleOutputRecoveryRetry()
+            return
+        }
+
+        applyAllMixSettings()
+        Self.outputLogger.notice("Audio output restored")
+    }
+
+    /// Clears the lost state and any pending retry. Bumping the generation lets an
+    /// in-flight probe tell that its result is stale.
+    private func clearOutputLoss() {
+        outputRecoveryTimer?.invalidate()
+        outputRecoveryTimer = nil
+        disarmOutputProbeWatchdog()
+        failedOutputRecoveryAttempts = 0
+        outputRecoveryGeneration += 1
+        isOutputLost = false
     }
 
     private func wireTrackOutputs(routing: OutputRoutingSnapshot) throws {
@@ -1224,6 +1387,11 @@ final class AudioEngineManager {
         // active scroll), instead of freezing while audio continues to play.
         let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
             guard let self, self.isPlaying else { return }
+            // Catches an engine that stopped without posting a configuration change.
+            if !self.engine.isRunning {
+                self.beginOutputRecoveryIfNeeded()
+                guard self.isPlaying else { return }
+            }
             self.refreshCurrentTimeFromEngine()
             self.applyTrackPitch(at: self.currentTime)
 

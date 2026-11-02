@@ -63,6 +63,37 @@ enum AudioOutputDeviceService {
         #endif
     }
 
+    /// Whether the output device with `uid` (or the system default when `nil`) can start.
+    /// A power-cycled interface can stay listed while its IO thread never comes up.
+    ///
+    /// Blocks for as long as CoreAudio does: call from a background queue only.
+    /// Always true on iOS, where the system owns routing.
+    static func canStartOutput(uid: String?) -> Bool {
+        #if os(macOS)
+        let probe = AVAudioEngine()
+        if let uid {
+            guard let deviceID = deviceID(forUID: uid) else { return false }
+            do {
+                try probe.outputNode.auAudioUnit.setDeviceID(deviceID)
+            } catch {
+                return false
+            }
+        }
+        // Accessing the main mixer connects it to the output node.
+        _ = probe.mainMixerNode
+        do {
+            try probe.start()
+        } catch {
+            return false
+        }
+        probe.stop()
+        return true
+        #else
+        _ = uid
+        return true
+        #endif
+    }
+
     /// Multi-channel PCM format for the engine graph (standard layout, discrete fallback).
     static func multiChannelFormat(sampleRate: Double, channelCount: Int) -> AVAudioFormat? {
         let channels = max(channelCount, 2)
