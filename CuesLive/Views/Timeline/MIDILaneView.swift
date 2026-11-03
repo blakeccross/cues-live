@@ -130,7 +130,8 @@ struct MIDILaneView: View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
                 .fill(trackColors.body.opacity(0.35))
-                .padding(.vertical, TimelineLayout.clipLaneInset)
+                .padding(.top, TimelineLayout.clipLaneInset)
+                .padding(.bottom, TimelineLayout.clipLaneInset + TimelineLayout.laneDividerHeight)
 
             Color.clear
                 .contentShape(Rectangle())

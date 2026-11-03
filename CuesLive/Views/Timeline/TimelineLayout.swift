@@ -47,9 +47,10 @@ enum TimelineLayout {
 
     static let laneHeight: CGFloat = 104
     static let clipHeaderHeight: CGFloat = 16
-    static let laneSpacing: CGFloat = 4
-    static let clipCornerRadius: CGFloat = 6
-    static let clipLaneInset: CGFloat = 3
+    static let laneSpacing: CGFloat = 0
+    static let laneDividerHeight: CGFloat = 1
+    static let clipCornerRadius: CGFloat = 0
+    static let clipLaneInset: CGFloat = 0
     static let clipSelectionBorderWidth: CGFloat = 2
     static let clipBorderWidth: CGFloat = 1
     static let sectionMarkerHeight: CGFloat = 22

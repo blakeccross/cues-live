@@ -27,42 +27,43 @@ struct TrackLaneHeaderView: View {
                 .foregroundStyle(.white)
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
                 .background(trackColors.body)
-                .clipShape(RoundedRectangle(cornerRadius: 3))
 
-            groupPicker
+            VStack(alignment: .leading, spacing: 6) {
+                groupPicker
 
-            HStack(spacing: 6) {
-                TrackMixButton(
-                    label: "M",
-                    isActive: track.isMuted,
-                    activeColor: .dawMuteActive
-                ) {
-                    track.isMuted.toggle()
-                    onMixChange()
+                HStack(spacing: 6) {
+                    TrackMixButton(
+                        label: "M",
+                        isActive: track.isMuted,
+                        activeColor: .dawMuteActive
+                    ) {
+                        track.isMuted.toggle()
+                        onMixChange()
+                    }
+
+                    TrackMixButton(
+                        label: "S",
+                        isActive: track.isSolo,
+                        activeColor: .dawSoloActive
+                    ) {
+                        track.isSolo.toggle()
+                        onMixChange()
+                    }
+
+                    LogicStyleVolumeSlider(
+                        value: $track.volume,
+                        meterLevel: audioEngine.trackMeterLevel(for: track.id),
+                        onEditingEnded: onMixChange
+                    )
+                    .frame(maxWidth: .infinity)
                 }
-
-                TrackMixButton(
-                    label: "S",
-                    isActive: track.isSolo,
-                    activeColor: .dawSoloActive
-                ) {
-                    track.isSolo.toggle()
-                    onMixChange()
-                }
-
-                LogicStyleVolumeSlider(
-                    value: $track.volume,
-                    meterLevel: audioEngine.trackMeterLevel(for: track.id),
-                    onEditingEnded: onMixChange
-                )
-                .frame(maxWidth: .infinity)
             }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 6)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
         .background {
             if isSelected {
@@ -295,7 +296,7 @@ struct WaveformLaneView: View {
     }
 
     private var waveformArea: some View {
-        ZStack(alignment: .leading) {
+        ZStack(alignment: .topLeading) {
             Color.clear
                 .frame(width: timelineContentWidth, height: laneHeight)
                 .contentShape(Rectangle())
@@ -334,7 +335,7 @@ struct WaveformLaneView: View {
     }
 
     private var clipLayer: some View {
-        ZStack(alignment: .leading) {
+        ZStack(alignment: .topLeading) {
             if usesArrangementLayout {
                 ForEach(arrangementSections) { section in
                     arrangementClip(for: section)
@@ -345,7 +346,7 @@ struct WaveformLaneView: View {
                 }
             }
         }
-        .frame(width: timelineContentWidth, height: laneHeight, alignment: .leading)
+        .frame(width: timelineContentWidth, height: laneHeight, alignment: .topLeading)
     }
 
     private struct SourceClipSegment: Identifiable {
@@ -500,7 +501,10 @@ struct WaveformLaneView: View {
                 timelineEnd: timelineEnd
             ) : nil
         }
-        let clipHeight = laneHeight - TimelineLayout.clipLaneInset * 2
+        let clipHeight = max(
+            0,
+            laneHeight - TimelineLayout.clipLaneInset * 2 - TimelineLayout.laneDividerHeight
+        )
 
         return VStack(spacing: 0) {
             clipHeader(
@@ -571,8 +575,14 @@ struct WaveformLaneView: View {
                     .allowsHitTesting(false)
             } else {
                 RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
-                    .stroke(palette.header.opacity(0.6), lineWidth: TimelineLayout.clipBorderWidth)
-                    .padding(-TimelineLayout.clipBorderWidth)
+                    .strokeBorder(palette.header.opacity(0.6), lineWidth: TimelineLayout.clipBorderWidth)
+                    .mask {
+                        // Keep the fill flush with the top edge so it lines up with the track name.
+                        VStack(spacing: 0) {
+                            Color.clear.frame(height: TimelineLayout.clipBorderWidth)
+                            Color.black
+                        }
+                    }
                     .allowsHitTesting(false)
             }
         }

@@ -22,6 +22,11 @@ extension Color {
         AppColors.separator
     }
 
+    /// Hairline between edit-view track rows.
+    static var dawTrackLaneDivider: Color {
+        Color(white: 0.28)
+    }
+
     static var dawMixButtonBackground: Color {
         AppColors.surface
     }

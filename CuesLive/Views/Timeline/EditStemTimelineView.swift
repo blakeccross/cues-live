@@ -19,6 +19,7 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
     let timelineDuration: TimeInterval
     let timelineContentWidth: CGFloat
     let timelineDisplayWidth: CGFloat
+    let laneCount: Int
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
     @ViewBuilder let ruler: () -> Ruler
@@ -37,6 +38,8 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
 
             VStack(spacing: 0) {
                 HStack(alignment: .top, spacing: 0) {
+                    headerRulerCorner()
+
                     TimelineHorizontalFollower(
                         contentWidth: timelineDisplayWidth,
                         scrollOffset: timelineHorizontalOffset,
@@ -45,12 +48,13 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
                         ruler()
                             .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerTotalHeight)
                     }
-
-                    headerRulerCorner()
                 }
 
                 ScrollView(.vertical, showsIndicators: true) {
                     HStack(alignment: .top, spacing: 0) {
+                        headers()
+                            .frame(width: TimelineLayout.trackHeaderWidth)
+
                         ScrollView(.horizontal, showsIndicators: true) {
                             VStack(spacing: 0) {
                                 TimelineHorizontalScrollOffsetReporter(
@@ -63,9 +67,11 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
                         .coordinateSpace(name: timelineHorizontalScrollSpace)
                         .applyTimelineHorizontalOffsetObserver { timelineHorizontalOffset = $0 }
                         .frame(width: timelineColumnWidth)
-
-                        headers()
-                            .frame(width: TimelineLayout.trackHeaderWidth)
+                    }
+                    .overlay(alignment: .topLeading) {
+                        // Drawn on the row that holds both columns. A line inside either
+                        // column is clipped before it can cross into the track names.
+                        trackLaneDividers
                     }
                 }
                 .frame(height: tracksViewportHeight)
@@ -81,6 +87,7 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
                     )
                     .frame(width: timelineColumnWidth, alignment: .leading)
                 }
+                .padding(.leading, TimelineLayout.trackHeaderWidth)
                 .allowsHitTesting(false)
             }
             .onGeometryChange(for: CGFloat.self) { proxy in
@@ -93,6 +100,22 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
             }
         }
         .frame(maxHeight: .infinity)
+    }
+
+    /// One dark rule per track, spanning the name column and the visible waveform.
+    private var trackLaneDividers: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<laneCount, id: \.self) { _ in
+                Color.clear
+                    .frame(height: TimelineLayout.laneHeight - TimelineLayout.laneDividerHeight)
+                Rectangle()
+                    .fill(Color.dawTrackLaneDivider)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: TimelineLayout.laneDividerHeight)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .allowsHitTesting(false)
     }
 }
 

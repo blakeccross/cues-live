@@ -1082,22 +1082,32 @@ struct LivePlaybackView: View {
 
     private var currentSongSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let loadError = coordinator.loadError {
-                Text(loadError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .padding(AppSpacing.md)
-            } else {
-                #if os(macOS)
-                LiveSetlistWaveformResizablePane(maxMIDILaneCount: coordinator.maxMIDILaneCount) {
-                    waveformContent
-                        .padding(.top, AppSpacing.xs)
-                }
-                #else
+            #if os(macOS)
+            LiveSetlistWaveformResizablePane(maxMIDILaneCount: coordinator.maxMIDILaneCount) {
                 waveformContent
                     .padding(.top, AppSpacing.xs)
-                #endif
+                    .overlay(alignment: .topLeading) { loadErrorBanner }
             }
+            #else
+            waveformContent
+                .padding(.top, AppSpacing.xs)
+                .overlay(alignment: .topLeading) { loadErrorBanner }
+            #endif
+        }
+    }
+
+    /// Overlaid rather than swapped in for the waveform so a failed load keeps the pane's height.
+    @ViewBuilder
+    private var loadErrorBanner: some View {
+        if let loadError = coordinator.loadError {
+            Label(loadError, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .lineLimit(2)
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.vertical, AppSpacing.xs)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                .padding(AppSpacing.md)
         }
     }
 

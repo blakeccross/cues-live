@@ -1848,6 +1848,7 @@ struct EditView: View {
             timelineDuration: timelineDuration,
             timelineContentWidth: timelineContentWidth,
             timelineDisplayWidth: timelineDisplayWidth,
+            laneCount: song.sortedTracks.count + midiTracks.count,
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
             ruler: { timelineRulerStack },
@@ -2042,9 +2043,9 @@ struct EditView: View {
 
             trackLanesContent
                 .compositingGroup()
-                .frame(width: timelineContentWidth, alignment: .leading)
+                .frame(width: timelineContentWidth, alignment: .topLeading)
         }
-        .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .leading)
+        .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
     }
 
     private var trackLanesContent: some View {
@@ -2166,7 +2167,7 @@ struct EditView: View {
             guard audioEngine.isPlaying || audioEngine.hasVisibleMeterLevel else { return }
             audioEngine.refreshGroupMeters()
         }
-        .overlay(alignment: .leading) {
+        .overlay(alignment: .trailing) {
             Rectangle()
                 .fill(Color.dawTimelineDivider)
                 .frame(width: 1)
@@ -2325,6 +2326,11 @@ struct EditView: View {
             Rectangle()
                 .fill(Color.dawTimelineDivider)
                 .frame(height: 1)
+        }
+        .overlay(alignment: .trailing) {
+            Rectangle()
+                .fill(Color.dawTimelineDivider)
+                .frame(width: 1)
         }
     }
 
