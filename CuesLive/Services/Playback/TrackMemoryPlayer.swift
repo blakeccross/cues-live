@@ -115,7 +115,58 @@ final class TrackMemoryPlayer {
             let transportState = transport.renderTimeline(atHostTime: hostTime, captureAnchor: true)
             guard transportState.isPlaying else { return false }
 
-            let masterStart = transportState.timelineSeconds
+            let totalFrames = Int(frameCount)
+            guard let split = transportState.transitionSplit else {
+                return renderSegment(
+                    masterStart: transportState.timelineSeconds,
+                    ratio: transportState.playbackRatio,
+                    outputStart: 0,
+                    outputEnd: totalFrames,
+                    outputBuffer: outputBuffer
+                )
+            }
+
+            // A scheduled jump lands inside this block: render up to the jump from the
+            // current position and the rest from the target, so the target's first frame
+            // is the first frame after the jump rather than the start of the next block.
+            let leadRatio = max(transportState.playbackRatio, 0.0001)
+            let leadFrames = Int(((split.secondsUntil / leadRatio) * sampleRate - 1e-6).rounded(.up))
+            let splitFrame = max(0, min(leadFrames, totalFrames))
+
+            var didRender = false
+            if splitFrame > 0 {
+                didRender = renderSegment(
+                    masterStart: transportState.timelineSeconds,
+                    ratio: transportState.playbackRatio,
+                    outputStart: 0,
+                    outputEnd: splitFrame,
+                    outputBuffer: outputBuffer
+                )
+            }
+            if splitFrame < totalFrames {
+                let targetRatio = transport.playbackRatio(at: split.targetOffset)
+                if renderSegment(
+                    masterStart: split.targetOffset,
+                    ratio: targetRatio,
+                    outputStart: splitFrame,
+                    outputEnd: totalFrames,
+                    outputBuffer: outputBuffer
+                ) {
+                    didRender = true
+                }
+            }
+            return didRender
+        }
+
+        /// Renders output frames `outputStart..<outputEnd` with the master timeline at `masterStart`
+        /// on the first of them.
+        private func renderSegment(
+            masterStart: TimeInterval,
+            ratio: Double,
+            outputStart: Int,
+            outputEnd: Int,
+            outputBuffer: UnsafeMutablePointer<AudioBufferList>
+        ) -> Bool {
             if let endTimeline = playbackEndTimeline, masterStart >= endTimeline {
                 return false
             }
@@ -123,12 +174,11 @@ final class TrackMemoryPlayer {
             let effectiveStart = masterStart - playbackTimelineOffset
             guard effectiveStart >= 0 else { return false }
 
-            let ratio = transportState.playbackRatio
-
             if abs(ratio - 1.0) < 0.0001 {
                 renderConstantTempo(
                     masterStart: effectiveStart,
-                    frameCount: frameCount,
+                    outputStart: outputStart,
+                    outputEnd: outputEnd,
                     outputBuffer: outputBuffer,
                     transportMasterStart: masterStart
                 )
@@ -136,7 +186,8 @@ final class TrackMemoryPlayer {
                 renderResampledTempo(
                     masterStart: effectiveStart,
                     ratio: ratio,
-                    frameCount: frameCount,
+                    outputStart: outputStart,
+                    outputEnd: outputEnd,
                     outputBuffer: outputBuffer,
                     transportMasterStart: masterStart
                 )
@@ -186,14 +237,15 @@ final class TrackMemoryPlayer {
 
         private func renderConstantTempo(
             masterStart: TimeInterval,
-            frameCount: AVAudioFrameCount,
+            outputStart: Int,
+            outputEnd: Int,
             outputBuffer: UnsafeMutablePointer<AudioBufferList>,
             transportMasterStart: TimeInterval
         ) {
             let loop = loopFrameBounds()
-            let totalFrames = Int(frameCount)
+            let totalFrames = outputEnd
 
-            var renderedFrames = 0
+            var renderedFrames = outputStart
             // Unwrapped absolute frame from transport; looping is applied per-run via modulo.
             var absoluteMasterFrame = AudioPlaybackTransport.frameIndex(
                 for: masterStart,
@@ -264,12 +316,13 @@ final class TrackMemoryPlayer {
         private func renderResampledTempo(
             masterStart: TimeInterval,
             ratio: Double,
-            frameCount: AVAudioFrameCount,
+            outputStart: Int,
+            outputEnd: Int,
             outputBuffer: UnsafeMutablePointer<AudioBufferList>,
             transportMasterStart: TimeInterval
         ) {
-            let outputFrames = Int(frameCount)
-            guard outputFrames > 0 else { return }
+            let outputFrames = outputEnd
+            guard outputFrames > outputStart else { return }
 
             let outputBuffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
             let outputChannelCount = outputBuffers.count
@@ -283,6 +336,7 @@ final class TrackMemoryPlayer {
                     startSourceFrame: bounds.startSourceFrame,
                     endSourceFrame: bounds.endSourceFrame,
                     sourceFrameStep: ratio,
+                    outputStart: outputStart,
                     outputFrames: outputFrames,
                     outputBuffers: outputBuffers,
                     outputChannelCount: outputChannelCount
@@ -293,6 +347,7 @@ final class TrackMemoryPlayer {
             renderResampledTempoMapped(
                 masterStart: masterStart,
                 ratio: ratio,
+                outputStart: outputStart,
                 outputFrames: outputFrames,
                 outputBuffers: outputBuffers,
                 outputChannelCount: outputChannelCount,
@@ -304,13 +359,14 @@ final class TrackMemoryPlayer {
             startSourceFrame: Double,
             endSourceFrame: Double,
             sourceFrameStep: Double,
+            outputStart: Int,
             outputFrames: Int,
             outputBuffers: UnsafeMutableAudioBufferListPointer,
             outputChannelCount: Int
         ) {
             var sourceFrame = startSourceFrame
 
-            for outputFrame in 0..<outputFrames {
+            for outputFrame in outputStart..<outputFrames {
                 guard sourceFrame < endSourceFrame else { break }
                 writeResampledFrame(
                     sourceFrame: sourceFrame,
@@ -325,12 +381,13 @@ final class TrackMemoryPlayer {
         private func renderResampledTempoMapped(
             masterStart: TimeInterval,
             ratio: Double,
+            outputStart: Int,
             outputFrames: Int,
             outputBuffers: UnsafeMutableAudioBufferListPointer,
             outputChannelCount: Int,
             transportMasterStart: TimeInterval
         ) {
-            var renderedFrames = 0
+            var renderedFrames = outputStart
             let loop = loopFrameBounds()
             var absoluteMasterFrame = Double(
                 AudioPlaybackTransport.frameIndex(for: masterStart, sampleRate: sampleRate)
@@ -623,6 +680,16 @@ final class TrackMemoryPlayer {
             )
             return noErr
         }
+    }
+
+    /// Renders one block exactly as the source node does; lets tests drive the render path
+    /// with a deterministic clock.
+    func renderBlock(
+        frameCount: AVAudioFrameCount,
+        hostTime: UInt64,
+        outputBuffer: UnsafeMutablePointer<AudioBufferList>
+    ) {
+        renderContext.render(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputBuffer)
     }
 
     /// Stops reading sample data on the audio thread. Call before detaching the node.

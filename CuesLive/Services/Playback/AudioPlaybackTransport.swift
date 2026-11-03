@@ -17,10 +17,21 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         var isValid: Bool { end > start }
     }
 
+    /// A scheduled transition that falls inside the block being rendered.
+    struct TransitionSplit: Sendable, Equatable {
+        /// Timeline seconds from the start of the block to the transition point.
+        let secondsUntil: TimeInterval
+        /// Timeline position the block continues from after the transition point.
+        let targetOffset: TimeInterval
+    }
+
     struct RenderState: Sendable {
         let timelineSeconds: TimeInterval
         let isPlaying: Bool
         let playbackRatio: Double
+        /// Set when a scheduled transition has not fired yet as of the block start, so
+        /// the renderer can switch to the target mid-block instead of at the next block.
+        var transitionSplit: TransitionSplit?
     }
 
     private var lock = os_unfair_lock()
@@ -99,6 +110,13 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         os_unfair_lock_lock(&lock)
         pendingTransition = nil
         os_unfair_lock_unlock(&lock)
+    }
+
+    /// True from scheduling until the audio thread has taken the jump (or it is cancelled).
+    var hasPendingTransition: Bool {
+        os_unfair_lock_lock(&lock)
+        defer { os_unfair_lock_unlock(&lock) }
+        return pendingTransition != nil
     }
 
     func setTempoMap(
@@ -245,15 +263,29 @@ final class AudioPlaybackTransport: @unchecked Sendable {
             return RenderState(timelineSeconds: anchored, isPlaying: true, playbackRatio: ratio)
         }
 
-        let elapsed = Self.seconds(fromHostTimeDelta: hostTime &- anchorHostTime)
-        let timeline: TimeInterval
-        if usesTempoMap {
-            timeline = tempoPlaybackMap.sourceTimeAfterWallElapsed(
-                from: anchorTimeline,
-                wallElapsed: elapsed
-            )
-        } else {
-            timeline = anchorTimeline + elapsed
+        func linearTimeline() -> TimeInterval {
+            let elapsed = Self.seconds(fromHostTimeDelta: hostTime &- anchorHostTime)
+            if usesTempoMap {
+                return tempoPlaybackMap.sourceTimeAfterWallElapsed(from: anchorTimeline, wallElapsed: elapsed)
+            }
+            return anchorTimeline + elapsed
+        }
+
+        var timeline = linearTimeline()
+        // The audio thread re-anchors the clock on the jump itself, at the host time the
+        // transition point was reached. Every track then reads one continuous clock, and
+        // nothing on the UI thread has to touch it (a UI re-anchor lands at an arbitrary
+        // moment and splices audible glitches into the stream).
+        if captureAnchor, loopRegion?.isValid != true,
+           let pendingTransition, timeline >= pendingTransition.transitionAt {
+            let wallToTransition = usesTempoMap
+                ? tempoPlaybackMap.wallElapsed(from: anchorTimeline, to: pendingTransition.transitionAt)
+                : max(0, pendingTransition.transitionAt - anchorTimeline)
+            anchorHostTime = anchorHostTime &+ Self.hostTicks(forSeconds: wallToTransition)
+            anchorTimeline = pendingTransition.targetOffset
+            pausedTimeline = pendingTransition.targetOffset
+            self.pendingTransition = nil
+            timeline = linearTimeline()
         }
         let positioned = positionedTimeline(mappedTimeline(fromLinear: timeline))
 
@@ -269,7 +301,14 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         } else {
             ratio = 1.0
         }
-        return RenderState(timelineSeconds: positioned, isPlaying: true, playbackRatio: ratio)
+        var split: TransitionSplit?
+        if let pendingTransition, loopRegion?.isValid != true, timeline < pendingTransition.transitionAt {
+            split = TransitionSplit(
+                secondsUntil: pendingTransition.transitionAt - timeline,
+                targetOffset: pendingTransition.targetOffset
+            )
+        }
+        return RenderState(timelineSeconds: positioned, isPlaying: true, playbackRatio: ratio, transitionSplit: split)
     }
 
     /// When a section loop is armed, keep continuous unwrapped time so the player
@@ -348,6 +387,11 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         }
         let wrappedFrame = startFrame + ((frame - startFrame) % length)
         return Double(wrappedFrame) / sampleRate
+    }
+
+    private static func hostTicks(forSeconds seconds: TimeInterval) -> UInt64 {
+        guard seconds > 0 else { return 0 }
+        return UInt64(seconds * 1_000_000_000 * Double(hostTimebase.denom) / Double(hostTimebase.numer))
     }
 
     private static func seconds(fromHostTimeDelta delta: UInt64) -> TimeInterval {

@@ -179,6 +179,9 @@
 		AA0000010000000000000100 /* SongSections in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000100 /* SongSections */; };
 		AA0000010000000000000102 /* SpeechSampleRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000102 /* SpeechSampleRendererTests.swift */; };
 		AA0000010000000000000103 /* SectionLoopTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000103 /* SectionLoopTimingTests.swift */; };
+		AA00000100000000000001FF /* SectionTransitionRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FF /* SectionTransitionRenderTests.swift */; };
+		AA00000100000000000001FE /* SectionCueEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FE /* SectionCueEngineTests.swift */; };
+		AA00000100000000000001FD /* UserProjectCueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FD /* UserProjectCueTests.swift */; };
 		AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */; };
 		AA0000010000000000000104 /* StreamingStemBufferLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */; };
 		AA0000010000000000000110 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
@@ -414,6 +417,9 @@
 		AA0000020000000000000100 /* SongSections */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SongSections; sourceTree = "<group>"; };
 		AA0000020000000000000102 /* SpeechSampleRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSampleRendererTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000103 /* SectionLoopTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionLoopTimingTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000001FF /* SectionTransitionRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionTransitionRenderTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000001FE /* SectionCueEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCueEngineTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000001FD /* UserProjectCueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProjectCueTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlannerTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingStemBufferLoopTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000110 /* TimecodeSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeSettings.swift; sourceTree = "<group>"; };
@@ -706,6 +712,9 @@
 				AA0000020000000000000050 /* ClickTrackSchedulerTests.swift */,
 				AA00000200000000000000FE /* ClickSongCreatorTests.swift */,
 				AA0000020000000000000103 /* SectionLoopTimingTests.swift */,
+				AA00000200000000000001FF /* SectionTransitionRenderTests.swift */,
+				AA00000200000000000001FE /* SectionCueEngineTests.swift */,
+				AA00000200000000000001FD /* UserProjectCueTests.swift */,
 				AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */,
 				AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */,
 				AA0000020000000000000049 /* SongArrangementLayoutTests.swift */,
@@ -1272,6 +1281,9 @@
 				AA0000010000000000000050 /* ClickTrackSchedulerTests.swift in Sources */,
 				AA00000100000000000000FE /* ClickSongCreatorTests.swift in Sources */,
 				AA0000010000000000000103 /* SectionLoopTimingTests.swift in Sources */,
+				AA00000100000000000001FF /* SectionTransitionRenderTests.swift in Sources */,
+				AA00000100000000000001FE /* SectionCueEngineTests.swift in Sources */,
+				AA00000100000000000001FD /* UserProjectCueTests.swift in Sources */,
 				AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */,
 				AA0000010000000000000104 /* StreamingStemBufferLoopTests.swift in Sources */,
 				AA0000010000000000000049 /* SongArrangementLayoutTests.swift in Sources */,

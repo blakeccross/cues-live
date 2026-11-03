@@ -312,6 +312,12 @@ struct SectionCueMonitor: View {
                 guard time >= cueFireTime! else { return }
                 onFire()
             }
+            // A jump to an earlier section never lets the playhead reach the fire time again
+            // soon, so the engine reports the jump itself.
+            .onChange(of: audioEngine.scheduledTransitionCompletions) { _, _ in
+                guard cueFireTime != nil, cuedSectionID != nil else { return }
+                onFire()
+            }
     }
 }
 

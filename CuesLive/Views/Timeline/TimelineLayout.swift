@@ -597,6 +597,22 @@ struct TempoPlaybackMap: Sendable {
         return source
     }
 
+    /// Wall-clock seconds playback needs to advance from source time `start` to `end`.
+    func wallElapsed(from start: TimeInterval, to end: TimeInterval) -> TimeInterval {
+        guard end > start else { return 0 }
+        guard !segments.isEmpty else { return end - start }
+
+        var wall: TimeInterval = 0
+        for segment in segments {
+            let lower = max(start, segment.sourceStart)
+            let upper = min(end, segment.sourceEnd)
+            if upper > lower {
+                wall += (upper - lower) / segment.ratio
+            }
+        }
+        return wall
+    }
+
     func ratio(at sourceTime: TimeInterval) -> Double {
         guard !segments.isEmpty else { return 1.0 }
         let time = max(0, sourceTime)

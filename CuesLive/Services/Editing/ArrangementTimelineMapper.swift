@@ -74,8 +74,15 @@ struct ArrangementTimelineMapper: Sendable {
         return max(0, min(limit, trimRemaining))
     }
 
-    private func section(containing master: TimeInterval) -> ArrangementDisplaySection? {
+    /// Playback positions are snapped to whole frames, so a jump to a section can land up to
+    /// half a frame before the section's exact start. Without slack that position falls in
+    /// a gap, nothing is mapped, and the block that should open on the section's first
+    /// click renders silent. About one frame at 48 kHz, far below anything audible.
+    private static let boundaryTolerance: TimeInterval = 2e-5
+
+    private func section(containing time: TimeInterval) -> ArrangementDisplaySection? {
         guard !sections.isEmpty else { return nil }
+        let master = time + Self.boundaryTolerance
 
         var low = 0
         var high = sections.count - 1

@@ -521,6 +521,10 @@ final class PlaybackCoordinator {
         }
     }
 
+    var hasPendingSectionTransition: Bool {
+        audioEngine.hasPendingSectionTransition
+    }
+
     func snapToScheduledSection(_ markerStart: TimeInterval) {
         audioEngine.snapToTransitionTarget(markerStart)
         if clockEngine !== audioEngine {

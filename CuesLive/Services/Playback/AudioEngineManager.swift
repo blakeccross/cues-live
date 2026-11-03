@@ -505,6 +505,34 @@ final class AudioEngineManager {
         suppressAutoStopOnPlaybackFinished = suppress
     }
 
+    #if DEBUG
+    private var captureTapNode: AVAudioNode?
+
+    /// Records what one track renders (before routing and the speakers) so tests can inspect
+    /// the real signal path. `silenceSpeakers` mutes the hardware output without touching the tap.
+    func installCaptureTapForTesting(
+        trackID: UUID? = nil,
+        silenceSpeakers: Bool,
+        handler: @escaping (AVAudioPCMBuffer, AVAudioTime) -> Void
+    ) {
+        removeCaptureTapForTesting()
+        // Tapping the track output keeps the capture at the stem's own sample rate.
+        guard let node = (trackID.flatMap { tracks[$0] } ?? tracks.values.first)?.playbackOutputNode else { return }
+        node.installTap(onBus: 0, bufferSize: 1024, format: nil) { buffer, time in
+            handler(buffer, time)
+        }
+        captureTapNode = node
+        if silenceSpeakers {
+            engine.mainMixerNode.outputVolume = 0
+        }
+    }
+
+    func removeCaptureTapForTesting() {
+        captureTapNode?.removeTap(onBus: 0)
+        captureTapNode = nil
+    }
+    #endif
+
     /// Sets a master output gain for this engine. This is used for crossfades
     /// between two engines.
     func setMasterVolume(_ volume: Float) {
@@ -757,12 +785,23 @@ final class AudioEngineManager {
             return
         }
 
+        // Streaming stems only keep a window around the playhead resident. Pinning pages the
+        // target in without moving that window, so the audio still playing is not evicted
+        // and the section's first frames are there when the jump lands.
+        transitionPinTarget = target
         transport.scheduleTransition(to: target, at: transitionAt)
+        isAwaitingScheduledTransition = true
+        applyLoopPrefetch()
     }
 
     func cancelScheduledTransition() {
         transport.cancelScheduledTransition()
+        isAwaitingScheduledTransition = false
+        transitionPinTarget = nil
+        applyLoopPrefetch()
     }
+
+    private var transitionPinTarget: TimeInterval?
 
     /// Arms a sample-accurate transport loop for the active arrangement section.
     func setSectionLoop(start: TimeInterval, end: TimeInterval) {
@@ -788,15 +827,26 @@ final class AudioEngineManager {
         applyLoopPrefetch()
     }
 
+    /// Where streaming stems must keep audio resident regardless of the playhead: the target of
+    /// a jump that has not happened yet, otherwise the start of the armed loop.
+    private var pinnedPrefetchTimeline: TimeInterval? {
+        if let transitionPinTarget, transport.hasPendingTransition {
+            return transitionPinTarget
+        }
+        return transport.currentLoopRegion()?.start
+    }
+
     /// Streaming stems evict pages behind the playhead, so the audio under the
-    /// loop start has to be pinned before playback wraps back onto it.
+    /// loop start (or a cued section's start) has to be pinned before playback lands on it.
+    /// The live view re-applies this on every playback tick, so anything that must stay
+    /// pinned has to be reflected here and not only set once.
     private func applyLoopPrefetch() {
-        let loopStart = transport.currentLoopRegion()?.start
+        let pinned = pinnedPrefetchTimeline
         for track in tracks.values {
-            track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: loopStart)
+            track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinned)
         }
         for track in overlapTracks.values {
-            track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: loopStart)
+            track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinned)
         }
     }
 
@@ -804,19 +854,34 @@ final class AudioEngineManager {
         transport.hasActiveLoopRegion
     }
 
-    func snapToTransitionTarget(_ targetOffset: TimeInterval) {
-        let target = quantizeTimelineTime(clampedTimelineTime(targetOffset))
-        transport.clearScheduledTransition()
-        currentTime = target
-        transport.setPausedTimeline(target)
-        applyTrackPitch(at: target)
-        midiScheduler.reset(toTimeline: target)
+    /// True while a scheduled section jump has not yet been taken by the audio thread.
+    var hasPendingSectionTransition: Bool {
+        transport.hasPendingTransition
+    }
 
-        // Use beginPlayback (not resetAnchor with lastRenderTime) so the next
-        // audio callback captures elapsed=0 and renders the target sample.
-        if isPlaying {
-            transport.beginPlayback(from: target)
-        }
+    /// Incremented each time a scheduled section jump completes, so views can react to
+    /// it even when the playhead lands before the time the jump was scheduled for.
+    private(set) var scheduledTransitionCompletions = 0
+    private var isAwaitingScheduledTransition = false
+
+    /// Settles state that follows the playhead once the audio thread has taken a jump.
+    private func finishScheduledTransitionIfNeeded() {
+        guard isAwaitingScheduledTransition, !transport.hasPendingTransition else { return }
+        isAwaitingScheduledTransition = false
+        transitionPinTarget = nil
+        let landed = livePlayheadTime()
+        currentTime = landed
+        applyTrackPitch(at: landed)
+        midiScheduler.reset(toTimeline: landed)
+        applyLoopPrefetch()
+        scheduledTransitionCompletions += 1
+    }
+
+    /// Called when the UI observes that a scheduled jump is due. The audio thread owns the
+    /// jump and re-anchors the clock itself, so this only settles dependent state; moving
+    /// the clock from here would land at an arbitrary moment and glitch the audio.
+    func snapToTransitionTarget(_ targetOffset: TimeInterval) {
+        finishScheduledTransitionIfNeeded()
     }
 
     func updateTrackSettings(id: UUID, settings: TrackSettings) {
@@ -1011,9 +1076,7 @@ final class AudioEngineManager {
         track.memoryPlayer.updateMapper(mapper)
         tracks[trackID] = track
         // The loop start may now resolve to a different source position.
-        track.memoryPlayer.prepareLoopPrefetch(
-            atMasterTimeline: transport.currentLoopRegion()?.start
-        )
+        track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinnedPrefetchTimeline)
     }
 
     private var canPlay: Bool {
@@ -1415,6 +1478,7 @@ final class AudioEngineManager {
                 guard self.isPlaying else { return }
             }
             self.refreshCurrentTimeFromEngine()
+            self.finishScheduledTransitionIfNeeded()
             self.applyTrackPitch(at: self.currentTime)
 
             if !self.didNotifyPlaybackFinished,

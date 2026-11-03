@@ -200,6 +200,71 @@ final class AudioPlaybackTransportTests: XCTestCase {
         XCTAssertEqual(state.timelineSeconds, 5.5, accuracy: 0.0000001)
     }
 
+    private func hostTicks(seconds: TimeInterval) -> UInt64 {
+        var info = mach_timebase_info_data_t()
+        mach_timebase_info(&info)
+        return UInt64(seconds * 1_000_000_000 * Double(info.denom) / Double(info.numer))
+    }
+
+    func testRenderTimelineReportsTransitionInsideBlock() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(60)
+        transport.beginPlayback(from: 10)
+        let origin: UInt64 = hostTicks(seconds: 100)
+        _ = transport.renderTimeline(atHostTime: origin, captureAnchor: true)
+        transport.scheduleTransition(to: 4, at: 10.5)
+
+        let early = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 0.25), captureAnchor: false)
+        XCTAssertEqual(early.timelineSeconds, 10.25, accuracy: 0.000001)
+        XCTAssertEqual(early.transitionSplit?.secondsUntil ?? -1, 0.25, accuracy: 0.000001)
+        XCTAssertEqual(early.transitionSplit?.targetOffset ?? -1, 4, accuracy: 0.000001)
+
+        let after = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 0.5), captureAnchor: false)
+        XCTAssertNil(after.transitionSplit)
+        XCTAssertEqual(after.timelineSeconds, 4, accuracy: 0.000001)
+    }
+
+    func testAudioThreadReAnchorsOnTheJumpAndUIReadsDoNot() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(60)
+        transport.beginPlayback(from: 10)
+        let origin: UInt64 = hostTicks(seconds: 100)
+        _ = transport.renderTimeline(atHostTime: origin, captureAnchor: true)
+        transport.scheduleTransition(to: 4, at: 10.5)
+
+        // A UI read past the jump sees the target but must not change the clock.
+        let uiRead = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 0.52), captureAnchor: false)
+        XCTAssertEqual(uiRead.timelineSeconds, 4.02, accuracy: 0.000001)
+        XCTAssertTrue(transport.hasPendingTransition)
+
+        // The first audio-thread read past the jump re-anchors at the exact jump moment.
+        let audioRead = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 0.52), captureAnchor: true)
+        XCTAssertEqual(audioRead.timelineSeconds, 4.02, accuracy: 0.000001)
+        XCTAssertFalse(transport.hasPendingTransition)
+
+        let later = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 0.62), captureAnchor: false)
+        XCTAssertNil(later.transitionSplit)
+        XCTAssertEqual(later.timelineSeconds, 4.12, accuracy: 0.000001)
+    }
+
+    func testBackToBackJumpsUseTheAudibleTimeline() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(60)
+        transport.beginPlayback(from: 10)
+        let origin: UInt64 = hostTicks(seconds: 100)
+        _ = transport.renderTimeline(atHostTime: origin, captureAnchor: true)
+
+        transport.scheduleTransition(to: 40, at: 10.5)
+        _ = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 0.6), captureAnchor: true)
+
+        // Audible time is now 40.1; a second jump is scheduled in that same timeline.
+        transport.scheduleTransition(to: 5, at: 41)
+        let beforeSecond = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 1.4), captureAnchor: true)
+        XCTAssertEqual(beforeSecond.timelineSeconds, 40.9, accuracy: 0.000001)
+        let afterSecond = transport.renderTimeline(atHostTime: origin + hostTicks(seconds: 1.6), captureAnchor: true)
+        XCTAssertEqual(afterSecond.timelineSeconds, 5.1, accuracy: 0.000001)
+    }
+
     func testRenderTimelineIgnoresStaleHostTimeBehindAnchor() {
         let transport = AudioPlaybackTransport()
         transport.setDuration(32)

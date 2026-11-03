@@ -1440,7 +1440,7 @@ struct EditView: View {
 
     private func fireMarkerCue() {
         guard let cueFireTime, let cuedSectionID else { return }
-        guard audioEngine.currentTime >= cueFireTime else { return }
+        guard audioEngine.currentTime >= cueFireTime || !audioEngine.hasPendingSectionTransition else { return }
         guard let section = displaySections.first(where: { $0.id == cuedSectionID }) else {
             clearMarkerCue(cancellingScheduledTransition: false)
             return
