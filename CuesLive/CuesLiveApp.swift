@@ -13,7 +13,7 @@ private enum AppWindowMetrics {
 @main
 struct CuesLiveApp: App {
     private let modelContainer: ModelContainer
-    #if os(macOS)
+    #if os(macOS) && !APP_STORE
     /// Local Xcode builds keep the project placeholders (`1.0` / build `1`).
     /// Sparkle compares that build number to the release feed and always
     /// reports an update. Shipped builds override both values in CI.
@@ -59,9 +59,11 @@ struct CuesLiveApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(after: .appInfo) {
+                #if !APP_STORE
                 if let updater = sparkleUpdater?.updater {
                     CheckForUpdatesView(updater: updater)
                 }
+                #endif
             }
             FileMenuCommands()
             SongMenuCommands()

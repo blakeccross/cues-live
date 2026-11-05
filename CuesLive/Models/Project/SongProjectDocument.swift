@@ -65,6 +65,7 @@ struct SongProjectMetadata: Codable, Hashable {
 
 struct ProjectTrackMix: Codable, Hashable {
     var volume: Double
+    var pan: Double
     var isMuted: Bool
     var isSolo: Bool
     var trimStartSeconds: Double
@@ -73,6 +74,7 @@ struct ProjectTrackMix: Codable, Hashable {
 
     init(from track: AudioTrack) {
         volume = track.volume
+        pan = track.pan
         isMuted = track.isMuted
         isSolo = track.isSolo
         trimStartSeconds = track.trimStartSeconds
@@ -80,8 +82,20 @@ struct ProjectTrackMix: Codable, Hashable {
         excludeFromTranspose = track.excludeFromTranspose
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        volume = try container.decode(Double.self, forKey: .volume)
+        pan = try container.decodeIfPresent(Double.self, forKey: .pan) ?? 0
+        isMuted = try container.decode(Bool.self, forKey: .isMuted)
+        isSolo = try container.decode(Bool.self, forKey: .isSolo)
+        trimStartSeconds = try container.decode(Double.self, forKey: .trimStartSeconds)
+        trimEndSeconds = try container.decodeIfPresent(Double.self, forKey: .trimEndSeconds)
+        excludeFromTranspose = try container.decode(Bool.self, forKey: .excludeFromTranspose)
+    }
+
     func apply(to track: AudioTrack) {
         track.volume = volume
+        track.pan = pan
         track.isMuted = isMuted
         track.isSolo = isSolo
         track.trimStartSeconds = trimStartSeconds

@@ -235,7 +235,8 @@ enum SongGroupBaker {
           source: sourceBuffer,
           into: output,
           mapper: mapper,
-          gain: gain
+          gain: gain,
+          pan: Float(track.pan)
         )
       }
 
@@ -250,7 +251,8 @@ enum GroupStemOfflineRenderer {
     source: DecodedStemBuffer,
     into output: DecodedStemBuffer,
     mapper: ArrangementTimelineMapper,
-    gain: Float
+    gain: Float,
+    pan: Float = 0
   ) {
     guard gain > 0, source.frameCount > 0, output.frameCount > 0 else { return }
 
@@ -291,7 +293,8 @@ enum GroupStemOfflineRenderer {
         frameCount: runFrames,
         into: output,
         destinationFrame: renderedFrames,
-        gain: gain
+        gain: gain,
+        pan: pan
       )
 
       renderedFrames += runFrames
@@ -305,9 +308,13 @@ enum GroupStemOfflineRenderer {
     frameCount: Int,
     into output: DecodedStemBuffer,
     destinationFrame: Int,
-    gain: Float
+    gain: Float,
+    pan: Float
   ) {
     guard frameCount > 0 else { return }
+    let panGains = TrackPan.channelGains(pan: pan)
+    let leftGain = gain * panGains.left
+    let rightGain = gain * panGains.right
 
     if source.channelCount == 1 {
       mixChannel(
@@ -318,7 +325,7 @@ enum GroupStemOfflineRenderer {
         into: output,
         destinationChannel: 0,
         destinationFrame: destinationFrame,
-        gain: gain
+        gain: output.channelCount >= 2 ? leftGain : gain
       )
       if output.channelCount >= 2 {
         mixChannel(
@@ -329,7 +336,7 @@ enum GroupStemOfflineRenderer {
           into: output,
           destinationChannel: 1,
           destinationFrame: destinationFrame,
-          gain: gain
+          gain: rightGain
         )
       }
       return
@@ -345,7 +352,7 @@ enum GroupStemOfflineRenderer {
         into: output,
         destinationChannel: channel,
         destinationFrame: destinationFrame,
-        gain: gain
+        gain: channel == 0 ? leftGain : channel == 1 ? rightGain : gain
       )
     }
   }

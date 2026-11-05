@@ -10,6 +10,7 @@ struct TrackEditSnapshot: Equatable, Hashable {
     var mediaPathStyleRaw: String?
     var mediaBookmarkData: Data?
     var volume: Double
+    var pan: Double
     var isMuted: Bool
     var isSolo: Bool
     var trimStartSeconds: Double
@@ -85,6 +86,7 @@ struct SongEditSnapshot: Equatable {
                     mediaPathStyleRaw: track.mediaPathStyleRaw,
                     mediaBookmarkData: track.mediaBookmarkData,
                     volume: track.volume,
+                    pan: track.pan,
                     isMuted: track.isMuted,
                     isSolo: track.isSolo,
                     trimStartSeconds: track.trimStartSeconds,
@@ -134,6 +136,7 @@ struct SongEditSnapshot: Equatable {
             track.mediaPathStyleRaw = trackSnapshot.mediaPathStyleRaw
             track.mediaBookmarkData = trackSnapshot.mediaBookmarkData
             track.volume = trackSnapshot.volume
+            track.pan = trackSnapshot.pan
             track.isMuted = trackSnapshot.isMuted
             track.isSolo = trackSnapshot.isSolo
             track.trimStartSeconds = trackSnapshot.trimStartSeconds

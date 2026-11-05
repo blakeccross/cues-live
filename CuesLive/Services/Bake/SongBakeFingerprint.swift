@@ -28,8 +28,10 @@ enum SongBakeFingerprint {
       let mediaPath = track.mediaPath ?? track.relativeFilePath
       let groupID = track.group?.id.uuidString ?? "ungrouped"
       let trimEnd = track.trimEndSeconds.map { String($0) } ?? "nil"
+      // Pan is appended only when off-centre so existing bakes stay valid.
+      let panToken = track.pan == 0 ? "" : "|pan\(track.pan)"
       parts.append(
-        "track|\(track.id.uuidString)|\(mediaPath)|\(modToken)|\(groupID)|\(track.volume)|\(track.isMuted)|\(track.isSolo)|\(track.trimStartSeconds)|\(trimEnd)|\(track.excludeFromTranspose)"
+        "track|\(track.id.uuidString)|\(mediaPath)|\(modToken)|\(groupID)|\(track.volume)|\(track.isMuted)|\(track.isSolo)|\(track.trimStartSeconds)|\(trimEnd)|\(track.excludeFromTranspose)\(panToken)"
       )
     }
 

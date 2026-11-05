@@ -53,12 +53,17 @@ struct TrackLaneHeaderView: View {
                         onMixChange()
                     }
 
-                    LogicStyleVolumeSlider(
-                        value: $track.volume,
-                        meterLevel: audioEngine.trackMeterLevel(for: track.id),
+                    TrackVolumeField(
+                        volume: $track.volume,
+                        onLiveChange: applyLiveMix,
                         onEditingEnded: onMixChange
                     )
-                    .frame(maxWidth: .infinity)
+
+                    TrackPanField(
+                        pan: $track.pan,
+                        onLiveChange: applyLiveMix,
+                        onEditingEnded: onMixChange
+                    )
                 }
             }
             .padding(.horizontal, 8)
@@ -81,6 +86,10 @@ struct TrackLaneHeaderView: View {
             }
         }
         .onTapGesture(perform: onSelect)
+    }
+
+    private func applyLiveMix() {
+        audioEngine.applyLiveTrackMix(id: track.id, volume: Float(track.volume), pan: Float(track.pan))
     }
 
     private var groupPicker: some View {

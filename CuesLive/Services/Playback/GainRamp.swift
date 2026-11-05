@@ -71,3 +71,61 @@ struct GainRamp {
         min(limit, Int(buffer.mDataByteSize) / MemoryLayout<Float>.size)
     }
 }
+
+enum TrackPan {
+    /// Balance law: centre is unity on both sides and moving off-centre attenuates only
+    /// the far side, so a centred track is bit-identical to an unpanned one.
+    static func channelGains(pan: Float) -> (left: Float, right: Float) {
+        let clamped = min(1, max(-1, pan))
+        return (min(1, 1 - clamped), min(1, 1 + clamped))
+    }
+}
+
+/// Pans the first two channels of a render block, ramping so a pan move never steps the waveform.
+struct PanRamp {
+    private(set) var current: Float
+
+    init(initial: Float = 0) {
+        current = initial
+    }
+
+    mutating func snap(to pan: Float) {
+        current = pan
+    }
+
+    /// A no-op while both the previous and target pan are centred.
+    mutating func apply(
+        target: Float,
+        to bufferList: UnsafeMutableAudioBufferListPointer,
+        frameCount: Int,
+        rampFrames: Int
+    ) {
+        let start = TrackPan.channelGains(pan: current)
+        let end = TrackPan.channelGains(pan: target)
+        current = target
+        guard bufferList.count >= 2, frameCount > 0 else { return }
+
+        Self.scale(bufferList[0], from: start.left, to: end.left, frameCount: frameCount, rampFrames: rampFrames)
+        Self.scale(bufferList[1], from: start.right, to: end.right, frameCount: frameCount, rampFrames: rampFrames)
+    }
+
+    private static func scale(_ buffer: AudioBuffer, from start: Float, to target: Float, frameCount: Int, rampFrames: Int) {
+        guard start != 1 || target != 1,
+              let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { return }
+        let count = min(frameCount, Int(buffer.mDataByteSize) / MemoryLayout<Float>.size)
+
+        var rampedCount = 0
+        if start != target {
+            rampedCount = min(max(rampFrames, 1), count)
+            let step = (target - start) / Float(rampedCount)
+            for index in 0..<rampedCount {
+                data[index] *= start + step * Float(index)
+            }
+        }
+        if count > rampedCount {
+            var gain = target
+            let tail = data + rampedCount
+            vDSP_vsmul(tail, 1, &gain, tail, 1, vDSP_Length(count - rampedCount))
+        }
+    }
+}

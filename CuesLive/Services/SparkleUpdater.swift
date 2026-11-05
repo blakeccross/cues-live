@@ -1,4 +1,4 @@
-#if os(macOS)
+#if os(macOS) && !APP_STORE
 import Combine
 import Sparkle
 import SwiftUI

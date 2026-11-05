@@ -9,6 +9,7 @@ final class AudioEngineManager {
 
     struct TrackSettings: Equatable {
         var volume: Float
+        var pan: Float = 0
         var isMuted: Bool
         var isSolo: Bool
         var trimStart: TimeInterval
@@ -896,6 +897,16 @@ final class AudioEngineManager {
         refreshTrackMappers()
     }
 
+    /// Audible-only volume/pan update for dragging a fader: skips the pitch, duration and
+    /// mapper refresh that `updateTrackSettings` does.
+    func applyLiveTrackMix(id: UUID, volume: Float, pan: Float) {
+        guard var track = tracks[id] else { return }
+        track.settings.volume = volume
+        track.settings.pan = pan
+        tracks[id] = track
+        applyAllMixSettings()
+    }
+
     func applyGroupMix(_ snapshot: GroupMixSnapshot) {
         groupMixSnapshot = snapshot
         applyAllMixSettings()
@@ -985,10 +996,6 @@ final class AudioEngineManager {
         groupMeterLevels = [:]
     }
 
-    func trackMeterLevel(for trackID: UUID) -> Float {
-        trackMeterLevels[trackID] ?? 0
-    }
-
     func groupMeterLevel(for groupID: UUID?) -> Float {
         let key = groupID ?? OutputRoutingStore.ungroupedRouteID
         return groupMeterLevels[key] ?? 0
@@ -1026,6 +1033,7 @@ final class AudioEngineManager {
 
             track.memoryPlayer.updateMix(
                 volume: effectiveVolume,
+                pan: track.settings.pan,
                 isAudible: isAudible
             )
         }
@@ -1160,6 +1168,7 @@ final class AudioEngineManager {
 
             track.memoryPlayer.updateMix(
                 volume: effectiveVolume,
+                pan: track.settings.pan,
                 isAudible: isAudible
             )
         }
@@ -1565,6 +1574,7 @@ final class AudioEngineManager {
 extension AudioEngineManager.TrackSettings {
     init(track: AudioTrack) {
         volume = Float(track.volume)
+        pan = Float(track.pan)
         isMuted = track.isMuted
         isSolo = track.isSolo
         trimStart = track.trimStartSeconds

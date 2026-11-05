@@ -7,24 +7,122 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA00000100000000000F1002 /* PlaybackCoordinatorError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */; };
-		AA00000100000000000F1001 /* LiveSetlistSnapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */; };
-		AA00000100000000000F0002 /* LivePlaybackSupportViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */; };
-		AA00000100000000000F0001 /* LiveSetlistToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0001 /* LiveSetlistToolbar.swift */; };
-		AA00000100000000000ED00A /* EditStemTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED00A /* EditStemTimelineView.swift */; };
-		AA00000100000000000ED009 /* TimelineSignatureAndTempoRulers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */; };
-		AA00000100000000000ED008 /* TimelineSectionMarkerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED008 /* TimelineSectionMarkerRow.swift */; };
-		AA00000100000000000ED007 /* TimelineRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED007 /* TimelineRulerView.swift */; };
-		AA00000100000000000ED006 /* RenameSectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED006 /* RenameSectionSheet.swift */; };
-		AA00000100000000000ED005 /* EditTransportBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED005 /* EditTransportBar.swift */; };
-		AA00000100000000000ED004 /* EditToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED004 /* EditToolbar.swift */; };
-		AA00000100000000000ED003 /* EditSongSettingsMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED003 /* EditSongSettingsMenus.swift */; };
-		AA00000100000000000ED002 /* EditGuideTrackMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED002 /* EditGuideTrackMenus.swift */; };
-		AA00000100000000000ED001 /* AddTrackTypeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED001 /* AddTrackTypeSheet.swift */; };
+		00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000043 /* ClickTrackGenerator.swift */; };
+		027BFA4C1F9227309DCAE3FE /* AppBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* AppBadge.swift */; };
+		0491D0CB258BB532C4D262E8 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
+		051EE6FC573BDB8874E49773 /* SongBakeFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D1 /* SongBakeFingerprint.swift */; };
+		055A7DD4FF49A64810EC90F1 /* InputMappingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000328 /* InputMappingSettingsView.swift */; };
+		060975E7911FF7D5A6DFA990 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
+		0635B9806DB2025259712FA7 /* CueshowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033E /* CueshowDocument.icns */; };
+		06FA428DC827C466F4686F62 /* SongEditSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D6 /* SongEditSnapshot.swift */; };
+		0D35133A1D42A2B20A0D0EE8 /* DecodedStemBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000026 /* DecodedStemBuffer.swift */; };
+		0D6EA2733B353775EEDD4EF7 /* SongProjectBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000077 /* SongProjectBridge.swift */; };
+		0ED0AD756C52C275816544DD /* TrackImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000010 /* TrackImportView.swift */; };
+		0F3EF9B5611E0354E1A203DC /* TimelineLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001D /* TimelineLayout.swift */; };
+		12943F0304EF5EAB7355CD98 /* ManageOutputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000033 /* ManageOutputsView.swift */; };
+		13D4374B5B93FA1763683C62 /* AppSheetContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008C /* AppSheetContainer.swift */; };
+		187CB1E89C8812E06A404CFB /* TrackGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002A /* TrackGroup.swift */; };
+		1B2C5D6E41F0EE9CA2CAE114 /* RemoteSessionSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000303 /* RemoteSessionSettingsStore.swift */; };
+		1C67899A8054E132507425D9 /* ClickTrackScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004E /* ClickTrackScheduler.swift */; };
+		1D561974C2CFF90227DC21A4 /* OutputDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002D /* OutputDestination.swift */; };
+		1D9D6E848F5BEFF2F56CF0C1 /* LiveSetlistNowPlayingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */; };
+		1E74E25D07E83CE83DBCDC73 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000400 /* AppIcon.icon */; };
+		1F9544513938F3D69E5FA41F /* MIDIDeviceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000067 /* MIDIDeviceStore.swift */; };
+		202596B98683B07496BF0A8C /* MIDIEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000061 /* MIDIEvent.swift */; };
+		20D72445427598058DC15378 /* TimecodeStartCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000112 /* TimecodeStartCalculator.swift */; };
+		2190D9EB6B43CD965AEFA8FE /* DeviceSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000030A /* DeviceSettingsSheet.swift */; };
+		235CFEF4F109F8A33310A3AD /* AudioOutputDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000031 /* AudioOutputDeviceService.swift */; };
+		24D870479A431B3965428D2E /* SectionAnnouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F2 /* SectionAnnouncer.swift */; };
+		27D2A245DFF5C591D697AC21 /* SectionLoopController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004C /* SectionLoopController.swift */; };
+		286CB25439511310D21D5039 /* WaveformBarsCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004D /* WaveformBarsCanvas.swift */; };
+		298868F51A2CBEE361DA8531 /* SongGroupBaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D3 /* SongGroupBaker.swift */; };
+		2E2CAAA36957618AF72A8A34 /* MappableControlModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000326 /* MappableControlModifier.swift */; };
+		3048121C0B3EE1404EE0187A /* AbletonProjectImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001A /* AbletonProjectImporter.swift */; };
+		327D8979234007649DDCB55B /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000039 /* PitchShiftBridge.mm */; };
+		33B1D1D0F78066D7DC4F76F9 /* AddTrackTypeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED001 /* AddTrackTypeSheet.swift */; };
+		3676BF19E8A4A2E5D90F6077 /* BakeSongSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D4 /* BakeSongSheet.swift */; };
+		376CE795C5085A6296C2E115 /* MeasureAnchoredChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B02 /* MeasureAnchoredChange.swift */; };
+		3783F545E83A9FCE76DD3909 /* EditToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED004 /* EditToolbar.swift */; };
+		39644CE53879671A2EABEAB4 /* TempoChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003E /* TempoChange.swift */; };
+		3B918329C4F08DEB6ED2F649 /* MIDIInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000323 /* MIDIInputService.swift */; };
+		3CB305E965C2989FEBD4EB18 /* ArrangementMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000019 /* ArrangementMarker.swift */; };
+		3E2D3C9A0AAFA9A7030E4B84 /* OutputChannelTestPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */; };
+		429ED83386A4DFAA235EFD97 /* SongSectionNameNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */; };
+		441249A9D52307B5C8382556 /* OutputRoutingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002E /* OutputRoutingConfig.swift */; };
+		448064EE42E8399691EC85BD /* DocsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033C /* DocsWindowView.swift */; };
+		44E1F5758574E69D7A0983E6 /* ClickTrackSubdivision.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000047 /* ClickTrackSubdivision.swift */; };
+		4926CEE83BB294F3E6CD4DCC /* MediaReferenceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000075 /* MediaReferenceResolver.swift */; };
+		4B88EC0A362514098B123157 /* SongBakeManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D0 /* SongBakeManifest.swift */; };
+		4C41DD9AEDCFAE6113E7E89F /* CuesLiveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000001 /* CuesLiveApp.swift */; };
+		4C73EDBD3D31E2979C49EE21 /* ArrangementEditorMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000020 /* ArrangementEditorMenu.swift */; };
+		4F709236950C532CBB37D313 /* RemoteSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000301 /* RemoteSessionModels.swift */; };
+		4FC29B6B20E69B79107E31F8 /* InputMappingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000325 /* InputMappingController.swift */; };
+		51F4FA0B555A2018050B4476 /* OverlapTransitionTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B2 /* OverlapTransitionTiming.swift */; };
+		52B769932B82F8AF0C46F701 /* AppChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000086 /* AppChip.swift */; };
+		532745A5BEDB024756242DEF /* TrackGroupEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002C /* TrackGroupEditorView.swift */; };
+		53905EA9D3DCECA7995A114B /* AppSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000089 /* AppSearchField.swift */; };
+		551027503493E87975725216 /* ClickSongCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FD /* ClickSongCreator.swift */; };
+		5683783753979D5D44AA769D /* Song.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000002 /* Song.swift */; };
+		569BF8338FB832C2C8F55120 /* OutputRoutingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000030 /* OutputRoutingStore.swift */; };
+		58940AEE9C3298ADB763B5A1 /* PeakMeterHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000007C /* PeakMeterHolder.swift */; };
+		59174B8DA8970F3382716FF6 /* LivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000013 /* LivePlaybackView.swift */; };
+		5A63923951976D12AE7931A8 /* TrackGroupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002B /* TrackGroupStore.swift */; };
+		5B6A57F1BD9DC7FCD60AFF9A /* PlaybackCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000008 /* PlaybackCoordinator.swift */; };
+		62DE9036BEB119F5597BEB1A /* SmartGuideCallPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */; };
+		6606EE84C487E3AFF450ED67 /* MediaConsolidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000078 /* MediaConsolidator.swift */; };
+		6716D03BAD0715BD25B720CB /* LiveGroupMixerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000007B /* LiveGroupMixerView.swift */; };
+		6A63938A6FD5EC7E7DBFC162 /* Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000004 /* Setlist.swift */; };
+		6DBFE7367ACB8F3E0C7CAA1D /* OutputRecoveryBackoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */; };
+		6E0D669AE634664FE0C646CE /* ToolbarSharedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000202 /* ToolbarSharedBackground.swift */; };
+		73BE27BA7981ADF0E1940E57 /* LTCFrameEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000113 /* LTCFrameEncoder.swift */; };
+		75BC88109658E5CE10908554 /* MediaReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000071 /* MediaReference.swift */; };
+		7677255193CAEA034F97288F /* RemoteSessionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000309 /* RemoteSessionSettingsView.swift */; };
+		77D95A2B047262B53FC13EBC /* MIDIOutputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000063 /* MIDIOutputService.swift */; };
+		79EC3821EFF35D7A1FB3BBEE /* click-normal.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000045 /* click-normal.wav */; };
+		7A71235334CE0DD935D64451 /* ArrangementTimelineMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000021 /* ArrangementTimelineMapper.swift */; };
+		7B0B0B631AF53DE1C5C98D2A /* EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000F /* EditView.swift */; };
+		7BA9FACA96FB7F0855F31423 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000037 /* ChangeKeyDialog.swift */; };
+		7C8B2EFDD5D77772BC5FEC54 /* ArrangementSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001E /* ArrangementSlot.swift */; };
+		7D412A866B68E52B871B8246 /* DAWColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000018 /* DAWColors.swift */; };
+		7E1007493D2F275F94D7A49B /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
+		7F74D91A2A30D76DE139D15C /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000D /* SongDetailView.swift */; };
+		804846CAC3A1D70D00F981EA /* InputMappingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000032B /* InputMappingPanel.swift */; };
+		807B849149E5ACF19C2AF34E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000014 /* Assets.xcassets */; };
+		80C395D6D9A696ACC64D7761 /* ProjectFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000076 /* ProjectFileStore.swift */; };
+		85637C1DE835C41B3E08A91F /* SongMediaHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E1 /* SongMediaHealth.swift */; };
+		87AA3E173DC3F3A03F5EB998 /* OutputRoutingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000032 /* OutputRoutingManager.swift */; };
+		88CF0E142B71D61032550EC0 /* SongMusicalKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012A /* SongMusicalKey.swift */; };
+		8A026E5598BE80B727B652AB /* RemoteHostSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000308 /* RemoteHostSessionController.swift */; };
+		8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000016 /* WaveformLoader.swift */; };
+		8B68D7E09EA9FAA4F8A97D3A /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001B /* PersistenceController.swift */; };
+		8B9717FD3846C0D5814AFFAF /* AudioTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000003 /* AudioTrack.swift */; };
+		8BF3A7FD93E6DB96B23D0DC4 /* SongArrangementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001F /* SongArrangementStore.swift */; };
+		8D25A49F3162B00063C8CFC8 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000B /* RootView.swift */; };
+		8E1DA345FCA18ABC2256B34E /* RemoteLivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000030B /* RemoteLivePlaybackView.swift */; };
+		8FC9A566079D15729EE3CD63 /* EditSongSettingsMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED003 /* EditSongSettingsMenus.swift */; };
+		8FDCF12509B8459144437CA4 /* RenameSectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED006 /* RenameSectionSheet.swift */; };
+		906E00ACDDE7F30BBCDFC166 /* AppEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008D /* AppEmptyState.swift */; };
+		90C0C4DD8E19782FA5FEAD5A /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000080 /* AppColors.swift */; };
+		9180875E8B4415CA60BF47D7 /* TimecodeSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000111 /* TimecodeSettingsStore.swift */; };
+		9260F2243174719BC2C7CCB4 /* KeyboardInputMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000324 /* KeyboardInputMonitor.swift */; };
+		92BDD0AF0E22E9D425FC596C /* EditStemTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED00A /* EditStemTimelineView.swift */; };
+		93C9773E4124A35B433FBA71 /* SongUndoController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D7 /* SongUndoController.swift */; };
+		9552A47E29CD5D877A5B07E3 /* TimelineRippleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000A0 /* TimelineRippleStore.swift */; };
+		957CBC2A828629EE5FEFBB86 /* AppSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000211 /* AppSettingsView.swift */; };
+		9A22FB2DF0BB81E4E73B9C2A /* TrackMixControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000007A /* TrackMixControls.swift */; };
+		9D019DBB987BA1DC7F1E8C0B /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000007 /* AudioEngineManager.swift */; };
+		9DF88DAA085CABDF5DFAD08E /* RemoteSessionClientService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000305 /* RemoteSessionClientService.swift */; };
+		A0098CC5375653F730D0E085 /* HelpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033A /* HelpSettingsView.swift */; };
+		A226C680E0B88DB12B7ACAD2 /* LiveSetlistSnapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */; };
+		A2AF74D227FB5096335253CB /* SongBakeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D2 /* SongBakeStore.swift */; };
+		A384FD84AA2A32587F49F3FB /* LiveSetlistRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000310 /* LiveSetlistRows.swift */; };
+		A471859ECA9875C2DABDAA29 /* GroupOutputRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002F /* GroupOutputRoute.swift */; };
+		A52C618F779EC1571CFD0792 /* SetlistPackageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E0 /* SetlistPackageStore.swift */; };
+		A6231BC1653A96074D7380B4 /* SetlistOverlapEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */; };
+		A63CDD28D6603B6DCAB980F5 /* TimelinePlayheadOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */; };
+		A6E4CA0EE895CD0A70ED6748 /* SharedTransportStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000DA /* SharedTransportStrip.swift */; };
 		AA0000010000000000000001 /* CuesLiveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000001 /* CuesLiveApp.swift */; };
 		AA0000010000000000000002 /* Song.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000002 /* Song.swift */; };
-		AA000001000000000000012A /* SongMusicalKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012A /* SongMusicalKey.swift */; };
-		AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012B /* SongMusicalKeyTests.swift */; };
 		AA0000010000000000000003 /* AudioTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000003 /* AudioTrack.swift */; };
 		AA0000010000000000000004 /* Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000004 /* Setlist.swift */; };
 		AA0000010000000000000005 /* SetlistEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000005 /* SetlistEntry.swift */; };
@@ -40,9 +138,6 @@
 		AA0000010000000000000010 /* TrackImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000010 /* TrackImportView.swift */; };
 		AA0000010000000000000013 /* LivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000013 /* LivePlaybackView.swift */; };
 		AA0000010000000000000014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000014 /* Assets.xcassets */; };
-		AA0000010000000000000400 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000400 /* AppIcon.icon */; };
-		AA000001000000000000033E /* CueshowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033E /* CueshowDocument.icns */; };
-		AA000001000000000000033F /* CuesliveDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033F /* CuesliveDocument.icns */; };
 		AA0000010000000000000015 /* WaveformLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000016 /* WaveformLoader.swift */; };
 		AA0000010000000000000016 /* WaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000017 /* WaveformLaneView.swift */; };
 		AA0000010000000000000017 /* DAWColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000018 /* DAWColors.swift */; };
@@ -58,12 +153,6 @@
 		AA0000010000000000000023 /* TimelinePlayheadOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */; };
 		AA0000010000000000000026 /* DecodedStemBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000026 /* DecodedStemBuffer.swift */; };
 		AA0000010000000000000027 /* TrackMemoryPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000027 /* TrackMemoryPlayer.swift */; };
-		AA00000100000000000004A1 /* GainRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A1 /* GainRamp.swift */; };
-		AA00000100000000000004A3 /* OutputRecoveryBackoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */; };
-		AA00000100000000000004A2 /* GainRampTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A2 /* GainRampTests.swift */; };
-		AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B01 /* MeasureBoundaryTests.swift */; };
-		AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */; };
-		AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
 		AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000028 /* LiveSongWaveformView.swift */; };
 		AA0000010000000000000029 /* SetlistTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000029 /* SetlistTransition.swift */; };
 		AA000001000000000000002A /* TrackGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002A /* TrackGroup.swift */; };
@@ -75,11 +164,9 @@
 		AA0000010000000000000030 /* OutputRoutingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000030 /* OutputRoutingStore.swift */; };
 		AA0000010000000000000031 /* AudioOutputDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000031 /* AudioOutputDeviceService.swift */; };
 		AA0000010000000000000032 /* OutputRoutingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000032 /* OutputRoutingManager.swift */; };
-		AA00000100000000000003B2 /* OutputChannelTestPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */; };
 		AA0000010000000000000033 /* ManageOutputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000033 /* ManageOutputsView.swift */; };
 		AA0000010000000000000034 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
-		AA0000010000000000000B02 /* MeasureAnchoredChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B02 /* MeasureAnchoredChange.swift */; };
 		AA0000010000000000000037 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000037 /* ChangeKeyDialog.swift */; };
 		AA0000010000000000000038 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000039 /* PitchShiftBridge.mm */; };
 		AA000001000000000000003A /* RubberBandPitchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003A /* RubberBandPitchProcessor.swift */; };
@@ -154,24 +241,15 @@
 		AA00000100000000000000D8 /* SongEditSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D8 /* SongEditSnapshotTests.swift */; };
 		AA00000100000000000000D9 /* SongUndoControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D9 /* SongUndoControllerTests.swift */; };
 		AA00000100000000000000DA /* SharedTransportStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000DA /* SharedTransportStrip.swift */; };
-		AA00000100000000000004A4 /* AudioOutputLostBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A4 /* AudioOutputLostBanner.swift */; };
 		AA00000100000000000000E0 /* SetlistPackageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E0 /* SetlistPackageStore.swift */; };
 		AA00000100000000000000E1 /* SongMediaHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E1 /* SongMediaHealth.swift */; };
 		AA00000100000000000000E2 /* MissingMediaRelinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E2 /* MissingMediaRelinkView.swift */; };
 		AA00000100000000000000F0 /* StemAudioWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F0 /* StemAudioWriter.swift */; };
 		AA00000100000000000000F1 /* ClickTrackFileGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */; };
 		AA00000100000000000000F2 /* SectionAnnouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F2 /* SectionAnnouncer.swift */; };
-		AA00000100000000000005A1 /* SmartGuideCallPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */; };
-		AA00000100000000000005A3 /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
 		AA00000100000000000000F3 /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
 		AA00000100000000000000F4 /* SongSectionNameNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */; };
-		AA0000010000000000000A01 /* SongSectionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A01 /* SongSectionDetector.swift */; };
 		AA00000100000000000000F5 /* SongSectionNameNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */; };
-		AA0000010000000000000A02 /* SongSectionDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A02 /* SongSectionDetectorTests.swift */; };
-		AA0000010000000000000A03 /* WaveformLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A03 /* WaveformLoaderTests.swift */; };
-		AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012E /* TrackGroupStoreTests.swift */; };
-		AA00000100000000000004F1 /* SetlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F1 /* SetlistViewModelTests.swift */; };
-		AA00000100000000000004F2 /* MixerFaderScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F2 /* MixerFaderScaleTests.swift */; };
 		AA00000100000000000000F6 /* AbletonProjectImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */; };
 		AA00000100000000000000F7 /* SpeechSampleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F7 /* SpeechSampleRenderer.swift */; };
 		AA00000100000000000000FD /* ClickSongCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000FD /* ClickSongCreator.swift */; };
@@ -179,10 +257,6 @@
 		AA0000010000000000000100 /* SongSections in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000100 /* SongSections */; };
 		AA0000010000000000000102 /* SpeechSampleRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000102 /* SpeechSampleRendererTests.swift */; };
 		AA0000010000000000000103 /* SectionLoopTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000103 /* SectionLoopTimingTests.swift */; };
-		AA00000100000000000001FF /* SectionTransitionRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FF /* SectionTransitionRenderTests.swift */; };
-		AA00000100000000000001FE /* SectionCueEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FE /* SectionCueEngineTests.swift */; };
-		AA00000100000000000001FD /* UserProjectCueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FD /* UserProjectCueTests.swift */; };
-		AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */; };
 		AA0000010000000000000104 /* StreamingStemBufferLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */; };
 		AA0000010000000000000110 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
 		AA0000010000000000000111 /* TimecodeSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000111 /* TimecodeSettingsStore.swift */; };
@@ -194,6 +268,12 @@
 		AA0000010000000000000117 /* LTCFrameEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000117 /* LTCFrameEncoderTests.swift */; };
 		AA0000010000000000000118 /* LTCGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000118 /* LTCGeneratorTests.swift */; };
 		AA0000010000000000000119 /* OutputRoutingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000119 /* OutputRoutingManagerTests.swift */; };
+		AA000001000000000000012A /* SongMusicalKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012A /* SongMusicalKey.swift */; };
+		AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012B /* SongMusicalKeyTests.swift */; };
+		AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012E /* TrackGroupStoreTests.swift */; };
+		AA00000100000000000001FD /* UserProjectCueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FD /* UserProjectCueTests.swift */; };
+		AA00000100000000000001FE /* SectionCueEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FE /* SectionCueEngineTests.swift */; };
+		AA00000100000000000001FF /* SectionTransitionRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000001FF /* SectionTransitionRenderTests.swift */; };
 		AA0000010000000000000200 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = AA0000E20000000000000200 /* Sparkle */; };
 		AA0000010000000000000201 /* SparkleUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000201 /* SparkleUpdater.swift */; };
 		AA0000010000000000000202 /* ToolbarSharedBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000202 /* ToolbarSharedBackground.swift */; };
@@ -218,16 +298,121 @@
 		AA0000010000000000000323 /* MIDIInputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000323 /* MIDIInputService.swift */; };
 		AA0000010000000000000324 /* KeyboardInputMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000324 /* KeyboardInputMonitor.swift */; };
 		AA0000010000000000000325 /* InputMappingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000325 /* InputMappingController.swift */; };
-		AA000001000000000000033D /* LiveSetlistMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033D /* LiveSetlistMenuController.swift */; };
 		AA0000010000000000000326 /* MappableControlModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000326 /* MappableControlModifier.swift */; };
 		AA0000010000000000000327 /* InputMappingSessionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000327 /* InputMappingSessionViews.swift */; };
 		AA0000010000000000000328 /* InputMappingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000328 /* InputMappingSettingsView.swift */; };
-		AA000001000000000000033A /* HelpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033A /* HelpSettingsView.swift */; };
-		AA000001000000000000033B /* DocsTopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033B /* DocsTopic.swift */; };
-		AA000001000000000000033C /* DocsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033C /* DocsWindowView.swift */; };
 		AA0000010000000000000329 /* InputMappingStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000329 /* InputMappingStoreTests.swift */; };
 		AA000001000000000000032A /* InputMappingControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000032A /* InputMappingControllerTests.swift */; };
 		AA000001000000000000032B /* InputMappingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000032B /* InputMappingPanel.swift */; };
+		AA000001000000000000033A /* HelpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033A /* HelpSettingsView.swift */; };
+		AA000001000000000000033B /* DocsTopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033B /* DocsTopic.swift */; };
+		AA000001000000000000033C /* DocsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033C /* DocsWindowView.swift */; };
+		AA000001000000000000033D /* LiveSetlistMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033D /* LiveSetlistMenuController.swift */; };
+		AA000001000000000000033E /* CueshowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033E /* CueshowDocument.icns */; };
+		AA000001000000000000033F /* CuesliveDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033F /* CuesliveDocument.icns */; };
+		AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
+		AA00000100000000000003B2 /* OutputChannelTestPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */; };
+		AA0000010000000000000400 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000400 /* AppIcon.icon */; };
+		AA00000100000000000004A1 /* GainRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A1 /* GainRamp.swift */; };
+		AA00000100000000000004A2 /* GainRampTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A2 /* GainRampTests.swift */; };
+		AA00000100000000000009F1 /* TrackMixControlsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000009F1 /* TrackMixControlsTests.swift */; };
+		AA00000100000000000004A3 /* OutputRecoveryBackoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */; };
+		AA00000100000000000004A4 /* AudioOutputLostBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A4 /* AudioOutputLostBanner.swift */; };
+		AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */; };
+		AA00000100000000000004F1 /* SetlistViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F1 /* SetlistViewModelTests.swift */; };
+		AA00000100000000000004F2 /* MixerFaderScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004F2 /* MixerFaderScaleTests.swift */; };
+		AA00000100000000000005A1 /* SmartGuideCallPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */; };
+		AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */; };
+		AA00000100000000000005A3 /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
+		AA0000010000000000000A01 /* SongSectionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A01 /* SongSectionDetector.swift */; };
+		AA0000010000000000000A02 /* SongSectionDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A02 /* SongSectionDetectorTests.swift */; };
+		AA0000010000000000000A03 /* WaveformLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A03 /* WaveformLoaderTests.swift */; };
+		AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B01 /* MeasureBoundaryTests.swift */; };
+		AA0000010000000000000B02 /* MeasureAnchoredChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B02 /* MeasureAnchoredChange.swift */; };
+		AA00000100000000000ED001 /* AddTrackTypeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED001 /* AddTrackTypeSheet.swift */; };
+		AA00000100000000000ED002 /* EditGuideTrackMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED002 /* EditGuideTrackMenus.swift */; };
+		AA00000100000000000ED003 /* EditSongSettingsMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED003 /* EditSongSettingsMenus.swift */; };
+		AA00000100000000000ED004 /* EditToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED004 /* EditToolbar.swift */; };
+		AA00000100000000000ED005 /* EditTransportBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED005 /* EditTransportBar.swift */; };
+		AA00000100000000000ED006 /* RenameSectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED006 /* RenameSectionSheet.swift */; };
+		AA00000100000000000ED007 /* TimelineRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED007 /* TimelineRulerView.swift */; };
+		AA00000100000000000ED008 /* TimelineSectionMarkerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED008 /* TimelineSectionMarkerRow.swift */; };
+		AA00000100000000000ED009 /* TimelineSignatureAndTempoRulers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */; };
+		AA00000100000000000ED00A /* EditStemTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED00A /* EditStemTimelineView.swift */; };
+		AA00000100000000000F0001 /* LiveSetlistToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0001 /* LiveSetlistToolbar.swift */; };
+		AA00000100000000000F0002 /* LivePlaybackSupportViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */; };
+		AA00000100000000000F1001 /* LiveSetlistSnapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */; };
+		AA00000100000000000F1002 /* PlaybackCoordinatorError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */; };
+		AA23A43494FFA381B9E728DC /* LivePlaybackSupportViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */; };
+		AA5CF1E506F6A4FAE6BC123E /* EditGuideTrackMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED002 /* EditGuideTrackMenus.swift */; };
+		ADCDDC8F0A7A835FBB10CB49 /* click-accent.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000044 /* click-accent.wav */; };
+		AEE3B433DC0DA4EAC3BCE6FC /* LiveSetlistToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0001 /* LiveSetlistToolbar.swift */; };
+		AF9B8BC70EDE7352FC6BE3DC /* TimelineRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED007 /* TimelineRulerView.swift */; };
+		B0F0F34B1FC430D4385FFE0A /* SetlistViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000A /* SetlistViewModel.swift */; };
+		B11A02399FAFE0392C601927 /* SongLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000C /* SongLibraryView.swift */; };
+		B52DB4D05D7FDAC3C927CF99 /* ClipRegionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004A /* ClipRegionStore.swift */; };
+		B74AE229801352765E6DEA8D /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
+		B9DAF17410376F31808D0978 /* MIDIDeviceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000068 /* MIDIDeviceViews.swift */; };
+		BA83614E17A28FB2E4807049 /* AppAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000083 /* AppAnimation.swift */; };
+		BB2538C2ECD8C0B97355D1F4 /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000321 /* InputBinding.swift */; };
+		BCFAEF5960EE8F456AE248FA /* LiveSongWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000028 /* LiveSongWaveformView.swift */; };
+		BE02C6AAD2AD6A4437E1A41E /* GainRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A1 /* GainRamp.swift */; };
+		BE744F75A7001DBB1FC26590 /* AppSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000082 /* AppSpacing.swift */; };
+		BF157A5352834146CE276B79 /* MissingMediaRelinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E2 /* MissingMediaRelinkView.swift */; };
+		BF3CA00EFDBA79C04ED897BB /* OutputRoutingSettingsForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000210 /* OutputRoutingSettingsForm.swift */; };
+		BF77226E75BDB6462A0A2787 /* MIDILaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000065 /* MIDILaneView.swift */; };
+		C04FAE1C7E419A35B562C367 /* RemoteSessionProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000302 /* RemoteSessionProtocol.swift */; };
+		C29C84FAA41C93CF453CCD67 /* DocsTopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033B /* DocsTopic.swift */; };
+		C3A673D653243066C6BC0B95 /* RubberBandPitchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003A /* RubberBandPitchProcessor.swift */; };
+		C4127164C36D8FBC754013DF /* SongTrackLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000041 /* SongTrackLoader.swift */; };
+		C5BAE856EF7F7C8C55C3A9AB /* LiveSetlistMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033D /* LiveSetlistMenuController.swift */; };
+		C645950FE0BEFC91246500EF /* SparkleUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000201 /* SparkleUpdater.swift */; };
+		C698E8F27C5F7057BB475B7E /* MIDIScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000064 /* MIDIScheduler.swift */; };
+		C768AFEEFAD4C2989E94B51D /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
+		C8B63C57E568FEA182FB13BF /* RemoteSessionSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000306 /* RemoteSessionSnapshotBuilder.swift */; };
+		C9D77B8B9596E38D691C7008 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
+		CC88A06A554FDB3E8BD37995 /* SongEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000009 /* SongEditorViewModel.swift */; };
+		CD6906EEB45CF9DC7F072F34 /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000006 /* FileStore.swift */; };
+		CD7424E5843E22B12D171FC7 /* TimelineSignatureAndTempoRulers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */; };
+		CDB38AA9CF51A97EE61EE493 /* MIDIDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000066 /* MIDIDevice.swift */; };
+		CE890C8FE3E35DB47ED860FF /* SetlistEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000005 /* SetlistEntry.swift */; };
+		CEEAF6B294B11B2034843452 /* TransportStatusReadout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008E /* TransportStatusReadout.swift */; };
+		CF4AB6A28318E141013C18B9 /* SongSections in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000100 /* SongSections */; };
+		D09825BE9A7B7991E4D60748 /* MappableLiveAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000320 /* MappableLiveAction.swift */; };
+		D647644C01187801B0AD4DA8 /* StemAudioWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F0 /* StemAudioWriter.swift */; };
+		D746F9EA63BC3169EC8BB5F3 /* RemoteSessionCommandBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000307 /* RemoteSessionCommandBridge.swift */; };
+		D8FA453DE863FD80936D5150 /* TimelineSectionMarkerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED008 /* TimelineSectionMarkerRow.swift */; };
+		DD0883626704CF5E3E575EA5 /* SetlistTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000029 /* SetlistTransition.swift */; };
+		DEE1D44DC9B506579D93EEC7 /* MIDITrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000060 /* MIDITrack.swift */; };
+		E207A200470468143ED9F367 /* GroupMixFadeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000203 /* GroupMixFadeController.swift */; };
+		E3DDF6D0C253E5995CB81C2A /* AppModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000084 /* AppModifiers.swift */; };
+		E4CD3BB92968A28A81E49C65 /* SongSectionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A01 /* SongSectionDetector.swift */; };
+		E4D058D968BCA6A8646D91FA /* SongProjectDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000072 /* SongProjectDocument.swift */; };
+		E54434E2BCC59128689F1709 /* InputMappingSessionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000327 /* InputMappingSessionViews.swift */; };
+		E5C5977DB09E54250B578B38 /* AudioOutputLostBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A4 /* AudioOutputLostBanner.swift */; };
+		E5FC8C57A71C36DCFDB2BD4A /* AudioPlaybackTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000022 /* AudioPlaybackTransport.swift */; };
+		E7429507307743EDFC91DF1E /* PlaybackCoordinatorError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */; };
+		E7829A3DD0DF8198590037E4 /* GroupMixStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000079 /* GroupMixStore.swift */; };
+		EA72A290E1CDEF653DCF596D /* OverlapTransitionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B1 /* OverlapTransitionConfig.swift */; };
+		EB3AF7FE98B3C448D5DC936E /* ShowProjectDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000073 /* ShowProjectDocument.swift */; };
+		EC73924EB981D1B6905FF2E4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003D /* Accelerate.framework */; };
+		EC7EF5AB04A4B9AB2BCEBDD3 /* LTCGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000114 /* LTCGenerator.swift */; };
+		ECA2184AEF722006934A4BB2 /* OverlapPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B4 /* OverlapPreviewEngine.swift */; };
+		EF5737E818752ACA57944474 /* ProjectUTType.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000074 /* ProjectUTType.swift */; };
+		EF67287DE02DFC7424325A54 /* AppSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008A /* AppSectionHeader.swift */; };
+		F242469D38CB96930284AE76 /* TrackMemoryPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000027 /* TrackMemoryPlayer.swift */; };
+		F2D0F7C9E61F7DF509ACBEB1 /* CuesliveDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033F /* CuesliveDocument.icns */; };
+		F61F8D583DD0B65FE15C8F39 /* WaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000017 /* WaveformLaneView.swift */; };
+		F61FC1B209F0DA22A085A044 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000081 /* AppTypography.swift */; };
+		F6CA20BD88E6F35CD3BD5773 /* EditTransportBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED005 /* EditTransportBar.swift */; };
+		F7BCB858706383EA368E569F /* AppButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000085 /* AppButtons.swift */; };
+		F7BED7B50FB7FABF262C9B83 /* OverlapTrackGraphBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */; };
+		F8A0670D0FA3E9DD3D013F8D /* ClickTrackFileGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */; };
+		F99B13CD70B9FC2FB944112A /* TrackBakeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000040 /* TrackBakeCache.swift */; };
+		F9D4CA76FF6F90A58CEB2DED /* TimecodePlaybackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000115 /* TimecodePlaybackSupport.swift */; };
+		FE240D938D9768F049D4540A /* InputMappingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000322 /* InputMappingStore.swift */; };
+		FF2FFB7A15E804182473C592 /* RemoteSessionHostService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000304 /* RemoteSessionHostService.swift */; };
+		FF5D2101985F288556C6A5CE /* SpeechSampleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F7 /* SpeechSampleRenderer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -241,24 +426,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorError.swift; sourceTree = "<group>"; };
-		AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistSnapshots.swift; sourceTree = "<group>"; };
-		AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackSupportViews.swift; sourceTree = "<group>"; };
-		AA00000200000000000F0001 /* LiveSetlistToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistToolbar.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED00A /* EditStemTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditStemTimelineView.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineSignatureAndTempoRulers.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED008 /* TimelineSectionMarkerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineSectionMarkerRow.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED007 /* TimelineRulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRulerView.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED006 /* RenameSectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameSectionSheet.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED005 /* EditTransportBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTransportBar.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED004 /* EditToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditToolbar.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED003 /* EditSongSettingsMenus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSongSettingsMenus.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED002 /* EditGuideTrackMenus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditGuideTrackMenus.swift; sourceTree = "<group>"; };
-		AA00000200000000000ED001 /* AddTrackTypeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTrackTypeSheet.swift; sourceTree = "<group>"; };
+		8CBF2A237BD29DB167C88E01 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		8DC47E4083293CA84B2885B4 /* cues.live.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cues.live.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000020000000000000001 /* CuesLiveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuesLiveApp.swift; sourceTree = "<group>"; };
 		AA0000020000000000000002 /* Song.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Song.swift; sourceTree = "<group>"; };
-		AA000002000000000000012A /* SongMusicalKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMusicalKey.swift; sourceTree = "<group>"; };
-		AA000002000000000000012B /* SongMusicalKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMusicalKeyTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000003 /* AudioTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTrack.swift; sourceTree = "<group>"; };
 		AA0000020000000000000004 /* Setlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Setlist.swift; sourceTree = "<group>"; };
 		AA0000020000000000000005 /* SetlistEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistEntry.swift; sourceTree = "<group>"; };
@@ -274,9 +445,6 @@
 		AA0000020000000000000010 /* TrackImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackImportView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000013 /* LivePlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AA0000020000000000000400 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
-		AA000002000000000000033E /* CueshowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CueshowDocument.icns; sourceTree = "<group>"; };
-		AA000002000000000000033F /* CuesliveDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CuesliveDocument.icns; sourceTree = "<group>"; };
 		AA0000020000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000020000000000000016 /* WaveformLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLoader.swift; sourceTree = "<group>"; };
 		AA0000020000000000000017 /* WaveformLaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLaneView.swift; sourceTree = "<group>"; };
@@ -293,12 +461,6 @@
 		AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelinePlayheadOverlay.swift; sourceTree = "<group>"; };
 		AA0000020000000000000026 /* DecodedStemBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodedStemBuffer.swift; sourceTree = "<group>"; };
 		AA0000020000000000000027 /* TrackMemoryPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMemoryPlayer.swift; sourceTree = "<group>"; };
-		AA00000200000000000004A1 /* GainRamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRamp.swift; sourceTree = "<group>"; };
-		AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRecoveryBackoff.swift; sourceTree = "<group>"; };
-		AA00000200000000000004A2 /* GainRampTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRampTests.swift; sourceTree = "<group>"; };
-		AA0000020000000000000B01 /* MeasureBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureBoundaryTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRecoveryBackoffTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformScrollBacking.swift; sourceTree = "<group>"; };
 		AA0000020000000000000028 /* LiveSongWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000029 /* SetlistTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistTransition.swift; sourceTree = "<group>"; };
 		AA000002000000000000002A /* TrackGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroup.swift; sourceTree = "<group>"; };
@@ -310,11 +472,9 @@
 		AA0000020000000000000030 /* OutputRoutingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingStore.swift; sourceTree = "<group>"; };
 		AA0000020000000000000031 /* AudioOutputDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputDeviceService.swift; sourceTree = "<group>"; };
 		AA0000020000000000000032 /* OutputRoutingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingManager.swift; sourceTree = "<group>"; };
-		AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputChannelTestPlayer.swift; sourceTree = "<group>"; };
 		AA0000020000000000000033 /* ManageOutputsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageOutputsView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000034 /* SongFolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderImporter.swift; sourceTree = "<group>"; };
 		AA0000020000000000000035 /* TimeSignatureChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSignatureChange.swift; sourceTree = "<group>"; };
-		AA0000020000000000000B02 /* MeasureAnchoredChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureAnchoredChange.swift; sourceTree = "<group>"; };
 		AA0000020000000000000037 /* ChangeKeyDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeKeyDialog.swift; sourceTree = "<group>"; };
 		AA0000020000000000000038 /* PitchShiftBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PitchShiftBridge.h; sourceTree = "<group>"; };
 		AA0000020000000000000039 /* PitchShiftBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PitchShiftBridge.mm; sourceTree = "<group>"; };
@@ -392,24 +552,15 @@
 		AA00000200000000000000D8 /* SongEditSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditSnapshotTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D9 /* SongUndoControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongUndoControllerTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000DA /* SharedTransportStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTransportStrip.swift; sourceTree = "<group>"; };
-		AA00000200000000000004A4 /* AudioOutputLostBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputLostBanner.swift; sourceTree = "<group>"; };
 		AA00000200000000000000E0 /* SetlistPackageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistPackageStore.swift; sourceTree = "<group>"; };
 		AA00000200000000000000E1 /* SongMediaHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMediaHealth.swift; sourceTree = "<group>"; };
 		AA00000200000000000000E2 /* MissingMediaRelinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingMediaRelinkView.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F0 /* StemAudioWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemAudioWriter.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackFileGenerator.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F2 /* SectionAnnouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionAnnouncer.swift; sourceTree = "<group>"; };
-		AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlanner.swift; sourceTree = "<group>"; };
-		AA00000200000000000005A3 /* AnnouncementSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementSource.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F3 /* SongSectionPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionPresets.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizer.swift; sourceTree = "<group>"; };
-		AA0000020000000000000A01 /* SongSectionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionDetector.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F5 /* SongSectionNameNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionNameNormalizerTests.swift; sourceTree = "<group>"; };
-		AA0000020000000000000A02 /* SongSectionDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionDetectorTests.swift; sourceTree = "<group>"; };
-		AA0000020000000000000A03 /* WaveformLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLoaderTests.swift; sourceTree = "<group>"; };
-		AA000002000000000000012E /* TrackGroupStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroupStoreTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000004F1 /* SetlistViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistViewModelTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000004F2 /* MixerFaderScaleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerFaderScaleTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F6 /* AbletonProjectImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbletonProjectImporterTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000F7 /* SpeechSampleRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSampleRenderer.swift; sourceTree = "<group>"; };
 		AA00000200000000000000FD /* ClickSongCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickSongCreator.swift; sourceTree = "<group>"; };
@@ -417,10 +568,6 @@
 		AA0000020000000000000100 /* SongSections */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SongSections; sourceTree = "<group>"; };
 		AA0000020000000000000102 /* SpeechSampleRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechSampleRendererTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000103 /* SectionLoopTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionLoopTimingTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000001FF /* SectionTransitionRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionTransitionRenderTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000001FE /* SectionCueEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCueEngineTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000001FD /* UserProjectCueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProjectCueTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlannerTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamingStemBufferLoopTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000110 /* TimecodeSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeSettings.swift; sourceTree = "<group>"; };
 		AA0000020000000000000111 /* TimecodeSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeSettingsStore.swift; sourceTree = "<group>"; };
@@ -432,6 +579,12 @@
 		AA0000020000000000000117 /* LTCFrameEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LTCFrameEncoderTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000118 /* LTCGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LTCGeneratorTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000119 /* OutputRoutingManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingManagerTests.swift; sourceTree = "<group>"; };
+		AA000002000000000000012A /* SongMusicalKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMusicalKey.swift; sourceTree = "<group>"; };
+		AA000002000000000000012B /* SongMusicalKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMusicalKeyTests.swift; sourceTree = "<group>"; };
+		AA000002000000000000012E /* TrackGroupStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroupStoreTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000001FD /* UserProjectCueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProjectCueTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000001FE /* SectionCueEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionCueEngineTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000001FF /* SectionTransitionRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionTransitionRenderTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000200 /* CuesLive.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CuesLive.entitlements; sourceTree = "<group>"; };
 		AA0000020000000000000201 /* SparkleUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdater.swift; sourceTree = "<group>"; };
 		AA0000020000000000000202 /* ToolbarSharedBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarSharedBackground.swift; sourceTree = "<group>"; };
@@ -456,17 +609,52 @@
 		AA0000020000000000000323 /* MIDIInputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIInputService.swift; sourceTree = "<group>"; };
 		AA0000020000000000000324 /* KeyboardInputMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardInputMonitor.swift; sourceTree = "<group>"; };
 		AA0000020000000000000325 /* InputMappingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingController.swift; sourceTree = "<group>"; };
-		AA000002000000000000033D /* LiveSetlistMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistMenuController.swift; sourceTree = "<group>"; };
 		AA0000020000000000000326 /* MappableControlModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappableControlModifier.swift; sourceTree = "<group>"; };
 		AA0000020000000000000327 /* InputMappingSessionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingSessionViews.swift; sourceTree = "<group>"; };
 		AA0000020000000000000328 /* InputMappingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingSettingsView.swift; sourceTree = "<group>"; };
-		AA000002000000000000033A /* HelpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpSettingsView.swift; sourceTree = "<group>"; };
-		AA000002000000000000033B /* DocsTopic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsTopic.swift; sourceTree = "<group>"; };
-		AA000002000000000000033C /* DocsWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsWindowView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000329 /* InputMappingStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingStoreTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000032A /* InputMappingControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingControllerTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000032B /* InputMappingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingPanel.swift; sourceTree = "<group>"; };
-		AA0000030000000000000001 /* cues.live.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "cues.live.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000002000000000000033A /* HelpSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpSettingsView.swift; sourceTree = "<group>"; };
+		AA000002000000000000033B /* DocsTopic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsTopic.swift; sourceTree = "<group>"; };
+		AA000002000000000000033C /* DocsWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocsWindowView.swift; sourceTree = "<group>"; };
+		AA000002000000000000033D /* LiveSetlistMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistMenuController.swift; sourceTree = "<group>"; };
+		AA000002000000000000033E /* CueshowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CueshowDocument.icns; sourceTree = "<group>"; };
+		AA000002000000000000033F /* CuesliveDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CuesliveDocument.icns; sourceTree = "<group>"; };
+		AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformScrollBacking.swift; sourceTree = "<group>"; };
+		AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputChannelTestPlayer.swift; sourceTree = "<group>"; };
+		AA0000020000000000000400 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		AA00000200000000000004A1 /* GainRamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRamp.swift; sourceTree = "<group>"; };
+		AA00000200000000000004A2 /* GainRampTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRampTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000009F1 /* TrackMixControlsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMixControlsTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRecoveryBackoff.swift; sourceTree = "<group>"; };
+		AA00000200000000000004A4 /* AudioOutputLostBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputLostBanner.swift; sourceTree = "<group>"; };
+		AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRecoveryBackoffTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000004F1 /* SetlistViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistViewModelTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000004F2 /* MixerFaderScaleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerFaderScaleTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlanner.swift; sourceTree = "<group>"; };
+		AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideCallPlannerTests.swift; sourceTree = "<group>"; };
+		AA00000200000000000005A3 /* AnnouncementSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnouncementSource.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A01 /* SongSectionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionDetector.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A02 /* SongSectionDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongSectionDetectorTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A03 /* WaveformLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLoaderTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B01 /* MeasureBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureBoundaryTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B02 /* MeasureAnchoredChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureAnchoredChange.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED001 /* AddTrackTypeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTrackTypeSheet.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED002 /* EditGuideTrackMenus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditGuideTrackMenus.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED003 /* EditSongSettingsMenus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSongSettingsMenus.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED004 /* EditToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditToolbar.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED005 /* EditTransportBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTransportBar.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED006 /* RenameSectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameSectionSheet.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED007 /* TimelineRulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRulerView.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED008 /* TimelineSectionMarkerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineSectionMarkerRow.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineSignatureAndTempoRulers.swift; sourceTree = "<group>"; };
+		AA00000200000000000ED00A /* EditStemTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditStemTimelineView.swift; sourceTree = "<group>"; };
+		AA00000200000000000F0001 /* LiveSetlistToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistToolbar.swift; sourceTree = "<group>"; };
+		AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackSupportViews.swift; sourceTree = "<group>"; };
+		AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistSnapshots.swift; sourceTree = "<group>"; };
+		AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorError.swift; sourceTree = "<group>"; };
+		AA0000030000000000000001 /* cues.live.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cues.live.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000030000000000000002 /* CuesLiveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CuesLiveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -487,15 +675,39 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA92DB660851B9DB66538C34 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EC73924EB981D1B6905FF2E4 /* Accelerate.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		31EBA79CD826626A6E42A89C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4991940D1E34D1B160FEE5AA /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		4566C29B2FF807D5009DDE90 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
 				AA000002000000000000003D /* Accelerate.framework */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		4991940D1E34D1B160FEE5AA /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				8CBF2A237BD29DB167C88E01 /* Cocoa.framework */,
+			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
 		AA0000050000000000000001 = {
@@ -505,6 +717,7 @@
 				AA0000050000000000000011 /* CuesLiveTests */,
 				AA0000050000000000000003 /* Products */,
 				4566C29B2FF807D5009DDE90 /* Recovered References */,
+				31EBA79CD826626A6E42A89C /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -533,6 +746,7 @@
 			children = (
 				AA0000030000000000000001 /* cues.live.app */,
 				AA0000030000000000000002 /* CuesLiveTests.xctest */,
+				8DC47E4083293CA84B2885B4 /* cues.live.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -611,15 +825,6 @@
 				AA00000500000000000BB00A /* Timeline */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		AA0000050000000000000330 /* Docs */ = {
-			isa = PBXGroup;
-			children = (
-				AA000002000000000000033B /* DocsTopic.swift */,
-				AA000002000000000000033C /* DocsWindowView.swift */,
-			);
-			path = Docs;
 			sourceTree = "<group>";
 		};
 		AA0000050000000000000008 /* Songs */ = {
@@ -724,6 +929,7 @@
 				AA00000200000000000000C7 /* AudioTimelineMathTests.swift */,
 				AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */,
 				AA00000200000000000004A2 /* GainRampTests.swift */,
+				AA00000200000000000009F1 /* TrackMixControlsTests.swift */,
 				AA0000020000000000000B01 /* MeasureBoundaryTests.swift */,
 				AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */,
 				AA00000200000000000000D5 /* SongBakeFingerprintTests.swift */,
@@ -825,6 +1031,15 @@
 				AA0000020000000000000308 /* RemoteHostSessionController.swift */,
 			);
 			path = RemoteSession;
+			sourceTree = "<group>";
+		};
+		AA0000050000000000000330 /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+				AA000002000000000000033B /* DocsTopic.swift */,
+				AA000002000000000000033C /* DocsWindowView.swift */,
+			);
+			path = Docs;
 			sourceTree = "<group>";
 		};
 		AA00000500000000000BB001 /* Playback */ = {
@@ -990,6 +1205,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		7461A8563658A2CA7A7E9ED8 /* CuesLiveAppStore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4ED3BE4EB5C147F86ED30C73 /* Build configuration list for PBXNativeTarget "CuesLiveAppStore" */;
+			buildPhases = (
+				E87AB31F98AC96B094CA1C27 /* Sources */,
+				FA92DB660851B9DB66538C34 /* Frameworks */,
+				9178D36BC015A98226FB4CE5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CuesLiveAppStore;
+			productName = cues.live;
+			productReference = 8DC47E4083293CA84B2885B4 /* cues.live.app */;
+			productType = "com.apple.product-type.application";
+		};
 		AA0000060000000000000001 /* CuesLive */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA0000090000000000000001 /* Build configuration list for PBXNativeTarget "CuesLive" */;
@@ -1006,7 +1238,7 @@
 			packageProductDependencies = (
 				AA0000E20000000000000200 /* Sparkle */,
 			);
-			productName = "cues.live";
+			productName = cues.live;
 			productReference = AA0000030000000000000001 /* cues.live.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -1064,11 +1296,26 @@
 			targets = (
 				AA0000060000000000000001 /* CuesLive */,
 				AA0000060000000000000002 /* CuesLiveTests */,
+				7461A8563658A2CA7A7E9ED8 /* CuesLiveAppStore */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		9178D36BC015A98226FB4CE5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				807B849149E5ACF19C2AF34E /* Assets.xcassets in Resources */,
+				1E74E25D07E83CE83DBCDC73 /* AppIcon.icon in Resources */,
+				0635B9806DB2025259712FA7 /* CueshowDocument.icns in Resources */,
+				F2D0F7C9E61F7DF509ACBEB1 /* CuesliveDocument.icns in Resources */,
+				ADCDDC8F0A7A835FBB10CB49 /* click-accent.wav in Resources */,
+				79EC3821EFF35D7A1FB3BBEE /* click-normal.wav in Resources */,
+				CF4AB6A28318E141013C18B9 /* SongSections in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA0000080000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1293,6 +1540,7 @@
 				AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */,
 				AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */,
 				AA00000100000000000004A2 /* GainRampTests.swift in Sources */,
+				AA00000100000000000009F1 /* TrackMixControlsTests.swift in Sources */,
 				AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */,
 				AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */,
 				AA00000100000000000000D5 /* SongBakeFingerprintTests.swift in Sources */,
@@ -1312,6 +1560,189 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E87AB31F98AC96B094CA1C27 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C41DD9AEDCFAE6113E7E89F /* CuesLiveApp.swift in Sources */,
+				5683783753979D5D44AA769D /* Song.swift in Sources */,
+				88CF0E142B71D61032550EC0 /* SongMusicalKey.swift in Sources */,
+				44E1F5758574E69D7A0983E6 /* ClickTrackSubdivision.swift in Sources */,
+				8B9717FD3846C0D5814AFFAF /* AudioTrack.swift in Sources */,
+				DEE1D44DC9B506579D93EEC7 /* MIDITrack.swift in Sources */,
+				202596B98683B07496BF0A8C /* MIDIEvent.swift in Sources */,
+				77D95A2B047262B53FC13EBC /* MIDIOutputService.swift in Sources */,
+				C698E8F27C5F7057BB475B7E /* MIDIScheduler.swift in Sources */,
+				BF77226E75BDB6462A0A2787 /* MIDILaneView.swift in Sources */,
+				CDB38AA9CF51A97EE61EE493 /* MIDIDevice.swift in Sources */,
+				1F9544513938F3D69E5FA41F /* MIDIDeviceStore.swift in Sources */,
+				B9DAF17410376F31808D0978 /* MIDIDeviceViews.swift in Sources */,
+				6A63938A6FD5EC7E7DBFC162 /* Setlist.swift in Sources */,
+				CE890C8FE3E35DB47ED860FF /* SetlistEntry.swift in Sources */,
+				CD6906EEB45CF9DC7F072F34 /* FileStore.swift in Sources */,
+				9D019DBB987BA1DC7F1E8C0B /* AudioEngineManager.swift in Sources */,
+				5B6A57F1BD9DC7FCD60AFF9A /* PlaybackCoordinator.swift in Sources */,
+				E7429507307743EDFC91DF1E /* PlaybackCoordinatorError.swift in Sources */,
+				A226C680E0B88DB12B7ACAD2 /* LiveSetlistSnapshots.swift in Sources */,
+				CC88A06A554FDB3E8BD37995 /* SongEditorViewModel.swift in Sources */,
+				B0F0F34B1FC430D4385FFE0A /* SetlistViewModel.swift in Sources */,
+				8D25A49F3162B00063C8CFC8 /* RootView.swift in Sources */,
+				B11A02399FAFE0392C601927 /* SongLibraryView.swift in Sources */,
+				7F74D91A2A30D76DE139D15C /* SongDetailView.swift in Sources */,
+				7B0B0B631AF53DE1C5C98D2A /* EditView.swift in Sources */,
+				92BDD0AF0E22E9D425FC596C /* EditStemTimelineView.swift in Sources */,
+				CD7424E5843E22B12D171FC7 /* TimelineSignatureAndTempoRulers.swift in Sources */,
+				D8FA453DE863FD80936D5150 /* TimelineSectionMarkerRow.swift in Sources */,
+				AF9B8BC70EDE7352FC6BE3DC /* TimelineRulerView.swift in Sources */,
+				8FDCF12509B8459144437CA4 /* RenameSectionSheet.swift in Sources */,
+				F6CA20BD88E6F35CD3BD5773 /* EditTransportBar.swift in Sources */,
+				3783F545E83A9FCE76DD3909 /* EditToolbar.swift in Sources */,
+				8FC9A566079D15729EE3CD63 /* EditSongSettingsMenus.swift in Sources */,
+				AA5CF1E506F6A4FAE6BC123E /* EditGuideTrackMenus.swift in Sources */,
+				33B1D1D0F78066D7DC4F76F9 /* AddTrackTypeSheet.swift in Sources */,
+				0ED0AD756C52C275816544DD /* TrackImportView.swift in Sources */,
+				59174B8DA8970F3382716FF6 /* LivePlaybackView.swift in Sources */,
+				AA23A43494FFA381B9E728DC /* LivePlaybackSupportViews.swift in Sources */,
+				AEE3B433DC0DA4EAC3BCE6FC /* LiveSetlistToolbar.swift in Sources */,
+				1D9D6E848F5BEFF2F56CF0C1 /* LiveSetlistNowPlayingInfoView.swift in Sources */,
+				CEEAF6B294B11B2034843452 /* TransportStatusReadout.swift in Sources */,
+				8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */,
+				F61F8D583DD0B65FE15C8F39 /* WaveformLaneView.swift in Sources */,
+				286CB25439511310D21D5039 /* WaveformBarsCanvas.swift in Sources */,
+				7D412A866B68E52B871B8246 /* DAWColors.swift in Sources */,
+				3CB305E965C2989FEBD4EB18 /* ArrangementMarker.swift in Sources */,
+				C768AFEEFAD4C2989E94B51D /* TimeSignatureChange.swift in Sources */,
+				376CE795C5085A6296C2E115 /* MeasureAnchoredChange.swift in Sources */,
+				3048121C0B3EE1404EE0187A /* AbletonProjectImporter.swift in Sources */,
+				8B68D7E09EA9FAA4F8A97D3A /* PersistenceController.swift in Sources */,
+				39644CE53879671A2EABEAB4 /* TempoChange.swift in Sources */,
+				F99B13CD70B9FC2FB944112A /* TrackBakeCache.swift in Sources */,
+				C4127164C36D8FBC754013DF /* SongTrackLoader.swift in Sources */,
+				00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */,
+				1C67899A8054E132507425D9 /* ClickTrackScheduler.swift in Sources */,
+				D647644C01187801B0AD4DA8 /* StemAudioWriter.swift in Sources */,
+				F8A0670D0FA3E9DD3D013F8D /* ClickTrackFileGenerator.swift in Sources */,
+				0491D0CB258BB532C4D262E8 /* TimecodeSettings.swift in Sources */,
+				9180875E8B4415CA60BF47D7 /* TimecodeSettingsStore.swift in Sources */,
+				20D72445427598058DC15378 /* TimecodeStartCalculator.swift in Sources */,
+				73BE27BA7981ADF0E1940E57 /* LTCFrameEncoder.swift in Sources */,
+				EC7EF5AB04A4B9AB2BCEBDD3 /* LTCGenerator.swift in Sources */,
+				F9D4CA76FF6F90A58CEB2DED /* TimecodePlaybackSupport.swift in Sources */,
+				551027503493E87975725216 /* ClickSongCreator.swift in Sources */,
+				FF5D2101985F288556C6A5CE /* SpeechSampleRenderer.swift in Sources */,
+				24D870479A431B3965428D2E /* SectionAnnouncer.swift in Sources */,
+				62DE9036BEB119F5597BEB1A /* SmartGuideCallPlanner.swift in Sources */,
+				B74AE229801352765E6DEA8D /* AnnouncementSource.swift in Sources */,
+				7E1007493D2F275F94D7A49B /* SongSectionPresets.swift in Sources */,
+				429ED83386A4DFAA235EFD97 /* SongSectionNameNormalizer.swift in Sources */,
+				E4CD3BB92968A28A81E49C65 /* SongSectionDetector.swift in Sources */,
+				C645950FE0BEFC91246500EF /* SparkleUpdater.swift in Sources */,
+				6E0D669AE634664FE0C646CE /* ToolbarSharedBackground.swift in Sources */,
+				0F3EF9B5611E0354E1A203DC /* TimelineLayout.swift in Sources */,
+				7C8B2EFDD5D77772BC5FEC54 /* ArrangementSlot.swift in Sources */,
+				8BF3A7FD93E6DB96B23D0DC4 /* SongArrangementStore.swift in Sources */,
+				B52DB4D05D7FDAC3C927CF99 /* ClipRegionStore.swift in Sources */,
+				9552A47E29CD5D877A5B07E3 /* TimelineRippleStore.swift in Sources */,
+				27D2A245DFF5C591D697AC21 /* SectionLoopController.swift in Sources */,
+				E207A200470468143ED9F367 /* GroupMixFadeController.swift in Sources */,
+				4F709236950C532CBB37D313 /* RemoteSessionModels.swift in Sources */,
+				C04FAE1C7E419A35B562C367 /* RemoteSessionProtocol.swift in Sources */,
+				1B2C5D6E41F0EE9CA2CAE114 /* RemoteSessionSettingsStore.swift in Sources */,
+				FF2FFB7A15E804182473C592 /* RemoteSessionHostService.swift in Sources */,
+				9DF88DAA085CABDF5DFAD08E /* RemoteSessionClientService.swift in Sources */,
+				C8B63C57E568FEA182FB13BF /* RemoteSessionSnapshotBuilder.swift in Sources */,
+				D746F9EA63BC3169EC8BB5F3 /* RemoteSessionCommandBridge.swift in Sources */,
+				8A026E5598BE80B727B652AB /* RemoteHostSessionController.swift in Sources */,
+				7677255193CAEA034F97288F /* RemoteSessionSettingsView.swift in Sources */,
+				2190D9EB6B43CD965AEFA8FE /* DeviceSettingsSheet.swift in Sources */,
+				8E1DA345FCA18ABC2256B34E /* RemoteLivePlaybackView.swift in Sources */,
+				A384FD84AA2A32587F49F3FB /* LiveSetlistRows.swift in Sources */,
+				D09825BE9A7B7991E4D60748 /* MappableLiveAction.swift in Sources */,
+				BB2538C2ECD8C0B97355D1F4 /* InputBinding.swift in Sources */,
+				FE240D938D9768F049D4540A /* InputMappingStore.swift in Sources */,
+				3B918329C4F08DEB6ED2F649 /* MIDIInputService.swift in Sources */,
+				9260F2243174719BC2C7CCB4 /* KeyboardInputMonitor.swift in Sources */,
+				4FC29B6B20E69B79107E31F8 /* InputMappingController.swift in Sources */,
+				C5BAE856EF7F7C8C55C3A9AB /* LiveSetlistMenuController.swift in Sources */,
+				2E2CAAA36957618AF72A8A34 /* MappableControlModifier.swift in Sources */,
+				E54434E2BCC59128689F1709 /* InputMappingSessionViews.swift in Sources */,
+				055A7DD4FF49A64810EC90F1 /* InputMappingSettingsView.swift in Sources */,
+				A0098CC5375653F730D0E085 /* HelpSettingsView.swift in Sources */,
+				C29C84FAA41C93CF453CCD67 /* DocsTopic.swift in Sources */,
+				448064EE42E8399691EC85BD /* DocsWindowView.swift in Sources */,
+				804846CAC3A1D70D00F981EA /* InputMappingPanel.swift in Sources */,
+				4C73EDBD3D31E2979C49EE21 /* ArrangementEditorMenu.swift in Sources */,
+				7BA9FACA96FB7F0855F31423 /* ChangeKeyDialog.swift in Sources */,
+				327D8979234007649DDCB55B /* PitchShiftBridge.mm in Sources */,
+				C3A673D653243066C6BC0B95 /* RubberBandPitchProcessor.swift in Sources */,
+				7A71235334CE0DD935D64451 /* ArrangementTimelineMapper.swift in Sources */,
+				E5FC8C57A71C36DCFDB2BD4A /* AudioPlaybackTransport.swift in Sources */,
+				0D35133A1D42A2B20A0D0EE8 /* DecodedStemBuffer.swift in Sources */,
+				F242469D38CB96930284AE76 /* TrackMemoryPlayer.swift in Sources */,
+				BE02C6AAD2AD6A4437E1A41E /* GainRamp.swift in Sources */,
+				6DBFE7367ACB8F3E0C7CAA1D /* OutputRecoveryBackoff.swift in Sources */,
+				A63CDD28D6603B6DCAB980F5 /* TimelinePlayheadOverlay.swift in Sources */,
+				C9D77B8B9596E38D691C7008 /* LiveSongWaveformScrollBacking.swift in Sources */,
+				BCFAEF5960EE8F456AE248FA /* LiveSongWaveformView.swift in Sources */,
+				DD0883626704CF5E3E575EA5 /* SetlistTransition.swift in Sources */,
+				EA72A290E1CDEF653DCF596D /* OverlapTransitionConfig.swift in Sources */,
+				51F4FA0B555A2018050B4476 /* OverlapTransitionTiming.swift in Sources */,
+				A6231BC1653A96074D7380B4 /* SetlistOverlapEditorView.swift in Sources */,
+				ECA2184AEF722006934A4BB2 /* OverlapPreviewEngine.swift in Sources */,
+				F7BED7B50FB7FABF262C9B83 /* OverlapTrackGraphBuilder.swift in Sources */,
+				187CB1E89C8812E06A404CFB /* TrackGroup.swift in Sources */,
+				5A63923951976D12AE7931A8 /* TrackGroupStore.swift in Sources */,
+				532745A5BEDB024756242DEF /* TrackGroupEditorView.swift in Sources */,
+				1D561974C2CFF90227DC21A4 /* OutputDestination.swift in Sources */,
+				441249A9D52307B5C8382556 /* OutputRoutingConfig.swift in Sources */,
+				A471859ECA9875C2DABDAA29 /* GroupOutputRoute.swift in Sources */,
+				569BF8338FB832C2C8F55120 /* OutputRoutingStore.swift in Sources */,
+				235CFEF4F109F8A33310A3AD /* AudioOutputDeviceService.swift in Sources */,
+				87AA3E173DC3F3A03F5EB998 /* OutputRoutingManager.swift in Sources */,
+				3E2D3C9A0AAFA9A7030E4B84 /* OutputChannelTestPlayer.swift in Sources */,
+				060975E7911FF7D5A6DFA990 /* SongFolderImporter.swift in Sources */,
+				12943F0304EF5EAB7355CD98 /* ManageOutputsView.swift in Sources */,
+				BF3CA00EFDBA79C04ED897BB /* OutputRoutingSettingsForm.swift in Sources */,
+				957CBC2A828629EE5FEFBB86 /* AppSettingsView.swift in Sources */,
+				75BC88109658E5CE10908554 /* MediaReference.swift in Sources */,
+				E4D058D968BCA6A8646D91FA /* SongProjectDocument.swift in Sources */,
+				EB3AF7FE98B3C448D5DC936E /* ShowProjectDocument.swift in Sources */,
+				EF5737E818752ACA57944474 /* ProjectUTType.swift in Sources */,
+				4926CEE83BB294F3E6CD4DCC /* MediaReferenceResolver.swift in Sources */,
+				80C395D6D9A696ACC64D7761 /* ProjectFileStore.swift in Sources */,
+				0D6EA2733B353775EEDD4EF7 /* SongProjectBridge.swift in Sources */,
+				6606EE84C487E3AFF450ED67 /* MediaConsolidator.swift in Sources */,
+				A52C618F779EC1571CFD0792 /* SetlistPackageStore.swift in Sources */,
+				85637C1DE835C41B3E08A91F /* SongMediaHealth.swift in Sources */,
+				BF157A5352834146CE276B79 /* MissingMediaRelinkView.swift in Sources */,
+				4B88EC0A362514098B123157 /* SongBakeManifest.swift in Sources */,
+				051EE6FC573BDB8874E49773 /* SongBakeFingerprint.swift in Sources */,
+				A2AF74D227FB5096335253CB /* SongBakeStore.swift in Sources */,
+				298868F51A2CBEE361DA8531 /* SongGroupBaker.swift in Sources */,
+				06FA428DC827C466F4686F62 /* SongEditSnapshot.swift in Sources */,
+				93C9773E4124A35B433FBA71 /* SongUndoController.swift in Sources */,
+				A6E4CA0EE895CD0A70ED6748 /* SharedTransportStrip.swift in Sources */,
+				E5C5977DB09E54250B578B38 /* AudioOutputLostBanner.swift in Sources */,
+				3676BF19E8A4A2E5D90F6077 /* BakeSongSheet.swift in Sources */,
+				E7829A3DD0DF8198590037E4 /* GroupMixStore.swift in Sources */,
+				9A22FB2DF0BB81E4E73B9C2A /* TrackMixControls.swift in Sources */,
+				6716D03BAD0715BD25B720CB /* LiveGroupMixerView.swift in Sources */,
+				58940AEE9C3298ADB763B5A1 /* PeakMeterHolder.swift in Sources */,
+				90C0C4DD8E19782FA5FEAD5A /* AppColors.swift in Sources */,
+				F61FC1B209F0DA22A085A044 /* AppTypography.swift in Sources */,
+				BE744F75A7001DBB1FC26590 /* AppSpacing.swift in Sources */,
+				BA83614E17A28FB2E4807049 /* AppAnimation.swift in Sources */,
+				E3DDF6D0C253E5995CB81C2A /* AppModifiers.swift in Sources */,
+				F7BCB858706383EA368E569F /* AppButtons.swift in Sources */,
+				52B769932B82F8AF0C46F701 /* AppChip.swift in Sources */,
+				53905EA9D3DCECA7995A114B /* AppSearchField.swift in Sources */,
+				EF67287DE02DFC7424325A54 /* AppSectionHeader.swift in Sources */,
+				027BFA4C1F9227309DCAE3FE /* AppBadge.swift in Sources */,
+				13D4374B5B93FA1763683C62 /* AppSheetContainer.swift in Sources */,
+				906E00ACDDE7F30BBCDFC166 /* AppEmptyState.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1323,6 +1754,165 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		1B084F89131F15A8DAF6D8ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_ENTITLEMENTS = "CuesLive/CuesLive-AppStore.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 6U2Y6W57T7;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/ThirdParty/rubberband",
+				);
+				INFOPLIST_FILE = CuesLive/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				"LD_RUNPATH_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				"OTHER_SWIFT_FLAGS[sdk=iphoneos26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=iphoneos27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=iphonesimulator26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=iphonesimulator27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=macosx26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=macosx27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				PRODUCT_BUNDLE_IDENTIFIER = live.cues;
+				PRODUCT_MODULE_NAME = CuesLive;
+				PRODUCT_NAME = cues.live;
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APP_STORE";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		912653BC1B0A8A28DAFE17AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				"ARCHS[sdk=macosx*]" = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_ENTITLEMENTS = "CuesLive/CuesLive-AppStore.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 6U2Y6W57T7;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/ThirdParty/rubberband",
+				);
+				INFOPLIST_FILE = CuesLive/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				"LD_RUNPATH_SEARCH_PATHS[sdk=iphoneos*]" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=iphonesimulator*]" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				ONLY_ACTIVE_ARCH = NO;
+				"OTHER_SWIFT_FLAGS[sdk=iphoneos26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=iphoneos27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=iphonesimulator26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=iphonesimulator27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=macosx26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				"OTHER_SWIFT_FLAGS[sdk=macosx27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
+				PRODUCT_BUNDLE_IDENTIFIER = live.cues;
+				PRODUCT_MODULE_NAME = CuesLive;
+				PRODUCT_NAME = cues.live;
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APP_STORE";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		AA00000B0000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1449,7 +2039,7 @@
 					"$(PROJECT_DIR)/ThirdParty/rubberband",
 				);
 				INFOPLIST_FILE = CuesLive/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "cues.live";
+				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1479,7 +2069,7 @@
 				"OTHER_SWIFT_FLAGS[sdk=macosx27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
 				PRODUCT_BUNDLE_IDENTIFIER = live.cues;
 				PRODUCT_MODULE_NAME = CuesLive;
-				PRODUCT_NAME = "cues.live";
+				PRODUCT_NAME = cues.live;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -1500,6 +2090,10 @@
 		AA00000B0000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"ARCHS[sdk=macosx*]" = (
+					arm64,
+					x86_64,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
@@ -1526,7 +2120,7 @@
 					"$(PROJECT_DIR)/ThirdParty/rubberband",
 				);
 				INFOPLIST_FILE = CuesLive/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "cues.live";
+				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -1549,7 +2143,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.0;
 				ONLY_ACTIVE_ARCH = NO;
-				"ARCHS[sdk=macosx*]" = "arm64 x86_64";
 				"OTHER_SWIFT_FLAGS[sdk=iphoneos26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
 				"OTHER_SWIFT_FLAGS[sdk=iphoneos27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
 				"OTHER_SWIFT_FLAGS[sdk=iphonesimulator26*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
@@ -1558,7 +2151,7 @@
 				"OTHER_SWIFT_FLAGS[sdk=macosx27*]" = "$(inherited) -DCUESLIVE_TOOLBAR_GLASS_SDK26";
 				PRODUCT_BUNDLE_IDENTIFIER = live.cues;
 				PRODUCT_MODULE_NAME = CuesLive;
-				PRODUCT_NAME = "cues.live";
+				PRODUCT_NAME = cues.live;
 				REGISTER_APP_GROUPS = YES;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
@@ -1633,6 +2226,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4ED3BE4EB5C147F86ED30C73 /* Build configuration list for PBXNativeTarget "CuesLiveAppStore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				912653BC1B0A8A28DAFE17AF /* Release */,
+				1B084F89131F15A8DAF6D8ED /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AA0000090000000000000001 /* Build configuration list for PBXNativeTarget "CuesLive" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -10,6 +10,7 @@ final class TrackMemoryPlayer {
 
     struct MixState: Sendable {
         var volume: Float = 1
+        var pan: Float = 0
         var isAudible: Bool = true
     }
 
@@ -24,6 +25,7 @@ final class TrackMemoryPlayer {
         let peakMeter = PeakMeterHolder()
         private var isInvalidated = false
         private var gainRamp = GainRamp()
+        private var panRamp = PanRamp()
         private let gainRampFrames: Int
         private var stateLock = os_unfair_lock()
 
@@ -51,13 +53,14 @@ final class TrackMemoryPlayer {
             os_unfair_lock_unlock(&stateLock)
         }
 
-        func updateMix(volume: Float, isAudible: Bool) {
+        func updateMix(volume: Float, pan: Float, isAudible: Bool) {
             os_unfair_lock_lock(&stateLock)
-            mix = MixState(volume: volume, isAudible: isAudible)
+            mix = MixState(volume: volume, pan: pan, isAudible: isAudible)
             // Nothing is audible while stopped, so land on the new gain instead of
             // ramping into the start of the next play (a muted track would leak).
             if !transport.isPlaying {
                 gainRamp.snap(to: Self.targetGain(for: mix))
+                panRamp.snap(to: mix.pan)
             }
             os_unfair_lock_unlock(&stateLock)
         }
@@ -91,6 +94,7 @@ final class TrackMemoryPlayer {
                 // Silent block: keep the gain current so the next audible block
                 // does not ramp from a stale value.
                 gainRamp.snap(to: targetGain)
+                panRamp.snap(to: mix.pan)
                 return
             }
 
@@ -98,6 +102,12 @@ final class TrackMemoryPlayer {
             // fader, mute or solo change never steps the waveform.
             gainRamp.apply(
                 target: targetGain,
+                to: UnsafeMutableAudioBufferListPointer(outputBuffer),
+                frameCount: Int(frameCount),
+                rampFrames: gainRampFrames
+            )
+            panRamp.apply(
+                target: mix.pan,
                 to: UnsafeMutableAudioBufferListPointer(outputBuffer),
                 frameCount: Int(frameCount),
                 rampFrames: gainRampFrames
@@ -701,8 +711,8 @@ final class TrackMemoryPlayer {
         renderContext.updateMapper(mapper)
     }
 
-    func updateMix(volume: Float, isAudible: Bool) {
-        renderContext.updateMix(volume: volume, isAudible: isAudible)
+    func updateMix(volume: Float, pan: Float, isAudible: Bool) {
+        renderContext.updateMix(volume: volume, pan: pan, isAudible: isAudible)
     }
 
     func setPlaybackWindow(offset: TimeInterval, endTimeline: TimeInterval?) {
