@@ -324,8 +324,7 @@ final class SongEditorViewModel {
     func preloadTrackDurations() {
         for track in song.sortedTracks {
             guard trackDurations[track.id] == nil else { continue }
-            guard let url = FileStore.trackURL(for: song, track: track) else { continue }
-            trackDurations[track.id] = FileStore.fileDuration(at: url) ?? 0
+            trackDurations[track.id] = FileStore.sourceDuration(for: song, track: track) ?? 0
         }
     }
 
@@ -333,8 +332,7 @@ final class SongEditorViewModel {
         if let cached = trackDurations[track.id] {
             return cached
         }
-        guard let url = FileStore.trackURL(for: song, track: track) else { return 0 }
-        let duration = FileStore.fileDuration(at: url) ?? 0
+        let duration = FileStore.sourceDuration(for: song, track: track) ?? 0
         trackDurations[track.id] = duration
         return duration
     }

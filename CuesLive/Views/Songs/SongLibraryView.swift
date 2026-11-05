@@ -504,6 +504,7 @@ struct SongLibraryPanel: View {
                 newTrack.trimStartSeconds = track.trimStartSeconds
                 newTrack.trimEndSeconds = track.trimEndSeconds
                 newTrack.excludeFromTranspose = track.excludeFromTranspose
+                newTrack.sourceDurationSeconds = track.sourceDurationSeconds
                 newTrack.mediaPath = track.mediaPath
                 newTrack.mediaPathStyle = track.mediaPathStyle
                 newTrack.mediaBookmarkData = track.mediaBookmarkData

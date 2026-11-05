@@ -18,6 +18,8 @@ final class AudioTrack {
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
     var excludeFromTranspose: Bool
+    /// Length of the source file the last time it was readable, so layout survives missing media.
+    var sourceDurationSeconds: Double?
 
     var mediaPathStyle: MediaPathStyle? {
         get {
@@ -44,6 +46,7 @@ final class AudioTrack {
         trimStartSeconds = 0.0
         trimEndSeconds = nil
         excludeFromTranspose = false
+        sourceDurationSeconds = nil
         mediaPath = nil
         mediaPathStyleRaw = nil
         mediaBookmarkData = nil

@@ -72,6 +72,22 @@ enum FileStore {
         try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
     }
 
+    /// Source length of a track's audio. Refreshes the cached length while the file is readable
+    /// and falls back to it when the file is missing, so the timeline keeps its size.
+    static func sourceDuration(for song: Song, track: AudioTrack) -> TimeInterval? {
+        if let url = trackURL(for: song, track: track), let duration = fileDuration(at: url) {
+            cacheSourceDuration(duration, for: track)
+            return duration
+        }
+        return track.sourceDurationSeconds
+    }
+
+    static func cacheSourceDuration(_ duration: TimeInterval, for track: AudioTrack) {
+        if track.sourceDurationSeconds.map({ abs($0 - duration) > 0.001 }) ?? true {
+            track.sourceDurationSeconds = duration
+        }
+    }
+
     static func fileDuration(at url: URL) -> TimeInterval? {
         guard let file = try? AVAudioFile(forReading: url) else { return nil }
         return Double(file.length) / file.processingFormat.sampleRate

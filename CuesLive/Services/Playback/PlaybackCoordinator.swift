@@ -824,12 +824,16 @@ final class PlaybackCoordinator {
             trackSources = song.sortedTracks.compactMap { track in
                 guard let url = FileStore.trackURL(for: song, track: track),
                       let duration = FileStore.fileDuration(at: url) else { return nil }
+                FileStore.cacheSourceDuration(duration, for: track)
                 return (url, duration)
             }
         }
-        guard !trackSources.isEmpty else { return nil }
 
-        let fileDuration = trackSources.map(\.duration).max() ?? 0
+        // Missing media keeps its cached length so sections still lay out, just without a waveform.
+        let cachedDuration = song.sortedTracks.compactMap(\.sourceDurationSeconds).max() ?? 0
+        guard !trackSources.isEmpty || cachedDuration > 0 else { return nil }
+
+        let fileDuration = trackSources.map(\.duration).max() ?? cachedDuration
         let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
         let arrangement = projectState.arrangement
         let inputs = arrangementLayoutInputs(for: song, markers: projectState.markers)
@@ -889,9 +893,8 @@ final class PlaybackCoordinator {
     }
 
     private static func trackSourceDuration(for trackID: UUID, in song: Song) -> TimeInterval {
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }),
-              let url = FileStore.trackURL(for: song, track: track) else { return 1 }
-        return FileStore.fileDuration(at: url) ?? 1
+        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
+        return FileStore.sourceDuration(for: song, track: track) ?? 1
     }
 
     static func arrangementLayoutInputs(

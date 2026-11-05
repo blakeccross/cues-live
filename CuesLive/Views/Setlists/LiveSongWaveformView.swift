@@ -204,6 +204,8 @@ struct LiveSongWaveformView: View {
     var isUserScrolling = false
     /// When true, mount a layout-space follow target for `ScrollViewReader`.
     var needsFollowScrollTarget = false
+    /// Shows a caution icon in every section when the song has missing audio files.
+    var showsMissingMediaWarning = false
     /// Observed playhead while stopped/paused so seeks and section taps move the marker.
     /// Omit while playing — live time comes from `playheadTimeProvider` + TimelineView.
     var idlePlayheadTime: TimeInterval? = nil
@@ -608,6 +610,14 @@ struct LiveSongWaveformView: View {
                         .padding(.top, 4)
                         .frame(width: segmentWidth, height: waveformHeight, alignment: .topLeading)
                         .offset(x: startX)
+
+                        if showsMissingMediaWarning {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(Color.orange)
+                                .frame(width: segmentWidth, height: waveformHeight)
+                                .offset(x: startX)
+                        }
                     }
                 }
             }
@@ -965,6 +975,8 @@ struct LiveSetlistWaveformScrollView: View {
     let currentPlaybackIndex: Int
     let waveformSnapshotForSongID: (UUID) -> LiveSongWaveformSnapshot?
     let ensureWaveformSnapshotForSongID: (UUID) -> Void
+    /// Songs with missing audio get a caution icon in each section.
+    var songHasMissingMedia: (UUID) -> Bool = { _ in false }
     let playheadTimeProvider: () -> TimeInterval
     let isPlayingProvider: () -> Bool
     /// Observed while stopped/paused so the playhead moves on seek/section tap.
@@ -1332,6 +1344,7 @@ struct LiveSetlistWaveformScrollView: View {
                 viewportWidth: viewportWidth,
                 isUserScrolling: isUserScrolling,
                 needsFollowScrollTarget: isCurrent && isFollowing,
+                showsMissingMediaWarning: songHasMissingMedia(snapshot.songID),
                 idlePlayheadTime: isCurrent ? idlePlayheadTime : nil,
                 playheadTimeProvider: isCurrent ? playheadTimeProvider : nil,
                 isPlayingProvider: isCurrent ? isPlayingProvider : nil,

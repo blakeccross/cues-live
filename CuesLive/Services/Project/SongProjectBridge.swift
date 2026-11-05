@@ -73,7 +73,8 @@ enum SongProjectBridge {
                 sortOrder: track.sortOrder,
                 media: media,
                 mix: ProjectTrackMix(from: track),
-                groupName: track.group?.name
+                groupName: track.group?.name,
+                sourceDurationSeconds: track.sourceDurationSeconds
             )
         }
 
@@ -272,6 +273,7 @@ enum SongProjectBridge {
             track.id = projectTrack.id
             applyMediaReference(projectTrack.media, to: track)
             projectTrack.mix.apply(to: track)
+            track.sourceDurationSeconds = projectTrack.sourceDurationSeconds
             if let groupName = projectTrack.groupName {
                 track.group = TrackGroupStore.findOrCreateGroup(named: groupName, in: context)
             }

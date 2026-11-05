@@ -42,11 +42,8 @@ enum SongPlaybackArrangementLoader {
     }
 
     private static func trackSourceDuration(for trackID: UUID, in song: Song) -> TimeInterval {
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }),
-              let url = FileStore.trackURL(for: song, track: track) else {
-            return 1
-        }
-        return FileStore.fileDuration(at: url) ?? 1
+        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
+        return FileStore.sourceDuration(for: song, track: track) ?? 1
     }
 }
 

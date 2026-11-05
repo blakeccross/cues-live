@@ -111,6 +111,8 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
     var media: MediaReference
     var mix: ProjectTrackMix
     var groupName: String?
+    /// Cached source length so sections keep their size when the audio file is missing.
+    var sourceDurationSeconds: Double?
 }
 
 struct ProjectMIDITrack: Codable, Hashable, Identifiable {

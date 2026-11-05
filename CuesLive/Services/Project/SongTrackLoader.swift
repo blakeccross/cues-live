@@ -193,6 +193,11 @@ enum SongTrackLoader {
         }
 
         let trackInputs = trackInputs(for: song)
+        // Missing files are skipped. When none are left, load an empty (silent) song so
+        // the timeline, cues and MIDI still run; only a song with no tracks at all is an error.
+        if trackInputs.isEmpty, !song.sortedTracks.isEmpty {
+            return []
+        }
         return try streamingPayloads(trackInputs: trackInputs)
     }
 

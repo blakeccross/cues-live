@@ -410,6 +410,7 @@ final class AudioEngineManager {
         setStreamingReadersActive(true)
         prewarmTracks(atTimelineSeconds: startTime)
         transport.beginPlayback(from: startTime)
+        advanceSilentClockIfNeeded()
         isPlaying = true
         didNotifyPlaybackFinished = false
         startTimer()
@@ -1087,8 +1088,9 @@ final class AudioEngineManager {
         track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinnedPrefetchTimeline)
     }
 
+    /// A song whose audio is all missing still plays its timeline silently.
     private var canPlay: Bool {
-        !tracks.isEmpty
+        !tracks.isEmpty || duration > 0
     }
 
     private func clampedTimelineTime(_ time: TimeInterval) -> TimeInterval {
@@ -1486,6 +1488,7 @@ final class AudioEngineManager {
                 self.beginOutputRecoveryIfNeeded()
                 guard self.isPlaying else { return }
             }
+            self.advanceSilentClockIfNeeded()
             self.refreshCurrentTimeFromEngine()
             self.finishScheduledTransitionIfNeeded()
             self.applyTrackPitch(at: self.currentTime)
@@ -1564,7 +1567,16 @@ final class AudioEngineManager {
         transport.audibleTimelineSeconds(atHostTime: currentHostTime())
     }
 
+    /// With no tracks loaded nothing renders on the audio thread, so the transport never
+    /// captures its start anchor or takes scheduled jumps. Drive it from here instead.
+    private func advanceSilentClockIfNeeded() {
+        guard tracks.isEmpty else { return }
+        _ = transport.renderTimeline(atHostTime: mach_absolute_time(), captureAnchor: true)
+    }
+
     private func currentHostTime() -> UInt64? {
+        // Same clock as `advanceSilentClockIfNeeded`; there is no render time to read.
+        if tracks.isEmpty { return mach_absolute_time() }
         guard let lastRenderTime = engine.outputNode.lastRenderTime,
               lastRenderTime.isHostTimeValid else { return nil }
         return lastRenderTime.hostTime

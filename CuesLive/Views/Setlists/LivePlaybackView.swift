@@ -1099,7 +1099,9 @@ struct LivePlaybackView: View {
     /// Overlaid rather than swapped in for the waveform so a failed load keeps the pane's height.
     @ViewBuilder
     private var loadErrorBanner: some View {
-        if let loadError = coordinator.loadError {
+        // Missing audio is flagged on the sections themselves, so its load error stays hidden.
+        if let loadError = coordinator.loadError,
+           !(coordinator.currentSong.map(songHasMissingMedia) ?? false) {
             Label(loadError, systemImage: "exclamationmark.triangle.fill")
                 .font(.caption)
                 .foregroundStyle(.red)
@@ -1124,6 +1126,9 @@ struct LivePlaybackView: View {
                 ensureWaveformSnapshotForSongID: { songID in
                     guard let song = coordinator.song(for: songID) else { return }
                     coordinator.ensureWaveformSnapshot(for: song)
+                },
+                songHasMissingMedia: { songID in
+                    coordinator.song(for: songID).map(songHasMissingMedia) ?? false
                 },
                 playheadTimeProvider: { coordinator.livePlayheadTime() },
                 isPlayingProvider: { coordinator.isPlaying },
