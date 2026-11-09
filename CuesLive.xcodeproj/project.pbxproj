@@ -229,6 +229,7 @@
 		AA00000100000000000000B5 /* OverlapTrackGraphBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */; };
 		AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */; };
 		AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C7 /* AudioTimelineMathTests.swift */; };
+		AA0000010000000000000CA1 /* LiveSetlistZoomAnchorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */; };
 		AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */; };
 		AA00000100000000000000D0 /* SongBakeManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D0 /* SongBakeManifest.swift */; };
 		AA00000100000000000000D1 /* SongBakeFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D1 /* SongBakeFingerprint.swift */; };
@@ -538,6 +539,7 @@
 		AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTrackGraphBuilder.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTransitionConfigTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C7 /* AudioTimelineMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTimelineMathTests.swift; sourceTree = "<group>"; };
+		AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomAnchorTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackTransportTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D0 /* SongBakeManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongBakeManifest.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D1 /* SongBakeFingerprint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongBakeFingerprint.swift; sourceTree = "<group>"; };
@@ -924,6 +926,7 @@
 				AA00000200000000000000A1 /* TimelineRippleStoreTests.swift */,
 				AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */,
 				AA00000200000000000000C7 /* AudioTimelineMathTests.swift */,
+				AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */,
 				AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */,
 				AA00000200000000000004A2 /* GainRampTests.swift */,
 				AA00000200000000000009F1 /* TrackMixControlsTests.swift */,
@@ -1534,6 +1537,7 @@
 				AA0000F10000000000000004 /* ClipEditingTests.swift in Sources */,
 				AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */,
 				AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */,
+				AA0000010000000000000CA1 /* LiveSetlistZoomAnchorTests.swift in Sources */,
 				AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */,
 				AA00000100000000000004A2 /* GainRampTests.swift in Sources */,
 				AA00000100000000000009F1 /* TrackMixControlsTests.swift in Sources */,

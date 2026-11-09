@@ -1,6 +1,8 @@
 import SwiftUI
 #if os(macOS)
 import AppKit
+#elseif os(iOS)
+import UIKit
 #endif
 
 enum ArrangementSectionPalette {
@@ -84,6 +86,178 @@ enum LiveSetlistWaveformMetrics {
 
     static func storageValue(forZoom horizontalZoom: CGFloat) -> Double {
         Double(clampedHorizontalZoom(horizontalZoom))
+    }
+
+    /// Width of a song lane whose waveform snapshot has not loaded yet.
+    static let unloadedLaneWidth: CGFloat = 180
+}
+
+/// Scroll-offset math for zooming the setlist waveform around the playhead.
+/// Fixed chrome (padding, headers, badges, spacing) is omitted: it does not
+/// change with zoom, so it cancels out of the offset delta.
+enum LiveSetlistZoomAnchor {
+    static func laneWidth(timelineDuration: TimeInterval?, zoom: CGFloat) -> CGFloat {
+        guard let timelineDuration else { return LiveSetlistWaveformMetrics.unloadedLaneWidth }
+        return TimelineLayout.contentWidth(for: timelineDuration, zoom: zoom)
+    }
+
+    /// Content X of the playhead counting only zoom-scaled lane widths.
+    static func scalablePlayheadX(
+        precedingLaneWidths: [CGFloat],
+        currentLaneWidth: CGFloat,
+        playheadTime: TimeInterval,
+        timelineDuration: TimeInterval
+    ) -> CGFloat {
+        let safeDuration = max(timelineDuration, 0.001)
+        let clampedTime = min(max(0, playheadTime), safeDuration)
+        let playheadX = TimelineLayout.xPosition(
+            for: clampedTime,
+            duration: safeDuration,
+            contentWidth: currentLaneWidth
+        )
+        return precedingLaneWidths.reduce(0, +) + playheadX
+    }
+
+    static func scrollOffsetDelta(
+        precedingLaneWidthsBefore: [CGFloat],
+        currentLaneWidthBefore: CGFloat,
+        precedingLaneWidthsAfter: [CGFloat],
+        currentLaneWidthAfter: CGFloat,
+        playheadTime: TimeInterval,
+        timelineDuration: TimeInterval
+    ) -> CGFloat {
+        let before = scalablePlayheadX(
+            precedingLaneWidths: precedingLaneWidthsBefore,
+            currentLaneWidth: currentLaneWidthBefore,
+            playheadTime: playheadTime,
+            timelineDuration: timelineDuration
+        )
+        let after = scalablePlayheadX(
+            precedingLaneWidths: precedingLaneWidthsAfter,
+            currentLaneWidth: currentLaneWidthAfter,
+            playheadTime: playheadTime,
+            timelineDuration: timelineDuration
+        )
+        return after - before
+    }
+}
+
+/// Applies one zoom gesture's scroll correction. Steps in a gesture sum onto the
+/// offset captured when the gesture starts, so a batched SwiftUI update still
+/// lands on the playhead. A later gesture keeps an unreached target as its base
+/// so a clamped correction is not dropped.
+struct LiveSetlistZoomScrollSession {
+    static let maximumStableAttempts = 8
+
+    private(set) var batchID: Int?
+    private(set) var baseOffset: CGFloat?
+    private(set) var unclampedTarget: CGFloat?
+    private(set) var reachedTarget = false
+    private var confirmedContentWidth: CGFloat?
+    private var stableRetries = 0
+
+    struct Update: Equatable {
+        /// Scroll offset to apply. `nil` leaves the scroll view where it is.
+        var offset: CGFloat?
+        /// No further correction is pending.
+        var isSettled: Bool
+    }
+
+    mutating func update(
+        batchID: Int?,
+        delta: CGFloat,
+        actualOffset: CGFloat?,
+        minimumOffset: CGFloat,
+        maximumOffset: CGFloat,
+        contentWidth: CGFloat?,
+        allowStable: Bool
+    ) -> Update {
+        if let batchID {
+            guard let actualOffset else { return Update(offset: nil, isSettled: false) }
+            noteBatch(batchID, delta: delta, actualOffset: actualOffset)
+            let offset = resolve(
+                actualOffset: actualOffset,
+                minimumOffset: minimumOffset,
+                maximumOffset: maximumOffset,
+                contentWidth: contentWidth,
+                allowStable: allowStable
+            )
+            return Update(offset: offset, isSettled: reachedTarget)
+        }
+
+        guard unclampedTarget != nil, let actualOffset else {
+            return Update(offset: nil, isSettled: true)
+        }
+        let offset = resolve(
+            actualOffset: actualOffset,
+            minimumOffset: minimumOffset,
+            maximumOffset: maximumOffset,
+            contentWidth: contentWidth,
+            allowStable: allowStable
+        )
+        let settled = reachedTarget
+        if reachedTarget {
+            reset()
+        }
+        return Update(offset: offset, isSettled: settled)
+    }
+
+    private mutating func noteBatch(_ batchID: Int, delta: CGFloat, actualOffset: CGFloat) {
+        if self.batchID != batchID {
+            if let unclampedTarget, !reachedTarget {
+                baseOffset = unclampedTarget
+            } else {
+                baseOffset = actualOffset
+            }
+            self.batchID = batchID
+            reachedTarget = false
+            confirmedContentWidth = nil
+            stableRetries = 0
+        }
+        guard let baseOffset else { return }
+        let target = baseOffset + delta
+        guard unclampedTarget != target else { return }
+        unclampedTarget = target
+        reachedTarget = false
+        confirmedContentWidth = nil
+        stableRetries = 0
+    }
+
+    private mutating func resolve(
+        actualOffset: CGFloat,
+        minimumOffset: CGFloat,
+        maximumOffset: CGFloat,
+        contentWidth: CGFloat?,
+        allowStable: Bool
+    ) -> CGFloat? {
+        guard let target = unclampedTarget, !reachedTarget else { return nil }
+        let upper = max(minimumOffset, maximumOffset)
+        let clamped = min(max(target, minimumOffset), upper)
+        let widthStable = allowStable && contentWidth != nil && confirmedContentWidth == contentWidth
+        if allowStable, let contentWidth {
+            confirmedContentWidth = contentWidth
+            stableRetries += 1
+        }
+        let atTarget = abs(clamped - target) <= 1
+        let alreadyThere = abs(actualOffset - clamped) <= 0.5
+        let gaveUp = stableRetries > Self.maximumStableAttempts
+        if alreadyThere && (atTarget || widthStable || gaveUp) {
+            reachedTarget = true
+            return nil
+        }
+        if gaveUp {
+            reachedTarget = true
+        }
+        return alreadyThere ? nil : clamped
+    }
+
+    private mutating func reset() {
+        batchID = nil
+        baseOffset = nil
+        unclampedTarget = nil
+        reachedTarget = false
+        confirmedContentWidth = nil
+        stableRetries = 0
     }
 }
 
@@ -1013,6 +1187,16 @@ struct LiveSetlistWaveformScrollView: View {
     @State private var viewportWidth: CGFloat = 1
     @State private var horizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoom
     @State private var pinchStartZoom: CGFloat?
+    /// Summed playhead shift for the open zoom gesture. Cleared once the scroll
+    /// view has had a chance to apply it.
+    @State private var zoomBatch: ZoomBatch?
+    @State private var zoomGestureID = 0
+    @State private var isZoomGesturing = false
+
+    private struct ZoomBatch: Equatable {
+        var id: Int
+        var delta: CGFloat
+    }
 
     private let laneSpacing: CGFloat = 24
     private static let zoomAdjustmentStep: CGFloat = 0.25
@@ -1040,6 +1224,15 @@ struct LiveSetlistWaveformScrollView: View {
                 .padding(.leading, AppSpacing.md)
                 .padding(.vertical, 2)
                 .frame(minWidth: viewportWidth, alignment: .leading)
+                .background(alignment: .topLeading) {
+                    LiveSetlistZoomScrollAdjuster(
+                        batchID: zoomBatch?.id,
+                        delta: zoomBatch?.delta ?? 0
+                    )
+                    .frame(width: 1, height: 1)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
             }
             .defaultScrollAnchor(.leading)
             // Keep a single scrollTargetBehavior instance so toggling follow does not
@@ -1048,7 +1241,8 @@ struct LiveSetlistWaveformScrollView: View {
             .coordinateSpace(name: LiveSetlistWaveformMetrics.scrollCoordinateSpaceName)
             .modifier(LiveSetlistFollowUserScrollDetector(
                 isFollowing: $isFollowing,
-                isUserScrolling: $isUserScrolling
+                isUserScrolling: $isUserScrolling,
+                suspendsUserScrollTracking: isZoomGesturing
             ))
             .onPreferenceChange(LiveSetlistPlayheadViewportXKey.self) { playheadX in
                 // Preference updates during a drag rebuild the scroll hierarchy
@@ -1214,25 +1408,107 @@ struct LiveSetlistWaveformScrollView: View {
     }
 
     private func pinchChanged(_ scale: CGFloat) {
-        if pinchStartZoom == nil {
+        let starting = pinchStartZoom == nil
+        if starting {
             pinchStartZoom = horizontalZoom
+            // Follow recenters on a timer. Hold it off for the whole pinch, including
+            // the first events whose scale has not moved the playhead yet.
+            beginZoomGesture()
         }
         guard let pinchStartZoom else { return }
+        let oldZoom = horizontalZoom
+        let newZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            horizontalZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
+            anchorZoom(from: oldZoom, to: newZoom)
+            horizontalZoom = newZoom
         }
     }
 
     private func pinchEnded() {
         pinchStartZoom = nil
         persistHorizontalZoom()
+        endZoomGesture()
     }
 
     private func setHorizontalZoom(_ proposed: CGFloat) {
-        horizontalZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(proposed)
+        let oldZoom = horizontalZoom
+        let newZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(proposed)
+        guard newZoom != oldZoom else { return }
+        let beganHere = !isZoomGesturing
+        anchorZoom(from: oldZoom, to: newZoom)
+        horizontalZoom = newZoom
         persistHorizontalZoom()
+        if beganHere {
+            endZoomGesture()
+        }
+    }
+
+    private func beginZoomGesture() {
+        zoomGestureID += 1
+        isZoomGesturing = true
+    }
+
+    /// Shifts the scroll offset by the same amount the playhead's content X moves.
+    /// Steps accumulate on the gesture's batch so one SwiftUI update still includes
+    /// every scale change.
+    private func anchorZoom(from oldZoom: CGFloat, to newZoom: CGFloat) {
+        guard oldZoom != newZoom else { return }
+        let time = resolvedPlayheadTime()
+        let step = scalablePlayheadX(zoom: newZoom, time: time)
+            - scalablePlayheadX(zoom: oldZoom, time: time)
+        guard step != 0 else { return }
+        if !isZoomGesturing {
+            beginZoomGesture()
+        }
+        if zoomBatch?.id != zoomGestureID {
+            zoomBatch = ZoomBatch(id: zoomGestureID, delta: step)
+        } else if var batch = zoomBatch {
+            batch.delta += step
+            zoomBatch = batch
+        }
+    }
+
+    private func endZoomGesture() {
+        guard isZoomGesturing else { return }
+        let gestureID = zoomGestureID
+        Task { @MainActor in
+            await Task.yield()
+            await Task.yield()
+            guard zoomGestureID == gestureID else { return }
+            zoomBatch = nil
+            isZoomGesturing = false
+        }
+    }
+
+    private func resolvedPlayheadTime() -> TimeInterval {
+        if isPlayingProvider() {
+            return playheadTimeProvider()
+        }
+        if let idlePlayheadTime {
+            return idlePlayheadTime
+        }
+        return playheadTimeProvider()
+    }
+
+    private func scalablePlayheadX(zoom: CGFloat, time: TimeInterval) -> CGFloat {
+        var preceding: [CGFloat] = []
+        for item in timelineItems {
+            guard case .song(let songID, let playbackIndex, _) = item else { continue }
+            let duration = waveformSnapshotForSongID(songID)?.timelineDuration
+            let width = LiveSetlistZoomAnchor.laneWidth(timelineDuration: duration, zoom: zoom)
+            if playbackIndex == currentPlaybackIndex {
+                return LiveSetlistZoomAnchor.scalablePlayheadX(
+                    precedingLaneWidths: preceding,
+                    currentLaneWidth: width,
+                    playheadTime: time,
+                    timelineDuration: duration ?? 0
+                )
+            }
+            preceding.append(width)
+        }
+        return 0
     }
 
     private func persistHorizontalZoom() {
@@ -1260,7 +1536,7 @@ struct LiveSetlistWaveformScrollView: View {
         deferred: Bool = false
     ) {
         let perform = {
-            guard self.isFollowing else { return }
+            guard self.isFollowing, !self.isZoomGesturing else { return }
             if requirePlaying, !self.isPlayingProvider() { return }
 
             var transaction = Transaction()
@@ -1374,9 +1650,9 @@ private struct LiveSetlistWaveformLanePlaceholder: View {
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
 
     var body: some View {
-        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-            .fill(AppColors.backgroundPrimary)
-            .frame(width: 180, height: waveformHeight)
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(AppColors.backgroundPrimary)
+                .frame(width: LiveSetlistWaveformMetrics.unloadedLaneWidth, height: waveformHeight)
             .opacity(isCurrent ? 1 : 0.72)
             .overlay {
                 ProgressView()
@@ -1446,11 +1722,14 @@ struct LiveSetlistFollowScrollDriver: View {
 struct LiveSetlistFollowUserScrollDetector: ViewModifier {
     @Binding var isFollowing: Bool
     @Binding var isUserScrolling: Bool
+    /// Programmatic playhead-anchored zoom also moves the scroll view.
+    var suspendsUserScrollTracking = false
 
     func body(content: Content) -> some View {
         if #available(macOS 15.0, iOS 18.0, *) {
             content
                 .onScrollPhaseChange { _, newPhase in
+                    guard !suspendsUserScrollTracking else { return }
                     switch newPhase {
                     case .interacting, .decelerating:
                         isUserScrolling = true
@@ -1464,10 +1743,12 @@ struct LiveSetlistFollowUserScrollDetector: ViewModifier {
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 6)
                         .onChanged { _ in
+                            guard !suspendsUserScrollTracking else { return }
                             isUserScrolling = true
                             isFollowing = false
                         }
                         .onEnded { _ in
+                            guard !suspendsUserScrollTracking else { return }
                             isUserScrolling = false
                         }
                 )
@@ -1596,6 +1877,255 @@ private struct LiveSetlistPinchRecognizer: UIGestureRecognizerRepresentable {
         ) -> Bool {
             true
         }
+    }
+}
+#endif
+
+/// Shifts the waveform scroll view so a zoom keeps the playhead under the same
+/// screen position. SwiftUI's scroll view otherwise keeps its point offset while
+/// the lanes grow, which slides the playhead sideways.
+private struct LiveSetlistZoomScrollAdjuster: View {
+    var batchID: Int?
+    var delta: CGFloat
+
+    var body: some View {
+        #if os(macOS)
+        LiveSetlistZoomScrollAdjusterMac(batchID: batchID, delta: delta)
+        #else
+        LiveSetlistZoomScrollAdjusterIOS(batchID: batchID, delta: delta)
+        #endif
+    }
+}
+
+private struct LiveSetlistZoomScrollMetrics {
+    var offset: CGFloat
+    var minimum: CGFloat
+    var maximum: CGFloat
+    var contentWidth: CGFloat
+}
+
+/// Retry loop shared by the macOS and iOS scroll adjusters.
+private final class LiveSetlistZoomScrollDriver {
+    private var session = LiveSetlistZoomScrollSession()
+    private var batchID: Int?
+    private var delta: CGFloat = 0
+    private var retryScheduled = false
+    private var retryCount = 0
+    private var isApplying = false
+
+    var needsLayoutPass: Bool {
+        batchID != nil || session.unclampedTarget != nil
+    }
+
+    func sync(
+        batchID: Int?,
+        delta: CGFloat,
+        readMetrics: @escaping () -> LiveSetlistZoomScrollMetrics?,
+        setOffset: @escaping (CGFloat) -> Void
+    ) {
+        if batchID != self.batchID || delta != self.delta {
+            retryCount = 0
+        }
+        self.batchID = batchID
+        self.delta = delta
+        let settled = apply(allowStable: batchID == nil, readMetrics: readMetrics, setOffset: setOffset)
+        if !settled {
+            scheduleRetry(readMetrics: readMetrics, setOffset: setOffset)
+        }
+    }
+
+    func applyFromLayout(
+        readMetrics: () -> LiveSetlistZoomScrollMetrics?,
+        setOffset: (CGFloat) -> Void
+    ) {
+        guard needsLayoutPass else { return }
+        apply(allowStable: batchID == nil, readMetrics: readMetrics, setOffset: setOffset)
+    }
+
+    private func scheduleRetry(
+        readMetrics: @escaping () -> LiveSetlistZoomScrollMetrics?,
+        setOffset: @escaping (CGFloat) -> Void
+    ) {
+        guard !retryScheduled, retryCount < LiveSetlistZoomScrollSession.maximumStableAttempts else { return }
+        retryScheduled = true
+        retryCount += 1
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.retryScheduled = false
+            let settled = self.apply(
+                allowStable: self.batchID == nil,
+                readMetrics: readMetrics,
+                setOffset: setOffset
+            )
+            if !settled {
+                self.scheduleRetry(readMetrics: readMetrics, setOffset: setOffset)
+            }
+        }
+    }
+
+    @discardableResult
+    private func apply(
+        allowStable: Bool,
+        readMetrics: () -> LiveSetlistZoomScrollMetrics?,
+        setOffset: (CGFloat) -> Void
+    ) -> Bool {
+        guard !isApplying else { return session.reachedTarget }
+        guard let metrics = readMetrics() else {
+            return batchID == nil && session.unclampedTarget == nil
+        }
+        isApplying = true
+        let update = session.update(
+            batchID: batchID,
+            delta: delta,
+            actualOffset: metrics.offset,
+            minimumOffset: metrics.minimum,
+            maximumOffset: metrics.maximum,
+            contentWidth: metrics.contentWidth,
+            allowStable: allowStable
+        )
+        if let offset = update.offset {
+            setOffset(offset)
+        }
+        isApplying = false
+        return update.isSettled
+    }
+}
+
+#if os(macOS)
+private struct LiveSetlistZoomScrollAdjusterMac: NSViewRepresentable {
+    var batchID: Int?
+    var delta: CGFloat
+
+    func makeNSView(context: Context) -> LiveSetlistZoomScrollAdjusterMacView {
+        let view = LiveSetlistZoomScrollAdjusterMacView()
+        view.sync(batchID: batchID, delta: delta)
+        return view
+    }
+
+    func updateNSView(_ nsView: LiveSetlistZoomScrollAdjusterMacView, context: Context) {
+        nsView.sync(batchID: batchID, delta: delta)
+    }
+}
+
+private final class LiveSetlistZoomScrollAdjusterMacView: NSView {
+    private let driver = LiveSetlistZoomScrollDriver()
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func layout() {
+        super.layout()
+        driver.applyFromLayout(
+            readMetrics: { self.scrollMetrics() },
+            setOffset: { self.setOffset($0) }
+        )
+    }
+
+    func sync(batchID: Int?, delta: CGFloat) {
+        driver.sync(
+            batchID: batchID,
+            delta: delta,
+            readMetrics: { [weak self] in self?.scrollMetrics() },
+            setOffset: { [weak self] in self?.setOffset($0) }
+        )
+    }
+
+    private func scrollMetrics() -> LiveSetlistZoomScrollMetrics? {
+        guard let scrollView = enclosingScrollView else { return nil }
+        let clip = scrollView.contentView
+        let contentWidth = scrollView.documentView?.frame.width ?? clip.bounds.width
+        let maximum = max(0, contentWidth - clip.bounds.width)
+        return LiveSetlistZoomScrollMetrics(
+            offset: clip.bounds.origin.x,
+            minimum: 0,
+            maximum: maximum,
+            contentWidth: contentWidth
+        )
+    }
+
+    private func setOffset(_ x: CGFloat) {
+        guard let scrollView = enclosingScrollView else { return }
+        let clip = scrollView.contentView
+        guard abs(clip.bounds.origin.x - x) > 0.5 else { return }
+        clip.scroll(to: NSPoint(x: x, y: clip.bounds.origin.y))
+        scrollView.reflectScrolledClipView(clip)
+    }
+}
+#else
+private struct LiveSetlistZoomScrollAdjusterIOS: UIViewRepresentable {
+    var batchID: Int?
+    var delta: CGFloat
+
+    func makeUIView(context: Context) -> LiveSetlistZoomScrollAdjusterIOSView {
+        let view = LiveSetlistZoomScrollAdjusterIOSView()
+        view.sync(batchID: batchID, delta: delta)
+        return view
+    }
+
+    func updateUIView(_ uiView: LiveSetlistZoomScrollAdjusterIOSView, context: Context) {
+        uiView.sync(batchID: batchID, delta: delta)
+    }
+}
+
+private final class LiveSetlistZoomScrollAdjusterIOSView: UIView {
+    private let driver = LiveSetlistZoomScrollDriver()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        driver.applyFromLayout(
+            readMetrics: { self.scrollMetrics() },
+            setOffset: { self.setOffset($0) }
+        )
+    }
+
+    func sync(batchID: Int?, delta: CGFloat) {
+        driver.sync(
+            batchID: batchID,
+            delta: delta,
+            readMetrics: { [weak self] in self?.scrollMetrics() },
+            setOffset: { [weak self] in self?.setOffset($0) }
+        )
+    }
+
+    private func scrollMetrics() -> LiveSetlistZoomScrollMetrics? {
+        guard let scrollView = enclosingScrollView() else { return nil }
+        let minimum = -scrollView.adjustedContentInset.left
+        let maximum = max(
+            minimum,
+            scrollView.contentSize.width - scrollView.bounds.width + scrollView.adjustedContentInset.right
+        )
+        return LiveSetlistZoomScrollMetrics(
+            offset: scrollView.contentOffset.x,
+            minimum: minimum,
+            maximum: maximum,
+            contentWidth: scrollView.contentSize.width
+        )
+    }
+
+    private func enclosingScrollView() -> UIScrollView? {
+        var view: UIView? = superview
+        while let current = view {
+            if let scrollView = current as? UIScrollView {
+                return scrollView
+            }
+            view = current.superview
+        }
+        return nil
+    }
+
+    private func setOffset(_ x: CGFloat) {
+        guard let scrollView = enclosingScrollView() else { return }
+        guard abs(scrollView.contentOffset.x - x) > 0.5 else { return }
+        scrollView.setContentOffset(CGPoint(x: x, y: scrollView.contentOffset.y), animated: false)
     }
 }
 #endif
