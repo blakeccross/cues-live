@@ -3,7 +3,6 @@ import SwiftUI
 
 struct EditTransportBar<Chrome: View>: View {
     let viewModel: SongEditorViewModel
-    let markers: [ArrangementMarker]
     @Bindable var song: Song
     @Binding var showingArrangementEditor: Bool
     @Binding var showingTimeSignatureEditor: Bool
@@ -15,25 +14,20 @@ struct EditTransportBar<Chrome: View>: View {
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
     @Binding var showingChangeKey: Bool
-    @Binding var arrangementSlots: [ArrangementSlot]
-    @Binding var clipTrims: [ArrangementClipTrim]
-    @Binding var removedClips: [ArrangementRemovedClip]
-    @Binding var clipGaps: [ArrangementClipGap]
-    @Binding var clipRegions: [ClipRegion]
-    @Binding var loopSlotIDs: Set<UUID>
+    let arrangementActions: ArrangementSectionActions
+    let loopSectionIDs: Set<UUID>
     @Binding var showingSongLibrary: Bool
     @Binding var showingBakeSheet: Bool
     @Binding var showingGroupEditor: Bool
     let isDetectingSections: Bool
     let onDetectSections: () -> Void
     let onClearMarkerCue: () -> Void
-    let onPersistArrangement: () -> Void
-    let onUndoableChange: UndoableChangeHandler
     let captureSnapshot: () -> SongEditSnapshot
-    let currentSectionAtTime: (TimeInterval) -> ArrangementDisplaySection?
+    let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+    let onClickTrackGenerated: () -> Void
     let onBack: () -> Void
     let undoController: SongUndoController
     let content: Chrome
@@ -75,6 +69,7 @@ struct EditTransportBar<Chrome: View>: View {
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
                 registerUndo: registerUndo,
+                onClickTrackGenerated: onClickTrackGenerated,
                 chrome: .sheet
             )
         }
@@ -88,17 +83,7 @@ struct EditTransportBar<Chrome: View>: View {
             )
         }
         .sheet(isPresented: $showingArrangementEditor) {
-            ArrangementEditorMenu(
-                slots: $arrangementSlots,
-                clipTrims: $clipTrims,
-                removedClips: $removedClips,
-                clipGaps: $clipGaps,
-                clipRegions: $clipRegions,
-                loopSlotIDs: $loopSlotIDs,
-                markers: markers,
-                onPersist: onPersistArrangement,
-                onUndoableChange: onUndoableChange
-            )
+            ArrangementEditorMenu(actions: arrangementActions)
             .padding(AppSpacing.md)
         }
     }
@@ -152,7 +137,7 @@ struct EditTransportBar<Chrome: View>: View {
                 Label("Smart Guide", systemImage: "person.wave.2")
             }
 
-            if !markers.isEmpty {
+            if !arrangementActions.sections.isEmpty {
                 Button {
                     showingArrangementEditor = true
                 } label: {
@@ -287,7 +272,7 @@ struct EditTransportBar<Chrome: View>: View {
 
     private func sectionLoopIsActive(at time: TimeInterval) -> Bool {
         guard let section = currentSectionAtTime(time) else { return false }
-        return loopSlotIDs.contains(section.id)
+        return loopSectionIDs.contains(section.id)
     }
 
 }

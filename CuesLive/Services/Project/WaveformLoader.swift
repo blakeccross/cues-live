@@ -22,11 +22,39 @@ enum WaveformLoader {
         normalize(loadRawPeaks(from: url, targetSampleCount: targetSampleCount))
     }
 
+    /// One normalized peak row per channel, at most two. Levels share one scale, so a quieter
+    /// channel stays shorter.
+    static func loadChannelPeaks(from url: URL, targetSampleCount: Int? = nil) -> [[Float]] {
+        normalizeChannels(loadRawChannelPeaks(from: url, targetSampleCount: targetSampleCount))
+    }
+
     static func loadRawPeaks(from url: URL, targetSampleCount: Int? = nil) -> [Float] {
+        mix(loadRawChannelPeaks(from: url, targetSampleCount: targetSampleCount))
+    }
+
+    static func loadRawChannelPeaks(from url: URL, targetSampleCount: Int? = nil) -> [[Float]] {
         guard let decoder = PeakDecoder(url: url, targetSampleCount: targetSampleCount) else { return [] }
-        var peaks = [Float](repeating: 0, count: decoder.bucketCount)
-        decoder.decode(0..<decoder.bucketCount, into: &peaks)
-        return peaks
+        var channels = decoder.makeBuckets()
+        decoder.decode(0..<decoder.bucketCount, into: &channels)
+        return channels
+    }
+
+    /// Loudest channel at each bucket. Mono files pass through unchanged.
+    static func mix(_ channels: [[Float]]) -> [Float] {
+        guard var mixed = channels.first else { return [] }
+        for channel in channels.dropFirst() {
+            let count = min(mixed.count, channel.count)
+            for index in 0..<count {
+                mixed[index] = max(mixed[index], channel[index])
+            }
+        }
+        return mixed
+    }
+
+    static func normalizeChannels(_ channels: [[Float]]) -> [[Float]] {
+        let peak = channels.flatMap { $0 }.max() ?? 0
+        guard peak > 0 else { return channels }
+        return channels.map { channel in channel.map { min(1, $0 / peak) } }
     }
 
     /// Number of peaks in the whole-file sketch shown before the full-density decode reaches a region.
@@ -40,25 +68,44 @@ enum WaveformLoader {
     /// replaced by real peaks, left to right, while the full-density decode runs.
     struct Preview: Sendable {
         let sampleCount: Int
-        fileprivate let coarse: [Float]
+        fileprivate let channelCount: Int
+        fileprivate let coarse: [[Float]]
         fileprivate let estimatedMax: Float
 
-        /// Full-length peaks with `fine[..<decodedCount]` real and the rest filled from the sketch.
-        fileprivate func composite(fine: [Float], decodedCount: Int) -> [Float] {
-            let decoded = min(decodedCount, fine.count)
-            let scaleMax = max(estimatedMax, fine.prefix(decoded).max() ?? 0)
-            guard scaleMax > 0, !coarse.isEmpty else { return [Float](repeating: 0, count: fine.count) }
+        /// Full-length peaks per channel. `fine[..<decodedCount]` is real; the rest is the sketch.
+        /// Every channel is scaled by the same maximum.
+        fileprivate func compositeChannels(fine: [[Float]], decodedCount: Int) -> [[Float]] {
+            let count = max(channelCount, 1)
+            let decodedPeak = fine.flatMap { channel in channel.prefix(min(decodedCount, channel.count)) }.max() ?? 0
+            let scaleMax = max(estimatedMax, decodedPeak)
+            guard scaleMax > 0 else {
+                return Array(repeating: [Float](repeating: 0, count: sampleCount), count: count)
+            }
 
-            return (0..<fine.count).map { index in
-                let raw = index < decoded
-                    ? fine[index]
-                    : coarse[min(coarse.count - 1, index * coarse.count / fine.count)]
-                return min(1, raw / scaleMax)
+            return (0..<count).map { channel in
+                let fineChannel = channel < fine.count ? fine[channel] : []
+                let coarseChannel = channel < coarse.count ? coarse[channel] : []
+                let decoded = min(decodedCount, fineChannel.count)
+                return (0..<sampleCount).map { index in
+                    let raw: Float
+                    if index < decoded {
+                        raw = fineChannel[index]
+                    } else if coarseChannel.isEmpty {
+                        raw = 0
+                    } else {
+                        raw = coarseChannel[min(coarseChannel.count - 1, index * coarseChannel.count / sampleCount)]
+                    }
+                    return min(1, raw / scaleMax)
+                }
             }
         }
 
         func sketch() -> [Float] {
-            composite(fine: [Float](repeating: 0, count: sampleCount), decodedCount: 0)
+            mix(compositeChannels(fine: [], decodedCount: 0))
+        }
+
+        fileprivate func channelSketch() -> [[Float]] {
+            compositeChannels(fine: [], decodedCount: 0)
         }
     }
 
@@ -68,9 +115,15 @@ enum WaveformLoader {
             return nil
         }
 
-        var coarse = [Float](repeating: 0, count: decoder.bucketCount)
+        var coarse = decoder.makeBuckets()
         decoder.decode(0..<decoder.bucketCount, into: &coarse)
-        return Preview(sampleCount: fine.bucketCount, coarse: coarse, estimatedMax: coarse.max() ?? 0)
+        let estimatedMax = coarse.flatMap { $0 }.max() ?? 0
+        return Preview(
+            sampleCount: fine.bucketCount,
+            channelCount: fine.drawnChannelCount,
+            coarse: coarse,
+            estimatedMax: estimatedMax
+        )
     }
 
     /// Decodes full-density, normalized peaks left to right, calling `onUpdate` with the
@@ -80,26 +133,45 @@ enum WaveformLoader {
         preview: Preview?,
         onUpdate: @Sendable ([Float]) -> Void
     ) -> [Float] {
+        let channels = refineRawChannels(from: url, preview: preview) { partial in
+            onUpdate(mix(partial))
+        }
+        return normalize(mix(channels))
+    }
+
+    /// Same decode as `refinePeaks`, keeping each channel. `onUpdate` receives normalized rows.
+    static func refineChannelPeaks(
+        from url: URL,
+        preview: Preview?,
+        onUpdate: @Sendable ([[Float]]) -> Void
+    ) -> [[Float]] {
+        normalizeChannels(refineRawChannels(from: url, preview: preview, onUpdate: onUpdate))
+    }
+
+    private static func refineRawChannels(
+        from url: URL,
+        preview: Preview?,
+        onUpdate: @Sendable ([[Float]]) -> Void
+    ) -> [[Float]] {
         guard let decoder = PeakDecoder(url: url, targetSampleCount: nil) else { return [] }
 
-        let bucketCount = decoder.bucketCount
-        var peaks = [Float](repeating: 0, count: bucketCount)
+        var channels = decoder.makeBuckets()
         var decodedCount = 0
         var lastUpdate = Date()
 
-        while decodedCount < bucketCount {
-            let chunkEnd = min(bucketCount, decodedCount + refineChunkBuckets)
-            guard decoder.decode(decodedCount..<chunkEnd, into: &peaks) else { break }
+        while decodedCount < decoder.bucketCount {
+            let chunkEnd = min(decoder.bucketCount, decodedCount + refineChunkBuckets)
+            guard decoder.decode(decodedCount..<chunkEnd, into: &channels) else { break }
             decodedCount = chunkEnd
 
-            if decodedCount < bucketCount, let preview,
+            if decodedCount < decoder.bucketCount, let preview,
                Date().timeIntervalSince(lastUpdate) >= progressInterval {
-                onUpdate(preview.composite(fine: peaks, decodedCount: decodedCount))
+                onUpdate(preview.compositeChannels(fine: channels, decodedCount: decodedCount))
                 lastUpdate = Date()
             }
         }
 
-        return normalize(peaks)
+        return channels
     }
 
     static func summedPeaks(
@@ -159,6 +231,7 @@ private final class PeakDecoder {
     static let blockFrames = 32_768
 
     let bucketCount: Int
+    let drawnChannelCount: Int
 
     private let file: AVAudioFile
     private let totalFrames: Int
@@ -184,6 +257,7 @@ private final class PeakDecoder {
         self.file = file
         self.totalFrames = totalFrames
         self.bucketCount = bucketCount
+        drawnChannelCount = min(2, Int(sourceFormat.channelCount))
         framesPerBucket = max(1, totalFrames / bucketCount)
         // Sample a small window per bucket instead of scanning the entire file.
         // Cap the window so long stems (e.g. 79 min) stay seek-light.
@@ -213,9 +287,13 @@ private final class PeakDecoder {
         }
     }
 
-    /// Fills `peaks[range]`. Returns false if the file stops yielding audio early.
+    func makeBuckets() -> [[Float]] {
+        Array(repeating: [Float](repeating: 0, count: bucketCount), count: drawnChannelCount)
+    }
+
+    /// Fills each channel of `channels` over `range`. Returns false if the file stops yielding audio early.
     @discardableResult
-    func decode(_ range: Range<Int>, into peaks: inout [Float]) -> Bool {
+    func decode(_ range: Range<Int>, into channels: inout [[Float]]) -> Bool {
         if framesPerSample >= framesPerBucket {
             // Every frame counts, so read contiguous blocks instead of seeking per bucket.
             let bucketsPerBlock = max(1, Self.blockFrames / framesPerBucket)
@@ -235,7 +313,11 @@ private final class PeakDecoder {
                 let covered = max(1, min(last - first, available / framesPerBucket))
                 for offset in 0..<covered {
                     let from = offset * framesPerBucket
-                    peaks[first + offset] = peak(in: block, frames: from..<min(available, from + framesPerBucket))
+                    write(
+                        channelPeaks(in: block, frames: from..<min(available, from + framesPerBucket)),
+                        to: &channels,
+                        bucket: first + offset
+                    )
                 }
                 first += covered
             }
@@ -248,9 +330,15 @@ private final class PeakDecoder {
                   let block = read(startFrame: startFrame, frameCount: min(framesPerSample, totalFrames - startFrame)) else {
                 return false
             }
-            peaks[bucket] = peak(in: block, frames: 0..<Int(block.frameLength))
+            write(channelPeaks(in: block, frames: 0..<Int(block.frameLength)), to: &channels, bucket: bucket)
         }
         return true
+    }
+
+    private func write(_ values: [Float], to channels: inout [[Float]], bucket: Int) {
+        for channel in 0..<min(values.count, channels.count) where bucket < channels[channel].count {
+            channels[channel][bucket] = values[channel]
+        }
     }
 
     private func read(startFrame: Int, frameCount: Int) -> AVAudioPCMBuffer? {
@@ -289,16 +377,20 @@ private final class PeakDecoder {
         return buffer
     }
 
-    private func peak(in block: AVAudioPCMBuffer, frames: Range<Int>) -> Float {
-        guard let channels = block.floatChannelData, !frames.isEmpty else { return 0 }
+    /// Peak of each drawn channel. Extra channels past the second are left out.
+    private func channelPeaks(in block: AVAudioPCMBuffer, frames: Range<Int>) -> [Float] {
+        guard let channels = block.floatChannelData, !frames.isEmpty else {
+            return [Float](repeating: 0, count: drawnChannelCount)
+        }
 
-        var peak: Float = 0
-        for channel in 0..<Int(block.format.channelCount) {
+        var peaks = [Float](repeating: 0, count: drawnChannelCount)
+        let available = Int(block.format.channelCount)
+        for channel in 0..<drawnChannelCount where channel < available {
             var channelPeak: Float = 0
             vDSP_maxmgv(channels[channel] + frames.lowerBound, 1, &channelPeak, vDSP_Length(frames.count))
-            peak = max(peak, channelPeak)
+            peaks[channel] = channelPeak
         }
-        return peak
+        return peaks
     }
 }
 
@@ -359,13 +451,13 @@ enum WaveformPeakResampler {
     static func arrangedDisplayPeaks(
         from source: [Float],
         fileDuration: TimeInterval,
-        sections: [ArrangementDisplaySection],
+        clips: [TrackClip],
         timelineDuration: TimeInterval,
         contentWidth: CGFloat,
         minimumBarSlotWidth: CGFloat = editorBarSlotWidth,
         maximumBars: Int? = maxDisplayBars
     ) -> [Float] {
-        guard !source.isEmpty, fileDuration > 0, !sections.isEmpty else {
+        guard !source.isEmpty, fileDuration > 0, !clips.isEmpty else {
             return displayPeaks(
                 from: source,
                 contentWidth: contentWidth,
@@ -375,7 +467,7 @@ enum WaveformPeakResampler {
         }
 
         let safeTimelineDuration = max(timelineDuration, 0.001)
-        let sortedSections = sections.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        let sortedClips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
 
         let barCount = min(
             source.count,
@@ -391,17 +483,34 @@ enum WaveformPeakResampler {
 
         for barIndex in 0..<barCount {
             let arrangementTime = safeTimelineDuration * (Double(barIndex) + 0.5) / Double(barCount)
-            guard let section = section(containing: arrangementTime, in: sortedSections) else {
+            guard let clip = Self.clip(containing: arrangementTime, in: sortedClips) else {
                 continue
             }
 
-            let sourceTime = section.sourceStartSeconds + (arrangementTime - section.timelineStartSeconds)
+            let sourceTime = clip.sourceStartSeconds + (arrangementTime - clip.timelineStartSeconds)
             let sourceIndex = Int((sourceTime / fileDuration) * Double(source.count))
             let clampedIndex = min(max(0, sourceIndex), source.count - 1)
             result[barIndex] = source[clampedIndex]
         }
 
         return result
+    }
+
+    /// `sortedClips` must be sorted by timeline start and must not overlap.
+    private static func clip(containing time: TimeInterval, in sortedClips: [TrackClip]) -> TrackClip? {
+        var low = 0
+        var high = sortedClips.count
+        while low < high {
+            let mid = (low + high) / 2
+            if sortedClips[mid].timelineStartSeconds <= time {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        guard low > 0 else { return nil }
+        let candidate = sortedClips[low - 1]
+        return time < candidate.timelineEndSeconds ? candidate : nil
     }
 
     /// Collapses `peaks` into consecutive groups of `groupSize`, keeping each group's maximum.
@@ -424,24 +533,24 @@ enum WaveformPeakResampler {
     static func timelinePeaks(
         from source: [Float],
         fileDuration: TimeInterval,
-        sections: [ArrangementDisplaySection],
+        clips: [TrackClip],
         timelineDuration: TimeInterval
     ) -> [Float] {
         guard !source.isEmpty else { return [] }
-        guard fileDuration > 0, !sections.isEmpty else { return source }
+        guard fileDuration > 0, !clips.isEmpty else { return source }
 
         let safeTimelineDuration = max(timelineDuration, 0.001)
-        let sortedSections = sections.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        let sortedClips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
         let sampleCount = source.count
         var result = [Float](repeating: 0, count: sampleCount)
 
         for index in 0..<sampleCount {
             let arrangementTime = safeTimelineDuration * (Double(index) + 0.5) / Double(sampleCount)
-            guard let section = section(containing: arrangementTime, in: sortedSections) else {
+            guard let clip = Self.clip(containing: arrangementTime, in: sortedClips) else {
                 continue
             }
 
-            let sourceTime = section.sourceStartSeconds + (arrangementTime - section.timelineStartSeconds)
+            let sourceTime = clip.sourceStartSeconds + (arrangementTime - clip.timelineStartSeconds)
             let sourceIndex = Int((sourceTime / fileDuration) * Double(source.count))
             let clampedIndex = min(max(0, sourceIndex), source.count - 1)
             result[index] = source[clampedIndex]
@@ -453,7 +562,7 @@ enum WaveformPeakResampler {
     static func displayPeaks(
         from source: [Float],
         fileDuration: TimeInterval,
-        sections: [ArrangementDisplaySection],
+        clips: [TrackClip],
         timelineDuration: TimeInterval,
         timeRange: ClosedRange<TimeInterval>,
         contentWidth: CGFloat,
@@ -471,8 +580,8 @@ enum WaveformPeakResampler {
 
         let rangeDuration = max(timeRange.upperBound - timeRange.lowerBound, 0.001)
         let safeTimelineDuration = max(timelineDuration, 0.001)
-        let sortedSections = sections.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
-        let usesArrangement = fileDuration > 0 && !sortedSections.isEmpty
+        let sortedClips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        let usesArrangement = fileDuration > 0 && !sortedClips.isEmpty
 
         var result = [Float](repeating: 0, count: barCount)
 
@@ -480,8 +589,9 @@ enum WaveformPeakResampler {
             let timelineTime = timeRange.lowerBound
                 + rangeDuration * (Double(barIndex) + 0.5) / Double(barCount)
 
-            if usesArrangement, let section = section(containing: timelineTime, in: sortedSections) {
-                let sourceTime = section.sourceStartSeconds + (timelineTime - section.timelineStartSeconds)
+            if usesArrangement {
+                guard let clip = Self.clip(containing: timelineTime, in: sortedClips) else { continue }
+                let sourceTime = clip.sourceStartSeconds + (timelineTime - clip.timelineStartSeconds)
                 let sourceIndex = Int((sourceTime / fileDuration) * Double(source.count))
                 let clampedIndex = min(max(0, sourceIndex), source.count - 1)
                 result[barIndex] = source[clampedIndex]
@@ -536,16 +646,16 @@ enum WaveformPeakResampler {
 
     private static func section(
         containing time: TimeInterval,
-        in sections: [ArrangementDisplaySection]
-    ) -> ArrangementDisplaySection? {
-        guard !sections.isEmpty else { return nil }
+        in clips: [TrackClip]
+    ) -> TrackClip? {
+        guard !clips.isEmpty else { return nil }
 
         var low = 0
-        var high = sections.count - 1
+        var high = clips.count - 1
 
         while low <= high {
             let mid = (low + high) / 2
-            let candidate = sections[mid]
+            let candidate = clips[mid]
 
             if time < candidate.timelineStartSeconds {
                 high = mid - 1
@@ -590,10 +700,130 @@ enum WaveformPeakDiskCache {
         }
     }
 
+    static func loadChannels(forKey key: String) -> [[Float]]? {
+        let url = cacheDirectory.appendingPathComponent(channelFileName(for: key))
+        guard let data = try? Data(contentsOf: url), data.count >= 8 else { return nil }
+        let channelCount = Int(data.withUnsafeBytes { $0.load(fromByteOffset: 0, as: UInt32.self) })
+        let length = Int(data.withUnsafeBytes { $0.load(fromByteOffset: 4, as: UInt32.self) })
+        let stride = MemoryLayout<Float>.stride
+        guard channelCount >= 1, channelCount <= 2, length > 0,
+              data.count == 8 + channelCount * length * stride else {
+            return nil
+        }
+        return (0..<channelCount).map { channel in
+            let start = 8 + channel * length * stride
+            let slice = data.subdata(in: start..<(start + length * stride))
+            return slice.withUnsafeBytes { buffer in
+                Array(buffer.bindMemory(to: Float.self))
+            }
+        }
+    }
+
+    static func saveChannels(_ channels: [[Float]], forKey key: String) {
+        guard let length = channels.first?.count, length > 0,
+              channels.count <= 2,
+              channels.allSatisfy({ $0.count == length }) else {
+            return
+        }
+        var data = Data()
+        var channelCount = UInt32(channels.count)
+        var bucketCount = UInt32(length)
+        data.append(Data(bytes: &channelCount, count: 4))
+        data.append(Data(bytes: &bucketCount, count: 4))
+        for channel in channels {
+            channel.withUnsafeBufferPointer { buffer in
+                guard let base = buffer.baseAddress else { return }
+                data.append(Data(buffer: UnsafeBufferPointer(start: base, count: buffer.count)))
+            }
+        }
+        let url = cacheDirectory.appendingPathComponent(channelFileName(for: key))
+        try? data.write(to: url, options: .atomic)
+    }
+
+    static func loadOverview(forKey key: String) -> WaveformFileOverview? {
+        let url = cacheDirectory.appendingPathComponent(overviewFileName(for: key))
+        guard let data = try? Data(contentsOf: url), data.count >= 24 else { return nil }
+        let magic: UInt32 = readValue(data, at: 0)
+        guard magic == 0x574F_5631 else { return nil }
+        let channelCount = Int(readValue(data, at: 4) as UInt32)
+        let sampleRate = Double(readValue(data, at: 8) as Float64)
+        let sampleCount = Int(readValue(data, at: 16) as UInt64)
+        guard channelCount >= 1, channelCount <= 2, sampleRate > 0, sampleCount > 0 else { return nil }
+
+        var offset = 24
+        var channels: [WaveformOverview] = []
+        let stride = MemoryLayout<Float>.stride
+        for _ in 0..<channelCount {
+            guard offset + 4 <= data.count else { return nil }
+            let blockCount = Int(readValue(data, at: offset) as UInt32)
+            offset += 4
+            let bytes = blockCount * 2 * stride
+            guard blockCount > 0, offset + bytes <= data.count else { return nil }
+            let slice = data.subdata(in: offset..<(offset + bytes))
+            let floats = slice.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
+            guard floats.count == blockCount * 2 else { return nil }
+            var blocks: [WaveformOverview.Block] = []
+            blocks.reserveCapacity(blockCount)
+            var index = 0
+            while index < floats.count {
+                blocks.append(WaveformOverview.Block(min: floats[index], max: floats[index + 1]))
+                index += 2
+            }
+            channels.append(WaveformOverview(sampleCount: sampleCount, level0: blocks))
+            offset += bytes
+        }
+        return WaveformFileOverview(sampleRate: sampleRate, channels: channels)
+    }
+
+    static func saveOverview(_ overview: WaveformFileOverview, forKey key: String) {
+        guard !overview.channels.isEmpty, overview.sampleRate > 0 else { return }
+        var data = Data()
+        var magic: UInt32 = 0x574F_5631
+        var channelCount = UInt32(overview.channels.count)
+        var sampleRate = Float64(overview.sampleRate)
+        var sampleCount = UInt64(overview.channels[0].sampleCount)
+        data.append(Data(bytes: &magic, count: 4))
+        data.append(Data(bytes: &channelCount, count: 4))
+        data.append(Data(bytes: &sampleRate, count: 8))
+        data.append(Data(bytes: &sampleCount, count: 8))
+        for channel in overview.channels {
+            guard let level0 = channel.levels.first else { return }
+            var blockCount = UInt32(level0.count)
+            data.append(Data(bytes: &blockCount, count: 4))
+            var floats: [Float] = []
+            floats.reserveCapacity(level0.count * 2)
+            for block in level0 {
+                floats.append(block.min)
+                floats.append(block.max)
+            }
+            floats.withUnsafeBufferPointer { buffer in
+                guard let base = buffer.baseAddress else { return }
+                data.append(Data(buffer: UnsafeBufferPointer(start: base, count: buffer.count)))
+            }
+        }
+        let url = cacheDirectory.appendingPathComponent(overviewFileName(for: key))
+        try? data.write(to: url, options: .atomic)
+    }
+
     private static func fileName(for key: String) -> String {
-        let digest = SHA256.hash(data: Data(key.utf8))
-        let hex = digest.map { String(format: "%02x", $0) }.joined()
-        return "\(hex).peaks"
+        "\(digest(for: key)).peaks"
+    }
+
+    private static func channelFileName(for key: String) -> String {
+        "\(digest(for: key)).channels"
+    }
+
+    private static func overviewFileName(for key: String) -> String {
+        "\(digest(for: key)).overview"
+    }
+
+    private static func readValue<T>(_ data: Data, at offset: Int) -> T {
+        let end = offset + MemoryLayout<T>.size
+        return data.subdata(in: offset..<end).withUnsafeBytes { $0.loadUnaligned(as: T.self) }
+    }
+
+    private static func digest(for key: String) -> String {
+        SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 }
 
@@ -602,9 +832,15 @@ final class WaveformCache {
     static let shared = WaveformCache()
 
     private var peakCache: [String: [Float]] = [:]
+    private var channelCache: [String: [[Float]]] = [:]
     private var inflightTasks: [String: Task<[Float], Never>] = [:]
+    private var channelInflightTasks: [String: Task<[[Float]], Never>] = [:]
+    private var overviewCache: [String: WaveformFileOverview] = [:]
+    private var overviewInflightTasks: [String: Task<WaveformFileOverview, Never>] = [:]
     private var partialPeaks: [String: [Float]] = [:]
+    private var partialChannels: [String: [[Float]]] = [:]
     private var progressHandlers: [String: [UUID: @MainActor ([Float]) -> Void]] = [:]
+    private var channelProgressHandlers: [String: [UUID: @MainActor ([[Float]]) -> Void]] = [:]
 
     func cachedPeaks(for url: URL) -> [Float]? {
         let key = Self.peakKey(for: url)
@@ -667,6 +903,102 @@ final class WaveformCache {
         let peaks = await task.value
         inflightTasks[key] = nil
         return peaks
+    }
+
+    func cachedChannelPeaks(for url: URL) -> [[Float]]? {
+        let key = Self.peakKey(for: url)
+        if let cached = channelCache[key] {
+            return cached
+        }
+        if let diskPeaks = WaveformPeakDiskCache.loadChannels(forKey: key) {
+            channelCache[key] = diskPeaks
+            return diskPeaks
+        }
+        return nil
+    }
+
+    /// Per-channel peaks for `url`. A stereo file yields two rows that share one level scale.
+    func channelPeaks(for url: URL, onProgress: (@MainActor ([[Float]]) -> Void)? = nil) async -> [[Float]] {
+        if let cached = cachedChannelPeaks(for: url) {
+            return cached
+        }
+
+        let key = Self.peakKey(for: url)
+        let handlerID = UUID()
+        if let onProgress {
+            channelProgressHandlers[key, default: [:]][handlerID] = onProgress
+            if let partial = partialChannels[key] {
+                onProgress(partial)
+            }
+        }
+        defer { channelProgressHandlers[key]?[handlerID] = nil }
+
+        if let existingTask = channelInflightTasks[key] {
+            return await existingTask.value
+        }
+
+        let task = Task.detached(priority: .utility) { () -> [[Float]] in
+            let preview = WaveformLoader.loadPreview(from: url)
+            if let preview {
+                await WaveformCache.shared.publishPartialChannels(preview.channelSketch(), forKey: key)
+            }
+
+            await WaveformPeakLoadLimiter.shared.acquire()
+            defer { Task { await WaveformPeakLoadLimiter.shared.release() } }
+
+            let channels = WaveformLoader.refineChannelPeaks(from: url, preview: preview) { partial in
+                Task { @MainActor in
+                    WaveformCache.shared.publishPartialChannels(partial, forKey: key)
+                }
+            }
+            WaveformPeakDiskCache.saveChannels(channels, forKey: key)
+            let mixed = WaveformLoader.mix(channels)
+            WaveformPeakDiskCache.save(mixed, forKey: key)
+            await WaveformCache.shared.storeChannels(channels, mixed: mixed, forKey: key)
+            return channels
+        }
+
+        channelInflightTasks[key] = task
+        let channels = await task.value
+        channelInflightTasks[key] = nil
+        return channels
+    }
+
+    func cachedOverview(for url: URL) -> WaveformFileOverview? {
+        let key = Self.peakKey(for: url)
+        if let cached = overviewCache[key] {
+            return cached
+        }
+        if let disk = WaveformPeakDiskCache.loadOverview(forKey: key) {
+            overviewCache[key] = disk
+            return disk
+        }
+        return nil
+    }
+
+    /// Min/max overview of each channel. The samples themselves are not kept.
+    func overview(for url: URL) async -> WaveformFileOverview {
+        if let cached = cachedOverview(for: url) {
+            return cached
+        }
+        let key = Self.peakKey(for: url)
+        if let existing = overviewInflightTasks[key] {
+            return await existing.value
+        }
+        let task = Task.detached(priority: .utility) { () -> WaveformFileOverview in
+            await WaveformPeakLoadLimiter.shared.acquire()
+            defer { Task { await WaveformPeakLoadLimiter.shared.release() } }
+            let overview = WaveformOverviewBuilder.build(from: url) ?? WaveformFileOverview(sampleRate: 0, channels: [])
+            if !overview.channels.isEmpty, overview.isComplete {
+                WaveformPeakDiskCache.saveOverview(overview, forKey: key)
+            }
+            await WaveformCache.shared.storeOverview(overview, forKey: key)
+            return overview
+        }
+        overviewInflightTasks[key] = task
+        let overview = await task.value
+        overviewInflightTasks[key] = nil
+        return overview
     }
 
     func cachedSummedPeaks(for sources: [(url: URL, duration: TimeInterval)]) -> [Float]? {
@@ -754,6 +1086,28 @@ final class WaveformCache {
     private func store(_ peaks: [Float], forKey key: String) {
         peakCache[key] = peaks
         partialPeaks[key] = nil
+    }
+
+    private func storeOverview(_ overview: WaveformFileOverview, forKey key: String) {
+        guard !overview.channels.isEmpty else { return }
+        overviewCache[key] = overview
+    }
+
+    private func storeChannels(_ channels: [[Float]], mixed: [Float], forKey key: String) {
+        channelCache[key] = channels
+        partialChannels[key] = nil
+        if peakCache[key] == nil {
+            peakCache[key] = mixed
+            partialPeaks[key] = nil
+        }
+    }
+
+    private func publishPartialChannels(_ channels: [[Float]], forKey key: String) {
+        guard channelCache[key] == nil else { return }
+        partialChannels[key] = channels
+        for handler in channelProgressHandlers[key]?.values ?? [:].values {
+            handler(channels)
+        }
     }
 
     private func publishPartial(_ peaks: [Float], forKey key: String) {

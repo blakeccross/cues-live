@@ -1,24 +1,33 @@
 import Foundation
 
 /// Maps master-timeline seconds to absolute source-file seconds for one track.
+///
+/// Arranged tracks play their clips; between clips they are silent. Linear tracks (baked stems,
+/// previews of raw files) play the file from `trimStart` at master time zero.
 struct ArrangementTimelineMapper: Sendable {
-    private let sections: [ArrangementDisplaySection]
-    private let trimStart: TimeInterval
-    private let trimEnd: TimeInterval
-    private let usesArrangement: Bool
+    private let clips: [TrackClip]
+    private let sourceStart: TimeInterval
+    private let sourceEnd: TimeInterval
+    private let usesClips: Bool
 
-    var hasArrangementMapping: Bool { usesArrangement && !sections.isEmpty }
+    var hasArrangementMapping: Bool { usesClips }
 
-    init(
-        sections: [ArrangementDisplaySection],
-        trimStart: TimeInterval,
-        trimEnd: TimeInterval,
-        usesArrangement: Bool
-    ) {
-        self.sections = sections.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
-        self.trimStart = trimStart
-        self.trimEnd = trimEnd
-        self.usesArrangement = usesArrangement
+    init(clips: [TrackClip], fileDuration: TimeInterval) {
+        self.clips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        sourceStart = 0
+        sourceEnd = fileDuration
+        usesClips = true
+    }
+
+    private init(trimStart: TimeInterval, trimEnd: TimeInterval) {
+        clips = []
+        sourceStart = trimStart
+        sourceEnd = trimEnd
+        usesClips = false
+    }
+
+    static func linear(trimStart: TimeInterval = 0, trimEnd: TimeInterval) -> ArrangementTimelineMapper {
+        ArrangementTimelineMapper(trimStart: max(0, trimStart), trimEnd: trimEnd)
     }
 
     /// Fast-path bounds for tempo resampling when the master timeline maps 1:1 to source trim.
@@ -26,70 +35,62 @@ struct ArrangementTimelineMapper: Sendable {
         atMasterTimeline master: TimeInterval,
         sampleRate: Double
     ) -> (startSourceFrame: Double, endSourceFrame: Double)? {
-        guard !usesArrangement, sampleRate > 0 else { return nil }
-        guard let sourceStart = sourceSeconds(atMasterTimeline: master) else { return nil }
-        return (sourceStart * sampleRate, trimEnd * sampleRate)
+        guard !usesClips, sampleRate > 0 else { return nil }
+        guard let source = sourceSeconds(atMasterTimeline: master) else { return nil }
+        return (source * sampleRate, sourceEnd * sampleRate)
     }
 
     /// Returns source-file seconds for the given master-timeline position, or nil when silent.
     func sourceSeconds(atMasterTimeline master: TimeInterval) -> TimeInterval? {
-        let rawSource: TimeInterval?
-        if usesArrangement {
-            guard let section = section(containing: master) else {
-                return nil
-            }
-            let offset = master - section.timelineStartSeconds
-            rawSource = section.sourceStartSeconds + offset
+        let rawSource: TimeInterval
+        if usesClips {
+            guard let clip = clip(containing: master) else { return nil }
+            rawSource = clip.sourceTime(atTimeline: master)
         } else {
-            rawSource = trimStart + master
+            rawSource = sourceStart + master
         }
 
-        guard let rawSource else { return nil }
-        let clamped = max(rawSource, trimStart)
-        guard clamped < trimEnd else { return nil }
+        let clamped = max(rawSource, sourceStart)
+        guard clamped < sourceEnd else { return nil }
         return clamped
     }
 
-    /// Master-timeline seconds until the current mapping region ends (section, trim, or buffer limit).
+    /// Master-timeline seconds until the current mapping region ends (clip, file end, or buffer limit).
     func regionRemainingSeconds(fromMasterTimeline master: TimeInterval, bufferLimit: TimeInterval) -> TimeInterval {
         let limit = max(0, bufferLimit)
         guard limit > 0 else { return 0 }
 
-        if usesArrangement {
-            guard let section = section(containing: master) else {
-                if let next = sections.first(where: { $0.timelineStartSeconds > master }) {
-                    let gapRemaining = next.timelineStartSeconds - master
-                    return max(0, min(limit, gapRemaining))
+        if usesClips {
+            guard let clip = clip(containing: master) else {
+                if let next = clips.first(where: { $0.timelineStartSeconds > master }) {
+                    return max(0, min(limit, next.timelineStartSeconds - master))
                 }
                 return 0
             }
-
-            let sectionRemaining = section.timelineEndSeconds - master
-            let sourceAtMaster = section.sourceStartSeconds + (master - section.timelineStartSeconds)
-            let trimRemaining = trimEnd - sourceAtMaster
-            return max(0, min(limit, sectionRemaining, trimRemaining))
+            let clipRemaining = clip.timelineEndSeconds - master
+            let fileRemaining = sourceEnd - clip.sourceTime(atTimeline: master)
+            return max(0, min(limit, clipRemaining, fileRemaining))
         }
 
-        let trimRemaining = trimEnd - (trimStart + master)
-        return max(0, min(limit, trimRemaining))
+        return max(0, min(limit, sourceEnd - (sourceStart + master)))
     }
 
-    /// Playback positions are snapped to whole frames, so a jump to a section can land up to
-    /// half a frame before the section's exact start. Without slack that position falls in
-    /// a gap, nothing is mapped, and the block that should open on the section's first
+    /// Playback positions are snapped to whole frames, so a jump to a clip can land up to
+    /// half a frame before the clip's exact start. Without slack that position falls in
+    /// a gap, nothing is mapped, and the block that should open on the clip's first
     /// click renders silent. About one frame at 48 kHz, far below anything audible.
     private static let boundaryTolerance: TimeInterval = 2e-5
 
-    private func section(containing time: TimeInterval) -> ArrangementDisplaySection? {
-        guard !sections.isEmpty else { return nil }
+    func clip(containing time: TimeInterval) -> TrackClip? {
+        guard !clips.isEmpty else { return nil }
         let master = time + Self.boundaryTolerance
 
         var low = 0
-        var high = sections.count - 1
+        var high = clips.count - 1
 
         while low <= high {
             let mid = (low + high) / 2
-            let candidate = sections[mid]
+            let candidate = clips[mid]
 
             if master < candidate.timelineStartSeconds {
                 high = mid - 1

@@ -44,12 +44,7 @@ final class SectionTransitionRenderTests: XCTestCase {
         seconds: Double,
         mapper customMapper: ArrangementTimelineMapper? = nil
     ) -> TrackMemoryPlayer {
-        let mapper = customMapper ?? ArrangementTimelineMapper(
-            sections: [],
-            trimStart: 0,
-            trimEnd: seconds,
-            usesArrangement: false
-        )
+        let mapper = customMapper ?? ArrangementTimelineMapper.linear(trimStart: 0, trimEnd: seconds)
         return TrackMemoryPlayer(trackID: UUID(), buffer: buffer, transport: transport, mapper: mapper)
     }
 
@@ -201,28 +196,13 @@ final class SectionTransitionRenderTests: XCTestCase {
         transport.setDuration(seconds)
         let buffer = try DecodedStemBuffer.monoStem(from: makeClickPCM(seconds: seconds))
 
-        func section(start: TimeInterval, end: TimeInterval, sourceStart: TimeInterval) -> ArrangementDisplaySection {
-            ArrangementDisplaySection(
-                id: UUID(),
-                slotID: UUID(),
-                markerID: UUID(),
-                name: "S",
-                sourceStartSeconds: sourceStart,
-                sourceEndSeconds: sourceStart + (end - start),
-                timelineStartSeconds: start,
-                timelineEndSeconds: end,
-                columnStartSeconds: start,
-                columnEndSeconds: end
-            )
-        }
+        let trackID = UUID()
         let mapper = ArrangementTimelineMapper(
-            sections: [
-                section(start: 0, end: sectionStart, sourceStart: 0),
-                section(start: sectionStart, end: sectionStart + 6, sourceStart: 8)
+            clips: [
+                TrackClip(trackID: trackID, timelineStartSeconds: 0, duration: sectionStart, sourceStartSeconds: 0),
+                TrackClip(trackID: trackID, timelineStartSeconds: sectionStart, duration: 6, sourceStartSeconds: 8),
             ],
-            trimStart: 0,
-            trimEnd: seconds,
-            usesArrangement: true
+            fileDuration: seconds
         )
         let player = makePlayer(buffer: buffer, transport: transport, seconds: seconds, mapper: mapper)
 

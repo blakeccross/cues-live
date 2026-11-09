@@ -9,8 +9,7 @@ final class SongBakeFingerprintTests: XCTestCase {
         song.tracks = [track]
 
         let projectState = SongProjectBridge.ProjectState(
-            markers: [],
-            arrangement: SongArrangementStore.defaultArrangement(for: []),
+            timeline: SongTimeline(),
             tempoChanges: SongProjectBridge.defaultTempoChanges(for: song),
             timeSignatureChanges: SongProjectBridge.defaultTimeSignatureChanges(for: song),
             midiEvents: []

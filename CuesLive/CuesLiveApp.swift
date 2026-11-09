@@ -99,8 +99,12 @@ struct SongEditorActions {
 struct ClipEditorActions {
     var canSplit = false
     var canJoin = false
+    var canDuplicate = false
+    var canDeselect = false
     var split: () -> Void = {}
     var join: () -> Void = {}
+    var duplicate: () -> Void = {}
+    var deselectAll: () -> Void = {}
 }
 
 struct SongUndoActions {
@@ -232,17 +236,29 @@ struct ClipEditorCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .pasteboard) {
-            Button("Split at Edit Point") {
+            Button("Split Regions at Playhead") {
                 actions?.split()
             }
             .keyboardShortcut("t", modifiers: .command)
             .disabled(actions?.canSplit != true)
 
-            Button("Join with Next Region") {
+            Button("Join Regions") {
                 actions?.join()
             }
             .keyboardShortcut("j", modifiers: .command)
             .disabled(actions?.canJoin != true)
+
+            Button("Duplicate Regions") {
+                actions?.duplicate()
+            }
+            .keyboardShortcut("d", modifiers: .command)
+            .disabled(actions?.canDuplicate != true)
+
+            Button("Deselect All Regions") {
+                actions?.deselectAll()
+            }
+            .keyboardShortcut("a", modifiers: [.command, .shift])
+            .disabled(actions?.canDeselect != true)
         }
     }
 }

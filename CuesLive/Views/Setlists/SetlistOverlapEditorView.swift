@@ -622,7 +622,7 @@ private struct OverlapWaveformLaneView: View {
         WaveformPeakResampler.displayPeaks(
             from: sourcePeaks,
             fileDuration: snapshot.fileDuration,
-            sections: useLinearPeakMapping ? [] : snapshot.peakSections,
+            clips: useLinearPeakMapping ? [] : snapshot.peakClips,
             timelineDuration: snapshot.timelineDuration,
             timeRange: timeRange,
             contentWidth: max(contentWidth, 120),

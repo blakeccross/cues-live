@@ -81,22 +81,19 @@ enum ClickSongCreator {
                 timeSignatureChanges: timeSignatureChanges
             )
 
-            let marker = ArrangementMarker(
-                name: sectionName,
-                startSeconds: 0,
-                sortOrder: 0
-            )
-            let slot = ArrangementSlot(markerID: marker.id)
+            var timeline = SongProjectBridge.projectStateOrDefaults(for: song).timeline
+            timeline.markers = [
+                ArrangementMarker(
+                    name: sectionName,
+                    startSeconds: 0,
+                    sortOrder: 0,
+                    loops: true
+                )
+            ]
 
             try SongProjectBridge.persist(
                 song: song,
-                markers: [marker],
-                arrangementSlots: [slot],
-                clipTrims: [],
-                removedClips: [],
-                clipGaps: [],
-                clipRegions: [],
-                loopSlotIDs: [slot.id],
+                timeline: timeline,
                 tempoChanges: tempoChanges,
                 timeSignatureChanges: timeSignatureChanges,
                 midiEvents: [],

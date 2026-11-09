@@ -185,9 +185,9 @@ struct LiveSongWaveformView: View {
     let trackSources: [(url: URL, duration: TimeInterval)]
     let fileDuration: TimeInterval
     let timelineDuration: TimeInterval
-    let sections: [ArrangementDisplaySection]
-    let peakSections: [ArrangementDisplaySection]
-    let loopSlotIDs: Set<UUID>
+    let sections: [SongSection]
+    let peakClips: [TrackClip]
+    let loopSectionIDs: Set<UUID>
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
     let cuedSectionID: UUID?
@@ -212,7 +212,7 @@ struct LiveSongWaveformView: View {
     var playheadTimeProvider: (() -> TimeInterval)?
     var isPlayingProvider: (() -> Bool)?
     let onSeek: (TimeInterval) -> Void
-    let onCueSection: (ArrangementDisplaySection) -> Void
+    let onCueSection: (SongSection) -> Void
 
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
 
@@ -237,7 +237,7 @@ struct LiveSongWaveformView: View {
     }
 
     private var usesArrangedPeakMapping: Bool {
-        !peakSections.isEmpty
+        !peakClips.isEmpty
     }
 
     private var showsFullSourceWaveform: Bool {
@@ -345,7 +345,7 @@ struct LiveSongWaveformView: View {
             .onChange(of: sections.map(\.id)) { _, _ in
                 refreshDisplayPeaks()
             }
-            .onChange(of: peakSections.map(\.id)) { _, _ in
+            .onChange(of: peakClips) { _, _ in
                 refreshDisplayPeaks()
             }
             .task(id: peaksLoadIdentity) {
@@ -589,7 +589,7 @@ struct LiveSongWaveformView: View {
                     if endX >= tile.lowerBound, startX <= tile.upperBound {
                         let segmentWidth = max(0, endX - startX)
                         let palette = ArrangementSectionPalette.colors(for: index)
-                        let isLoopSection = loopSlotIDs.contains(section.id)
+                        let isLoopSection = loopSectionIDs.contains(section.id)
 
                         HStack(spacing: 3) {
                             if isLoopSection {
@@ -920,7 +920,7 @@ struct LiveSongWaveformView: View {
             cachedDisplayPeaks = WaveformPeakResampler.timelinePeaks(
                 from: sourcePeaks,
                 fileDuration: fileDuration,
-                sections: peakSections,
+                clips: peakClips,
                 timelineDuration: safeTimelineDuration
             )
         }
@@ -984,7 +984,7 @@ struct LiveSetlistWaveformScrollView: View {
     let cuedSectionID: UUID?
     let cueFlashPhase: Bool
     let onSeek: (TimeInterval) -> Void
-    let onCueSection: (ArrangementDisplaySection) -> Void
+    let onCueSection: (SongSection) -> Void
     var onOverlapBadgeTapped: ((Int) -> Void)?
     /// When set, tapping a non-current song lane jumps to that song, at the tapped section's start when one was hit.
     var onSelectSong: ((Int, TimeInterval?) -> Void)?
@@ -1331,8 +1331,8 @@ struct LiveSetlistWaveformScrollView: View {
                 fileDuration: snapshot.fileDuration,
                 timelineDuration: snapshot.timelineDuration,
                 sections: snapshot.sections,
-                peakSections: snapshot.peakSections,
-                loopSlotIDs: snapshot.loopSlotIDs,
+                peakClips: snapshot.peakClips,
+                loopSectionIDs: snapshot.loopSectionIDs,
                 tempoChanges: snapshot.tempoChanges,
                 timeSignatureChanges: snapshot.timeSignatureChanges,
                 cuedSectionID: isCurrent ? cuedSectionID : nil,
@@ -1391,7 +1391,7 @@ private struct NonCurrentSongSelectTapModifier: ViewModifier {
     let isEnabled: Bool
     let contentWidth: CGFloat
     let duration: TimeInterval
-    let sections: [ArrangementDisplaySection]
+    let sections: [SongSection]
     let onSelect: (TimeInterval?) -> Void
 
     func body(content: Content) -> some View {

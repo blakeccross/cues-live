@@ -51,15 +51,15 @@ final class SectionLoopController {
     }
 
     func activeSection(
-        in sections: [ArrangementDisplaySection],
-        loopSlotIDs: Set<UUID>
-    ) -> ArrangementDisplaySection? {
+        in sections: [SongSection],
+        loopSectionIDs: Set<UUID>
+    ) -> SongSection? {
         if let manualSectionID,
            let section = sections.first(where: { $0.id == manualSectionID }) {
             return section
         }
         guard let activeSectionID,
-              loopSlotIDs.contains(activeSectionID),
+              loopSectionIDs.contains(activeSectionID),
               let section = sections.first(where: { $0.id == activeSectionID }) else {
             return nil
         }
@@ -68,25 +68,25 @@ final class SectionLoopController {
 
     func handlePlaybackTimeChange(
         at time: TimeInterval,
-        sections: [ArrangementDisplaySection],
-        loopSlotIDs: Set<UUID>,
+        sections: [SongSection],
+        loopSectionIDs: Set<UUID>,
         onActivate: () -> Void
     ) {
         clearSuppressedSectionsIfOutsidePlayback(at: time, sections: sections)
-        activateIfNeeded(at: time, sections: sections, loopSlotIDs: loopSlotIDs, onActivate: onActivate)
+        activateIfNeeded(at: time, sections: sections, loopSectionIDs: loopSectionIDs, onActivate: onActivate)
     }
 
-    func handleLoopSlotIDsChange(_ loopSlotIDs: Set<UUID>) {
-        if let activeSectionID, !loopSlotIDs.contains(activeSectionID) {
+    func handleLoopSectionIDsChange(_ loopSectionIDs: Set<UUID>) {
+        if let activeSectionID, !loopSectionIDs.contains(activeSectionID) {
             self.activeSectionID = nil
         }
-        suppressedSectionIDs = suppressedSectionIDs.intersection(loopSlotIDs)
+        suppressedSectionIDs = suppressedSectionIDs.intersection(loopSectionIDs)
     }
 
     @discardableResult
-    func toggleLoop(on sectionID: UUID, loopSlotIDs: inout Set<UUID>) -> Bool {
-        if loopSlotIDs.contains(sectionID) {
-            loopSlotIDs.remove(sectionID)
+    func toggleLoop(on sectionID: UUID, loopSectionIDs: inout Set<UUID>) -> Bool {
+        if loopSectionIDs.contains(sectionID) {
+            loopSectionIDs.remove(sectionID)
             if activeSectionID == sectionID {
                 activeSectionID = nil
             }
@@ -94,7 +94,7 @@ final class SectionLoopController {
             return false
         }
 
-        loopSlotIDs.insert(sectionID)
+        loopSectionIDs.insert(sectionID)
         return true
     }
 
@@ -116,7 +116,7 @@ final class SectionLoopController {
 
     private func clearSuppressedSectionsIfOutsidePlayback(
         at time: TimeInterval,
-        sections: [ArrangementDisplaySection]
+        sections: [SongSection]
     ) {
         guard !suppressedSectionIDs.isEmpty else { return }
 
@@ -133,15 +133,15 @@ final class SectionLoopController {
 
     private func activateIfNeeded(
         at time: TimeInterval,
-        sections: [ArrangementDisplaySection],
-        loopSlotIDs: Set<UUID>,
+        sections: [SongSection],
+        loopSectionIDs: Set<UUID>,
         onActivate: () -> Void
     ) {
-        guard manualSectionID == nil, activeSectionID == nil, !loopSlotIDs.isEmpty else { return }
+        guard manualSectionID == nil, activeSectionID == nil, !loopSectionIDs.isEmpty else { return }
 
         guard let section = sections.loopSectionCandidate(
             at: time,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             suppressedSectionIDs: suppressedSectionIDs
         ) else {
             return

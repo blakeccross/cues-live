@@ -5,7 +5,6 @@ import UniformTypeIdentifiers
 import AppKit
 #endif
 
-typealias UndoableChangeHandler = (_ actionName: String, _ change: () -> Void) -> Void
 
 struct EditView: View {
     @Environment(\.modelContext) private var modelContext
@@ -13,13 +12,7 @@ struct EditView: View {
     @Bindable var song: Song
     let viewModel: SongEditorViewModel
     let undoController: SongUndoController
-    @Binding var arrangementMarkers: [ArrangementMarker]
-    @Binding var arrangementSlots: [ArrangementSlot]
-    @Binding var clipTrims: [ArrangementClipTrim]
-    @Binding var removedClips: [ArrangementRemovedClip]
-    @Binding var clipGaps: [ArrangementClipGap]
-    @Binding var clipRegions: [ClipRegion]
-    @Binding var loopSlotIDs: Set<UUID>
+    @Binding var timeline: SongTimeline
     @Binding var tempoChanges: [TempoChange]
     @Binding var timeSignatureChanges: [TimeSignatureChange]
     @Binding var midiEvents: [MIDIEvent]
@@ -56,16 +49,18 @@ struct EditView: View {
     @State private var editingTempoMarkerID: UUID?
     @State private var showingTimeSignatureMarkerEditor = false
     @State private var editingTimeSignatureMarkerID: UUID?
-    @State private var sectionPendingRename: ArrangementDisplaySection?
+    @State private var sectionPendingRename: SongSection?
     @State private var sectionNamePromptTitle = "Rename Section"
     @State private var trackPendingRename: AudioTrack?
     @State private var renameTrackName = ""
-    @State private var clipSelection: TimelineClipSelection?
+    @State private var clipSelection = ClipSelection()
+    /// Shift-press on an already selected clip; removed on release unless the press became a drag.
+    @State private var pendingShiftDeselectID: UUID?
+    @State private var clipDrag: ClipDrag?
+    @State private var rangeDrag: ClipRangeDrag?
     @State private var rulerMeasureSelection: MeasureRangeSelection?
-    @State private var selectedTrackID: UUID?
+    @State private var selectedTrackIDs: Set<UUID> = []
     @FocusState private var isTimelineFocused: Bool
-    @State private var cachedRulerSections: [ArrangementDisplaySection] = []
-    @State private var cachedTrackSections: [UUID: [ArrangementDisplaySection]] = [:]
     @State private var isTimelineReady = false
 
     @Query(sort: [SortDescriptor(\TrackGroup.sortOrder), SortDescriptor(\TrackGroup.name)])
@@ -153,13 +148,7 @@ struct EditView: View {
     private func persistProjectState() {
         try? SongProjectBridge.persist(
             song: song,
-            markers: markers,
-            arrangementSlots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            loopSlotIDs: loopSlotIDs,
+            timeline: timeline,
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges,
             midiEvents: midiEvents,
@@ -170,13 +159,7 @@ struct EditView: View {
     private func captureSnapshot() -> SongEditSnapshot {
         SongEditSnapshot.capture(
             song: song,
-            markers: arrangementMarkers,
-            arrangementSlots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            loopSlotIDs: loopSlotIDs,
+            timeline: timeline,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents
@@ -184,13 +167,8 @@ struct EditView: View {
     }
 
     private func applySnapshot(_ snapshot: SongEditSnapshot) {
-        arrangementMarkers = snapshot.markers
-        arrangementSlots = snapshot.arrangementSlots
-        clipTrims = snapshot.clipTrims
-        removedClips = snapshot.removedClips
-        clipGaps = snapshot.clipGaps
-        clipRegions = snapshot.clipRegions
-        loopSlotIDs = snapshot.loopSlotIDs
+        timeline = snapshot.timeline
+        clipSelection.retain(existing: timeline.clips)
         midiEvents = snapshot.midiEvents
 
         snapshot.applyMetadata(to: song)
@@ -211,13 +189,7 @@ struct EditView: View {
 
         try? SongProjectBridge.persist(
             song: song,
-            markers: markers,
-            arrangementSlots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            loopSlotIDs: loopSlotIDs,
+            timeline: timeline,
             tempoChanges: normalizedTempo,
             timeSignatureChanges: normalizedTimeSignature,
             midiEvents: midiEvents,
@@ -225,13 +197,11 @@ struct EditView: View {
         )
         try? modelContext.save()
 
-        refreshTimelineLayout()
         syncPlayback()
         viewModel.syncTempoMap(normalizedTempo, timeSignatureChanges: normalizedTimeSignature)
 
         for track in song.sortedTracks {
             viewModel.updateMix(for: track, context: modelContext)
-            viewModel.updateTrim(for: track, context: modelContext)
         }
 
         reconfigureMIDI()
@@ -267,12 +237,6 @@ struct EditView: View {
                 applySnapshot(snapshot)
             }
         )
-    }
-
-    private var undoableChange: UndoableChangeHandler {
-        { actionName, change in
-            performUndoableChange(actionName, change)
-        }
     }
 
     private func handleTempoRulerTap(at time: TimeInterval) {
@@ -344,7 +308,7 @@ struct EditView: View {
     }
 
     private var markers: [ArrangementMarker] {
-        arrangementMarkers.sortedByTime
+        timeline.sortedMarkers
     }
 
     private var sourceDuration: TimeInterval {
@@ -357,113 +321,52 @@ struct EditView: View {
         AudioEngineManager.shared.duration
     }
 
-    private var sourceDurationForTrack: (UUID) -> TimeInterval {
-        { trackID in
-            guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
-            return viewModel.fileDuration(for: track)
-        }
+    private var displaySections: [SongSection] {
+        timeline.sections(songEnd: timeline.duration)
     }
 
-    private var rulerSections: [ArrangementDisplaySection] {
-        cachedRulerSections
+    private var loopSectionIDs: Set<UUID> {
+        Set(timeline.markers.filter(\.loops).map(\.id))
     }
 
-    private func trackSections(for track: AudioTrack) -> [ArrangementDisplaySection] {
-        cachedTrackSections[track.id] ?? []
-    }
-
-    private func layoutInputs() -> ArrangementLayoutInputs {
-        SongArrangementStore.makeLayoutInputs(
-            markers: markers,
-            trackIDs: song.sortedTracks.map(\.id),
-            sourceDurationForTrack: sourceDurationForTrack
-        )
-    }
-
-    private func refreshTimelineLayout() {
-        let layout = viewModel.buildArrangementLayout(
-            markers: markers,
-            slots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions
-        )
-        cachedRulerSections = layout.rulerSections
-        cachedTrackSections = layout.trackSections
-    }
-
-    private func persistArrangement() {
-        persistProjectState()
+    /// Picks up timeline changes written straight to the project file, such as a regenerated click clip.
+    private func reloadTimelineFromProject() {
+        guard let state = try? SongProjectBridge.loadProjectState(for: song) else { return }
+        timeline = state.timeline
+        syncPlayback()
     }
 
     private func syncPlayback() {
-        viewModel.syncArrangement(
-            markers: markers,
-            slots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions
-        )
+        viewModel.syncArrangement(timeline)
     }
 
-    private func syncTrackPlayback(for trackID: UUID) {
-        viewModel.syncTrackArrangement(
-            trackID: trackID,
-            markers: markers,
-            slots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            track: song.sortedTracks.first(where: { $0.id == trackID })
-        )
-    }
-
-    private func commitTrackArrangementChange(for trackID: UUID) {
-        refreshTimelineLayout()
-        syncTrackPlayback(for: trackID)
-    }
-
-    private var displaySections: [ArrangementDisplaySection] {
-        rulerSections
-    }
-
-    private func trackLaneSections(for track: AudioTrack) -> [ArrangementDisplaySection] {
-        trackSections(for: track)
-    }
-
-    private func clipDisplaySections(for track: AudioTrack) -> [ArrangementDisplaySection] {
-        let laneSections = trackLaneSections(for: track)
-        if !laneSections.isEmpty {
-            return laneSections
+    /// Applies one timeline edit as a single undo step, then saves and updates playback.
+    private func commitTimelineEdit(_ actionName: String, _ edit: (inout SongTimeline) -> Void) {
+        performUndoableChange(actionName) {
+            edit(&timeline)
+            persistProjectState()
+            syncPlayback()
+            prepareSectionAnnouncements()
         }
-        return SongArrangementStore.sourceTrackDisplaySections(
-            trackID: track.id,
-            trimStart: track.trimStartSeconds,
-            trimEnd: track.trimEndSeconds ?? viewModel.fileDuration(for: track),
-            clipGaps: clipGaps,
-            clipRegions: clipRegions
-        )
     }
 
     private var clipEditorActions: ClipEditorActions {
         ClipEditorActions(
-            canSplit: clipSelection != nil,
-            canJoin: clipSelection?.isWholeClip == true,
-            split: { splitSelectedClipAtPlayhead() },
-            join: { joinSelectedClipWithNext() }
+            canSplit: !clipSelection.isEmpty,
+            canJoin: !clipSelection.isEmpty,
+            canDuplicate: !clipSelection.isEmpty,
+            canDeselect: !clipSelection.isEmpty,
+            split: { splitSelectedClips(at: AudioEngineManager.shared.currentTime) },
+            join: { joinSelectedClips() },
+            duplicate: { duplicateSelectedClips() },
+            deselectAll: { clipSelection.deselectAll() }
         )
     }
 
     private var timelineDuration: TimeInterval {
-        let hasTrackSections = cachedTrackSections.values.contains { !$0.isEmpty }
-        if !displaySections.isEmpty || hasTrackSections {
-            return SongArrangementStore.effectiveTimelineDuration(
-                rulerSections: rulerSections,
-                trackSections: cachedTrackSections
-            )
+        let duration = timeline.duration
+        if duration > 0 {
+            return duration
         }
         return max(sourceDuration, finiteEngineDuration, 1)
     }
@@ -612,12 +515,13 @@ struct EditView: View {
                 for track in tracks {
                     modelContext.insert(track)
                     song.tracks.append(track)
+                    if let clip = SongProjectBridge.defaultClip(for: track, in: song) {
+                        timeline.clips.append(clip)
+                    }
                 }
                 try? modelContext.save()
-                try? SongProjectBridge.syncProjectFile(for: song, context: modelContext)
                 TrackGroupStore.autoAssignGroups(for: song, in: modelContext)
                 persistProjectState()
-                refreshTimelineLayout()
                 syncPlayback()
                 viewModel.loadSong(context: modelContext)
             }
@@ -632,13 +536,7 @@ struct EditView: View {
             let importedMarkers = AbletonProjectImporter.makeMarkers(from: importResult).sortedByTime
             performUndoableChange("Import Ableton File") {
                 if !importedMarkers.isEmpty {
-                    arrangementMarkers = importedMarkers
-                    arrangementSlots = SongArrangementStore.defaultSlots(from: importedMarkers)
-                    clipTrims = []
-                    removedClips = []
-                    clipGaps = []
-                    clipRegions = []
-                    loopSlotIDs = []
+                    timeline.markers = importedMarkers
                 }
                 try? AbletonProjectImporter.apply(
                     importResult,
@@ -649,7 +547,6 @@ struct EditView: View {
                 tempoChanges = [TempoChange(startMeasure: 1, bpm: importResult.bpm, sortOrder: 0)]
                 timeSignatureChanges = importResult.timeSignatures
                 persistProjectState()
-                refreshTimelineLayout()
                 syncPlayback()
                 viewModel.syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
                 prepareSectionAnnouncements()
@@ -678,6 +575,7 @@ struct EditView: View {
 
     private func deleteMIDITrack(_ track: MIDITrack) {
         midiEvents.removeAll { $0.trackID == track.id }
+        selectedTrackIDs.remove(track.id)
         song.midiTracks.removeAll { $0.id == track.id }
         modelContext.delete(track)
         try? modelContext.save()
@@ -747,7 +645,6 @@ struct EditView: View {
         .focusEffectDisabled()
         .focusedValue(\.clipEditorActions, clipEditorActions)
         .onAppear {
-            refreshTimelineLayout()
             isTimelineFocused = true
             tempoChanges = normalizedTempoChanges
             timeSignatureChanges = normalizedTimeSignatureChanges
@@ -763,21 +660,12 @@ struct EditView: View {
             viewModel.applyOutputRoutingChange()
         }
         .onChange(of: clipSelection) { _, newValue in
-            if let trackID = newValue?.trackID {
-                selectedTrackID = trackID
-            }
-            if newValue != nil {
+            if !newValue.isEmpty {
                 rulerMeasureSelection = nil
                 isTimelineFocused = true
             }
         }
-        .onChange(of: arrangementSlots) { _, _ in
-            refreshTimelineLayout()
-            syncPlayback()
-            prepareSectionAnnouncements()
-        }
-        .onChange(of: arrangementMarkers) { _, _ in
-            refreshTimelineLayout()
+        .onChange(of: timeline.markers) { _, _ in
             prepareSectionAnnouncements()
         }
         .onChange(of: song.smartGuideEnabled) { _, _ in
@@ -800,13 +688,13 @@ struct EditView: View {
                 sections: displaySections,
                 cuedSectionID: cuedSectionID,
                 cueFireTime: cueFireTime,
-                loopSection: sectionLoop.activeSection(in: displaySections, loopSlotIDs: loopSlotIDs),
+                loopSection: sectionLoop.activeSection(in: displaySections, loopSectionIDs: loopSectionIDs),
                 announcer: sectionAnnouncer
             )
             SectionLoopPlaybackSupport(
                 loopController: sectionLoop,
                 sections: displaySections,
-                loopSlotIDs: loopSlotIDs,
+                loopSectionIDs: loopSectionIDs,
                 onLoopActivated: { clearMarkerCue() }
             )
         }
@@ -828,6 +716,12 @@ struct EditView: View {
             } else {
                 removeClipSelection()
             }
+        }
+        .onCommand(#selector(NSResponder.selectAll(_:))) {
+            selectAllClips()
+        }
+        .onExitCommand {
+            clipSelection.deselectAll()
         }
 #endif
         .sheet(isPresented: $showingGroupEditor) {
@@ -899,7 +793,6 @@ struct EditView: View {
         .toolbar {
             EditSongToolbarContent(
                 viewModel: viewModel,
-                markers: markers,
                 song: song,
                 showingArrangementEditor: $showingArrangementEditor,
                 showingTimeSignatureEditor: $showingTimeSignatureEditor,
@@ -914,12 +807,8 @@ struct EditView: View {
                 onApplyTempo: applyReferenceTempo,
                 onApplyBaseKey: applyBaseKey,
                 showingChangeKey: $showingChangeKey,
-                arrangementSlots: $arrangementSlots,
-                clipTrims: $clipTrims,
-                removedClips: $removedClips,
-                clipGaps: $clipGaps,
-                clipRegions: $clipRegions,
-                loopSlotIDs: $loopSlotIDs,
+                arrangementActions: arrangementActions,
+                loopSectionIDs: loopSectionIDs,
                 showingSongLibrary: $showingSongLibrary,
                 showingBakeSheet: $showingBakeSheet,
                 showingGroupEditor: $showingGroupEditor,
@@ -937,12 +826,6 @@ struct EditView: View {
                     guard let section = displaySections.section(atTimeline: time) else { return }
                     toggleLoopSection(section)
                 },
-                onPersistArrangement: {
-                    performUndoableChange("Edit Arrangement") {
-                        persistArrangement()
-                    }
-                },
-                onUndoableChange: undoableChange,
                 captureSnapshot: captureSnapshot,
                 registerUndo: { actionName, before, after in
                     undoController.registerChange(
@@ -953,7 +836,8 @@ struct EditView: View {
                             applySnapshot(snapshot)
                         }
                     )
-                }
+                },
+                onClickTrackGenerated: reloadTimelineFromProject
             )
         }
         .appLockToolbarDisplayMode()
@@ -961,47 +845,13 @@ struct EditView: View {
     }
 
     private func removeClipSelection() {
-        guard let clipSelection else { return }
-        let trackID = clipSelection.trackID
-        let selection = clipSelection
-
-        performUndoableChange("Delete Clip") {
-            switch selection {
-            case .whole(let clipID, let slotID, let trackID, _):
-                deleteWholeClip(clipID: clipID, slotID: slotID, trackID: trackID)
-            case .range(_, let slotID, let trackID, let start, let end):
-                if !displaySections.isEmpty,
-                   let track = song.sortedTracks.first(where: { $0.id == trackID }),
-                   let slot = arrangementSlots.first(where: { $0.id == slotID }),
-                   let marker = markers.first(where: { $0.id == slot.markerID }),
-                   let section = trackLaneSections(for: track).first(where: { $0.slotID == slotID }) {
-                    SongArrangementStore.deleteVisibleRange(
-                        slotID: slotID,
-                        trackID: trackID,
-                        rangeStart: start,
-                        rangeEnd: end,
-                        sections: trackLaneSections(for: track),
-                        marker: marker,
-                        markers: markers,
-                        tempoChanges: normalizedTempoChanges,
-                        timeSignatureChanges: normalizedTimeSignatureChanges,
-                        sourceDuration: viewModel.fileDuration(for: track),
-                        clipTrims: &clipTrims,
-                        removedClips: &removedClips,
-                        clipGaps: &clipGaps,
-                        clipRegions: &clipRegions,
-                        columnStart: section.columnStartSeconds
-                    )
-                } else if let track = song.sortedTracks.first(where: { $0.id == trackID }) {
-                    deleteSourceTrackRange(track: track, rangeStart: start, rangeEnd: end)
-                }
-            }
-
-            self.clipSelection = nil
-            clearMarkerCue(cancellingScheduledTransition: false)
-            persistArrangement()
-            commitTrackArrangementChange(for: trackID)
+        guard !clipSelection.isEmpty else { return }
+        let ids = clipSelection.clipIDs
+        commitTimelineEdit("Delete Clips") { timeline in
+            ClipEditing.delete(clipIDs: ids, in: &timeline.clips)
         }
+        clipSelection.deselectAll()
+        clearMarkerCue(cancellingScheduledTransition: false)
     }
 
     /// Ripple-deletes the ruler measure selection: removes that span from every track and shifts
@@ -1010,379 +860,206 @@ struct EditView: View {
         guard let selection = rulerMeasureSelection else { return }
 
         performUndoableChange("Ripple Delete") {
-            let tracks = song.sortedTracks.map { track in
-                TimelineRippleStore.Track(
-                    id: track.id,
-                    trimStart: track.trimStartSeconds,
-                    trimEnd: track.trimEndSeconds ?? viewModel.fileDuration(for: track),
-                    sourceDuration: viewModel.fileDuration(for: track)
-                )
-            }
-
-            let result = TimelineRippleStore.rippleDeleteMeasures(
+            TimelineRippleStore.rippleDeleteMeasures(
                 startMeasure: selection.startMeasure,
                 endMeasure: selection.endMeasure,
-                markers: &arrangementMarkers,
-                slots: &arrangementSlots,
-                clipTrims: clipTrims,
-                removedClips: removedClips,
-                clipGaps: &clipGaps,
-                clipRegions: &clipRegions,
-                loopSlotIDs: &loopSlotIDs,
+                timeline: &timeline,
                 tempoChanges: &tempoChanges,
                 timeSignatureChanges: &timeSignatureChanges,
                 midiEvents: &midiEvents,
-                tracks: tracks,
                 defaultBPM: song.bpm ?? TempoChange.defaultBPM,
                 defaultNumerator: song.timeSignatureNumerator ?? MeasureTiming.defaultNumerator,
                 defaultDenominator: song.timeSignatureDenominator ?? MeasureTiming.defaultDenominator
             )
 
-            for track in song.sortedTracks where result.emptiedTrackIDs.contains(track.id) {
-                track.trimEndSeconds = track.trimStartSeconds
-                viewModel.updateTrim(for: track, context: modelContext)
-            }
-
             rulerMeasureSelection = nil
-            clipSelection = nil
+            clipSelection.deselectAll()
             clearMarkerCue(cancellingScheduledTransition: false)
 
-            refreshTimelineLayout()
             persistTempoChanges()
             persistTimeSignatureChanges()
-            persistArrangement()
             reconfigureMIDI()
             syncPlayback()
         }
     }
 
-    private func deleteWholeClip(clipID: UUID, slotID: UUID, trackID: UUID) {
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return }
+    // MARK: - Clip selection
 
-        let visibleSections = !displaySections.isEmpty
-            ? trackLaneSections(for: track)
-            : SongArrangementStore.sourceTrackDisplaySections(
-                trackID: trackID,
-                trimStart: track.trimStartSeconds,
-                trimEnd: track.trimEndSeconds ?? viewModel.fileDuration(for: track),
-                clipGaps: clipGaps,
-                clipRegions: clipRegions
-            )
+    private func selectAllClips() {
+        clipSelection = ClipSelection(timeline.clips.map(\.id))
+    }
 
-        guard let section = visibleSections.first(where: { $0.id == clipID }) else { return }
-        let siblingSections = visibleSections.filter { $0.slotID == slotID }
-
-        if siblingSections.count > 1 {
-            if !displaySections.isEmpty,
-               let slot = arrangementSlots.first(where: { $0.id == slotID }),
-               let marker = markers.first(where: { $0.id == slot.markerID }),
-               let sourceRange = SongArrangementStore.trimmedSourceRange(
-                   slot: slot,
-                   trackID: trackID,
-                   marker: marker,
-                   markers: markers,
-                   clipTrims: clipTrims,
-                   sourceDuration: viewModel.fileDuration(for: track)
-               ) {
-                let bounds = SongArrangementStore.markerSourceRange(
-                    for: marker,
-                    markers: markers,
-                    sourceDuration: viewModel.fileDuration(for: track)
-                )
-                SongArrangementStore.ensureClipRegions(
-                    slotID: slotID,
-                    trackID: trackID,
-                    markerID: marker.id,
-                    sourceRange: sourceRange,
-                    boundsStart: bounds.start,
-                    columnStart: section.columnStartSeconds,
-                    clipGaps: clipGaps,
-                    clipRegions: &clipRegions
-                )
-            } else {
-                SongArrangementStore.ensureSourceTrackRegions(
-                    trackID: track.id,
-                    trimStart: track.trimStartSeconds,
-                    trimEnd: track.trimEndSeconds ?? viewModel.fileDuration(for: track),
-                    clipGaps: clipGaps,
-                    clipRegions: &clipRegions
-                )
-            }
-            clipGaps.removeAll { $0.slotID == slotID && $0.trackID == trackID }
-            _ = SongArrangementStore.deleteRegion(
-                regionID: clipID,
-                slotID: slotID,
-                trackID: trackID,
-                clipTrims: &clipTrims,
-                removedClips: &removedClips,
-                clipGaps: &clipGaps,
-                clipRegions: &clipRegions
-            )
-        } else if !displaySections.isEmpty {
-            SongArrangementStore.removeClip(
-                slotID: slotID,
-                trackID: trackID,
-                clipTrims: &clipTrims,
-                removedClips: &removedClips,
-                clipGaps: &clipGaps,
-                clipRegions: &clipRegions
-            )
-        } else {
-            deleteSourceTrackRange(
-                track: track,
-                rangeStart: section.sourceStartSeconds,
-                rangeEnd: section.sourceEndSeconds
-            )
+    /// Splits every selected clip that spans `time`; both halves stay selected.
+    private func splitSelectedClips(at time: TimeInterval) {
+        let ids = clipSelection.clipIDs
+        guard timeline.clips.contains(where: { ids.contains($0.id) && $0.containsTimelineTime(time) }) else { return }
+        commitTimelineEdit("Split Clips") { timeline in
+            let rightIDs = ClipEditing.split(clipIDs: ids, at: time, in: &timeline.clips)
+            clipSelection.select(rightIDs)
         }
     }
 
-    private func deleteSourceTrackRange(
-        track: AudioTrack,
-        rangeStart: TimeInterval,
-        rangeEnd: TimeInterval
-    ) {
-        let fileDuration = viewModel.fileDuration(for: track)
-        let clipStart = track.trimStartSeconds
-        let clipEnd = track.trimEndSeconds ?? fileDuration
-        let snapped = MeasureTiming.snapTimelineRangeToGrid(
-            start: rangeStart,
-            end: rangeEnd,
+    private func joinSelectedClips() {
+        var joined = timeline.clips
+        let remaining = ClipEditing.join(clipIDs: clipSelection.clipIDs, in: &joined)
+        guard joined != timeline.clips else { return }
+        commitTimelineEdit("Join Clips") { timeline in
+            timeline.clips = joined
+        }
+        clipSelection = ClipSelection(remaining)
+    }
+
+    private func duplicateSelectedClips() {
+        guard !clipSelection.isEmpty else { return }
+        let ids = clipSelection.clipIDs
+        commitTimelineEdit("Duplicate Clips") { timeline in
+            clipSelection = ClipSelection(ClipEditing.duplicate(clipIDs: ids, in: &timeline.clips))
+        }
+    }
+
+    private var selectedClips: [TrackClip] {
+        timeline.clips.filter { clipSelection.contains($0.id) }
+    }
+
+    private func snappedToBeat(_ time: TimeInterval) -> TimeInterval {
+        MeasureTiming.snapToNearestBeat(
+            max(0, time),
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
-        let selectionStart = max(snapped.start, clipStart)
-        let selectionEnd = min(snapped.end, clipEnd)
-        let minGap: TimeInterval = 0.1
-        guard selectionEnd - selectionStart >= minGap else { return }
-
-        let tolerance: TimeInterval = 0.02
-        if selectionStart <= clipStart + tolerance, selectionEnd >= clipEnd - tolerance {
-            track.trimEndSeconds = clipStart + minGap
-        } else if selectionStart <= clipStart + tolerance {
-            track.trimStartSeconds = min(selectionEnd, clipEnd - minGap)
-        } else if selectionEnd >= clipEnd - tolerance {
-            track.trimEndSeconds = max(selectionStart, clipStart + minGap)
-        } else {
-            SongArrangementStore.ensureSourceTrackRegions(
-                trackID: track.id,
-                trimStart: clipStart,
-                trimEnd: clipEnd,
-                clipGaps: clipGaps,
-                clipRegions: &clipRegions
-            )
-            clipGaps.removeAll { $0.slotID == track.id && $0.trackID == track.id }
-            _ = ClipRegionStore.deleteTimelineRange(
-                slotID: track.id,
-                trackID: track.id,
-                rangeStart: selectionStart,
-                rangeEnd: selectionEnd,
-                tempoChanges: normalizedTempoChanges,
-                timeSignatureChanges: normalizedTimeSignatureChanges,
-                in: &clipRegions
-            )
-        }
-        viewModel.updateTrim(for: track, context: modelContext)
     }
 
-    private func splitSelectedClipAtPlayhead() {
-        guard let selection = clipSelection else { return }
-        let trackID = selection.trackID
-
-        performUndoableChange("Split Clip") {
-            switch selection {
-            case .range(let clipID, let slotID, _, let start, let end):
-                let minDuration = SongArrangementStore.minimumClipDuration
-                if end - start < minDuration {
-                    if let rightID = performSplit(
-                        clipID: clipID,
-                        slotID: slotID,
-                        trackID: trackID,
-                        at: start
-                    ) {
-                        clipSelection = .whole(clipID: rightID, slotID: slotID, trackID: trackID, editTime: nil)
-                        finalizeSplit(trackID: trackID)
-                    }
-                    return
+    private var clipLaneActions: ClipLaneActions {
+        ClipLaneActions(
+            press: { clipID, trackID, modifiers in
+                let wasSelected = clipSelection.press(clipID, extending: modifiers.shift)
+                pendingShiftDeselectID = wasSelected ? clipID : nil
+            },
+            click: { clipID, modifiers, time in
+                if pendingShiftDeselectID == clipID {
+                    clipSelection.deselect(clipID)
+                } else if modifiers.option {
+                    splitSelectedClips(at: time)
                 }
-
-                _ = performSplit(clipID: clipID, slotID: slotID, trackID: trackID, at: end)
-                if let rightID = performSplit(clipID: clipID, slotID: slotID, trackID: trackID, at: start) {
-                    clipSelection = .whole(clipID: rightID, slotID: slotID, trackID: trackID, editTime: nil)
+                pendingShiftDeselectID = nil
+            },
+            drag: updateClipDrag,
+            endDrag: commitClipDrag,
+            marquee: updateRangeDrag,
+            endMarquee: { rangeDrag = nil },
+            clickBlank: { trackID, time in
+                clipSelection.deselectAll()
+                selectedTrackIDs = [trackID]
+                if !audioEngine.isPlaying {
+                    AudioEngineManager.shared.seek(to: time)
                 }
-                finalizeSplit(trackID: trackID)
-
-            case .whole(let clipID, let slotID, _, let editTime):
-                let splitTime = editTime ?? AudioEngineManager.shared.currentTime
-                if let rightID = performSplit(
-                    clipID: clipID,
-                    slotID: slotID,
-                    trackID: trackID,
-                    at: splitTime
-                ) {
-                    clipSelection = .whole(clipID: rightID, slotID: slotID, trackID: trackID, editTime: nil)
-                    finalizeSplit(trackID: trackID)
-                }
-            }
-        }
-    }
-
-    @discardableResult
-    private func performSplit(
-        clipID: UUID,
-        slotID: UUID,
-        trackID: UUID,
-        at splitTime: TimeInterval
-    ) -> UUID? {
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return nil }
-
-        let sections = clipDisplaySections(for: track)
-        guard let section = sections.first(where: { $0.id == clipID })
-            ?? sections.first(where: {
-                splitTime >= $0.timelineStartSeconds + 0.02
-                    && splitTime <= $0.timelineEndSeconds - 0.02
-                    && $0.slotID == slotID
-            }) else { return nil }
-        guard splitTime > section.timelineStartSeconds + 0.02,
-              splitTime < section.timelineEndSeconds - 0.02 else { return nil }
-
-        if trackLaneSections(for: track).isEmpty {
-            SongArrangementStore.ensureSourceTrackRegions(
-                trackID: track.id,
-                trimStart: track.trimStartSeconds,
-                trimEnd: track.trimEndSeconds ?? viewModel.fileDuration(for: track),
-                clipGaps: clipGaps,
-                clipRegions: &clipRegions
-            )
-            clipGaps.removeAll { $0.slotID == track.id && $0.trackID == track.id }
-        } else {
-            materializeRegionsIfNeeded(
-                slotID: slotID,
-                trackID: trackID,
-                section: section,
-                track: track
-            )
-        }
-
-        let regionID = ClipRegionStore.regions(slotID: slotID, trackID: trackID, in: clipRegions)
-            .first(where: {
-                splitTime > $0.timelineStartSeconds + 0.02
-                    && splitTime < $0.timelineEndSeconds - 0.02
-            })?.id ?? section.id
-
-        return SongArrangementStore.splitRegion(
-            regionID: regionID,
-            trackID: trackID,
-            at: splitTime,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges,
-            clipRegions: &clipRegions
+            },
+            menu: performClipMenuAction
         )
     }
 
-    private func materializeRegionsIfNeeded(
-        slotID: UUID,
-        trackID: UUID,
-        section: ArrangementDisplaySection,
-        track: AudioTrack
-    ) {
-        guard !ClipRegionStore.hasStoredRegions(slotID: slotID, trackID: trackID, in: clipRegions),
-              let slot = arrangementSlots.first(where: { $0.id == slotID }),
-              let marker = markers.first(where: { $0.id == slot.markerID }),
-              let sourceRange = SongArrangementStore.trimmedSourceRange(
-                  slot: slot,
-                  trackID: trackID,
-                  marker: marker,
-                  markers: markers,
-                  clipTrims: clipTrims,
-                  sourceDuration: viewModel.fileDuration(for: track)
-              ) else { return }
-
-        let bounds = SongArrangementStore.markerSourceRange(
-            for: marker,
-            markers: markers,
-            sourceDuration: viewModel.fileDuration(for: track)
-        )
-        SongArrangementStore.ensureClipRegions(
-            slotID: slotID,
-            trackID: trackID,
-            markerID: marker.id,
-            sourceRange: sourceRange,
-            boundsStart: bounds.start,
-            columnStart: section.columnStartSeconds,
-            clipGaps: clipGaps,
-            clipRegions: &clipRegions
-        )
-        clipGaps.removeAll { $0.slotID == slotID && $0.trackID == trackID }
+    /// Snaps the reference clip's moved edge to the beat grid and applies that change to the whole selection.
+    private func updateClipDrag(_ request: ClipDragRequest) {
+        pendingShiftDeselectID = nil
+        switch request {
+        case .move(let reference, let rawDelta, let copy):
+            let earliest = selectedClips.map(\.timelineStartSeconds).min() ?? reference.timelineStartSeconds
+            let delta = snappedToBeat(reference.timelineStartSeconds + rawDelta) - reference.timelineStartSeconds
+            clipDrag = .move(delta: max(delta, -earliest), copy: copy)
+        case .trim(let reference, let edge, let rawTime):
+            let edgeTime = edge == .leading ? reference.timelineStartSeconds : reference.timelineEndSeconds
+            clipDrag = .trim(edge: edge, delta: snappedToBeat(rawTime) - edgeTime)
+        }
     }
 
-    private func finalizeSplit(trackID: UUID) {
-        refreshTimelineLayout()
-        persistArrangement()
-        commitTrackArrangementChange(for: trackID)
-        syncPlayback()
-    }
-
-    private func joinSelectedClipWithNext() {
-        guard case .whole(let clipID, let slotID, let trackID, _) = clipSelection else { return }
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return }
-
-        let sections = clipDisplaySections(for: track)
-            .filter { $0.slotID == slotID }
-            .sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
-
-        guard let index = sections.firstIndex(where: { $0.id == clipID }),
-              index + 1 < sections.count else { return }
-
-        let nextID = sections[index + 1].id
-
-        performUndoableChange("Join Clips") {
-            if let firstSection = sections.first, !trackLaneSections(for: track).isEmpty,
-               let slot = arrangementSlots.first(where: { $0.id == slotID }),
-               let marker = markers.first(where: { $0.id == slot.markerID }),
-               let sourceRange = SongArrangementStore.trimmedSourceRange(
-                   slot: slot,
-                   trackID: trackID,
-                   marker: marker,
-                   markers: markers,
-                   clipTrims: clipTrims,
-                   sourceDuration: viewModel.fileDuration(for: track)
-               ) {
-                let bounds = SongArrangementStore.markerSourceRange(
-                    for: marker,
-                    markers: markers,
-                    sourceDuration: viewModel.fileDuration(for: track)
-                )
-                SongArrangementStore.ensureClipRegions(
-                    slotID: slotID,
-                    trackID: trackID,
-                    markerID: marker.id,
-                    sourceRange: sourceRange,
-                    boundsStart: bounds.start,
-                    columnStart: firstSection.columnStartSeconds,
-                    clipGaps: clipGaps,
-                    clipRegions: &clipRegions
-                )
+    private func commitClipDrag() {
+        guard let drag = clipDrag else { return }
+        clipDrag = nil
+        let ids = clipSelection.clipIDs
+        switch drag {
+        case .move(let delta, let copy):
+            guard abs(delta) > ClipEditing.tolerance else { return }
+            if copy {
+                commitTimelineEdit("Copy Clips") { timeline in
+                    clipSelection = ClipSelection(ClipEditing.copy(clipIDs: ids, by: delta, in: &timeline.clips))
+                }
             } else {
-                SongArrangementStore.ensureSourceTrackRegions(
-                    trackID: track.id,
-                    trimStart: track.trimStartSeconds,
-                    trimEnd: track.trimEndSeconds ?? viewModel.fileDuration(for: track),
-                    clipGaps: clipGaps,
-                    clipRegions: &clipRegions
+                commitTimelineEdit("Move Clips") { timeline in
+                    ClipEditing.move(clipIDs: ids, by: delta, in: &timeline.clips)
+                }
+            }
+        case .trim(let edge, let delta):
+            guard abs(delta) > ClipEditing.tolerance else { return }
+            let durations = Dictionary(uniqueKeysWithValues: song.sortedTracks.map { ($0.id, viewModel.fileDuration(for: $0)) })
+            commitTimelineEdit("Trim Clips") { timeline in
+                ClipEditing.trim(
+                    clipIDs: ids,
+                    edge: edge,
+                    by: delta,
+                    sourceDuration: { durations[$0] ?? 0 },
+                    in: &timeline.clips
                 )
             }
-            clipGaps.removeAll { $0.slotID == slotID && $0.trackID == trackID }
-
-            if SongArrangementStore.joinRegions(
-                firstID: clipID,
-                secondID: nextID,
-                trackID: trackID,
-                clipRegions: &clipRegions
-            ) != nil {
-                persistArrangement()
-                commitTrackArrangementChange(for: trackID)
-            }
         }
+        clipSelection.retain(existing: timeline.clips)
+    }
+
+    /// A context-menu action on a clip outside the selection first makes it the only selected clip.
+    private func performClipMenuAction(_ action: ClipMenuAction, clipID: UUID) {
+        if !clipSelection.contains(clipID) {
+            clipSelection = ClipSelection([clipID])
+        }
+        switch action {
+        case .splitAtPlayhead: splitSelectedClips(at: AudioEngineManager.shared.currentTime)
+        case .join: joinSelectedClips()
+        case .duplicate: duplicateSelectedClips()
+        case .delete: removeClipSelection()
+        }
+    }
+
+    /// A Soundcraft selector drag: a snapped time range across every row from the press to the pointer.
+    private struct ClipRangeDrag: Equatable {
+        var start: TimeInterval
+        var end: TimeInterval
+        var firstRow: Int
+        var lastRow: Int
+    }
+
+    /// Rows run MIDI first, then audio. The drag selects each clip the range overlaps on those rows.
+    private func updateRangeDrag(from start: CGPoint, to current: CGPoint, modifiers _: PointerModifiers) {
+        let ids = displayedTrackIDs
+        guard !ids.isEmpty else { return }
+        let rowHeight = TimelineLayout.laneHeight + TimelineLayout.laneSpacing
+        func row(at y: CGFloat) -> Int {
+            let index = Int((y / rowHeight).rounded(.down))
+            return min(max(index, 0), ids.count - 1)
+        }
+        let lowRow = min(row(at: start.y), row(at: current.y))
+        let highRow = max(row(at: start.y), row(at: current.y))
+        let startTime = snappedToBeat(time(atX: start.x))
+        let endTime = snappedToBeat(time(atX: current.x))
+        rangeDrag = ClipRangeDrag(
+            start: min(startTime, endTime),
+            end: max(startTime, endTime),
+            firstRow: lowRow,
+            lastRow: highRow
+        )
+        pendingShiftDeselectID = nil
+        clipDrag = nil
+        let trackIDs = Set(ids[lowRow...highRow])
+        selectedTrackIDs = trackIDs
+        clipSelection = ClipSelection(
+            ClipSelection.clipIDs(
+                in: timeline.clips,
+                trackIDs: trackIDs,
+                from: startTime,
+                to: endTime
+            )
+        )
+    }
+
+    private func time(atX x: CGFloat) -> TimeInterval {
+        TimelineLayout.time(at: x, duration: timelineDuration, contentWidth: timelineContentWidth)
     }
 
     private func clearMarkerCue(cancellingScheduledTransition: Bool = true) {
@@ -1399,7 +1076,7 @@ struct EditView: View {
         sectionAnnouncer.prepare(names: displaySections.map(\.name))
     }
 
-    private func cueSection(_ section: ArrangementDisplaySection) {
+    private func cueSection(_ section: SongSection) {
         sectionLoop.endLoopIfActive()
 
         if !audioEngine.isPlaying {
@@ -1423,7 +1100,7 @@ struct EditView: View {
         )
     }
 
-    private func sectionCueFireTime(for cuedSection: ArrangementDisplaySection) -> TimeInterval {
+    private func sectionCueFireTime(for cuedSection: SongSection) -> TimeInterval {
         if let currentSection = displaySections.section(atTimeline: audioEngine.currentTime) {
             return currentSection.timelineEndSeconds
         }
@@ -1450,140 +1127,35 @@ struct EditView: View {
         clearMarkerCue(cancellingScheduledTransition: false)
     }
 
-    private func toggleLoopSection(_ section: ArrangementDisplaySection) {
-        performUndoableChange("Toggle Loop") {
-            sectionLoop.toggleLoop(on: section.id, loopSlotIDs: &loopSlotIDs)
-            persistArrangement()
+    private func toggleLoopSection(_ section: SongSection) {
+        var loops = loopSectionIDs
+        sectionLoop.toggleLoop(on: section.id, loopSectionIDs: &loops)
+        commitTimelineEdit("Toggle Loop") { timeline in
+            for index in timeline.markers.indices {
+                timeline.markers[index].loops = loops.contains(timeline.markers[index].id)
+            }
         }
     }
 
     private func addSection(at timelineTime: TimeInterval) {
-        performUndoableChange("Add Section") {
-            let snappedTime = MeasureTiming.snapToNearestBeat(
-                max(0, timelineTime),
-                tempoChanges: normalizedTempoChanges,
-                timeSignatureChanges: normalizedTimeSignatureChanges
-            )
-            let sourceTime = min(max(0, snappedTime), max(sourceDuration - 0.01, 0))
-
-            if markers.contains(where: { abs($0.startSeconds - sourceTime) < 0.02 }) {
-                return
-            }
-
-            let newMarker = ArrangementMarker(
-                name: "Section \(markers.count + 1)",
-                startSeconds: sourceTime,
-                sortOrder: markers.count
-            )
-            let markerInsertIndex = markers.firstIndex(where: { $0.startSeconds > sourceTime + 0.001 })
-                ?? markers.count
-
-            arrangementMarkers.insert(newMarker, at: markerInsertIndex)
-
-            let newSlot = ArrangementSlot(markerID: newMarker.id)
-            let slotInsertIndex = displaySections.firstIndex(where: { timelineTime < $0.timelineStartSeconds - 0.001 })
-                ?? arrangementSlots.count
-            arrangementSlots.insert(newSlot, at: slotInsertIndex)
-
-            refreshTimelineLayout()
-            persistArrangement()
-            syncPlayback()
-
-            if let section = displaySections.first(where: { $0.markerID == newMarker.id }) {
-                sectionNamePromptTitle = "Name Section"
-                sectionPendingRename = section
-            }
-        }
-    }
-
-    private func addSection(from rawStart: TimeInterval, to rawEnd: TimeInterval) {
-        let snapped = MeasureTiming.snapTimelineRangeToGrid(
-            start: rawStart,
-            end: rawEnd,
+        let snappedTime = MeasureTiming.snapToNearestBeat(
+            max(0, timelineTime),
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
-        let songDuration = max(sourceDuration, 0)
-        let start = min(max(0, snapped.start), songDuration)
-        let end = min(max(0, snapped.end), songDuration)
-        guard let plan = SectionRangeInsertion.plan(
-            markers: markers,
-            start: start,
-            end: end,
-            songDuration: songDuration,
-            newSectionName: "Section \(markers.count + 1)"
-        ) else { return }
+        let start = min(max(0, snappedTime), max(timelineDuration - 0.01, 0))
+        guard !markers.contains(where: { abs($0.startSeconds - start) < 0.02 }) else { return }
 
-        performUndoableChange("Add Section") {
-            applySectionRangeInsertion(plan)
-        }
-    }
-
-    private func applySectionRangeInsertion(_ plan: SectionRangeInsertion) {
-        let removedMarkerIDs = Set(plan.removedMarkerIDs)
-        let removedSlotIDs = Set(
-            arrangementSlots
-                .filter { removedMarkerIDs.contains($0.markerID) }
-                .map(\.id)
+        let newMarker = ArrangementMarker(
+            name: "Section \(markers.count + 1)",
+            startSeconds: start,
+            sortOrder: markers.count
         )
-
-        if let cuedSectionID,
-           displaySections.contains(where: {
-               $0.id == cuedSectionID && removedMarkerIDs.contains($0.markerID)
-           }) {
-            clearMarkerCue()
+        commitTimelineEdit("Add Section") { timeline in
+            timeline.markers.append(newMarker)
         }
 
-        for slotID in removedSlotIDs {
-            loopSlotIDs.remove(slotID)
-        }
-        for section in displaySections where removedMarkerIDs.contains(section.markerID) {
-            loopSlotIDs.remove(section.id)
-            loopSlotIDs.remove(section.slotID)
-        }
-
-        clipTrims.removeAll { removedSlotIDs.contains($0.slotID) }
-        removedClips.removeAll { removedSlotIDs.contains($0.slotID) }
-        clipGaps.removeAll { removedSlotIDs.contains($0.slotID) }
-        clipRegions.removeAll { removedSlotIDs.contains($0.slotID) }
-
-        let wasIdentity = SongArrangementStore.isIdentitySlotSequence(
-            arrangementSlots,
-            markers: markers
-        )
-        var slotsByMarkerID: [UUID: ArrangementSlot] = [:]
-        if wasIdentity {
-            for slot in arrangementSlots where slotsByMarkerID[slot.markerID] == nil {
-                slotsByMarkerID[slot.markerID] = slot
-            }
-        }
-
-        arrangementMarkers = plan.markers
-
-        if wasIdentity {
-            arrangementSlots = plan.markers.map { marker in
-                slotsByMarkerID[marker.id] ?? ArrangementSlot(markerID: marker.id)
-            }
-        } else {
-            arrangementSlots.removeAll { removedMarkerIDs.contains($0.markerID) }
-            let existingMarkerIDs = Set(arrangementSlots.map(\.markerID))
-            let additions = plan.markers.filter { !existingMarkerIDs.contains($0.id) }
-            for marker in additions {
-                let index = arrangementSlots.firstIndex { slot in
-                    guard let existing = plan.markers.first(where: { $0.id == slot.markerID }) else {
-                        return false
-                    }
-                    return existing.startSeconds > marker.startSeconds + 0.001
-                } ?? arrangementSlots.count
-                arrangementSlots.insert(ArrangementSlot(markerID: marker.id), at: index)
-            }
-        }
-
-        refreshTimelineLayout()
-        persistArrangement()
-        syncPlayback()
-
-        if let section = displaySections.first(where: { $0.markerID == plan.sectionMarkerID }) {
+        if let section = displaySections.first(where: { $0.id == newMarker.id }) {
             sectionNamePromptTitle = "Name Section"
             sectionPendingRename = section
         }
@@ -1602,7 +1174,7 @@ struct EditView: View {
         guard !isDetectingSections else { return }
         let urls = SongSectionDetector.analysisTracks(in: song)
             .compactMap { FileStore.trackURL(for: song, track: $0) }
-        let songDuration = sourceDuration
+        let songDuration = timelineDuration
         isDetectingSections = true
 
         Task {
@@ -1623,23 +1195,16 @@ struct EditView: View {
         }
     }
 
-    /// Replaces every section, which also drops the per-section clip edits and loops that pointed at them.
+    /// Replaces every marker. Clips are untouched.
     private func applyDetectedSections(_ detected: [ArrangementMarker]) {
         clearMarkerCue()
-        arrangementMarkers = detected
-        arrangementSlots = detected.map { ArrangementSlot(markerID: $0.id) }
-        clipTrims = []
-        removedClips = []
-        clipGaps = []
-        clipRegions = []
-        loopSlotIDs = []
-
-        refreshTimelineLayout()
-        persistArrangement()
+        timeline.markers = detected
+        persistProjectState()
         syncPlayback()
+        prepareSectionAnnouncements()
     }
 
-    private func beginRenameSection(_ section: ArrangementDisplaySection) {
+    private func beginRenameSection(_ section: SongSection) {
         sectionNamePromptTitle = "Rename Section"
         sectionPendingRename = section
     }
@@ -1648,51 +1213,75 @@ struct EditView: View {
         guard let section = sectionPendingRename else { return }
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
-              let index = arrangementMarkers.firstIndex(where: { $0.id == section.markerID }) else {
+              let index = timeline.markers.firstIndex(where: { $0.id == section.id }) else {
             sectionPendingRename = nil
             return
         }
 
-        performUndoableChange("Rename Section") {
-            let marker = arrangementMarkers[index]
-            arrangementMarkers[index] = ArrangementMarker(
-                id: marker.id,
-                name: trimmed,
-                startSeconds: marker.startSeconds,
-                sortOrder: marker.sortOrder
-            )
-            sectionPendingRename = nil
-            refreshTimelineLayout()
-            persistArrangement()
-            syncPlayback()
+        sectionPendingRename = nil
+        commitTimelineEdit("Rename Section") { timeline in
+            timeline.markers[index].name = trimmed
         }
     }
 
-    private func deleteSection(_ section: ArrangementDisplaySection) {
-        performUndoableChange("Delete Section") {
-            let slotID = section.slotID
-            let markerID = section.markerID
-
-            arrangementSlots.removeAll { $0.id == slotID }
-            clipTrims.removeAll { $0.slotID == slotID }
-            removedClips.removeAll { $0.slotID == slotID }
-            clipGaps.removeAll { $0.slotID == slotID }
-            clipRegions.removeAll { $0.slotID == slotID }
-            loopSlotIDs.remove(slotID)
-            loopSlotIDs.remove(section.id)
-
-            if !arrangementSlots.contains(where: { $0.markerID == markerID }) {
-                arrangementMarkers.removeAll { $0.id == markerID }
-            }
-
-            if cuedSectionID == section.id {
-                clearMarkerCue()
-            }
-
-            refreshTimelineLayout()
-            persistArrangement()
-            syncPlayback()
+    /// Removes the marker only; the audio stays and joins the previous section.
+    private func removeMarker(_ section: SongSection) {
+        if cuedSectionID == section.id {
+            clearMarkerCue()
         }
+        commitTimelineEdit("Remove Marker") { timeline in
+            timeline.markers.removeAll { $0.id == section.id }
+        }
+    }
+
+    /// Removes the section's span from every track, MIDI lane, and the marker list, closing the gap.
+    private func deleteSection(_ section: SongSection) {
+        if cuedSectionID == section.id {
+            clearMarkerCue()
+        }
+        clipSelection.deselectAll()
+        performUndoableChange("Delete Section") {
+            ClipEditing.removeSection(section.id, timeline: &timeline, midiEvents: &midiEvents)
+            persistProjectState()
+            syncPlayback()
+            reconfigureMIDI()
+            prepareSectionAnnouncements()
+        }
+    }
+
+    private func duplicateSection(_ sectionID: UUID) {
+        clipSelection.deselectAll()
+        performUndoableChange("Duplicate Section") {
+            ClipEditing.duplicateSection(sectionID, timeline: &timeline, midiEvents: &midiEvents)
+            persistProjectState()
+            syncPlayback()
+            reconfigureMIDI()
+            prepareSectionAnnouncements()
+        }
+    }
+
+    private func moveSection(_ sectionID: UUID, toIndex index: Int) {
+        clearMarkerCue()
+        clipSelection.deselectAll()
+        performUndoableChange("Reorder Sections") {
+            ClipEditing.moveSection(sectionID, toIndex: index, timeline: &timeline, midiEvents: &midiEvents)
+            persistProjectState()
+            syncPlayback()
+            reconfigureMIDI()
+            prepareSectionAnnouncements()
+        }
+    }
+
+    private var arrangementActions: ArrangementSectionActions {
+        ArrangementSectionActions(
+            sections: displaySections,
+            move: moveSection(_:toIndex:),
+            duplicate: duplicateSection,
+            remove: { sectionID in
+                guard let section = displaySections.first(where: { $0.id == sectionID }) else { return }
+                deleteSection(section)
+            }
+        )
     }
 
     private func seekOnTimeline(to time: TimeInterval) {
@@ -1726,7 +1315,7 @@ struct EditView: View {
             onApplyTempo: applyReferenceTempo,
             onApplyBaseKey: applyBaseKey,
             showingTimeSignatureEditor: $showingTimeSignatureEditor,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             currentSectionAtTime: { time in
                 displaySections.section(atTimeline: time)
             },
@@ -1777,7 +1366,6 @@ struct EditView: View {
     private func transportChrome<Chrome: View>(@ViewBuilder content: () -> Chrome) -> some View {
         EditTransportBar(
             viewModel: viewModel,
-            markers: markers,
             song: song,
             showingArrangementEditor: $showingArrangementEditor,
             showingTimeSignatureEditor: $showingTimeSignatureEditor,
@@ -1793,24 +1381,14 @@ struct EditView: View {
             onApplyTempo: applyReferenceTempo,
             onApplyBaseKey: applyBaseKey,
             showingChangeKey: $showingChangeKey,
-            arrangementSlots: $arrangementSlots,
-            clipTrims: $clipTrims,
-            removedClips: $removedClips,
-            clipGaps: $clipGaps,
-            clipRegions: $clipRegions,
-            loopSlotIDs: $loopSlotIDs,
+            arrangementActions: arrangementActions,
+            loopSectionIDs: loopSectionIDs,
             showingSongLibrary: $showingSongLibrary,
             showingBakeSheet: $showingBakeSheet,
             showingGroupEditor: $showingGroupEditor,
             isDetectingSections: isDetectingSections,
             onDetectSections: requestDetectSections,
             onClearMarkerCue: { clearMarkerCue() },
-            onPersistArrangement: {
-                performUndoableChange("Edit Arrangement") {
-                    persistArrangement()
-                }
-            },
-            onUndoableChange: undoableChange,
             captureSnapshot: captureSnapshot,
             currentSectionAtTime: { time in
                 displaySections.section(atTimeline: time)
@@ -1833,6 +1411,7 @@ struct EditView: View {
                     }
                 )
             },
+            onClickTrackGenerated: reloadTimelineFromProject,
             onBack: onBack,
             undoController: undoController,
             content: content()
@@ -1933,7 +1512,7 @@ struct EditView: View {
             timeSignatureChanges: normalizedTimeSignatureChanges,
             cuedSectionID: cuedSectionID,
             cueFlashPhase: cueFlashPhase,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             sectionMarkerHeight: TimelineLayout.sectionMarkerHeight,
             timeSignatureRulerHeight: TimelineLayout.timeSignatureRulerHeight,
             tempoRulerHeight: TimelineLayout.tempoRulerHeight,
@@ -1946,7 +1525,7 @@ struct EditView: View {
                 seekOnTimeline(to: time)
             },
             onSelectMeasures: { startMeasure, endMeasure in
-                clipSelection = nil
+                clipSelection.deselectAll()
                 rulerMeasureSelection = MeasureRangeSelection(
                     startMeasure: startMeasure,
                     endMeasure: endMeasure
@@ -1956,16 +1535,8 @@ struct EditView: View {
             onCueSection: cueSection,
             onToggleLoopSection: toggleLoopSection,
             onAddSection: addSection,
-            onAddSectionRange: addSection(from:to:),
-            snapSectionRange: { start, end in
-                MeasureTiming.snapTimelineRangeToGrid(
-                    start: start,
-                    end: end,
-                    tempoChanges: normalizedTempoChanges,
-                    timeSignatureChanges: normalizedTimeSignatureChanges
-                )
-            },
             onRenameSection: beginRenameSection,
+            onRemoveMarker: removeMarker,
             onDeleteSection: deleteSection,
             onTimeSignatureRulerTap: handleTimeSignatureRulerTap,
             onEditTimeSignatureMarker: { marker in
@@ -2032,18 +1603,22 @@ struct EditView: View {
                 .fill(Color.dawTimelineBackground)
                 .frame(width: timelineDisplayWidth, height: trackAreaHeight)
 
+            trackLanesContent
+                .compositingGroup()
+                .frame(width: timelineContentWidth, alignment: .topLeading)
+
             TimelineMeasureGridOverlay(
                 duration: timelineDuration,
                 tempoChanges: normalizedTempoChanges,
                 timeSignatureChanges: normalizedTimeSignatureChanges,
                 contentWidth: timelineContentWidth,
                 displayWidth: timelineDisplayWidth,
-                rulerHeight: 0
+                rulerHeight: 0,
+                showsThroughContent: true,
+                headerBands: clipHeaderBands
             )
 
-            trackLanesContent
-                .compositingGroup()
-                .frame(width: timelineContentWidth, alignment: .topLeading)
+            clipRangeSelectionOverlay
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
     }
@@ -2065,7 +1640,7 @@ struct EditView: View {
                 .frame(width: timelineContentWidth, alignment: .leading)
             }
 
-            ForEach(song.sortedTracks, id: \.id) { track in
+            ForEach(Array(song.sortedTracks.enumerated()), id: \.element.id) { index, track in
                 if let fileURL = FileStore.trackURL(for: song, track: track) {
                 WaveformLaneView(
                     track: track,
@@ -2073,34 +1648,18 @@ struct EditView: View {
                     fileDuration: viewModel.fileDuration(for: track),
                     timelineDuration: timelineDuration,
                     timelineContentWidth: timelineContentWidth,
-                    arrangementSections: trackLaneSections(for: track),
-                    arrangementSlots: $arrangementSlots,
-                    clipTrims: $clipTrims,
-                    clipGaps: $clipGaps,
-                    clipRegions: $clipRegions,
-                    clipSelection: $clipSelection,
-                    selectedTrackID: $selectedTrackID,
-                    markers: markers,
+                    clips: timeline.clips(forTrack: track.id),
+                    sections: displaySections,
+                    selection: clipSelection,
+                    clipDrag: clipDrag,
+                    actions: clipLaneActions,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
                     laneHeight: TimelineLayout.laneHeight,
-                    onTrimChange: {
-                        performUndoableChange("Trim Track") {
-                            viewModel.updateTrim(for: track, context: modelContext)
-                        }
-                    },
+                    rowIndex: midiTracks.count + index,
                     onCueSection: cueSection,
-                    loopSlotIDs: loopSlotIDs,
+                    loopSectionIDs: loopSectionIDs,
                     onToggleLoopSection: toggleLoopSection,
-                    onClipTrimCommitted: {
-                        performUndoableChange("Trim Clip") {
-                            persistArrangement()
-                            commitTrackArrangementChange(for: track.id)
-                        }
-                    },
-                    onSeek: { time in
-                        AudioEngineManager.shared.seek(to: time)
-                    },
                     shouldLoadWaveformPeaks: viewModel.isLoaded
                 )
                 .frame(width: timelineContentWidth, alignment: .leading)
@@ -2109,6 +1668,95 @@ struct EditView: View {
         }
         .frame(width: timelineContentWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
+        .coordinateSpace(name: TimelineLayout.trackLanesCoordinateSpace)
+    }
+
+    /// Full-lane wash for the dragged time range, painted over the clips and the grid.
+    @ViewBuilder
+    private var clipRangeSelectionOverlay: some View {
+        if let drag = rangeDrag, drag.end - drag.start > ClipEditing.tolerance {
+            let x0 = TimelineLayout.xPosition(
+                for: drag.start,
+                duration: timelineDuration,
+                contentWidth: timelineContentWidth
+            )
+            let x1 = TimelineLayout.xPosition(
+                for: drag.end,
+                duration: timelineDuration,
+                contentWidth: timelineContentWidth
+            )
+            let rowHeight = TimelineLayout.laneHeight + TimelineLayout.laneSpacing
+            ZStack(alignment: .topLeading) {
+                ForEach(drag.firstRow...drag.lastRow, id: \.self) { row in
+                    Rectangle()
+                        .fill(Color.soundcraftSelection)
+                        .frame(width: max(x1 - x0, 1), height: TimelineLayout.laneHeight)
+                        .offset(x: x0, y: CGFloat(row) * rowHeight)
+                }
+            }
+            .frame(width: timelineContentWidth, height: trackAreaHeight, alignment: .topLeading)
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// MIDI lanes first, then audio, matching the header and lane order.
+    private var displayedTrackIDs: [UUID] {
+        midiTracks.map(\.id) + song.sortedTracks.map(\.id)
+    }
+
+    /// Clips as drawn, including an in-progress move or trim.
+    private var previewClips: [TrackClip] {
+        var preview = timeline.clips
+        guard let clipDrag else { return preview }
+        let ids = clipSelection.clipIDs
+        guard !ids.isEmpty else { return preview }
+        switch clipDrag {
+        case .move(let delta, let copy):
+            if copy {
+                ClipEditing.copy(clipIDs: ids, by: delta, in: &preview)
+            } else {
+                ClipEditing.move(clipIDs: ids, by: delta, in: &preview)
+            }
+        case .trim(let edge, let delta):
+            let durations = Dictionary(uniqueKeysWithValues: song.sortedTracks.map { ($0.id, viewModel.fileDuration(for: $0)) })
+            ClipEditing.trim(
+                clipIDs: ids,
+                edge: edge,
+                by: delta,
+                sourceDuration: { durations[$0] ?? 0 },
+                in: &preview
+            )
+        }
+        return preview
+    }
+
+    /// Name bars of the clips on screen. Measure lines stop here so the header stays opaque.
+    private var clipHeaderBands: [CGRect] {
+        let ids = displayedTrackIDs
+        guard !ids.isEmpty else { return [] }
+        let rowHeight = TimelineLayout.laneHeight + TimelineLayout.laneSpacing
+        let rowOf = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1, $0) })
+        return previewClips.compactMap { clip in
+            guard let row = rowOf[clip.trackID] else { return nil }
+            let x0 = TimelineLayout.xPosition(
+                for: clip.timelineStartSeconds,
+                duration: timelineDuration,
+                contentWidth: timelineContentWidth
+            )
+            let x1 = TimelineLayout.xPosition(
+                for: clip.timelineEndSeconds,
+                duration: timelineDuration,
+                contentWidth: timelineContentWidth
+            )
+            let width = x1 - x0
+            guard width > 0 else { return nil }
+            return CGRect(
+                x: x0,
+                y: CGFloat(row) * rowHeight,
+                width: width,
+                height: TimelineLayout.clipHeaderHeight
+            )
+        }
     }
 
     private var trackHeaderList: some View {
@@ -2117,10 +1765,14 @@ struct EditView: View {
                 MIDITrackHeaderView(
                     track: track,
                     laneHeight: TimelineLayout.laneHeight,
-                    isSelected: selectedTrackID == track.id,
-                    onSelect: {
-                        selectedTrackID = track.id
-                        clipSelection = nil
+                    isSelected: selectedTrackIDs.contains(track.id),
+                    onSelect: { modifiers in
+                        selectedTrackIDs = TrackSelection.click(
+                            id: track.id,
+                            in: selectedTrackIDs,
+                            order: displayedTrackIDs,
+                            modifiers: modifiers
+                        )
                     },
                     onConfigChange: commitMIDIConfig,
                     onSendTest: { sendMIDITest(for: track) },
@@ -2133,11 +1785,15 @@ struct EditView: View {
                 TrackLaneHeaderView(
                     track: track,
                     laneHeight: TimelineLayout.laneHeight,
-                    isSelected: selectedTrackID == track.id,
+                    isSelected: selectedTrackIDs.contains(track.id),
                     groups: trackGroups,
-                    onSelect: {
-                        selectedTrackID = track.id
-                        clipSelection = nil
+                    onSelect: { modifiers in
+                        selectedTrackIDs = TrackSelection.click(
+                            id: track.id,
+                            in: selectedTrackIDs,
+                            order: displayedTrackIDs,
+                            modifiers: modifiers
+                        )
                     },
                     onMixChange: {
                         performUndoableChange("Mix Track") {
@@ -2202,26 +1858,14 @@ struct EditView: View {
         }
     }
 
-    private func removeArrangementData(for trackID: UUID) {
-        clipTrims.removeAll { $0.trackID == trackID || $0.slotID == trackID }
-        removedClips.removeAll { $0.trackID == trackID || $0.slotID == trackID }
-        clipGaps.removeAll { $0.trackID == trackID || $0.slotID == trackID }
-        clipRegions.removeAll { $0.trackID == trackID || $0.slotID == trackID }
-        loopSlotIDs.remove(trackID)
-    }
-
     private func deleteAudioTrack(_ track: AudioTrack) {
         let trackID = track.id
 
         performUndoableChange("Delete Track") {
-            removeArrangementData(for: trackID)
+            timeline.clips.removeAll { $0.trackID == trackID }
+            clipSelection.retain(existing: timeline.clips)
 
-            if selectedTrackID == trackID {
-                selectedTrackID = nil
-            }
-            if clipSelection?.trackID == trackID {
-                clipSelection = nil
-            }
+            selectedTrackIDs.remove(trackID)
 
             song.tracks.removeAll { $0.id == trackID }
             modelContext.delete(track)
@@ -2231,7 +1875,6 @@ struct EditView: View {
             }
 
             persistProjectState()
-            refreshTimelineLayout()
             syncPlayback()
             viewModel.loadSong(context: modelContext)
         }
@@ -2285,18 +1928,16 @@ struct EditView: View {
     private var trackHeaderRulerCorner: some View {
         VStack(spacing: 0) {
             Color.clear
-                .frame(height: TimelineLayout.sectionMarkerHeight)
-
-            Color.clear
                 .frame(height: TimelineLayout.timeSignatureRulerHeight)
 
             Color.clear
                 .frame(height: TimelineLayout.tempoRulerHeight)
 
-            ZStack {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.06))
+            Rectangle()
+                .fill(Color.primary.opacity(0.06))
+                .frame(height: TimelineLayout.rulerHeight)
 
+            ZStack {
                 HStack(spacing: 6) {
                     Text("Tracks")
                         .font(.system(size: 9, weight: .semibold))
@@ -2318,7 +1959,7 @@ struct EditView: View {
                 }
                 .padding(.horizontal, 8)
             }
-            .frame(height: TimelineLayout.rulerHeight)
+            .frame(height: TimelineLayout.sectionMarkerHeight)
         }
         .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerTotalHeight)
         .background(Color.dawTrackHeaderBackground)
@@ -2355,13 +1996,7 @@ struct EditView: View {
         song: Song(name: "Preview"),
         viewModel: SongEditorViewModel(song: Song(name: "Preview")),
         undoController: SongUndoController(),
-        arrangementMarkers: .constant([]),
-        arrangementSlots: .constant([]),
-        clipTrims: .constant([]),
-        removedClips: .constant([]),
-        clipGaps: .constant([]),
-        clipRegions: .constant([]),
-        loopSlotIDs: .constant([]),
+        timeline: .constant(SongTimeline()),
         tempoChanges: .constant([TempoChange(startMeasure: 1, bpm: 120)]),
         timeSignatureChanges: .constant([
             TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0)

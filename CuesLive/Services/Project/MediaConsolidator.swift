@@ -72,13 +72,7 @@ enum MediaConsolidator {
         let projectState = try SongProjectBridge.loadProjectState(for: song)
         try SongProjectBridge.persist(
             song: song,
-            markers: projectState.markers,
-            arrangementSlots: projectState.arrangement.slots,
-            clipTrims: projectState.arrangement.clipTrims,
-            removedClips: projectState.arrangement.removedClips,
-            clipGaps: projectState.arrangement.clipGaps,
-            clipRegions: projectState.arrangement.clipRegions,
-            loopSlotIDs: projectState.arrangement.loopSlotIDs,
+            timeline: projectState.timeline,
             tempoChanges: projectState.tempoChanges,
             timeSignatureChanges: projectState.timeSignatureChanges,
             midiEvents: projectState.midiEvents,

@@ -28,7 +28,7 @@ final class RemoteHostSessionController {
     private(set) var isLiveUIBound = false
 
     private var clearMarkerCueHandler: ((Bool) -> Void)?
-    private var cueSectionHandler: ((ArrangementDisplaySection) -> Void)?
+    private var cueSectionHandler: ((SongSection) -> Void)?
     private var fireMarkerCueHandler: (() -> Void)?
     private var stopPlaybackHandler: (() -> Void)?
     private var waveformPeakPrefetchTask: Task<Void, Never>?
@@ -102,7 +102,7 @@ final class RemoteHostSessionController {
         cuedSectionID: UUID?,
         cueFireTime: TimeInterval?,
         clearMarkerCue: @escaping (Bool) -> Void,
-        cueSection: @escaping (ArrangementDisplaySection) -> Void,
+        cueSection: @escaping (SongSection) -> Void,
         fireMarkerCue: @escaping () -> Void,
         stopPlayback: @escaping () -> Void
     ) {

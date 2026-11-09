@@ -30,8 +30,8 @@ struct EditSongTransportCluster: View {
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
     @Binding var showingTimeSignatureEditor: Bool
-    let loopSlotIDs: Set<UUID>
-    let currentSectionAtTime: (TimeInterval) -> ArrangementDisplaySection?
+    let loopSectionIDs: Set<UUID>
+    let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
 
@@ -132,13 +132,12 @@ struct EditSongTransportCluster: View {
 
     private func sectionLoopIsActive(at time: TimeInterval) -> Bool {
         guard let section = currentSectionAtTime(time) else { return false }
-        return loopSlotIDs.contains(section.id)
+        return loopSectionIDs.contains(section.id)
     }
 }
 
 struct EditSongToolbarContent: ToolbarContent {
     let viewModel: SongEditorViewModel
-    let markers: [ArrangementMarker]
     @Bindable var song: Song
     @Binding var showingArrangementEditor: Bool
     @Binding var showingTimeSignatureEditor: Bool
@@ -149,25 +148,20 @@ struct EditSongToolbarContent: ToolbarContent {
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
     @Binding var showingChangeKey: Bool
-    @Binding var arrangementSlots: [ArrangementSlot]
-    @Binding var clipTrims: [ArrangementClipTrim]
-    @Binding var removedClips: [ArrangementRemovedClip]
-    @Binding var clipGaps: [ArrangementClipGap]
-    @Binding var clipRegions: [ClipRegion]
-    @Binding var loopSlotIDs: Set<UUID>
+    let arrangementActions: ArrangementSectionActions
+    let loopSectionIDs: Set<UUID>
     @Binding var showingSongLibrary: Bool
     @Binding var showingBakeSheet: Bool
     @Binding var showingGroupEditor: Bool
     let isDetectingSections: Bool
     let onDetectSections: () -> Void
     let onBack: () -> Void
-    let currentSectionAtTime: (TimeInterval) -> ArrangementDisplaySection?
+    let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
-    let onPersistArrangement: () -> Void
-    let onUndoableChange: UndoableChangeHandler
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+    let onClickTrackGenerated: () -> Void
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
@@ -195,7 +189,8 @@ struct EditSongToolbarContent: ToolbarContent {
                 song: song,
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo
+                registerUndo: registerUndo,
+                onClickTrackGenerated: onClickTrackGenerated
             )
         }
         .cuesHideSharedBackground()
@@ -210,7 +205,7 @@ struct EditSongToolbarContent: ToolbarContent {
         }
         .cuesHideSharedBackground()
 
-        if !markers.isEmpty {
+        if !arrangementActions.sections.isEmpty {
             ToolbarItem(placement: .automatic) {
                 arrangementEditorButton
             }
@@ -234,7 +229,7 @@ struct EditSongToolbarContent: ToolbarContent {
             onApplyTempo: onApplyTempo,
             onApplyBaseKey: onApplyBaseKey,
             showingTimeSignatureEditor: $showingTimeSignatureEditor,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             currentSectionAtTime: currentSectionAtTime,
             onStopTransport: onStopTransport,
             onToggleLoopAtTime: onToggleLoopAtTime
@@ -269,17 +264,7 @@ struct EditSongToolbarContent: ToolbarContent {
         }
         .help("Arrangement")
         .popover(isPresented: $showingArrangementEditor, arrowEdge: .bottom) {
-            ArrangementEditorMenu(
-                slots: $arrangementSlots,
-                clipTrims: $clipTrims,
-                removedClips: $removedClips,
-                clipGaps: $clipGaps,
-                clipRegions: $clipRegions,
-                loopSlotIDs: $loopSlotIDs,
-                markers: markers,
-                onPersist: onPersistArrangement,
-                onUndoableChange: onUndoableChange
-            )
+            ArrangementEditorMenu(actions: arrangementActions)
         }
     }
 

@@ -713,7 +713,7 @@ struct LivePlaybackView: View {
             announcer: sectionAnnouncer,
             sectionLoop: sectionLoop,
             loopSections: loopSections,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             playbackEngine: coordinator.playbackEngine,
             onLoopActivated: { clearMarkerCue() }
         )
@@ -1463,11 +1463,11 @@ struct LivePlaybackView: View {
         isCreatingHeader = false
     }
 
-    private var loopSlotIDs: Set<UUID> {
-        coordinator.currentWaveformSnapshot?.loopSlotIDs ?? []
+    private var loopSectionIDs: Set<UUID> {
+        coordinator.currentWaveformSnapshot?.loopSectionIDs ?? []
     }
 
-    private var loopSections: [ArrangementDisplaySection] {
+    private var loopSections: [SongSection] {
         coordinator.currentWaveformSnapshot?.sections ?? []
     }
 
@@ -1487,7 +1487,7 @@ struct LivePlaybackView: View {
         cueFlashPhase = false
     }
 
-    private func cueSection(_ section: ArrangementDisplaySection) {
+    private func cueSection(_ section: SongSection) {
         sectionLoop.endLoopIfActive()
 
         if !coordinator.isPlaying {
@@ -1512,7 +1512,7 @@ struct LivePlaybackView: View {
         )
     }
 
-    private func sectionCueFireTime(for cuedSection: ArrangementDisplaySection) -> TimeInterval {
+    private func sectionCueFireTime(for cuedSection: SongSection) -> TimeInterval {
         let sections = loopSections
 
         if let currentSection = sections.section(atTimeline: coordinator.currentTime) {

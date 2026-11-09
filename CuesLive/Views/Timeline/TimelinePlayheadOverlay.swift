@@ -166,8 +166,8 @@ struct SectionLoopPlaybackSupport: View {
     /// handoff this can be a separate `AudioEngineManager` instance.
     var playbackEngine: AudioEngineManager = .shared
     @Bindable var loopController: SectionLoopController
-    let sections: [ArrangementDisplaySection]
-    let loopSlotIDs: Set<UUID>
+    let sections: [SongSection]
+    let loopSectionIDs: Set<UUID>
     let onLoopActivated: () -> Void
 
     var body: some View {
@@ -185,7 +185,7 @@ struct SectionLoopPlaybackSupport: View {
                 loopController.handlePlaybackTimeChange(
                     at: time,
                     sections: sections,
-                    loopSlotIDs: loopSlotIDs,
+                    loopSectionIDs: loopSectionIDs,
                     onActivate: {
                         onLoopActivated()
                         syncEngineLoopRegion()
@@ -193,12 +193,12 @@ struct SectionLoopPlaybackSupport: View {
                 )
                 syncEngineLoopRegion()
             }
-            .onChange(of: loopSlotIDs) { _, newLoopSlotIDs in
-                loopController.handleLoopSlotIDsChange(newLoopSlotIDs)
+            .onChange(of: loopSectionIDs) { _, newLoopSectionIDs in
+                loopController.handleLoopSectionIDsChange(newLoopSectionIDs)
                 loopController.handlePlaybackTimeChange(
                     at: clockEngine.currentTime,
                     sections: sections,
-                    loopSlotIDs: newLoopSlotIDs,
+                    loopSectionIDs: newLoopSectionIDs,
                     onActivate: onLoopActivated
                 )
                 syncEngineLoopRegion()
@@ -220,7 +220,7 @@ struct SectionLoopPlaybackSupport: View {
     /// Arms the audio-thread loop region. Seeking/snapping is intentionally not
     /// used — wrapping is sample-accurate inside the transport + render path.
     private func syncEngineLoopRegion() {
-        if let section = loopController.activeSection(in: sections, loopSlotIDs: loopSlotIDs) {
+        if let section = loopController.activeSection(in: sections, loopSectionIDs: loopSectionIDs) {
             applyLoopRegion(
                 start: section.timelineStartSeconds,
                 end: section.timelineEndSeconds
@@ -247,7 +247,7 @@ struct SectionLoopPlaybackSupport: View {
     }
 
     private func installWillReachEndHandler() {
-        let handler: () -> Bool = { [loopController, sections, loopSlotIDs, onLoopActivated, playbackEngine, clockEngine] in
+        let handler: () -> Bool = { [loopController, sections, loopSectionIDs, onLoopActivated, playbackEngine, clockEngine] in
             // Activate a marked loop section if playback reached the end before the
             // deferred SwiftUI time observer ran (common for single-section songs).
             let duration = max(playbackEngine.duration, clockEngine.duration)
@@ -259,13 +259,13 @@ struct SectionLoopPlaybackSupport: View {
             loopController.handlePlaybackTimeChange(
                 at: nearEnd,
                 sections: sections,
-                loopSlotIDs: loopSlotIDs,
+                loopSectionIDs: loopSectionIDs,
                 onActivate: onLoopActivated
             )
 
             guard let section = loopController.activeSection(
                 in: sections,
-                loopSlotIDs: loopSlotIDs
+                loopSectionIDs: loopSectionIDs
             ) else {
                 return playbackEngine.hasActiveSectionLoop || clockEngine.hasActiveSectionLoop
             }
@@ -326,10 +326,10 @@ struct SectionCueMonitor: View {
 struct SectionAnnounceMonitor: View {
     @Bindable private var audioEngine = AudioEngineManager.shared
     let enabled: Bool
-    let sections: [ArrangementDisplaySection]
+    let sections: [SongSection]
     let cuedSectionID: UUID?
     let cueFireTime: TimeInterval?
-    let loopSection: ArrangementDisplaySection?
+    let loopSection: SongSection?
     let announcer: SectionAnnouncer
 
     @State private var planner = SmartGuideCallPlanner()

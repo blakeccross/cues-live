@@ -4,7 +4,7 @@ struct MIDITrackHeaderView: View {
     @Bindable var track: MIDITrack
     let laneHeight: CGFloat
     let isSelected: Bool
-    let onSelect: () -> Void
+    let onSelect: (PointerModifiers) -> Void
     let onConfigChange: () -> Void
     let onSendTest: () -> Void
     let onEditDevice: () -> Void
@@ -78,7 +78,7 @@ struct MIDITrackHeaderView: View {
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
+        .onTapGesture { onSelect(.current) }
     }
 
     private var deviceLabel: String {

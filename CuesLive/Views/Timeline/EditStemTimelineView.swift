@@ -61,6 +61,10 @@ struct EditStemTimelineView<Ruler: View, Lanes: View, HeaderCorner: View, Header
                                     coordinateSpaceName: timelineHorizontalScrollSpace
                                 )
                                 lanes()
+                                    .environment(
+                                        \.timelineVisibleContentX,
+                                        timelineHorizontalOffset...(timelineHorizontalOffset + timelineColumnWidth)
+                                    )
                                     .frame(width: timelineDisplayWidth, alignment: .leading)
                             }
                         }
@@ -133,6 +137,18 @@ extension View {
                 onChange(max(0, newValue))
             }
         }
+    }
+}
+
+private struct TimelineVisibleContentXKey: EnvironmentKey {
+    static let defaultValue: ClosedRange<CGFloat>? = nil
+}
+
+extension EnvironmentValues {
+    /// Horizontal slice of the timeline content currently inside the editor's scroll view.
+    var timelineVisibleContentX: ClosedRange<CGFloat>? {
+        get { self[TimelineVisibleContentXKey.self] }
+        set { self[TimelineVisibleContentXKey.self] = newValue }
     }
 }
 

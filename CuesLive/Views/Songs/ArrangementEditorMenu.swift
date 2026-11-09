@@ -1,58 +1,53 @@
 import SwiftUI
 
-struct ArrangementEditorMenu: View {
-    @Binding var slots: [ArrangementSlot]
-    @Binding var clipTrims: [ArrangementClipTrim]
-    @Binding var removedClips: [ArrangementRemovedClip]
-    @Binding var clipGaps: [ArrangementClipGap]
-    @Binding var clipRegions: [ClipRegion]
-    @Binding var loopSlotIDs: Set<UUID>
-    let markers: [ArrangementMarker]
-    let onPersist: () -> Void
-    let onUndoableChange: UndoableChangeHandler
+/// Section-level edits. Each one moves, copies, or removes the audio on every track along with
+/// the section's marker.
+struct ArrangementSectionActions {
+    let sections: [SongSection]
+    let move: (_ sectionID: UUID, _ toIndex: Int) -> Void
+    let duplicate: (_ sectionID: UUID) -> Void
+    let remove: (_ sectionID: UUID) -> Void
+}
 
-    private var markersByID: [UUID: ArrangementMarker] {
-        Dictionary(uniqueKeysWithValues: markers.map { ($0.id, $0) })
-    }
+struct ArrangementEditorMenu: View {
+    let actions: ArrangementSectionActions
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             AppSectionHeader(title: "Song Arrangement")
 
-            Text("Drag to reorder. Duplicate or remove sections below.")
+            Text("Drag to reorder. Reordering, duplicating, or removing a section edits the audio on every track.")
                 .font(.caption)
                 .foregroundStyle(AppColors.textTertiary)
 
-            if slots.isEmpty {
+            if actions.sections.isEmpty {
                 AppEmptyState(
                     title: "No Sections",
                     systemImage: "music.note.list",
-                    description: "Import an Ableton file to add section markers."
+                    description: "Add a section marker on the ruler or import an Ableton file."
                 )
                 .frame(minWidth: 300, minHeight: 180)
             } else {
                 List {
-                    ForEach(Array(slots.enumerated()), id: \.element.id) { index, slot in
+                    ForEach(actions.sections) { section in
                         HStack(spacing: AppSpacing.sm) {
                             Image(systemName: "line.3.horizontal")
                                 .font(.caption)
                                 .foregroundStyle(AppColors.textTertiary)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(displayName(for: slot, at: index))
+                                Text(section.name)
                                     .font(.body.weight(.medium))
                                     .foregroundStyle(AppColors.textPrimary)
-                                if let marker = markersByID[slot.markerID] {
-                                    Text(formatSourceTime(marker.startSeconds))
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(AppColors.textSecondary)
-                                }
+                                Text("\(formatTime(section.timelineStartSeconds)) – \(formatTime(section.timelineEndSeconds))")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(AppColors.textSecondary)
                             }
 
                             Spacer()
 
                             Button {
-                                duplicate(slot)
+                                actions.duplicate(section.id)
                             } label: {
                                 Image(systemName: "plus.square.on.square")
                                     .foregroundStyle(AppColors.textSecondary)
@@ -61,7 +56,7 @@ struct ArrangementEditorMenu: View {
                             .help("Duplicate section")
 
                             Button(role: .destructive) {
-                                remove(slot)
+                                actions.remove(section.id)
                             } label: {
                                 Image(systemName: "trash")
                             }
@@ -84,42 +79,13 @@ struct ArrangementEditorMenu: View {
         .background(AppColors.surfaceElevated, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
     }
 
-    private func displayName(for slot: ArrangementSlot, at index: Int) -> String {
-        markersByID[slot.markerID]?.name ?? "Section \(index + 1)"
-    }
-
-    private func formatSourceTime(_ value: TimeInterval) -> String {
+    private func formatTime(_ value: TimeInterval) -> String {
         let totalSeconds = max(0, Int(value.rounded()))
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        return String(format: "Source %d:%02d", minutes, seconds)
+        return String(format: "%d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
 
     private func move(from source: IndexSet, to destination: Int) {
-        onUndoableChange("Reorder Sections") {
-            slots.move(fromOffsets: source, toOffset: destination)
-            onPersist()
-        }
-    }
-
-    private func duplicate(_ slot: ArrangementSlot) {
-        guard let index = slots.firstIndex(where: { $0.id == slot.id }) else { return }
-        onUndoableChange("Duplicate Section") {
-            let copy = ArrangementSlot(markerID: slot.markerID)
-            slots.insert(copy, at: index + 1)
-            onPersist()
-        }
-    }
-
-    private func remove(_ slot: ArrangementSlot) {
-        onUndoableChange("Remove Section") {
-            slots.removeAll { $0.id == slot.id }
-            clipTrims.removeAll { $0.slotID == slot.id }
-            removedClips.removeAll { $0.slotID == slot.id }
-            clipGaps.removeAll { $0.slotID == slot.id }
-            clipRegions.removeAll { $0.slotID == slot.id }
-            loopSlotIDs.remove(slot.id)
-            onPersist()
-        }
+        guard let index = source.first, index < actions.sections.count else { return }
+        actions.move(actions.sections[index].id, destination)
     }
 }

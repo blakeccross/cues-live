@@ -124,11 +124,31 @@ struct ProjectMIDITrack: Codable, Hashable, Identifiable {
 
 struct SongProjectArrangement: Codable {
     var markers: [ArrangementMarker]
-    var sequence: SongArrangement
+    var clips: [TrackClip]
+
+    init(timeline: SongTimeline) {
+        markers = timeline.markers
+        clips = timeline.clips
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case markers
+        case clips
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        markers = try container.decodeIfPresent([ArrangementMarker].self, forKey: .markers) ?? []
+        clips = try container.decodeIfPresent([TrackClip].self, forKey: .clips) ?? []
+    }
+
+    var timeline: SongTimeline {
+        SongTimeline(markers: markers, clips: clips)
+    }
 }
 
 struct SongProjectDocument: Codable, Identifiable {
-    static let currentFormatVersion = 2
+    static let currentFormatVersion = 3
 
     var formatVersion: Int
     var id: UUID

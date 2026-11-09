@@ -754,9 +754,7 @@ final class PlaybackCoordinator {
     }
 
     private struct SongEngineLayout {
-        let sectionsByTrack: [UUID: [ArrangementDisplaySection]]
-        let masterSections: [ArrangementDisplaySection]
-        let removedClips: [ArrangementRemovedClip]
+        let playback: SongPlaybackLayout
         let tempoChanges: [TempoChange]
         let timeSignatureChanges: [TimeSignatureChange]
         let midiEvents: [MIDIScheduler.ScheduledEvent]
@@ -764,27 +762,13 @@ final class PlaybackCoordinator {
 
     private func songEngineLayout(for song: Song) -> SongEngineLayout {
         let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
-        let arrangement = projectState.arrangement
-        let inputs = Self.arrangementLayoutInputs(for: song, markers: projectState.markers)
-        let layout = SongArrangementStore.playbackLayoutSnapshot(
-            slots: arrangement.slots,
-            clipTrims: arrangement.clipTrims,
-            removedClips: arrangement.removedClips,
-            clipGaps: arrangement.clipGaps,
-            clipRegions: arrangement.clipRegions,
-            tracks: SongPlaybackArrangementLoader.playbackTracks(for: song),
-            inputs: inputs
-        )
-
         let resolvedMIDI = MIDIScheduler.scheduledEvents(
             events: projectState.midiEvents,
             tracks: song.sortedMIDITracks
         )
 
         return SongEngineLayout(
-            sectionsByTrack: layout.trackSections,
-            masterSections: layout.rulerSections,
-            removedClips: arrangement.removedClips,
+            playback: SongPlaybackLayout(timeline: projectState.timeline),
             tempoChanges: projectState.tempoChanges,
             timeSignatureChanges: projectState.timeSignatureChanges,
             midiEvents: resolvedMIDI
@@ -794,11 +778,7 @@ final class PlaybackCoordinator {
     private func applySongEngineState(for song: Song) {
         let layout = songEngineLayout(for: song)
 
-        audioEngine.setArrangement(
-            sectionsByTrack: layout.sectionsByTrack,
-            masterSections: layout.masterSections,
-            removedClips: layout.removedClips
-        )
+        audioEngine.setArrangement(layout.playback)
 
         audioEngine.setTempoMap(
             layout.tempoChanges,
@@ -835,25 +815,7 @@ final class PlaybackCoordinator {
 
         let fileDuration = trackSources.map(\.duration).max() ?? cachedDuration
         let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
-        let arrangement = projectState.arrangement
-        let inputs = arrangementLayoutInputs(for: song, markers: projectState.markers)
-        let playbackLayout = SongArrangementStore.playbackLayoutSnapshot(
-            slots: arrangement.slots,
-            clipTrims: arrangement.clipTrims,
-            removedClips: arrangement.removedClips,
-            clipGaps: arrangement.clipGaps,
-            clipRegions: arrangement.clipRegions,
-            tracks: SongPlaybackArrangementLoader.playbackTracks(for: song),
-            inputs: inputs
-        )
-        let peakSections = waveformPeakSections(
-            playbackLayout: playbackLayout,
-            rulerSections: playbackLayout.rulerSections
-        )
-        let timelineDuration = SongArrangementStore.effectiveTimelineDuration(
-            rulerSections: playbackLayout.rulerSections,
-            trackSections: playbackLayout.trackSections
-        )
+        let playbackLayout = SongPlaybackLayout(timeline: projectState.timeline)
         let midiLanes = song.sortedMIDITracks.map { track in
             LiveMIDILaneSnapshot(
                 id: track.id,
@@ -869,42 +831,15 @@ final class PlaybackCoordinator {
             songName: song.name,
             trackSources: trackSources,
             fileDuration: fileDuration,
-            timelineDuration: timelineDuration,
-            sections: playbackLayout.rulerSections,
-            peakSections: peakSections,
-            loopSlotIDs: arrangement.loopSlotIDs,
+            timelineDuration: playbackLayout.duration,
+            sections: playbackLayout.sections,
+            peakClips: playbackLayout.peakClips,
             tempoChanges: projectState.tempoChanges,
             timeSignatureChanges: projectState.timeSignatureChanges,
             // Synthetic 120 BPM markers are always injected for timing math; only
             // show measure ticks when the song actually has a set/imported tempo.
             showsMeasureGrid: song.bpm != nil,
             midiLanes: midiLanes
-        )
-    }
-
-    /// Uses playback clip regions for peak mapping.
-    static func waveformPeakSections(
-        playbackLayout: ArrangementLayoutSnapshot,
-        rulerSections: [ArrangementDisplaySection]
-    ) -> [ArrangementDisplaySection] {
-        playbackLayout.trackSections.values
-            .first(where: { !$0.isEmpty })
-            ?? rulerSections
-    }
-
-    private static func trackSourceDuration(for trackID: UUID, in song: Song) -> TimeInterval {
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
-        return FileStore.sourceDuration(for: song, track: track) ?? 1
-    }
-
-    static func arrangementLayoutInputs(
-        for song: Song,
-        markers: [ArrangementMarker]
-    ) -> ArrangementLayoutInputs {
-        SongArrangementStore.makeLayoutInputs(
-            markers: markers,
-            trackIDs: song.sortedTracks.map(\.id),
-            sourceDurationForTrack: { trackSourceDuration(for: $0, in: song) }
         )
     }
 
@@ -1018,11 +953,7 @@ final class PlaybackCoordinator {
             let routing = routingProvider?()
 
             try engine.loadPreparedTracks(payloads, routing: routing)
-            engine.setArrangement(
-                sectionsByTrack: layout.sectionsByTrack,
-                masterSections: layout.masterSections,
-                removedClips: layout.removedClips
-            )
+            engine.setArrangement(layout.playback)
             engine.setTempoMap(
                 layout.tempoChanges,
                 referenceBPM: layout.tempoChanges.referenceBPM,
@@ -1172,9 +1103,6 @@ final class PlaybackCoordinator {
         for song: Song,
         layout: SongEngineLayout
     ) -> TimeInterval {
-        SongArrangementStore.effectiveTimelineDuration(
-            rulerSections: layout.masterSections,
-            trackSections: layout.sectionsByTrack
-        )
+        layout.playback.duration
     }
 }

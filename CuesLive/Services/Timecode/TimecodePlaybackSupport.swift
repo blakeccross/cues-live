@@ -78,9 +78,6 @@ enum TimecodePlaybackSupport {
     }
 
     static func timelineDuration(for song: Song) -> TimeInterval {
-        SongTrackLoader.timelineDuration(for: song) { trackID in
-            guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
-            return FileStore.sourceDuration(for: song, track: track) ?? 1
-        }
+        SongTrackLoader.timelineDuration(for: song)
     }
 }

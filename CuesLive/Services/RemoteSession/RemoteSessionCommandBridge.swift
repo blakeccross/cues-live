@@ -12,7 +12,7 @@ final class RemoteSessionCommandBridge {
         var cuedSectionID: UUID?
         var cueFireTime: TimeInterval?
         var clearMarkerCue: () -> Void
-        var cueSection: (ArrangementDisplaySection) -> Void
+        var cueSection: (SongSection) -> Void
         var fireMarkerCue: () -> Void
         var stopPlayback: () -> Void
         var onMixChanged: () -> Void

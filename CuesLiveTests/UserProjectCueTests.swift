@@ -114,6 +114,12 @@ final class UserProjectCueTests: XCTestCase {
         }
         try XCTSkipUnless(coordinator.isLoaded, "song did not load: \(coordinator.loadError ?? "unknown")")
         let sections = try XCTUnwrap(coordinator.currentWaveformSnapshot?.sections)
+        let clickClips = try SongProjectBridge.loadProjectState(for: song).timeline.clips(forTrack: clickTrack.id)
+        /// Click-file seconds at `time`; `endingAt` picks the clip that ends there instead of the next one.
+        func clickSource(at time: TimeInterval, endingAt: Bool = false) -> TimeInterval {
+            let probe = endingAt ? time - 1e-6 : time
+            return clickClips.first { $0.containsTimelineTime(probe) }?.sourceTime(atTimeline: time) ?? time
+        }
 
         let engine = coordinator.playbackEngine
         let box = CaptureBox()
@@ -142,7 +148,7 @@ final class UserProjectCueTests: XCTestCase {
         var current: CueRecord?
         var log: [String] = []
         var pending = steps
-        var cued: (target: ArrangementDisplaySection, fireTime: TimeInterval)?
+        var cued: (target: SongSection, fireTime: TimeInterval)?
         var lastEvent: TimeInterval = 0
         let deadline = Date().addingTimeInterval(120)
 
@@ -182,12 +188,9 @@ final class UserProjectCueTests: XCTestCase {
                     ?? target.timelineEndSeconds
                 cued = (target, fireTime)
                 let fromSection = sections.section(atTimeline: now)
-                let fireSource = fromSection.map {
-                    $0.sourceStartSeconds + (fireTime - $0.timelineStartSeconds)
-                } ?? fireTime
                 current = CueRecord(
-                    fireSourceSeconds: fireSource,
-                    targetSourceSeconds: target.sourceStartSeconds,
+                    fireSourceSeconds: clickSource(at: fireTime, endingAt: true),
+                    targetSourceSeconds: clickSource(at: target.timelineStartSeconds),
                     captureFramesWhenFired: 0,
                     label: String(format: "%@ (in %@ at %.2fs) -> %@ @%.3fs", step.sectionName,
                                   fromSection?.name ?? "?", now, target.name, target.timelineStartSeconds)

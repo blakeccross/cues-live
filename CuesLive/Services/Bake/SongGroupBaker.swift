@@ -34,8 +34,7 @@ enum SongGroupBaker {
 
     let groups: [Group]
     let timelineDuration: TimeInterval
-    let sectionsByTrack: [UUID: [ArrangementDisplaySection]]
-    let masterSections: [ArrangementDisplaySection]
+    let clipsByTrack: [UUID: [TrackClip]]
     let fingerprint: String
   }
 
@@ -50,11 +49,7 @@ enum SongGroupBaker {
     }
 
     let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
-    let arrangement = SongPlaybackArrangementLoader.sections(for: song)
-    let timelineDuration = SongArrangementStore.effectiveTimelineDuration(
-      rulerSections: arrangement.masterSections,
-      trackSections: arrangement.sectionsByTrack
-    )
+    let layout = SongPlaybackLayout(timeline: projectState.timeline)
 
     var grouped: [UUID?: [AudioTrack]] = [:]
     for track in tracks {
@@ -87,9 +82,8 @@ enum SongGroupBaker {
 
     return BakePlan(
       groups: groups,
-      timelineDuration: timelineDuration,
-      sectionsByTrack: arrangement.sectionsByTrack,
-      masterSections: arrangement.masterSections,
+      timelineDuration: layout.duration,
+      clipsByTrack: layout.clipsByTrack,
       fingerprint: fingerprint
     )
   }
@@ -127,8 +121,7 @@ enum SongGroupBaker {
         song: song,
         tracks: audibleTracks,
         timelineDuration: plan.timelineDuration,
-        sectionsByTrack: plan.sectionsByTrack,
-        masterSections: plan.masterSections
+        clipsByTrack: plan.clipsByTrack
       )
 
       let groupKey = group.groupID ?? OutputRoutingStore.ungroupedRouteID
@@ -189,8 +182,7 @@ enum SongGroupBaker {
     song: Song,
     tracks: [AudioTrack],
     timelineDuration: TimeInterval,
-    sectionsByTrack: [UUID: [ArrangementDisplaySection]],
-    masterSections: [ArrangementDisplaySection]
+    clipsByTrack: [UUID: [TrackClip]]
   ) async throws -> DecodedStemBuffer {
     try await Task.detached(priority: .userInitiated) {
       let frameCount = max(1, Int((timelineDuration * DecodedStemBuffer.engineSampleRate).rounded(.up)))
@@ -200,17 +192,12 @@ enum SongGroupBaker {
         channelCount: 2
       )
 
-      let usesArrangement = !masterSections.isEmpty
-
       for track in tracks {
         guard let sourceURL = FileStore.trackURL(for: song, track: track) else { continue }
 
         var settings = AudioEngineManager.TrackSettings(track: track)
         var sourceBuffer = try DecodedStemBuffer.decode(from: sourceURL)
         let fileDuration = Double(sourceBuffer.frameCount) / sourceBuffer.sampleRate
-        if settings.trimEnd == nil {
-          settings.trimEnd = fileDuration
-        }
 
         if song.transposeHighQuality,
            Int((settings.pitchCents / 100).rounded()) != 0 {
@@ -221,13 +208,9 @@ enum SongGroupBaker {
           settings.pitchCents = 0
         }
 
-        let sections = sectionsByTrack[track.id] ?? []
-        let trackUsesArrangement = usesArrangement || !sections.isEmpty
         let mapper = ArrangementTimelineMapper(
-          sections: sections,
-          trimStart: settings.trimStart,
-          trimEnd: settings.trimEnd ?? fileDuration,
-          usesArrangement: trackUsesArrangement
+          clips: clipsByTrack[track.id] ?? [],
+          fileDuration: fileDuration
         )
 
         let gain = Float(track.volume)

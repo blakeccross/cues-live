@@ -32,21 +32,17 @@ enum ClickTrackFileGenerator {
         existingClickTrack(in: song) != nil
     }
 
-    static func timelineDuration(
-        for song: Song,
-        sourceDurationForTrack: @escaping (UUID) -> TimeInterval
-    ) -> TimeInterval {
-        SongTrackLoader.timelineDuration(for: song, sourceDurationForTrack: sourceDurationForTrack)
+    static func timelineDuration(for song: Song) -> TimeInterval {
+        SongTrackLoader.timelineDuration(for: song)
     }
 
     /// Generates a click audio file for the song timeline and links or replaces a Click track.
     @discardableResult
     static func generateAndAttach(
         to song: Song,
-        context: ModelContext,
-        sourceDurationForTrack: @escaping (UUID) -> TimeInterval
+        context: ModelContext
     ) throws -> AudioTrack {
-        let duration = timelineDuration(for: song, sourceDurationForTrack: sourceDurationForTrack)
+        let duration = timelineDuration(for: song)
         guard duration > 0 else {
             throw ClickTrackFileGeneratorError.invalidDuration
         }
@@ -131,7 +127,10 @@ enum ClickTrackFileGenerator {
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
 
         try context.save()
-        try SongProjectBridge.syncProjectFile(for: song, context: context)
+        var timeline = SongProjectBridge.projectStateOrDefaults(for: song).timeline
+        timeline.clips.removeAll { $0.trackID == track.id }
+        timeline.clips.append(.wholeFile(trackID: track.id, duration: duration))
+        try SongProjectBridge.syncProjectFile(for: song, context: context, timeline: timeline)
         return track
     }
 

@@ -134,13 +134,8 @@ final class OverlapPreviewEngine {
         let payloads = try SongTrackLoader.playbackPayloads(for: song)
         try engine.loadPreparedTracks(payloads)
 
-        let arrangement = SongPlaybackArrangementLoader.sections(for: song)
         let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
-        engine.setArrangement(
-            sectionsByTrack: arrangement.sectionsByTrack,
-            masterSections: arrangement.masterSections,
-            removedClips: projectState.arrangement.removedClips
-        )
+        engine.setArrangement(SongPlaybackLayout(timeline: projectState.timeline))
         engine.setTempoMap(
             projectState.tempoChanges,
             referenceBPM: projectState.tempoChanges.referenceBPM,

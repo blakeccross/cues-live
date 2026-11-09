@@ -16,6 +16,12 @@ struct TimelineMeasureGridOverlay: View {
     var contentWidth: CGFloat?
     var displayWidth: CGFloat?
     let rulerHeight: CGFloat
+    /// Draws the lane lines over the clips, the way Soundcraft draws a shown grid.
+    var showsThroughContent = false
+    /// Opaque clip headers. Lane lines stop at these rects so the name bar stays solid.
+    var headerBands: [CGRect] = []
+
+    @Environment(\.self) private var environment
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -51,7 +57,9 @@ struct TimelineMeasureGridOverlay: View {
             guard size.width > 0, size.height > 0, mappingWidth > 0 else { return }
 
             let rulerLineColor = Color.dawMeasureGridLine
-            let trackLineColor = Color.dawMeasureGridLine.opacity(0.75)
+            let trackLineColor = showsThroughContent
+                ? Color.soundcraftGridVeil(over: .dawTimelineBackground, environment: environment)
+                : Color.dawMeasureGridLine.opacity(0.75)
             let rulerLineEnd = min(rulerHeight, size.height)
 
             for time in boundaries {
@@ -69,10 +77,15 @@ struct TimelineMeasureGridOverlay: View {
 
                 guard size.height > rulerLineEnd else { continue }
 
-                var trackPath = Path()
-                trackPath.move(to: CGPoint(x: x, y: rulerLineEnd))
-                trackPath.addLine(to: CGPoint(x: x, y: size.height))
-                context.stroke(trackPath, with: .color(trackLineColor), lineWidth: 1)
+                let gaps = showsThroughContent
+                    ? MeasureGridSpans.gaps(at: x, in: headerBands)
+                    : []
+                for (start, end) in MeasureGridSpans.verticalSegments(from: rulerLineEnd, to: size.height, skipping: gaps) {
+                    var trackPath = Path()
+                    trackPath.move(to: CGPoint(x: x, y: start))
+                    trackPath.addLine(to: CGPoint(x: x, y: end))
+                    context.stroke(trackPath, with: .color(trackLineColor), lineWidth: 1)
+                }
             }
         }
         .frame(width: canvasWidth > 0 ? canvasWidth : nil)
@@ -80,16 +93,58 @@ struct TimelineMeasureGridOverlay: View {
     }
 }
 
+/// Vertical pieces of a measure line after clip headers have been cut out.
+enum MeasureGridSpans {
+    static func gaps(at x: CGFloat, in bands: [CGRect]) -> [ClosedRange<CGFloat>] {
+        bands.compactMap { band in
+            guard band.width > 0, band.height > 0, band.minX < x + 0.5, band.maxX > x - 0.5 else { return nil }
+            return band.minY...band.maxY
+        }
+    }
+
+    static func verticalSegments(
+        from top: CGFloat,
+        to bottom: CGFloat,
+        skipping gaps: [ClosedRange<CGFloat>]
+    ) -> [(CGFloat, CGFloat)] {
+        guard bottom > top else { return [] }
+        let blocked = gaps
+            .map { max($0.lowerBound, top)...min($0.upperBound, bottom) }
+            .filter { $0.upperBound > $0.lowerBound }
+            .sorted { $0.lowerBound < $1.lowerBound }
+        var merged: [ClosedRange<CGFloat>] = []
+        for range in blocked {
+            if let last = merged.last, range.lowerBound <= last.upperBound {
+                merged[merged.count - 1] = last.lowerBound...max(last.upperBound, range.upperBound)
+            } else {
+                merged.append(range)
+            }
+        }
+        var y = top
+        var segments: [(CGFloat, CGFloat)] = []
+        for range in merged {
+            if range.lowerBound > y {
+                segments.append((y, range.lowerBound))
+            }
+            y = max(y, range.upperBound)
+        }
+        if y < bottom {
+            segments.append((y, bottom))
+        }
+        return segments
+    }
+}
+
 struct TimelineRulerView: View {
     let duration: TimeInterval
     let contentWidth: CGFloat
     let displayWidth: CGFloat
-    let sections: [ArrangementDisplaySection]
+    let sections: [SongSection]
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
     let cuedSectionID: UUID?
     let cueFlashPhase: Bool
-    let loopSlotIDs: Set<UUID>
+    let loopSectionIDs: Set<UUID>
     let sectionMarkerHeight: CGFloat
     let timeSignatureRulerHeight: CGFloat
     let tempoRulerHeight: CGFloat
@@ -98,13 +153,12 @@ struct TimelineRulerView: View {
     let measureSelectionEnabled: Bool
     let onSeek: (TimeInterval) -> Void
     let onSelectMeasures: (Int, Int) -> Void
-    let onCueSection: (ArrangementDisplaySection) -> Void
-    let onToggleLoopSection: (ArrangementDisplaySection) -> Void
+    let onCueSection: (SongSection) -> Void
+    let onToggleLoopSection: (SongSection) -> Void
     let onAddSection: (TimeInterval) -> Void
-    let onAddSectionRange: (TimeInterval, TimeInterval) -> Void
-    let snapSectionRange: (TimeInterval, TimeInterval) -> (TimeInterval, TimeInterval)
-    let onRenameSection: (ArrangementDisplaySection) -> Void
-    let onDeleteSection: (ArrangementDisplaySection) -> Void
+    let onRenameSection: (SongSection) -> Void
+    let onRemoveMarker: (SongSection) -> Void
+    let onDeleteSection: (SongSection) -> Void
     let onTimeSignatureRulerTap: (TimeInterval) -> Void
     let onEditTimeSignatureMarker: (TimeSignatureChange) -> Void
     let onDeleteTimeSignatureMarker: (TimeSignatureChange) -> Void
@@ -122,9 +176,6 @@ struct TimelineRulerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            sectionMarkerRow
-                .frame(width: effectiveDisplayWidth, height: sectionMarkerHeight)
-
             TimelineTimeSignatureRulerView(
                 duration: safeDuration,
                 contentWidth: contentWidth,
@@ -183,6 +234,9 @@ struct TimelineRulerView: View {
                 }
             }
             #endif
+
+            sectionMarkerRow
+                .frame(width: effectiveDisplayWidth, height: sectionMarkerHeight)
         }
         .frame(width: effectiveDisplayWidth, alignment: .leading)
         .overlay(alignment: .bottom) {
@@ -267,14 +321,13 @@ struct TimelineRulerView: View {
             height: sectionMarkerHeight,
             cuedSectionID: cuedSectionID,
             cueFlashPhase: cueFlashPhase,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             isPlaying: isPlaying,
             onCueSection: onCueSection,
             onToggleLoopSection: onToggleLoopSection,
             onAddSection: onAddSection,
-            onAddSectionRange: onAddSectionRange,
-            snapSectionRange: snapSectionRange,
             onRenameSection: onRenameSection,
+            onRemoveMarker: onRemoveMarker,
             onDeleteSection: onDeleteSection
         )
     }

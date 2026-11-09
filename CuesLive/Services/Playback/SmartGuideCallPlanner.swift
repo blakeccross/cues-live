@@ -42,9 +42,9 @@ struct SmartGuideCallPlanner {
     ///   - leadDuration: Duration of one measure ending at the given timeline position.
     mutating func evaluate(
         at time: TimeInterval,
-        sections: [ArrangementDisplaySection],
+        sections: [SongSection],
         cue: Cue?,
-        loop: ArrangementDisplaySection?,
+        loop: SongSection?,
         leadDuration: (TimeInterval) -> TimeInterval
     ) -> SmartGuideCall? {
         defer { lastTime = time }
@@ -97,9 +97,9 @@ struct SmartGuideCallPlanner {
 
     private func target(
         at time: TimeInterval,
-        sections: [ArrangementDisplaySection],
+        sections: [SongSection],
         cue: Cue?,
-        loop: ArrangementDisplaySection?
+        loop: SongSection?
     ) -> Target? {
         if let loop {
             return Target(
