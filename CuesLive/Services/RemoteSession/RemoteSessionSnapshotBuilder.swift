@@ -171,14 +171,14 @@ enum RemoteSessionSnapshotBuilder {
 
         let sections: [RemoteArrangementSectionDTO]
         let peakSections: [RemoteArrangementSectionDTO]
-        let loopSlotIDs: [UUID]
+        let loopSectionIDs: [UUID]
         let tempoChanges: [TempoChange]
         let timeSignatureChanges: [TimeSignatureChange]
 
         if let snapshot {
             sections = snapshot.sections.map(RemoteArrangementSectionDTO.init)
-            peakSections = snapshot.peakSections.map(RemoteArrangementSectionDTO.init)
-            loopSlotIDs = Array(snapshot.loopSlotIDs)
+            peakSections = snapshot.peakClips.map(RemoteArrangementSectionDTO.init)
+            loopSectionIDs = Array(snapshot.loopSectionIDs)
             tempoChanges = snapshot.tempoChanges.isEmpty ? projectState.tempoChanges : snapshot.tempoChanges
             timeSignatureChanges = snapshot.timeSignatureChanges.isEmpty
                 ? projectState.timeSignatureChanges
@@ -186,7 +186,7 @@ enum RemoteSessionSnapshotBuilder {
         } else {
             sections = []
             peakSections = []
-            loopSlotIDs = []
+            loopSectionIDs = []
             tempoChanges = projectState.tempoChanges
             timeSignatureChanges = projectState.timeSignatureChanges
         }
@@ -202,7 +202,7 @@ enum RemoteSessionSnapshotBuilder {
             key: song.transportKeyText,
             sections: sections,
             peakSections: peakSections,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: snapshot?.showsMeasureGrid ?? (song.bpm != nil),

@@ -57,9 +57,8 @@ final class AudioEngineManager {
     private var didNotifyPlaybackFinished = false
     private var suppressAutoStopOnPlaybackFinished = false
     private var playbackTimer: Timer?
-    private var masterArrangementSections: [ArrangementDisplaySection] = []
-    private var arrangementSectionsByTrack: [UUID: [ArrangementDisplaySection]] = [:]
-    private var arrangementRemovedClips: [ArrangementRemovedClip] = []
+    /// Nil until the song's timeline is applied; tracks then play their trimmed files linearly.
+    private var playbackLayout: SongPlaybackLayout?
     private var routingSnapshot: OutputRoutingSnapshot?
     private var groupMixSnapshot = GroupMixSnapshot.default
     private var tempoChanges: [TempoChange] = []
@@ -197,9 +196,7 @@ final class AudioEngineManager {
         stop()
         stopEngineForGraphChanges()
         teardownTracks()
-        masterArrangementSections = []
-        arrangementSectionsByTrack = [:]
-        arrangementRemovedClips = []
+        playbackLayout = nil
         routingSnapshot = routing
 
         var loadedTracks: [UUID: TrackState] = [:]
@@ -337,19 +334,13 @@ final class AudioEngineManager {
         _ = adoptOutputDevice(uid)
     }
 
-    func setArrangement(
-        sectionsByTrack: [UUID: [ArrangementDisplaySection]],
-        masterSections: [ArrangementDisplaySection],
-        removedClips: [ArrangementRemovedClip] = []
-    ) {
+    func setArrangement(_ layout: SongPlaybackLayout) {
         if isPlaying {
             refreshCurrentTimeFromEngine()
         }
 
-        let preservedTime = min(currentTime, masterSections.last?.timelineEndSeconds ?? currentTime)
-        arrangementSectionsByTrack = sectionsByTrack
-        masterArrangementSections = masterSections
-        arrangementRemovedClips = removedClips
+        let preservedTime = currentTime
+        playbackLayout = layout
         duration = calculateEffectiveDuration()
         transport.setDuration(duration)
         syncTransportTempoMap()
@@ -357,21 +348,6 @@ final class AudioEngineManager {
         transport.setPausedTimeline(currentTime)
         transport.cancelScheduledTransition()
         refreshTrackMappers()
-    }
-
-    /// Updates one track's arrangement mapping without disturbing transport or other tracks.
-    func updateTrackArrangement(
-        trackID: UUID,
-        sections: [ArrangementDisplaySection],
-        removedClips: [ArrangementRemovedClip]
-    ) {
-        arrangementSectionsByTrack[trackID] = sections
-        arrangementRemovedClips = removedClips
-        refreshTrackMapper(for: trackID)
-    }
-
-    func setArrangement(_ sections: [ArrangementDisplaySection]) {
-        setArrangement(sectionsByTrack: [:], masterSections: sections, removedClips: [])
     }
 
     func setTempoMap(
@@ -578,7 +554,7 @@ final class AudioEngineManager {
 
     func beginOverlapPlayback(
         payloads: [PreparedTrackPayload],
-        sectionsByTrack: [UUID: [ArrangementDisplaySection]],
+        clipsByTrack: [UUID: [TrackClip]]?,
         atMasterTime masterTime: TimeInterval
     ) throws {
         guard !isOverlapPlaybackActive, !payloads.isEmpty else { return }
@@ -588,8 +564,10 @@ final class AudioEngineManager {
         isOverlapPlaybackActive = true
 
         for payload in payloads {
-            let sections = sectionsByTrack[payload.id] ?? []
-            let trackState = try buildOverlapTrackState(for: payload, sections: sections)
+            let trackState = try buildOverlapTrackState(
+                for: payload,
+                clips: clipsByTrack.map { $0[payload.id] ?? [] }
+            )
             overlapTracks[payload.id] = trackState
             trackState.memoryPlayer.setPlaybackWindow(offset: quantizedStart, endTimeline: nil)
             connectOverlapTrackToMasterMixer(trackState)
@@ -703,17 +681,6 @@ final class AudioEngineManager {
         let hostTime = currentHostTime() ?? mach_absolute_time()
         transport.resetAnchor(to: clamped, hostTime: hostTime)
         refreshCurrentTimeFromEngine()
-    }
-
-    private static func duration(
-        for masterSections: [ArrangementDisplaySection],
-        tracks: [(trimStart: TimeInterval, trimEnd: TimeInterval)]
-    ) -> TimeInterval {
-        if !masterSections.isEmpty {
-            return masterSections.last?.timelineEndSeconds ?? 0
-        }
-
-        return tracks.map { max(0, $0.trimEnd - $0.trimStart) }.max() ?? 0
     }
 
     private func prewarmTracks(atTimelineSeconds timeline: TimeInterval, trackIDs: Set<UUID>? = nil) {
@@ -1041,31 +1008,17 @@ final class AudioEngineManager {
         applyAnnouncementGain()
     }
 
-    private var usesArrangement: Bool {
-        !masterArrangementSections.isEmpty
-    }
-
     private func makeMapper(
         trackID: UUID,
         settings: TrackSettings,
         fileDuration: TimeInterval
     ) -> ArrangementTimelineMapper {
-        if settings.bypassesArrangementMapping {
-            return ArrangementTimelineMapper(
-                sections: [],
-                trimStart: settings.trimStart,
-                trimEnd: settings.trimEnd ?? fileDuration,
-                usesArrangement: false
-            )
+        guard !settings.bypassesArrangementMapping, let playbackLayout else {
+            return .linear(trimStart: settings.trimStart, trimEnd: settings.trimEnd ?? fileDuration)
         }
-
-        let sections = arrangementSectionsByTrack[trackID] ?? []
-        let trackUsesArrangement = usesArrangement || !sections.isEmpty
         return ArrangementTimelineMapper(
-            sections: sections,
-            trimStart: settings.trimStart,
-            trimEnd: settings.trimEnd ?? fileDuration,
-            usesArrangement: trackUsesArrangement
+            clips: playbackLayout.clipsByTrack[trackID] ?? [],
+            fileDuration: fileDuration
         )
     }
 
@@ -1098,16 +1051,8 @@ final class AudioEngineManager {
     }
 
     private func calculateEffectiveDuration() -> TimeInterval {
-        let trackEnd = arrangementSectionsByTrack.values
-            .flatMap { $0 }
-            .map(\.timelineEndSeconds)
-            .max() ?? 0
-
-        if usesArrangement || trackEnd > 0 {
-            return SongArrangementStore.effectiveTimelineDuration(
-                rulerSections: usesArrangement ? masterArrangementSections : [],
-                trackSections: arrangementSectionsByTrack
-            )
+        if let playbackLayout, playbackLayout.duration > 0 {
+            return playbackLayout.duration
         }
 
         return tracks.values.map { track in
@@ -1118,11 +1063,11 @@ final class AudioEngineManager {
 
     private func buildOverlapTrackState(
         for payload: PreparedTrackPayload,
-        sections: [ArrangementDisplaySection]
+        clips: [TrackClip]?
     ) throws -> TrackState {
         let built = try OverlapTrackGraphBuilder.buildTrack(
             payload: payload,
-            sections: sections,
+            clips: clips,
             transport: transport,
             engine: engine
         )

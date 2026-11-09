@@ -39,13 +39,7 @@ struct SongDetailView: View {
     @State private var abletonImportError: String?
     @State private var abletonImportSummary: String?
     @State private var showingBakeSheet = false
-    @State private var arrangementMarkers: [ArrangementMarker] = []
-    @State private var arrangementSlots: [ArrangementSlot] = []
-    @State private var clipTrims: [ArrangementClipTrim] = []
-    @State private var removedClips: [ArrangementRemovedClip] = []
-    @State private var clipGaps: [ArrangementClipGap] = []
-    @State private var clipRegions: [ClipRegion] = []
-    @State private var loopSlotIDs: Set<UUID> = []
+    @State private var timeline = SongTimeline()
     @State private var tempoChanges: [TempoChange] = []
     @State private var timeSignatureChanges: [TimeSignatureChange] = []
     @State private var midiEvents: [MIDIEvent] = []
@@ -149,13 +143,7 @@ struct SongDetailView: View {
                         song: activeSong,
                         viewModel: viewModel,
                         undoController: undoController,
-                        arrangementMarkers: $arrangementMarkers,
-                        arrangementSlots: $arrangementSlots,
-                        clipTrims: $clipTrims,
-                        removedClips: $removedClips,
-                        clipGaps: $clipGaps,
-                        clipRegions: $clipRegions,
-                        loopSlotIDs: $loopSlotIDs,
+                        timeline: $timeline,
                         tempoChanges: $tempoChanges,
                         timeSignatureChanges: $timeSignatureChanges,
                         midiEvents: $midiEvents,
@@ -277,17 +265,10 @@ struct SongDetailView: View {
         guard let projectState = try? SongProjectBridge.loadProjectState(for: song) else {
             return
         }
-        arrangementMarkers = projectState.markers
-        arrangementSlots = projectState.arrangement.slots
-        clipTrims = projectState.arrangement.clipTrims
-        removedClips = projectState.arrangement.removedClips
-        clipGaps = projectState.arrangement.clipGaps
-        clipRegions = projectState.arrangement.clipRegions
-        loopSlotIDs = projectState.arrangement.loopSlotIDs
+        timeline = projectState.timeline
         tempoChanges = projectState.tempoChanges
         timeSignatureChanges = projectState.timeSignatureChanges
         midiEvents = projectState.midiEvents
-        migrateClipGapsIfNeeded()
         syncArrangementPlayback()
         syncTempoPlayback()
     }
@@ -295,13 +276,7 @@ struct SongDetailView: View {
     private func persistSongState() {
         try? SongProjectBridge.persist(
             song: activeSong,
-            markers: arrangementMarkers,
-            arrangementSlots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            loopSlotIDs: loopSlotIDs,
+            timeline: timeline,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents,
@@ -309,45 +284,9 @@ struct SongDetailView: View {
         )
     }
 
-    private func migrateClipGapsIfNeeded() {
-        guard clipRegions.isEmpty, !clipGaps.isEmpty else { return }
-        let inputs = SongArrangementStore.makeLayoutInputs(
-            markers: arrangementMarkers,
-            trackIDs: activeSong.sortedTracks.map(\.id),
-            sourceDurationForTrack: { trackID in
-                activeSong.sortedTracks.first(where: { $0.id == trackID })
-                    .map { viewModel?.fileDuration(for: $0) ?? 0 } ?? 0
-            }
-        )
-        let sourceTracks = activeSong.sortedTracks.map { track in
-            (
-                trackID: track.id,
-                trimStart: track.trimStartSeconds,
-                trimEnd: track.trimEndSeconds ?? (viewModel?.fileDuration(for: track) ?? 0)
-            )
-        }
-        clipRegions = SongArrangementStore.migrateClipGapsToRegions(
-            slots: arrangementSlots,
-            clipTrims: clipTrims,
-            clipGaps: clipGaps,
-            removedClips: removedClips,
-            inputs: inputs,
-            sourceTracks: sourceTracks
-        )
-        clipGaps = []
-        persistSongState()
-    }
-
     private func syncArrangementPlayback() {
         guard let viewModel else { return }
-        viewModel.syncArrangement(
-            markers: arrangementMarkers,
-            slots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions
-        )
+        viewModel.syncArrangement(timeline)
     }
 
     private func syncTempoPlayback() {
@@ -430,13 +369,7 @@ struct SongDetailView: View {
                 let importResult = try AbletonProjectImporter.importFrom(url: url)
                 let markers = AbletonProjectImporter.makeMarkers(from: importResult).sortedByTime
                 if !markers.isEmpty {
-                    arrangementMarkers = markers
-                    arrangementSlots = SongArrangementStore.defaultSlots(from: markers)
-                    clipTrims = []
-                    removedClips = []
-                    clipGaps = []
-                    clipRegions = []
-                    loopSlotIDs = []
+                    timeline.markers = markers
                 }
                 try AbletonProjectImporter.apply(
                     importResult,

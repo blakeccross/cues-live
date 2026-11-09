@@ -10,7 +10,7 @@ struct LiveSongWaveformScrollBacking: NSViewRepresentable {
     var contentWidth: CGFloat
     var timelineDuration: TimeInterval
     var peaks: [Float]
-    var sections: [ArrangementDisplaySection]
+    var sections: [SongSection]
     var tempoChanges: [TempoChange]
     var timeSignatureChanges: [TimeSignatureChange]
     var showsMeasureGrid: Bool
@@ -67,7 +67,7 @@ final class LiveSongWaveformScrollBackingView: NSView {
         var contentWidth: CGFloat = 1
         var timelineDuration: TimeInterval = 1
         var peaks: [Float] = []
-        var sections: [ArrangementDisplaySection] = []
+        var sections: [SongSection] = []
         var tempoChanges: [TempoChange] = []
         var timeSignatureChanges: [TimeSignatureChange] = []
         var showsMeasureGrid = true

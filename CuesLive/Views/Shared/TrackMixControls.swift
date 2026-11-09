@@ -95,7 +95,9 @@ struct TrackValueField: View {
                     .focusEffectDisabled()
                     .tint(.clear)
                     .onSubmit(commit)
+                    #if os(macOS)
                     .onExitCommand { isEditing = false }
+                    #endif
                     .onChange(of: isFocused) { _, focused in
                         if !focused, isEditing { commit() }
                     }

@@ -165,12 +165,7 @@ final class TrackPanBakeTests: XCTestCase {
         for frame in 0..<frames { samples[frame] = 1 }
 
         let output = try DecodedStemBuffer.silent(frameCount: frames, channelCount: 2)
-        let mapper = ArrangementTimelineMapper(
-            sections: [],
-            trimStart: 0,
-            trimEnd: Double(frames) / source.sampleRate,
-            usesArrangement: false
-        )
+        let mapper = ArrangementTimelineMapper.linear(trimStart: 0, trimEnd: Double(frames) / source.sampleRate)
         GroupStemOfflineRenderer.mix(source: source, into: output, mapper: mapper, gain: gain, pan: pan)
         return output
     }
@@ -245,13 +240,7 @@ final class TrackPanPersistenceTests: XCTestCase {
 
         let snapshot = SongEditSnapshot.capture(
             song: song,
-            markers: [],
-            arrangementSlots: [],
-            clipTrims: [],
-            removedClips: [],
-            clipGaps: [],
-            clipRegions: [],
-            loopSlotIDs: [],
+            timeline: SongTimeline(),
             tempoChanges: [],
             timeSignatureChanges: [],
             midiEvents: []
@@ -267,8 +256,7 @@ final class TrackPanPersistenceTests: XCTestCase {
 final class TrackPanFingerprintTests: XCTestCase {
     private func fingerprint(for song: Song) -> String {
         let projectState = SongProjectBridge.ProjectState(
-            markers: [],
-            arrangement: SongArrangementStore.defaultArrangement(for: []),
+            timeline: SongTimeline(),
             tempoChanges: SongProjectBridge.defaultTempoChanges(for: song),
             timeSignatureChanges: SongProjectBridge.defaultTimeSignatureChanges(for: song),
             midiEvents: []

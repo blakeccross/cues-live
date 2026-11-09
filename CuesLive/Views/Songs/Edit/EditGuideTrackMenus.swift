@@ -77,7 +77,6 @@ struct SmartGuideMenu: View {
     private var sectionNames: [String] {
         var seen = Set<String>()
         return SongProjectBridge.projectStateOrDefaults(for: song).markers
-            .sorted { $0.sortOrder < $1.sortOrder }
             .map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && seen.insert($0).inserted }
     }
@@ -149,6 +148,7 @@ struct ClickTrackEditorButton: View {
     let viewModel: SongEditorViewModel
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
+    let onClickTrackGenerated: () -> Void
     var chrome: Chrome = .toolbar
 
     @State private var showingEditor = false
@@ -221,17 +221,9 @@ struct ClickTrackEditorButton: View {
         isGenerating = true
         generateError = nil
         do {
-            _ = try ClickTrackFileGenerator.generateAndAttach(
-                to: song,
-                context: modelContext,
-                sourceDurationForTrack: { trackID in
-                    if let track = song.sortedTracks.first(where: { $0.id == trackID }) {
-                        return viewModel.fileDuration(for: track)
-                    }
-                    return 1
-                }
-            )
+            _ = try ClickTrackFileGenerator.generateAndAttach(to: song, context: modelContext)
             viewModel.reloadSongAfterMediaChange()
+            onClickTrackGenerated()
             closeEditor()
         } catch {
             generateError = error.localizedDescription
@@ -248,15 +240,7 @@ struct ClickTrackEditorMenu: View {
     let onGenerate: () -> Void
 
     private var canGenerate: Bool {
-        let duration = ClickTrackFileGenerator.timelineDuration(
-            for: song,
-            sourceDurationForTrack: { trackID in
-                if let track = song.sortedTracks.first(where: { $0.id == trackID }) {
-                    return viewModel.fileDuration(for: track)
-                }
-                return 1
-            }
-        )
+        let duration = ClickTrackFileGenerator.timelineDuration(for: song)
         return duration > 0 && !isGenerating
     }
 

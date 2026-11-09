@@ -40,31 +40,51 @@ struct RemoteArrangementSectionDTO: Codable, Hashable, Identifiable, Sendable {
     var columnStartSeconds: TimeInterval
     var columnEndSeconds: TimeInterval
 
-    init(_ section: ArrangementDisplaySection) {
+    /// Fields without a meaning for sections (source, column) mirror the timeline span so
+    /// hosts and clients on the slot-based wire format still read them.
+    init(_ section: SongSection) {
         id = section.id
-        slotID = section.slotID
-        markerID = section.markerID
+        slotID = section.id
+        markerID = section.id
         name = section.name
-        sourceStartSeconds = section.sourceStartSeconds
-        sourceEndSeconds = section.sourceEndSeconds
+        sourceStartSeconds = section.timelineStartSeconds
+        sourceEndSeconds = section.timelineEndSeconds
         timelineStartSeconds = section.timelineStartSeconds
         timelineEndSeconds = section.timelineEndSeconds
-        columnStartSeconds = section.columnStartSeconds
-        columnEndSeconds = section.columnEndSeconds
+        columnStartSeconds = section.timelineStartSeconds
+        columnEndSeconds = section.timelineEndSeconds
     }
 
-    var asDisplaySection: ArrangementDisplaySection {
-        ArrangementDisplaySection(
+    init(_ clip: TrackClip) {
+        id = clip.id
+        slotID = clip.id
+        markerID = clip.id
+        name = ""
+        sourceStartSeconds = clip.sourceStartSeconds
+        sourceEndSeconds = clip.sourceEndSeconds
+        timelineStartSeconds = clip.timelineStartSeconds
+        timelineEndSeconds = clip.timelineEndSeconds
+        columnStartSeconds = clip.timelineStartSeconds
+        columnEndSeconds = clip.timelineEndSeconds
+    }
+
+    func asSection(loopSectionIDs: Set<UUID>) -> SongSection {
+        SongSection(
             id: id,
-            slotID: slotID,
-            markerID: markerID,
             name: name,
-            sourceStartSeconds: sourceStartSeconds,
-            sourceEndSeconds: sourceEndSeconds,
             timelineStartSeconds: timelineStartSeconds,
             timelineEndSeconds: timelineEndSeconds,
-            columnStartSeconds: columnStartSeconds,
-            columnEndSeconds: columnEndSeconds
+            loops: loopSectionIDs.contains(id)
+        )
+    }
+
+    var asClip: TrackClip {
+        TrackClip(
+            id: id,
+            trackID: id,
+            timelineStartSeconds: timelineStartSeconds,
+            duration: max(0, timelineEndSeconds - timelineStartSeconds),
+            sourceStartSeconds: sourceStartSeconds
         )
     }
 }
@@ -90,9 +110,8 @@ extension RemoteSongDTO {
             trackSources: [],
             fileDuration: fileDuration,
             timelineDuration: timelineDuration,
-            sections: sections.map(\.asDisplaySection),
-            peakSections: peakSections.map(\.asDisplaySection),
-            loopSlotIDs: Set(loopSlotIDs),
+            sections: sections.map { $0.asSection(loopSectionIDs: Set(loopSectionIDs)) },
+            peakClips: peakSections.map(\.asClip),
             tempoChanges: tempo,
             timeSignatureChanges: signatures,
             showsMeasureGrid: showsMeasureGrid,
@@ -150,7 +169,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
     var key: String
     var sections: [RemoteArrangementSectionDTO]
     var peakSections: [RemoteArrangementSectionDTO]
-    var loopSlotIDs: [UUID]
+    var loopSectionIDs: [UUID]
     var tempoChanges: [TempoChange]
     var timeSignatureChanges: [TimeSignatureChange]
     /// When false, remote clients hide measure ticks (host song has no set BPM).
@@ -167,7 +186,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         case key
         case sections
         case peakSections
-        case loopSlotIDs
+        case loopSectionIDs = "loopSlotIDs"
         case tempoChanges
         case timeSignatureChanges
         case showsMeasureGrid
@@ -183,7 +202,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         key: String,
         sections: [RemoteArrangementSectionDTO],
         peakSections: [RemoteArrangementSectionDTO],
-        loopSlotIDs: [UUID],
+        loopSectionIDs: [UUID],
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         showsMeasureGrid: Bool,
@@ -197,7 +216,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         self.key = key
         self.sections = sections
         self.peakSections = peakSections
-        self.loopSlotIDs = loopSlotIDs
+        self.loopSectionIDs = loopSectionIDs
         self.tempoChanges = tempoChanges
         self.timeSignatureChanges = timeSignatureChanges
         self.showsMeasureGrid = showsMeasureGrid
@@ -214,7 +233,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         key = try container.decode(String.self, forKey: .key)
         sections = try container.decode([RemoteArrangementSectionDTO].self, forKey: .sections)
         peakSections = try container.decodeIfPresent([RemoteArrangementSectionDTO].self, forKey: .peakSections) ?? sections
-        loopSlotIDs = try container.decode([UUID].self, forKey: .loopSlotIDs)
+        loopSectionIDs = try container.decode([UUID].self, forKey: .loopSectionIDs)
         tempoChanges = try container.decode([TempoChange].self, forKey: .tempoChanges)
         timeSignatureChanges = try container.decode([TimeSignatureChange].self, forKey: .timeSignatureChanges)
         // Older hosts omit this; keep prior behavior (show grid when tempo map exists).

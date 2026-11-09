@@ -14,11 +14,12 @@ enum SongProjectBridge {
     }
 
     struct ProjectState {
-        let markers: [ArrangementMarker]
-        let arrangement: SongArrangement
+        let timeline: SongTimeline
         let tempoChanges: [TempoChange]
         let timeSignatureChanges: [TimeSignatureChange]
         let midiEvents: [MIDIEvent]
+
+        var markers: [ArrangementMarker] { timeline.sortedMarkers }
     }
 
     static func projectURL(for song: Song) -> URL? {
@@ -41,8 +42,7 @@ enum SongProjectBridge {
 
         let document = buildDocument(
             from: song,
-            markers: [],
-            arrangement: SongArrangementStore.defaultArrangement(for: []),
+            timeline: defaultTimeline(for: song),
             tempoChanges: defaultTempoChanges(for: song),
             timeSignatureChanges: defaultTimeSignatureChanges(for: song),
             midiEvents: []
@@ -53,8 +53,7 @@ enum SongProjectBridge {
 
     static func buildDocument(
         from song: Song,
-        markers: [ArrangementMarker],
-        arrangement: SongArrangement,
+        timeline: SongTimeline,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         midiEvents: [MIDIEvent],
@@ -87,6 +86,17 @@ enum SongProjectBridge {
             )
         }
 
+        let trackIDs = Set(tracks.map(\.id))
+        var storedTimeline = timeline
+        storedTimeline.markers = timeline.sortedMarkers
+        storedTimeline.clips = timeline.clips
+            .filter { trackIDs.contains($0.trackID) }
+            .sorted {
+                $0.trackID == $1.trackID
+                    ? $0.timelineStartSeconds < $1.timelineStartSeconds
+                    : $0.trackID.uuidString < $1.trackID.uuidString
+            }
+
         return SongProjectDocument(
             id: song.id,
             name: song.name,
@@ -94,7 +104,7 @@ enum SongProjectBridge {
             metadata: SongProjectMetadata(from: song),
             tracks: tracks,
             midiTracks: midiTracks,
-            arrangement: SongProjectArrangement(markers: markers, sequence: arrangement),
+            arrangement: SongProjectArrangement(timeline: storedTimeline),
             tempo: tempoChanges,
             timeSignatures: timeSignatureChanges,
             midiEvents: midiEvents,
@@ -105,20 +115,16 @@ enum SongProjectBridge {
     static func syncProjectFile(
         for song: Song,
         context: ModelContext,
-        markers: [ArrangementMarker]? = nil,
-        arrangement: SongArrangement? = nil,
+        timeline: SongTimeline? = nil,
         tempoChanges: [TempoChange]? = nil,
         timeSignatureChanges: [TimeSignatureChange]? = nil,
         midiEvents: [MIDIEvent]? = nil
     ) throws {
         let projectURL = try ensureProjectFile(for: song, context: context)
         let existingDocument = try? ProjectFileStore.load(from: projectURL)
-        let resolvedMarkers = markers ?? existingDocument?.arrangement.markers ?? []
-        let resolvedArrangement = arrangement
-            ?? SongArrangementStore.normalized(
-                existingDocument?.arrangement.sequence ?? SongArrangementStore.defaultArrangement(for: resolvedMarkers),
-                markers: resolvedMarkers
-            )
+        let resolvedTimeline = timeline
+            ?? existingDocument.map { self.timeline(from: $0) }
+            ?? defaultTimeline(for: song)
         let resolvedTempo = tempoChanges
             ?? normalizedTempoChanges(existingDocument?.tempo ?? [], for: song)
         let resolvedTimeSignatures = timeSignatureChanges
@@ -127,8 +133,11 @@ enum SongProjectBridge {
 
         let document = buildDocument(
             from: song,
-            markers: resolvedMarkers,
-            arrangement: resolvedArrangement,
+            timeline: addingClipsForNewTracks(
+                to: resolvedTimeline,
+                song: song,
+                previousDocument: existingDocument
+            ),
             tempoChanges: resolvedTempo,
             timeSignatureChanges: resolvedTimeSignatures,
             midiEvents: resolvedMIDIEvents,
@@ -141,13 +150,7 @@ enum SongProjectBridge {
 
     static func persist(
         song: Song,
-        markers: [ArrangementMarker],
-        arrangementSlots: [ArrangementSlot],
-        clipTrims: [ArrangementClipTrim],
-        removedClips: [ArrangementRemovedClip],
-        clipGaps: [ArrangementClipGap],
-        clipRegions: [ClipRegion],
-        loopSlotIDs: Set<UUID>,
+        timeline: SongTimeline,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         midiEvents: [MIDIEvent],
@@ -158,20 +161,13 @@ enum SongProjectBridge {
         }
 
         let existingDocument = try? ProjectFileStore.load(from: projectURL)
-
-        let arrangement = SongArrangement(
-            slots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            loopSlotIDs: loopSlotIDs
-        )
-
         let document = buildDocument(
             from: song,
-            markers: markers,
-            arrangement: arrangement,
+            timeline: addingClipsForNewTracks(
+                to: timeline,
+                song: song,
+                previousDocument: existingDocument
+            ),
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents,
@@ -187,8 +183,7 @@ enum SongProjectBridge {
             return state
         }
         return ProjectState(
-            markers: [],
-            arrangement: SongArrangementStore.defaultArrangement(for: []),
+            timeline: defaultTimeline(for: song),
             tempoChanges: defaultTempoChanges(for: song),
             timeSignatureChanges: defaultTimeSignatureChanges(for: song),
             midiEvents: []
@@ -202,18 +197,53 @@ enum SongProjectBridge {
         }
 
         let document = try ProjectFileStore.load(from: projectURL)
-        let markers = document.arrangement.markers.sortedByTime
-        let arrangement = SongArrangementStore.normalized(document.arrangement.sequence, markers: markers)
-        let tempoChanges = normalizedTempoChanges(document.tempo, for: song)
-        let timeSignatureChanges = normalizedTimeSignatureChanges(document.timeSignatures, for: song)
-
         return ProjectState(
-            markers: markers,
-            arrangement: arrangement,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges,
+            timeline: timeline(from: document),
+            tempoChanges: normalizedTempoChanges(document.tempo, for: song),
+            timeSignatureChanges: normalizedTimeSignatureChanges(document.timeSignatures, for: song),
             midiEvents: document.midiEvents.sorted { $0.timelineSeconds < $1.timelineSeconds }
         )
+    }
+
+    static func timeline(from document: SongProjectDocument) -> SongTimeline {
+        var timeline = document.arrangement.timeline
+        timeline.markers = timeline.sortedMarkers
+        return timeline
+    }
+
+    static func defaultTimeline(for song: Song) -> SongTimeline {
+        SongTimeline(clips: song.sortedTracks.compactMap { defaultClip(for: $0, in: song) })
+    }
+
+    /// The track's trimmed file placed at the start of the timeline.
+    static func defaultClip(for track: AudioTrack, in song: Song) -> TrackClip? {
+        guard let sourceDuration = FileStore.sourceDuration(for: song, track: track) else { return nil }
+        let start = min(max(track.trimStartSeconds, 0), sourceDuration)
+        let end = min(track.trimEndSeconds ?? sourceDuration, sourceDuration)
+        guard end - start >= TrackClip.minimumDuration else { return nil }
+        return TrackClip(
+            trackID: track.id,
+            timelineStartSeconds: 0,
+            duration: end - start,
+            sourceStartSeconds: start
+        )
+    }
+
+    /// Tracks added since the document was written start with their whole file on the timeline.
+    static func addingClipsForNewTracks(
+        to timeline: SongTimeline,
+        song: Song,
+        previousDocument: SongProjectDocument?
+    ) -> SongTimeline {
+        let knownTrackIDs = Set(previousDocument?.tracks.map(\.id) ?? [])
+            .union(timeline.clips.map(\.trackID))
+        var result = timeline
+        for track in song.sortedTracks where !knownTrackIDs.contains(track.id) {
+            if let clip = defaultClip(for: track, in: song) {
+                result.clips.append(clip)
+            }
+        }
+        return result
     }
 
     static func defaultTempoChanges(for song: Song) -> [TempoChange] {

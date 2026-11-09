@@ -4,19 +4,15 @@ import XCTest
 final class SongUndoControllerTests: XCTestCase {
     private func makeSnapshot(markers: Int = 0) -> SongEditSnapshot {
         SongEditSnapshot(
-            markers: (0..<markers).map { index in
-                ArrangementMarker(
-                    name: "Section \(index + 1)",
-                    startSeconds: TimeInterval(index),
-                    sortOrder: index
-                )
-            },
-            arrangementSlots: [],
-            clipTrims: [],
-            removedClips: [],
-            clipGaps: [],
-            clipRegions: [],
-            loopSlotIDs: [],
+            timeline: SongTimeline(
+                markers: (0..<markers).map { index in
+                    ArrangementMarker(
+                        name: "Section \(index + 1)",
+                        startSeconds: TimeInterval(index),
+                        sortOrder: index
+                    )
+                }
+            ),
             tempoChanges: [TempoChange(startMeasure: 1, bpm: 120)],
             timeSignatureChanges: [
                 TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0)
@@ -50,12 +46,12 @@ final class SongUndoControllerTests: XCTestCase {
         XCTAssertFalse(controller.canRedo)
 
         controller.undo()
-        XCTAssertEqual(current.markers.count, 0)
+        XCTAssertEqual(current.timeline.markers.count, 0)
         XCTAssertFalse(controller.canUndo)
         XCTAssertTrue(controller.canRedo)
 
         controller.redo()
-        XCTAssertEqual(current.markers.count, 1)
+        XCTAssertEqual(current.timeline.markers.count, 1)
         XCTAssertTrue(controller.canUndo)
         XCTAssertFalse(controller.canRedo)
     }
@@ -84,7 +80,7 @@ final class SongUndoControllerTests: XCTestCase {
         current = second
 
         XCTAssertFalse(controller.canRedo)
-        XCTAssertEqual(current.markers.count, 2)
+        XCTAssertEqual(current.timeline.markers.count, 2)
     }
 
     func testSkipsRegistrationWhenSnapshotsMatch() {

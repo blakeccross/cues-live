@@ -12,21 +12,18 @@ final class TimelineRippleStoreTests: XCTestCase {
         [TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0)]
     }
 
-    private func region(
+    private func clip(
         trackID: UUID,
-        source: ClosedRange<TimeInterval>,
+        source: TimeInterval,
         timeline: ClosedRange<TimeInterval>,
         id: UUID = UUID()
-    ) -> ClipRegion {
-        ClipRegion(
+    ) -> TrackClip {
+        TrackClip(
             id: id,
-            slotID: trackID,
             trackID: trackID,
-            markerID: trackID,
-            sourceStartSeconds: source.lowerBound,
-            sourceEndSeconds: source.upperBound,
             timelineStartSeconds: timeline.lowerBound,
-            timelineEndSeconds: timeline.upperBound
+            duration: timeline.upperBound - timeline.lowerBound,
+            sourceStartSeconds: source
         )
     }
 
@@ -34,133 +31,96 @@ final class TimelineRippleStoreTests: XCTestCase {
     private func ripple(
         start: Int,
         end: Int,
-        markers: inout [ArrangementMarker],
-        slots: inout [ArrangementSlot],
-        clipRegions: inout [ClipRegion],
-        loopSlotIDs: inout Set<UUID>,
+        timeline: inout SongTimeline,
         tempoChanges: inout [TempoChange],
         timeSignatureChanges: inout [TimeSignatureChange],
-        midiEvents: inout [MIDIEvent],
-        tracks: [TimelineRippleStore.Track] = []
+        midiEvents: inout [MIDIEvent]
     ) -> TimelineRippleStore.Result {
-        var clipGaps: [ArrangementClipGap] = []
-        return TimelineRippleStore.rippleDeleteMeasures(
+        TimelineRippleStore.rippleDeleteMeasures(
             startMeasure: start,
             endMeasure: end,
-            markers: &markers,
-            slots: &slots,
-            clipTrims: [],
-            removedClips: [],
-            clipGaps: &clipGaps,
-            clipRegions: &clipRegions,
-            loopSlotIDs: &loopSlotIDs,
+            timeline: &timeline,
             tempoChanges: &tempoChanges,
             timeSignatureChanges: &timeSignatureChanges,
             midiEvents: &midiEvents,
-            tracks: tracks,
             defaultBPM: 120,
             defaultNumerator: 4,
             defaultDenominator: 4
         )
     }
 
-    func testRegionAfterWindowShiftsLeft() {
-        let trackID = UUID()
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
+    @discardableResult
+    private func ripple(start: Int, end: Int, timeline: inout SongTimeline) -> TimelineRippleStore.Result {
         var tempo = defaultTempo()
         var timeSig = defaultTimeSignature()
         var midi: [MIDIEvent] = []
-        var regions = [region(trackID: trackID, source: 10...20, timeline: 10...20)]
+        return ripple(
+            start: start, end: end, timeline: &timeline,
+            tempoChanges: &tempo, timeSignatureChanges: &timeSig, midiEvents: &midi
+        )
+    }
+
+    func testClipAfterWindowShiftsLeft() {
+        let trackID = UUID()
+        var timeline = SongTimeline(clips: [clip(trackID: trackID, source: 10, timeline: 10...20)])
 
         // Delete measures 3-4 -> window [4, 8), removedDuration 4.
-        ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
-        )
+        ripple(start: 3, end: 5, timeline: &timeline)
 
-        XCTAssertEqual(regions.count, 1)
-        XCTAssertEqual(regions[0].timelineStartSeconds, 6, accuracy: 0.001)
-        XCTAssertEqual(regions[0].timelineEndSeconds, 16, accuracy: 0.001)
-        // Source is unchanged by the shift.
-        XCTAssertEqual(regions[0].sourceStartSeconds, 10, accuracy: 0.001)
-        XCTAssertEqual(regions[0].sourceEndSeconds, 20, accuracy: 0.001)
+        XCTAssertEqual(timeline.clips.count, 1)
+        XCTAssertEqual(timeline.clips[0].timelineStartSeconds, 6, accuracy: 0.001)
+        XCTAssertEqual(timeline.clips[0].timelineEndSeconds, 16, accuracy: 0.001)
+        XCTAssertEqual(timeline.clips[0].sourceStartSeconds, 10, accuracy: 0.001)
     }
 
-    func testRegionSpanningWindowSplitsAndClosesGap() {
+    func testClipSpanningWindowSplitsAndClosesGap() {
         let trackID = UUID()
-        let regionID = UUID()
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
-        var tempo = defaultTempo()
-        var timeSig = defaultTimeSignature()
-        var midi: [MIDIEvent] = []
-        var regions = [region(trackID: trackID, source: 0...30, timeline: 0...30, id: regionID)]
+        let clipID = UUID()
+        var timeline = SongTimeline(clips: [clip(trackID: trackID, source: 0, timeline: 0...30, id: clipID)])
 
         // Delete measures 6-10 -> window [10, 20), removedDuration 10.
-        ripple(
-            start: 6, end: 11,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
-        )
+        ripple(start: 6, end: 11, timeline: &timeline)
 
-        XCTAssertEqual(regions.count, 2)
-        let sorted = regions.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
+        let sorted = timeline.clips(forTrack: trackID)
+        XCTAssertEqual(sorted.count, 2)
         XCTAssertEqual(sorted[0].timelineStartSeconds, 0, accuracy: 0.001)
         XCTAssertEqual(sorted[0].timelineEndSeconds, 10, accuracy: 0.001)
-        XCTAssertEqual(sorted[0].id, regionID, "Left piece keeps the original region id")
+        XCTAssertEqual(sorted[0].id, clipID, "Left piece keeps the original clip id")
         XCTAssertEqual(sorted[1].timelineStartSeconds, 10, accuracy: 0.001)
         XCTAssertEqual(sorted[1].timelineEndSeconds, 20, accuracy: 0.001)
-        // Right piece kept its source content [20, 30].
         XCTAssertEqual(sorted[1].sourceStartSeconds, 20, accuracy: 0.001)
-        XCTAssertEqual(sorted[1].sourceEndSeconds, 30, accuracy: 0.001)
-        XCTAssertNotEqual(sorted[1].id, regionID, "Right piece gets a fresh id")
+        XCTAssertNotEqual(sorted[1].id, clipID, "Right piece gets a fresh id")
     }
 
-    func testRegionFullyInsideWindowIsRemoved() {
-        let trackID = UUID()
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
-        var tempo = defaultTempo()
-        var timeSig = defaultTimeSignature()
-        var midi: [MIDIEvent] = []
-        var regions = [region(trackID: trackID, source: 5...7, timeline: 5...7)]
+    func testClipFullyInsideWindowIsRemovedAndTrackReportedEmpty() {
+        let covered = UUID()
+        let cleared = UUID()
+        var timeline = SongTimeline(clips: [
+            clip(trackID: covered, source: 0, timeline: 0...30),
+            clip(trackID: cleared, source: 5, timeline: 5...7),
+        ])
 
         // Delete measures 3-4 -> window [4, 8).
-        ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
-        )
+        let result = ripple(start: 3, end: 5, timeline: &timeline)
 
-        XCTAssertTrue(regions.isEmpty)
+        XCTAssertTrue(timeline.clips(forTrack: cleared).isEmpty)
+        XCTAssertFalse(timeline.clips(forTrack: covered).isEmpty)
+        XCTAssertEqual(result.emptiedTrackIDs, [cleared])
     }
 
     func testTempoChangesRenumberByMeasure() {
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
+        var timeline = SongTimeline()
         var tempo = [
             TempoChange(startMeasure: 1, bpm: 120),
             TempoChange(startMeasure: 7, bpm: 140),
         ]
         var timeSig = defaultTimeSignature()
         var midi: [MIDIEvent] = []
-        var regions: [ClipRegion] = []
 
         // Delete measures 3-4 -> removedMeasures 2.
         ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
+            start: 3, end: 5, timeline: &timeline,
+            tempoChanges: &tempo, timeSignatureChanges: &timeSig, midiEvents: &midi
         )
 
         let sorted = tempo.sortedByMeasure
@@ -172,23 +132,18 @@ final class TimelineRippleStoreTests: XCTestCase {
     }
 
     func testDeletingFromMeasureOnePromotesLaterTempo() {
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
+        var timeline = SongTimeline()
         var tempo = [
             TempoChange(startMeasure: 1, bpm: 120),
             TempoChange(startMeasure: 3, bpm: 150),
         ]
         var timeSig = defaultTimeSignature()
         var midi: [MIDIEvent] = []
-        var regions: [ClipRegion] = []
 
         // Delete measures 1-2 -> the tempo active at measure 3 becomes measure 1.
         ripple(
-            start: 1, end: 3,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
+            start: 1, end: 3, timeline: &timeline,
+            tempoChanges: &tempo, timeSignatureChanges: &timeSig, midiEvents: &midi
         )
 
         let sorted = tempo.sortedByMeasure
@@ -197,23 +152,18 @@ final class TimelineRippleStoreTests: XCTestCase {
     }
 
     func testTimeSignatureChangesRenumberByMeasure() {
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
+        var timeline = SongTimeline()
         var tempo = defaultTempo()
         var timeSig = [
             TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0),
             TimeSignatureChange(numerator: 3, denominator: 4, startMeasure: 9, sortOrder: 1),
         ]
         var midi: [MIDIEvent] = []
-        var regions: [ClipRegion] = []
 
         // Delete measures 3-4 -> removedMeasures 2.
         ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
+            start: 3, end: 5, timeline: &timeline,
+            tempoChanges: &tempo, timeSignatureChanges: &timeSig, midiEvents: &midi
         )
 
         let sorted = timeSig.sortedByMeasure
@@ -223,39 +173,39 @@ final class TimelineRippleStoreTests: XCTestCase {
         XCTAssertEqual(sorted[1].denominator, 4)
     }
 
-    func testMarkersRemovedAndShifted() {
-        var markers = [
+    func testMarkerInsideWindowMovesToCutWhenItsSectionContinues() {
+        var timeline = SongTimeline(markers: [
             ArrangementMarker(name: "Intro", startSeconds: 0, sortOrder: 0),
             ArrangementMarker(name: "Verse", startSeconds: 5, sortOrder: 1),
             ArrangementMarker(name: "Chorus", startSeconds: 10, sortOrder: 2),
-        ]
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
-        var tempo = defaultTempo()
-        var timeSig = defaultTimeSignature()
-        var midi: [MIDIEvent] = []
-        var regions: [ClipRegion] = []
+        ])
 
-        // Delete measures 3-4 -> window [4, 8), removedDuration 4.
-        ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
-        )
+        // Delete measures 3-4 -> window [4, 8). Verse's 8–10 survives, so its label moves to 4.
+        ripple(start: 3, end: 5, timeline: &timeline)
 
-        let sorted = markers.sortedByTime
-        XCTAssertEqual(sorted.count, 2, "Marker inside the deleted window is removed")
-        XCTAssertEqual(sorted[0].name, "Intro")
-        XCTAssertEqual(sorted[0].startSeconds, 0, accuracy: 0.001)
-        XCTAssertEqual(sorted[1].name, "Chorus")
-        XCTAssertEqual(sorted[1].startSeconds, 6, accuracy: 0.001)
+        let sorted = timeline.sortedMarkers
+        XCTAssertEqual(sorted.map(\.name), ["Intro", "Verse", "Chorus"])
+        XCTAssertEqual(sorted[1].startSeconds, 4, accuracy: 0.001)
+        XCTAssertEqual(sorted[2].startSeconds, 6, accuracy: 0.001)
+    }
+
+    func testMarkerInsideWindowIsRemovedWhenItsSectionIsGone() {
+        var timeline = SongTimeline(markers: [
+            ArrangementMarker(name: "Intro", startSeconds: 0, sortOrder: 0),
+            ArrangementMarker(name: "Verse", startSeconds: 5, sortOrder: 1),
+            ArrangementMarker(name: "Chorus", startSeconds: 8, sortOrder: 2),
+        ])
+
+        // Delete measures 3-4 -> window [4, 8). All of Verse is inside it.
+        ripple(start: 3, end: 5, timeline: &timeline)
+
+        let sorted = timeline.sortedMarkers
+        XCTAssertEqual(sorted.map(\.name), ["Intro", "Chorus"])
+        XCTAssertEqual(sorted[1].startSeconds, 4, accuracy: 0.001)
     }
 
     func testMidiEventsRemovedAndShifted() {
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
+        var timeline = SongTimeline()
         var tempo = defaultTempo()
         var timeSig = defaultTimeSignature()
         let trackID = UUID()
@@ -264,50 +214,16 @@ final class TimelineRippleStoreTests: XCTestCase {
             MIDIEvent(trackID: trackID, timelineSeconds: 5, commandID: UUID()),
             MIDIEvent(trackID: trackID, timelineSeconds: 10, commandID: UUID()),
         ]
-        var regions: [ClipRegion] = []
 
         // Delete measures 3-4 -> window [4, 8), removedDuration 4.
         ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi
+            start: 3, end: 5, timeline: &timeline,
+            tempoChanges: &tempo, timeSignatureChanges: &timeSig, midiEvents: &midi
         )
 
         let times = midi.map(\.timelineSeconds).sorted()
         XCTAssertEqual(times.count, 2)
         XCTAssertEqual(times[0], 2, accuracy: 0.001)
         XCTAssertEqual(times[1], 6, accuracy: 0.001)
-    }
-
-    func testMaterializesTrackWithoutRegionsAndReportsEmptied() {
-        let coveredTrack = UUID()
-        let clearedTrack = UUID()
-        var markers: [ArrangementMarker] = []
-        var slots: [ArrangementSlot] = []
-        var loopSlotIDs: Set<UUID> = []
-        var tempo = defaultTempo()
-        var timeSig = defaultTimeSignature()
-        var midi: [MIDIEvent] = []
-        var regions: [ClipRegion] = []
-
-        let tracks = [
-            TimelineRippleStore.Track(id: coveredTrack, trimStart: 0, trimEnd: 30, sourceDuration: 30),
-            TimelineRippleStore.Track(id: clearedTrack, trimStart: 4, trimEnd: 8, sourceDuration: 30),
-        ]
-
-        // Delete measures 3-4 -> window [4, 8).
-        let result = ripple(
-            start: 3, end: 5,
-            markers: &markers, slots: &slots, clipRegions: &regions,
-            loopSlotIDs: &loopSlotIDs, tempoChanges: &tempo,
-            timeSignatureChanges: &timeSig, midiEvents: &midi,
-            tracks: tracks
-        )
-
-        XCTAssertTrue(result.emptiedTrackIDs.contains(clearedTrack))
-        XCTAssertFalse(result.emptiedTrackIDs.contains(coveredTrack))
-        XCTAssertTrue(regions.contains { $0.trackID == coveredTrack })
-        XCTAssertFalse(regions.contains { $0.trackID == clearedTrack })
     }
 }

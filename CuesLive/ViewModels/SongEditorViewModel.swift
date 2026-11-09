@@ -258,11 +258,6 @@ final class SongEditorViewModel {
         try? context.save()
     }
 
-    func updateTrim(for track: AudioTrack, context: ModelContext) {
-        audioEngine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
-        try? context.save()
-    }
-
     func updateGroup(for track: AudioTrack, context: ModelContext) {
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
         refreshTrackOutputGroups()
@@ -315,12 +310,6 @@ final class SongEditorViewModel {
         return assignedCount
     }
 
-    func previewTrim(for track: AudioTrack) {
-        audioEngine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
-        audioEngine.stop()
-        audioEngine.play()
-    }
-
     func preloadTrackDurations() {
         for track in song.sortedTracks {
             guard trackDurations[track.id] == nil else { continue }
@@ -337,132 +326,9 @@ final class SongEditorViewModel {
         return duration
     }
 
-    func setArrangement(
-        sectionsByTrack: [UUID: [ArrangementDisplaySection]],
-        masterSections: [ArrangementDisplaySection],
-        removedClips: [ArrangementRemovedClip] = []
-    ) {
+    func syncArrangement(_ timeline: SongTimeline) {
         guard isLoaded else { return }
-        audioEngine.setArrangement(
-            sectionsByTrack: sectionsByTrack,
-            masterSections: masterSections,
-            removedClips: removedClips
-        )
-    }
-
-    func applyArrangementLayout(
-        _ layout: ArrangementLayoutSnapshot,
-        removedClips: [ArrangementRemovedClip]
-    ) {
-        guard isLoaded else { return }
-        setArrangement(
-            sectionsByTrack: layout.trackSections,
-            masterSections: layout.rulerSections,
-            removedClips: removedClips
-        )
-    }
-
-    func syncTrackArrangement(
-        trackID: UUID,
-        markers: [ArrangementMarker],
-        slots: [ArrangementSlot],
-        clipTrims: [ArrangementClipTrim],
-        removedClips: [ArrangementRemovedClip],
-        clipGaps: [ArrangementClipGap] = [],
-        clipRegions: [ClipRegion] = [],
-        track: AudioTrack? = nil
-    ) {
-        guard isLoaded else { return }
-
-        let inputs = arrangementLayoutInputs(markers: markers)
-        let resolvedTrack = track ?? song.sortedTracks.first(where: { $0.id == trackID })
-        let trimEnd = resolvedTrack.map { $0.trimEndSeconds ?? fileDuration(for: $0) }
-            ?? inputs.sourceDurationForTrack(trackID)
-        let trimStart = resolvedTrack?.trimStartSeconds ?? 0
-
-        let sections = SongArrangementStore.playbackTrackSections(
-            for: trackID,
-            trimStart: trimStart,
-            trimEnd: trimEnd,
-            slots: slots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            inputs: inputs
-        )
-        audioEngine.updateTrackArrangement(
-            trackID: trackID,
-            sections: sections,
-            removedClips: removedClips
-        )
-    }
-
-    func buildArrangementLayout(
-        markers: [ArrangementMarker],
-        slots: [ArrangementSlot],
-        clipTrims: [ArrangementClipTrim],
-        removedClips: [ArrangementRemovedClip],
-        clipGaps: [ArrangementClipGap] = [],
-        clipRegions: [ClipRegion] = []
-    ) -> ArrangementLayoutSnapshot {
-        SongArrangementStore.buildLayoutSnapshot(
-            slots: slots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            inputs: arrangementLayoutInputs(markers: markers)
-        )
-    }
-
-    func buildPlaybackLayout(
-        markers: [ArrangementMarker],
-        slots: [ArrangementSlot],
-        clipTrims: [ArrangementClipTrim],
-        removedClips: [ArrangementRemovedClip],
-        clipGaps: [ArrangementClipGap] = [],
-        clipRegions: [ClipRegion] = []
-    ) -> ArrangementLayoutSnapshot {
-        let inputs = arrangementLayoutInputs(markers: markers)
-        let tracks = song.sortedTracks.map { track in
-            (
-                id: track.id,
-                trimStart: track.trimStartSeconds,
-                trimEnd: track.trimEndSeconds ?? fileDuration(for: track)
-            )
-        }
-        return SongArrangementStore.playbackLayoutSnapshot(
-            slots: slots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            tracks: tracks,
-            inputs: inputs
-        )
-    }
-
-    func syncArrangement(
-        markers: [ArrangementMarker],
-        slots: [ArrangementSlot],
-        clipTrims: [ArrangementClipTrim],
-        removedClips: [ArrangementRemovedClip],
-        clipGaps: [ArrangementClipGap] = [],
-        clipRegions: [ClipRegion] = []
-    ) {
-        guard isLoaded else { return }
-        applyArrangementLayout(
-            buildPlaybackLayout(
-                markers: markers,
-                slots: slots,
-                clipTrims: clipTrims,
-                removedClips: removedClips,
-                clipGaps: clipGaps,
-                clipRegions: clipRegions
-            ),
-            removedClips: removedClips
-        )
+        audioEngine.setArrangement(SongPlaybackLayout(timeline: timeline))
     }
 
     func syncTempoMap(
@@ -481,17 +347,6 @@ final class SongEditorViewModel {
             normalizedTempo,
             referenceBPM: normalizedTempo.referenceBPM,
             timeSignatureChanges: normalizedSignatures
-        )
-    }
-
-    private func arrangementLayoutInputs(markers: [ArrangementMarker]) -> ArrangementLayoutInputs {
-        SongArrangementStore.makeLayoutInputs(
-            markers: markers,
-            trackIDs: song.sortedTracks.map(\.id),
-            sourceDurationForTrack: { [self] trackID in
-                guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
-                return fileDuration(for: track)
-            }
         )
     }
 

@@ -29,7 +29,8 @@ final class SectionCueEngineTests: XCTestCase {
     private struct Fixture {
         let url: URL
         let trackID: UUID
-        let sections: [ArrangementDisplaySection]
+        let layout: SongPlaybackLayout
+        var sections: [SongSection] { layout.sections }
         let tempo: [TempoChange]
         let signatures: [TimeSignatureChange]
         let sectionSeconds: TimeInterval
@@ -75,15 +76,12 @@ final class SectionCueEngineTests: XCTestCase {
             ArrangementMarker(name: "S\($0 + 1)", startSeconds: Double($0) * sectionSeconds, sortOrder: $0)
         }
         let trackID = UUID()
-        let sections = SongArrangementStore.rulerDisplaySections(
-            slots: SongArrangementStore.defaultSlots(from: markers),
+        let timeline = SongTimeline(
             markers: markers,
-            clipTrims: [],
-            trackIDs: [trackID],
-            sourceDurationForTrack: { _ in self.songSeconds }
+            clips: [.wholeFile(trackID: trackID, duration: songSeconds)]
         )
         return Fixture(
-            url: url, trackID: trackID, sections: sections,
+            url: url, trackID: trackID, layout: SongPlaybackLayout(timeline: timeline),
             tempo: tempo, signatures: signatures, sectionSeconds: sectionSeconds
         )
     }
@@ -258,19 +256,13 @@ final class SectionCueEngineTests: XCTestCase {
             bypassesArrangementMapping: bypassArrangement
         )
         if !bypassArrangement {
-            engine.setArrangement(
-                sectionsByTrack: [fixture.trackID: fixture.sections],
-                masterSections: fixture.sections
-            )
+            engine.setArrangement(fixture.layout)
         }
         try engine.loadPreparedTracks([
             AudioEngineManager.PreparedTrackPayload(id: fixture.trackID, buffer: stream, settings: settings, groupID: nil)
         ])
         if !bypassArrangement {
-            engine.setArrangement(
-                sectionsByTrack: [fixture.trackID: fixture.sections],
-                masterSections: fixture.sections
-            )
+            engine.setArrangement(fixture.layout)
         }
         engine.setTempoMap(fixture.tempo, referenceBPM: bpm, timeSignatureChanges: fixture.signatures)
 

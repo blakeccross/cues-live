@@ -208,19 +208,12 @@ enum SongFolderImporter {
                     timeSignatureChanges: importResult.timeSignatures
                 )
             } else {
-                let slots = SongArrangementStore.defaultSlots(from: markers)
-                let arrangement = SongArrangement(
-                    slots: slots,
-                    clipTrims: [],
-                    removedClips: [],
-                    clipGaps: [],
-                    clipRegions: []
-                )
+                var timeline = SongProjectBridge.projectStateOrDefaults(for: song).timeline
+                timeline.markers = markers
                 try SongProjectBridge.syncProjectFile(
                     for: song,
                     context: context,
-                    markers: markers,
-                    arrangement: arrangement,
+                    timeline: timeline,
                     tempoChanges: [TempoChange(startMeasure: 1, bpm: importResult.bpm, sortOrder: 0)],
                     timeSignatureChanges: importResult.timeSignatures
                 )

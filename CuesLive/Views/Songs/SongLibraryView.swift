@@ -515,39 +515,13 @@ struct SongLibraryPanel: View {
             }
 
             let sourceState = try SongProjectBridge.loadProjectState(for: source)
-            var arrangement = sourceState.arrangement
-            arrangement.clipTrims = arrangement.clipTrims.map { trim in
-                ArrangementClipTrim(
-                    slotID: trim.slotID,
-                    trackID: trackIDMap[trim.trackID] ?? trim.trackID,
-                    leadingTrim: trim.leadingTrim,
-                    trailingTrim: trim.trailingTrim
-                )
-            }
-            arrangement.removedClips = arrangement.removedClips.map { removed in
-                ArrangementRemovedClip(
-                    slotID: removed.slotID,
-                    trackID: trackIDMap[removed.trackID] ?? removed.trackID
-                )
-            }
-            arrangement.clipGaps = arrangement.clipGaps.map { gap in
-                ArrangementClipGap(
-                    slotID: gap.slotID,
-                    trackID: trackIDMap[gap.trackID] ?? gap.trackID,
-                    sourceStartSeconds: gap.sourceStartSeconds,
-                    sourceEndSeconds: gap.sourceEndSeconds
-                )
-            }
-            arrangement.clipRegions = arrangement.clipRegions.map { region in
-                ClipRegion(
-                    id: region.id,
-                    slotID: region.slotID,
-                    trackID: trackIDMap[region.trackID] ?? region.trackID,
-                    markerID: region.markerID,
-                    sourceStartSeconds: region.sourceStartSeconds,
-                    sourceEndSeconds: region.sourceEndSeconds,
-                    timelineStartSeconds: region.timelineStartSeconds,
-                    timelineEndSeconds: region.timelineEndSeconds
+            var timeline = sourceState.timeline
+            timeline.clips = timeline.clips.map { clip in
+                TrackClip(
+                    trackID: trackIDMap[clip.trackID] ?? clip.trackID,
+                    timelineStartSeconds: clip.timelineStartSeconds,
+                    duration: clip.duration,
+                    sourceStartSeconds: clip.sourceStartSeconds
                 )
             }
             let midiEvents = sourceState.midiEvents.map { event in
@@ -564,8 +538,7 @@ struct SongLibraryPanel: View {
             try SongProjectBridge.syncProjectFile(
                 for: copy,
                 context: modelContext,
-                markers: sourceState.markers,
-                arrangement: arrangement,
+                timeline: timeline,
                 tempoChanges: sourceState.tempoChanges,
                 timeSignatureChanges: sourceState.timeSignatureChanges,
                 midiEvents: midiEvents

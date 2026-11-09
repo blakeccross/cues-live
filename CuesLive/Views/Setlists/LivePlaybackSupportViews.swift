@@ -5,11 +5,11 @@ struct LivePlaybackMonitorSupport: View {
     let cueFireTime: TimeInterval?
     let onFireMarkerCue: () -> Void
     let smartGuideEnabled: Bool
-    let sections: [ArrangementDisplaySection]
+    let sections: [SongSection]
     let announcer: SectionAnnouncer
     @Bindable var sectionLoop: SectionLoopController
-    let loopSections: [ArrangementDisplaySection]
-    let loopSlotIDs: Set<UUID>
+    let loopSections: [SongSection]
+    let loopSectionIDs: Set<UUID>
     var playbackEngine: AudioEngineManager
     let onLoopActivated: () -> Void
 
@@ -24,14 +24,14 @@ struct LivePlaybackMonitorSupport: View {
             sections: sections,
             cuedSectionID: cuedSectionID,
             cueFireTime: cueFireTime,
-            loopSection: sectionLoop.activeSection(in: loopSections, loopSlotIDs: loopSlotIDs),
+            loopSection: sectionLoop.activeSection(in: loopSections, loopSectionIDs: loopSectionIDs),
             announcer: announcer
         )
         SectionLoopPlaybackSupport(
             playbackEngine: playbackEngine,
             loopController: sectionLoop,
             sections: loopSections,
-            loopSlotIDs: loopSlotIDs,
+            loopSectionIDs: loopSectionIDs,
             onLoopActivated: onLoopActivated
         )
     }

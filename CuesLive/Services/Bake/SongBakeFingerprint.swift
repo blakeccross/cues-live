@@ -19,7 +19,7 @@ enum SongBakeFingerprint {
   parts.append("tempo|\(fingerprint(tempoChanges: projectState.tempoChanges))")
   parts.append("meter|\(fingerprint(timeSignatures: projectState.timeSignatureChanges))")
   parts.append("midi|\(fingerprint(midiEvents: projectState.midiEvents))")
-  parts.append("arrangement|\(fingerprint(arrangement: projectState.arrangement, markers: projectState.markers))")
+  parts.append("timeline|\(fingerprint(timeline: projectState.timeline))")
 
     let sortedTracks = song.sortedTracks.sorted { $0.sortOrder < $1.sortOrder }
     for track in sortedTracks {
@@ -66,36 +66,16 @@ enum SongBakeFingerprint {
       .joined(separator: ";")
   }
 
-  private static func fingerprint(
-    arrangement: SongArrangement,
-    markers: [ArrangementMarker]
-  ) -> String {
-    let markerPart = markers
-      .sorted { $0.startSeconds < $1.startSeconds }
-      .map { "\($0.id.uuidString)|\($0.name)|\($0.startSeconds)" }
+  /// Only what changes rendered audio: clip placement and the song length markers can extend.
+  private static func fingerprint(timeline: SongTimeline) -> String {
+    let clipPart = timeline.clips
+      .sorted {
+        $0.trackID == $1.trackID
+          ? $0.timelineStartSeconds < $1.timelineStartSeconds
+          : $0.trackID.uuidString < $1.trackID.uuidString
+      }
+      .map { "\($0.trackID.uuidString)|\($0.timelineStartSeconds)|\($0.duration)|\($0.sourceStartSeconds)" }
       .joined(separator: ";")
-
-    let slotPart = arrangement.slots
-      .map { "\($0.id.uuidString)|\($0.markerID.uuidString)" }
-      .joined(separator: ";")
-
-    let trimPart = arrangement.clipTrims
-      .map { "\($0.slotID.uuidString)|\($0.trackID.uuidString)|\($0.leadingTrim)|\($0.trailingTrim)" }
-      .joined(separator: ";")
-
-    let regionPart = arrangement.clipRegions
-      .map { "\($0.id.uuidString)|\($0.trackID.uuidString)|\($0.timelineStartSeconds)|\($0.timelineEndSeconds)" }
-      .joined(separator: ";")
-
-    let removedPart = arrangement.removedClips
-      .map { "\($0.slotID.uuidString)" }
-      .joined(separator: ",")
-
-    let loopPart = arrangement.loopSlotIDs
-      .map(\.uuidString)
-      .sorted()
-      .joined(separator: ",")
-
-    return "markers=\(markerPart)||slots=\(slotPart)||trims=\(trimPart)||regions=\(regionPart)||removed=\(removedPart)||loops=\(loopPart)"
+    return "clips=\(clipPart)||duration=\(timeline.duration)"
   }
 }

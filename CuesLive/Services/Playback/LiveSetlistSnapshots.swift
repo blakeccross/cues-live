@@ -14,11 +14,10 @@ struct LiveSongWaveformSnapshot: Identifiable {
     let trackSources: [(url: URL, duration: TimeInterval)]
     let fileDuration: TimeInterval
     let timelineDuration: TimeInterval
-    /// Marker columns used for section labels, cueing, and loop badges.
-    let sections: [ArrangementDisplaySection]
-    /// Playback clip layout used to map timeline time to source audio for the waveform.
-    let peakSections: [ArrangementDisplaySection]
-    let loopSlotIDs: Set<UUID>
+    /// Sections used for labels, cueing, and loop badges.
+    let sections: [SongSection]
+    /// Clips used to map timeline time to source audio for the combined waveform.
+    let peakClips: [TrackClip]
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
     /// When false, the setlist lane hides measure ticks (`song.bpm` is unset).
@@ -31,6 +30,8 @@ struct LiveSongWaveformSnapshot: Identifiable {
 
     var id: UUID { songID }
 
+    var loopSectionIDs: Set<UUID> { sections.loopSectionIDs }
+
     var contentWidth: CGFloat {
         TimelineLayout.contentWidth(for: timelineDuration, zoom: 1)
     }
@@ -41,9 +42,8 @@ struct LiveSongWaveformSnapshot: Identifiable {
         trackSources: [(url: URL, duration: TimeInterval)],
         fileDuration: TimeInterval,
         timelineDuration: TimeInterval,
-        sections: [ArrangementDisplaySection],
-        peakSections: [ArrangementDisplaySection],
-        loopSlotIDs: Set<UUID>,
+        sections: [SongSection],
+        peakClips: [TrackClip],
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         showsMeasureGrid: Bool,
@@ -56,8 +56,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         self.fileDuration = fileDuration
         self.timelineDuration = timelineDuration
         self.sections = sections
-        self.peakSections = peakSections
-        self.loopSlotIDs = loopSlotIDs
+        self.peakClips = peakClips
         self.tempoChanges = tempoChanges
         self.timeSignatureChanges = timeSignatureChanges
         self.showsMeasureGrid = showsMeasureGrid
@@ -73,8 +72,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
             fileDuration: fileDuration,
             timelineDuration: timelineDuration,
             sections: sections,
-            peakSections: peakSections,
-            loopSlotIDs: loopSlotIDs,
+            peakClips: peakClips,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: showsMeasureGrid,

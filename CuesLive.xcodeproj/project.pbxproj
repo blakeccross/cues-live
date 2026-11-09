@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA0000F10000000000000001 /* SongTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000001 /* SongTimeline.swift */; };
+		AA0000F10000000000000002 /* ClipEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000002 /* ClipEditing.swift */; };
+		AA0000F10000000000000004 /* ClipEditingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000004 /* ClipEditingTests.swift */; };
+		AA0000F30000000000000001 /* SongTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000001 /* SongTimeline.swift */; };
+		AA0000F30000000000000002 /* ClipEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000002 /* ClipEditing.swift */; };
 		00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000043 /* ClickTrackGenerator.swift */; };
 		027BFA4C1F9227309DCAE3FE /* AppBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* AppBadge.swift */; };
 		0491D0CB258BB532C4D262E8 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
@@ -82,7 +87,6 @@
 		7A71235334CE0DD935D64451 /* ArrangementTimelineMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000021 /* ArrangementTimelineMapper.swift */; };
 		7B0B0B631AF53DE1C5C98D2A /* EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000F /* EditView.swift */; };
 		7BA9FACA96FB7F0855F31423 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000037 /* ChangeKeyDialog.swift */; };
-		7C8B2EFDD5D77772BC5FEC54 /* ArrangementSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001E /* ArrangementSlot.swift */; };
 		7D412A866B68E52B871B8246 /* DAWColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000018 /* DAWColors.swift */; };
 		7E1007493D2F275F94D7A49B /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
 		7F74D91A2A30D76DE139D15C /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000D /* SongDetailView.swift */; };
@@ -94,9 +98,9 @@
 		88CF0E142B71D61032550EC0 /* SongMusicalKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012A /* SongMusicalKey.swift */; };
 		8A026E5598BE80B727B652AB /* RemoteHostSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000308 /* RemoteHostSessionController.swift */; };
 		8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000016 /* WaveformLoader.swift */; };
+		8AF480949E8482DC31933EC2 /* WaveformOverview.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000C21 /* WaveformOverview.swift */; };
 		8B68D7E09EA9FAA4F8A97D3A /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001B /* PersistenceController.swift */; };
 		8B9717FD3846C0D5814AFFAF /* AudioTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000003 /* AudioTrack.swift */; };
-		8BF3A7FD93E6DB96B23D0DC4 /* SongArrangementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001F /* SongArrangementStore.swift */; };
 		8D25A49F3162B00063C8CFC8 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000B /* RootView.swift */; };
 		8E1DA345FCA18ABC2256B34E /* RemoteLivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000030B /* RemoteLivePlaybackView.swift */; };
 		8FC9A566079D15729EE3CD63 /* EditSongSettingsMenus.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED003 /* EditSongSettingsMenus.swift */; };
@@ -139,14 +143,13 @@
 		AA0000010000000000000013 /* LivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000013 /* LivePlaybackView.swift */; };
 		AA0000010000000000000014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000014 /* Assets.xcassets */; };
 		AA0000010000000000000015 /* WaveformLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000016 /* WaveformLoader.swift */; };
+		AA0000010000000000000C21 /* WaveformOverview.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000C21 /* WaveformOverview.swift */; };
 		AA0000010000000000000016 /* WaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000017 /* WaveformLaneView.swift */; };
 		AA0000010000000000000017 /* DAWColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000018 /* DAWColors.swift */; };
 		AA0000010000000000000018 /* ArrangementMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000019 /* ArrangementMarker.swift */; };
 		AA0000010000000000000019 /* AbletonProjectImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001A /* AbletonProjectImporter.swift */; };
 		AA000001000000000000001A /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001B /* PersistenceController.swift */; };
 		AA000001000000000000001C /* TimelineLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001D /* TimelineLayout.swift */; };
-		AA000001000000000000001D /* ArrangementSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001E /* ArrangementSlot.swift */; };
-		AA000001000000000000001E /* SongArrangementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001F /* SongArrangementStore.swift */; };
 		AA000001000000000000001F /* ArrangementEditorMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000020 /* ArrangementEditorMenu.swift */; };
 		AA0000010000000000000020 /* ArrangementTimelineMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000021 /* ArrangementTimelineMapper.swift */; };
 		AA0000010000000000000021 /* AudioPlaybackTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000022 /* AudioPlaybackTransport.swift */; };
@@ -180,9 +183,6 @@
 		AA0000010000000000000045 /* click-normal.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000045 /* click-normal.wav */; };
 		AA0000010000000000000046 /* ClickTrackGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000046 /* ClickTrackGeneratorTests.swift */; };
 		AA0000010000000000000047 /* ClickTrackSubdivision.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000047 /* ClickTrackSubdivision.swift */; };
-		AA0000010000000000000049 /* SongArrangementLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000049 /* SongArrangementLayoutTests.swift */; };
-		AA000001000000000000004A /* ClipRegionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004A /* ClipRegionStore.swift */; };
-		AA000001000000000000004B /* ClipRegionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004B /* ClipRegionStoreTests.swift */; };
 		AA000001000000000000004C /* SectionLoopController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004C /* SectionLoopController.swift */; };
 		AA000001000000000000004D /* WaveformBarsCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004D /* WaveformBarsCanvas.swift */; };
 		AA000001000000000000004E /* ClickTrackScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004E /* ClickTrackScheduler.swift */; };
@@ -350,7 +350,6 @@
 		AF9B8BC70EDE7352FC6BE3DC /* TimelineRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED007 /* TimelineRulerView.swift */; };
 		B0F0F34B1FC430D4385FFE0A /* SetlistViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000A /* SetlistViewModel.swift */; };
 		B11A02399FAFE0392C601927 /* SongLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000C /* SongLibraryView.swift */; };
-		B52DB4D05D7FDAC3C927CF99 /* ClipRegionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004A /* ClipRegionStore.swift */; };
 		B74AE229801352765E6DEA8D /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
 		B9DAF17410376F31808D0978 /* MIDIDeviceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000068 /* MIDIDeviceViews.swift */; };
 		BA83614E17A28FB2E4807049 /* AppAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000083 /* AppAnimation.swift */; };
@@ -426,6 +425,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AA0000F20000000000000001 /* SongTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongTimeline.swift; sourceTree = "<group>"; };
+		AA0000F20000000000000002 /* ClipEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipEditing.swift; sourceTree = "<group>"; };
+		AA0000F20000000000000004 /* ClipEditingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipEditingTests.swift; sourceTree = "<group>"; };
 		8CBF2A237BD29DB167C88E01 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		8DC47E4083293CA84B2885B4 /* cues.live.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cues.live.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000020000000000000001 /* CuesLiveApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuesLiveApp.swift; sourceTree = "<group>"; };
@@ -447,14 +449,13 @@
 		AA0000020000000000000014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000020000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000020000000000000016 /* WaveformLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLoader.swift; sourceTree = "<group>"; };
+		AA0000020000000000000C21 /* WaveformOverview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformOverview.swift; sourceTree = "<group>"; };
 		AA0000020000000000000017 /* WaveformLaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformLaneView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000018 /* DAWColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DAWColors.swift; sourceTree = "<group>"; };
 		AA0000020000000000000019 /* ArrangementMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementMarker.swift; sourceTree = "<group>"; };
 		AA000002000000000000001A /* AbletonProjectImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbletonProjectImporter.swift; sourceTree = "<group>"; };
 		AA000002000000000000001B /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		AA000002000000000000001D /* TimelineLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineLayout.swift; sourceTree = "<group>"; };
-		AA000002000000000000001E /* ArrangementSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementSlot.swift; sourceTree = "<group>"; };
-		AA000002000000000000001F /* SongArrangementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongArrangementStore.swift; sourceTree = "<group>"; };
 		AA0000020000000000000020 /* ArrangementEditorMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementEditorMenu.swift; sourceTree = "<group>"; };
 		AA0000020000000000000021 /* ArrangementTimelineMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementTimelineMapper.swift; sourceTree = "<group>"; };
 		AA0000020000000000000022 /* AudioPlaybackTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackTransport.swift; sourceTree = "<group>"; };
@@ -491,9 +492,6 @@
 		AA0000020000000000000045 /* click-normal.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "click-normal.wav"; sourceTree = "<group>"; };
 		AA0000020000000000000046 /* ClickTrackGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackGeneratorTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000047 /* ClickTrackSubdivision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackSubdivision.swift; sourceTree = "<group>"; };
-		AA0000020000000000000049 /* SongArrangementLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongArrangementLayoutTests.swift; sourceTree = "<group>"; };
-		AA000002000000000000004A /* ClipRegionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipRegionStore.swift; sourceTree = "<group>"; };
-		AA000002000000000000004B /* ClipRegionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipRegionStoreTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000004C /* SectionLoopController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionLoopController.swift; sourceTree = "<group>"; };
 		AA000002000000000000004D /* WaveformBarsCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformBarsCanvas.swift; sourceTree = "<group>"; };
 		AA000002000000000000004E /* ClickTrackScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackScheduler.swift; sourceTree = "<group>"; };
@@ -773,7 +771,7 @@
 				AA0000020000000000000B02 /* MeasureAnchoredChange.swift */,
 				AA000002000000000000003E /* TempoChange.swift */,
 				AA0000020000000000000047 /* ClickTrackSubdivision.swift */,
-				AA000002000000000000001E /* ArrangementSlot.swift */,
+				AA0000F20000000000000001 /* SongTimeline.swift */,
 				AA0000020000000000000004 /* Setlist.swift */,
 				AA0000020000000000000005 /* SetlistEntry.swift */,
 				AA0000020000000000000029 /* SetlistTransition.swift */,
@@ -922,8 +920,7 @@
 				AA00000200000000000001FD /* UserProjectCueTests.swift */,
 				AA00000200000000000005A2 /* SmartGuideCallPlannerTests.swift */,
 				AA0000020000000000000104 /* StreamingStemBufferLoopTests.swift */,
-				AA0000020000000000000049 /* SongArrangementLayoutTests.swift */,
-				AA000002000000000000004B /* ClipRegionStoreTests.swift */,
+				AA0000F20000000000000004 /* ClipEditingTests.swift */,
 				AA00000200000000000000A1 /* TimelineRippleStoreTests.swift */,
 				AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */,
 				AA00000200000000000000C7 /* AudioTimelineMathTests.swift */,
@@ -1152,6 +1149,7 @@
 				AA0000020000000000000041 /* SongTrackLoader.swift */,
 				AA00000200000000000000F0 /* StemAudioWriter.swift */,
 				AA0000020000000000000016 /* WaveformLoader.swift */,
+				AA0000020000000000000C21 /* WaveformOverview.swift */,
 			);
 			path = Project;
 			sourceTree = "<group>";
@@ -1160,8 +1158,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000020000000000000021 /* ArrangementTimelineMapper.swift */,
-				AA000002000000000000004A /* ClipRegionStore.swift */,
-				AA000002000000000000001F /* SongArrangementStore.swift */,
+				AA0000F20000000000000002 /* ClipEditing.swift */,
 				AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */,
 				AA0000020000000000000A01 /* SongSectionDetector.swift */,
 				AA00000200000000000000D7 /* SongUndoController.swift */,
@@ -1380,6 +1377,7 @@
 				AA0000010000000000000042 /* LiveSetlistNowPlayingInfoView.swift in Sources */,
 				AA000001000000000000008E /* TransportStatusReadout.swift in Sources */,
 				AA0000010000000000000015 /* WaveformLoader.swift in Sources */,
+				AA0000010000000000000C21 /* WaveformOverview.swift in Sources */,
 				AA0000010000000000000016 /* WaveformLaneView.swift in Sources */,
 				AA000001000000000000004D /* WaveformBarsCanvas.swift in Sources */,
 				AA0000010000000000000017 /* DAWColors.swift in Sources */,
@@ -1412,10 +1410,9 @@
 				AA0000010000000000000201 /* SparkleUpdater.swift in Sources */,
 				AA0000010000000000000202 /* ToolbarSharedBackground.swift in Sources */,
 				AA000001000000000000001C /* TimelineLayout.swift in Sources */,
-				AA000001000000000000001D /* ArrangementSlot.swift in Sources */,
-				AA000001000000000000001E /* SongArrangementStore.swift in Sources */,
-				AA000001000000000000004A /* ClipRegionStore.swift in Sources */,
 				AA00000100000000000000A0 /* TimelineRippleStore.swift in Sources */,
+				AA0000F10000000000000001 /* SongTimeline.swift in Sources */,
+				AA0000F10000000000000002 /* ClipEditing.swift in Sources */,
 				AA000001000000000000004C /* SectionLoopController.swift in Sources */,
 				AA0000010000000000000203 /* GroupMixFadeController.swift in Sources */,
 				AA0000010000000000000301 /* RemoteSessionModels.swift in Sources */,
@@ -1533,9 +1530,8 @@
 				AA00000100000000000001FD /* UserProjectCueTests.swift in Sources */,
 				AA00000100000000000005A2 /* SmartGuideCallPlannerTests.swift in Sources */,
 				AA0000010000000000000104 /* StreamingStemBufferLoopTests.swift in Sources */,
-				AA0000010000000000000049 /* SongArrangementLayoutTests.swift in Sources */,
-				AA000001000000000000004B /* ClipRegionStoreTests.swift in Sources */,
 				AA00000100000000000000A1 /* TimelineRippleStoreTests.swift in Sources */,
+				AA0000F10000000000000004 /* ClipEditingTests.swift in Sources */,
 				AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */,
 				AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */,
 				AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */,
@@ -1607,6 +1603,7 @@
 				1D9D6E848F5BEFF2F56CF0C1 /* LiveSetlistNowPlayingInfoView.swift in Sources */,
 				CEEAF6B294B11B2034843452 /* TransportStatusReadout.swift in Sources */,
 				8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */,
+				8AF480949E8482DC31933EC2 /* WaveformOverview.swift in Sources */,
 				F61F8D583DD0B65FE15C8F39 /* WaveformLaneView.swift in Sources */,
 				286CB25439511310D21D5039 /* WaveformBarsCanvas.swift in Sources */,
 				7D412A866B68E52B871B8246 /* DAWColors.swift in Sources */,
@@ -1639,10 +1636,9 @@
 				C645950FE0BEFC91246500EF /* SparkleUpdater.swift in Sources */,
 				6E0D669AE634664FE0C646CE /* ToolbarSharedBackground.swift in Sources */,
 				0F3EF9B5611E0354E1A203DC /* TimelineLayout.swift in Sources */,
-				7C8B2EFDD5D77772BC5FEC54 /* ArrangementSlot.swift in Sources */,
-				8BF3A7FD93E6DB96B23D0DC4 /* SongArrangementStore.swift in Sources */,
-				B52DB4D05D7FDAC3C927CF99 /* ClipRegionStore.swift in Sources */,
 				9552A47E29CD5D877A5B07E3 /* TimelineRippleStore.swift in Sources */,
+				AA0000F30000000000000001 /* SongTimeline.swift in Sources */,
+				AA0000F30000000000000002 /* ClipEditing.swift in Sources */,
 				27D2A245DFF5C591D697AC21 /* SectionLoopController.swift in Sources */,
 				E207A200470468143ED9F367 /* GroupMixFadeController.swift in Sources */,
 				4F709236950C532CBB37D313 /* RemoteSessionModels.swift in Sources */,

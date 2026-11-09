@@ -30,13 +30,7 @@ struct SongMetadataSnapshot: Equatable, Hashable {
 }
 
 struct SongEditSnapshot: Equatable {
-    var markers: [ArrangementMarker]
-    var arrangementSlots: [ArrangementSlot]
-    var clipTrims: [ArrangementClipTrim]
-    var removedClips: [ArrangementRemovedClip]
-    var clipGaps: [ArrangementClipGap]
-    var clipRegions: [ClipRegion]
-    var loopSlotIDs: Set<UUID>
+    var timeline: SongTimeline
     var tempoChanges: [TempoChange]
     var timeSignatureChanges: [TimeSignatureChange]
     var midiEvents: [MIDIEvent]
@@ -45,25 +39,13 @@ struct SongEditSnapshot: Equatable {
 
     static func capture(
         song: Song,
-        markers: [ArrangementMarker],
-        arrangementSlots: [ArrangementSlot],
-        clipTrims: [ArrangementClipTrim],
-        removedClips: [ArrangementRemovedClip],
-        clipGaps: [ArrangementClipGap],
-        clipRegions: [ClipRegion],
-        loopSlotIDs: Set<UUID>,
+        timeline: SongTimeline,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
         midiEvents: [MIDIEvent]
     ) -> SongEditSnapshot {
         SongEditSnapshot(
-            markers: markers,
-            arrangementSlots: arrangementSlots,
-            clipTrims: clipTrims,
-            removedClips: removedClips,
-            clipGaps: clipGaps,
-            clipRegions: clipRegions,
-            loopSlotIDs: loopSlotIDs,
+            timeline: timeline,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents,

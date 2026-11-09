@@ -46,7 +46,11 @@ enum TimelineLayout {
     }
 
     static let laneHeight: CGFloat = 104
+    /// Shared by every lane so a rubber band can span tracks.
+    static let trackLanesCoordinateSpace = "trackLanes"
     static let clipHeaderHeight: CGFloat = 16
+    /// Width of the trim hit target on each end of a clip header.
+    static let clipTrimHandleWidth: CGFloat = 14
     static let laneSpacing: CGFloat = 0
     static let laneDividerHeight: CGFloat = 1
     static let clipCornerRadius: CGFloat = 0
@@ -408,20 +412,6 @@ enum MeasureTiming {
         let maxBeatIndex = max(0, Int(beatsInMeasure.rounded(.down)))
         let clampedBeatIndex = min(max(0, Int(beatIndex)), maxBeatIndex)
         return measureStart + TimeInterval(clampedBeatIndex) * beatDuration
-    }
-
-    static func snapTimelineRangeToGrid(
-        start: TimeInterval,
-        end: TimeInterval,
-        tempoChanges: [TempoChange],
-        timeSignatureChanges: [TimeSignatureChange]
-    ) -> (start: TimeInterval, end: TimeInterval) {
-        let snappedStart = snapToNearestBeat(start, tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
-        let snappedEnd = snapToNearestBeat(end, tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
-        if snappedStart <= snappedEnd {
-            return (snappedStart, snappedEnd)
-        }
-        return (snappedEnd, snappedStart)
     }
 
     static func nearestMeasureBoundary(

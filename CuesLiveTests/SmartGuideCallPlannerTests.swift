@@ -6,10 +6,10 @@ final class SmartGuideCallPlannerTests: XCTestCase {
     private let lead: TimeInterval = 2
     private let step: TimeInterval = 0.1
 
-    private var verse: ArrangementDisplaySection { section("Verse", start: 0, end: 16) }
-    private var chorus: ArrangementDisplaySection { section("Chorus", start: 16, end: 32) }
-    private var bridge: ArrangementDisplaySection { section("Bridge", start: 32, end: 48) }
-    private var sections: [ArrangementDisplaySection] { [verse, chorus, bridge] }
+    private var verse: SongSection { section("Verse", start: 0, end: 16) }
+    private var chorus: SongSection { section("Chorus", start: 16, end: 32) }
+    private var bridge: SongSection { section("Bridge", start: 32, end: 48) }
+    private var sections: [SongSection] { [verse, chorus, bridge] }
 
     func testCallsNextSectionOneMeasureBeforeBoundary() {
         var planner = SmartGuideCallPlanner()
@@ -196,19 +196,8 @@ final class SmartGuideCallPlannerTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func section(_ name: String, start: TimeInterval, end: TimeInterval) -> ArrangementDisplaySection {
-        ArrangementDisplaySection(
-            id: UUID(),
-            slotID: UUID(),
-            markerID: UUID(),
-            name: name,
-            sourceStartSeconds: start,
-            sourceEndSeconds: end,
-            timelineStartSeconds: start,
-            timelineEndSeconds: end,
-            columnStartSeconds: start,
-            columnEndSeconds: end
-        )
+    private func section(_ name: String, start: TimeInterval, end: TimeInterval) -> SongSection {
+        SongSection(id: UUID(), name: name, timelineStartSeconds: start, timelineEndSeconds: end, loops: false)
     }
 
     /// Steps playback in `step` increments from `start` to `end`, returning calls.
@@ -217,7 +206,7 @@ final class SmartGuideCallPlannerTests: XCTestCase {
         from start: TimeInterval,
         to end: TimeInterval,
         cue: SmartGuideCallPlanner.Cue? = nil,
-        loop: ArrangementDisplaySection? = nil
+        loop: SongSection? = nil
     ) -> [SmartGuideCall] {
         var calls: [SmartGuideCall] = []
         var time = start

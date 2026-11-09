@@ -27,8 +27,10 @@ final class SongEditSnapshotTests: XCTestCase {
         song.tracks = [track]
         context.insert(song)
 
-        var markers = [ArrangementMarker(name: "Intro", startSeconds: 0, sortOrder: 0)]
-        var slots = [ArrangementSlot(markerID: markers[0].id)]
+        var timeline = SongTimeline(
+            markers: [ArrangementMarker(name: "Intro", startSeconds: 0, sortOrder: 0, loops: true)],
+            clips: [TrackClip(trackID: track.id, timelineStartSeconds: 0, duration: 8.5, sourceStartSeconds: 1.5)]
+        )
         var tempoChanges = [TempoChange(startMeasure: 1, bpm: 128)]
         var timeSignatureChanges = [
             TimeSignatureChange(numerator: 3, denominator: 4, startMeasure: 1, sortOrder: 0)
@@ -37,13 +39,7 @@ final class SongEditSnapshotTests: XCTestCase {
 
         let snapshot = SongEditSnapshot.capture(
             song: song,
-            markers: markers,
-            arrangementSlots: slots,
-            clipTrims: [],
-            removedClips: [],
-            clipGaps: [],
-            clipRegions: [],
-            loopSlotIDs: [],
+            timeline: timeline,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents
@@ -54,15 +50,13 @@ final class SongEditSnapshotTests: XCTestCase {
         song.transposeSemitones = -1
         track.volume = 1.0
         track.isMuted = false
-        markers = []
-        slots = []
+        timeline = SongTimeline()
         tempoChanges = [TempoChange(startMeasure: 1, bpm: 90)]
         timeSignatureChanges = [
             TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0)
         ]
 
-        markers = snapshot.markers
-        slots = snapshot.arrangementSlots
+        timeline = snapshot.timeline
         tempoChanges = snapshot.tempoChanges
         timeSignatureChanges = snapshot.timeSignatureChanges
         midiEvents = snapshot.midiEvents
@@ -74,13 +68,7 @@ final class SongEditSnapshotTests: XCTestCase {
 
         let restored = SongEditSnapshot.capture(
             song: song,
-            markers: markers,
-            arrangementSlots: slots,
-            clipTrims: [],
-            removedClips: [],
-            clipGaps: [],
-            clipRegions: [],
-            loopSlotIDs: [],
+            timeline: timeline,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
             midiEvents: midiEvents

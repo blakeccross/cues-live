@@ -270,30 +270,7 @@ enum SongTrackLoader {
         }
     }
 
-    static func timelineDuration(
-        for song: Song,
-        sourceDurationForTrack: @escaping (UUID) -> TimeInterval
-    ) -> TimeInterval {
-        let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
-        let markers = projectState.markers
-        let arrangement = projectState.arrangement
-        let inputs = SongArrangementStore.makeLayoutInputs(
-            markers: markers,
-            trackIDs: song.sortedTracks.map(\.id),
-            sourceDurationForTrack: sourceDurationForTrack
-        )
-        let layout = SongArrangementStore.buildLayoutSnapshot(
-            slots: arrangement.slots,
-            clipTrims: arrangement.clipTrims,
-            removedClips: arrangement.removedClips,
-            clipGaps: arrangement.clipGaps,
-            clipRegions: arrangement.clipRegions,
-            inputs: inputs
-        )
-
-        return SongArrangementStore.effectiveTimelineDuration(
-            rulerSections: layout.rulerSections,
-            trackSections: layout.trackSections
-        )
+    static func timelineDuration(for song: Song) -> TimeInterval {
+        SongProjectBridge.projectStateOrDefaults(for: song).timeline.duration
     }
 }

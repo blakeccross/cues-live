@@ -1,49 +1,9 @@
 import AVFoundation
 import Foundation
 
-enum SongPlaybackArrangementLoader {
-    struct Sections {
-        let sectionsByTrack: [UUID: [ArrangementDisplaySection]]
-        let masterSections: [ArrangementDisplaySection]
-    }
-
-    static func sections(for song: Song) -> Sections {
-        let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
-        let arrangement = projectState.arrangement
-        let inputs = PlaybackCoordinator.arrangementLayoutInputs(
-            for: song,
-            markers: projectState.markers
-        )
-        let layout = SongArrangementStore.playbackLayoutSnapshot(
-            slots: arrangement.slots,
-            clipTrims: arrangement.clipTrims,
-            removedClips: arrangement.removedClips,
-            clipGaps: arrangement.clipGaps,
-            clipRegions: arrangement.clipRegions,
-            tracks: playbackTracks(for: song),
-            inputs: inputs
-        )
-        return Sections(
-            sectionsByTrack: layout.trackSections,
-            masterSections: layout.rulerSections
-        )
-    }
-
-    static func playbackTracks(
-        for song: Song
-    ) -> [(id: UUID, trimStart: TimeInterval, trimEnd: TimeInterval)] {
-        song.sortedTracks.map { track in
-            (
-                id: track.id,
-                trimStart: track.trimStartSeconds,
-                trimEnd: track.trimEndSeconds ?? trackSourceDuration(for: track.id, in: song)
-            )
-        }
-    }
-
-    private static func trackSourceDuration(for trackID: UUID, in song: Song) -> TimeInterval {
-        guard let track = song.sortedTracks.first(where: { $0.id == trackID }) else { return 1 }
-        return FileStore.sourceDuration(for: song, track: track) ?? 1
+enum SongPlaybackLayoutLoader {
+    static func layout(for song: Song) -> SongPlaybackLayout {
+        SongPlaybackLayout(timeline: SongProjectBridge.projectStateOrDefaults(for: song).timeline)
     }
 }
 
@@ -73,29 +33,28 @@ enum OverlapTrackGraphBuilder {
         return (settings, fileDuration)
     }
 
+    /// Nil clips play the trimmed file linearly.
     static func arrangementMapper(
         settings: AudioEngineManager.TrackSettings,
-        sections: [ArrangementDisplaySection],
+        clips: [TrackClip]?,
         fileDuration: TimeInterval
     ) -> ArrangementTimelineMapper {
-        ArrangementTimelineMapper(
-            sections: settings.bypassesArrangementMapping ? [] : sections,
-            trimStart: settings.trimStart,
-            trimEnd: settings.trimEnd ?? fileDuration,
-            usesArrangement: !settings.bypassesArrangementMapping && !sections.isEmpty
-        )
+        guard !settings.bypassesArrangementMapping, let clips else {
+            return .linear(trimStart: settings.trimStart, trimEnd: settings.trimEnd ?? fileDuration)
+        }
+        return ArrangementTimelineMapper(clips: clips, fileDuration: fileDuration)
     }
 
     static func buildTrack(
         payload: AudioEngineManager.PreparedTrackPayload,
-        sections: [ArrangementDisplaySection],
+        clips: [TrackClip]?,
         transport: AudioPlaybackTransport,
         engine: AVAudioEngine
     ) throws -> BuiltTrack {
         let resolved = resolvedSettings(for: payload)
         let mapper = arrangementMapper(
             settings: resolved.settings,
-            sections: sections,
+            clips: clips,
             fileDuration: resolved.fileDuration
         )
 

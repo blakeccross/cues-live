@@ -43,6 +43,25 @@ extension Color {
         AppColors.separator.opacity(0.6)
     }
 
+    /// Soundcraft's edit-selection wash: the dark-theme selection composited over the lanes.
+    static var soundcraftSelection: Color {
+        let alpha = 110.0 / 255.0
+        return Color(red: 40.0 / 110.0, green: 70.0 / 110.0, blue: 1).opacity(alpha)
+    }
+
+    /// Soundcraft's lane grid: a white or black veil that becomes its bar line on the lane
+    /// background, and stays visible when the same stroke crosses a clip.
+    static func soundcraftGridVeil(over background: Color, environment: EnvironmentValues) -> Color {
+        let resolved = background.resolve(in: environment)
+        let level = (Double(resolved.red) + Double(resolved.green) + Double(resolved.blue)) / 3
+        let shift = level < 0.5 ? 30.0 / 255.0 : -48.0 / 255.0
+        let lineLevel = min(max(level + shift, 0), 1)
+        if lineLevel > level {
+            return Color.white.opacity((lineLevel - level) / max(1 - level, 0.001))
+        }
+        return Color.black.opacity((level - lineLevel) / max(level, 0.001))
+    }
+
     static var dawWaveformFill: Color {
         AppColors.textSecondary.opacity(0.6)
     }
