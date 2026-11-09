@@ -648,8 +648,8 @@ private struct OverlapWaveformLaneView: View {
                     showsEmptyBaseline: false,
                     style: .voiceMemosBars,
                     playheadFraction: playheadFraction,
-                    playedColor: .white,
-                    unplayedColor: .white.opacity(0.32)
+                    playedColor: .white.opacity(LiveSetlistWaveformMetrics.waveformPlayedOpacity),
+                    unplayedColor: .white.opacity(LiveSetlistWaveformMetrics.waveformUnplayedOpacity)
                 )
                 .frame(width: max(contentWidth, 1), height: height)
                 .padding(.vertical, 2)

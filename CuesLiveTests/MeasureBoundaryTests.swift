@@ -2,6 +2,17 @@ import XCTest
 @testable import CuesLive
 
 final class MeasureBoundaryTests: XCTestCase {
+    func testBeatGridPlacesQuartersAndEighths() {
+        // 120 BPM in 4/4 is a 0.5 s beat. Downbeats stay out of both lists.
+        let grid = MeasureTiming.beatGridTimes(
+            duration: 4,
+            tempoChanges: [TempoChange(startMeasure: 1, bpm: 120)],
+            timeSignatureChanges: []
+        )
+        XCTAssertEqual(grid.beats, [0.5, 1, 1.5, 2.5, 3, 3.5])
+        XCTAssertEqual(grid.subdivisions, [0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75])
+    }
+
     func testBoundariesFollowTempoMapAtEveryMeasureWhenSpacious() {
         // 120 BPM in 4/4 is 2 s per measure; a wide lane keeps every measure.
         let boundaries = MeasureTiming.visibleMeasureBoundaries(

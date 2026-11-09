@@ -90,6 +90,21 @@ enum LiveSetlistWaveformMetrics {
 
     /// Width of a song lane whose waveform snapshot has not loaded yet.
     static let unloadedLaneWidth: CGFloat = 180
+
+    /// Waveform ahead of the playhead.
+    static let waveformUnplayedOpacity: CGFloat = 0.32
+    /// Waveform the playhead has passed. Brighter than the rest, still translucent.
+    static let waveformPlayedOpacity: CGFloat = 0.80
+
+    /// Bar lines. A step down from solid so the waveform stays in front.
+    static let downbeatTickOpacity: CGFloat = 0.50
+    /// Quarter-note (or meter beat) ticks.
+    static let beatTickOpacity: CGFloat = 0.16
+    /// Halfway between beats. Fainter than the downbeat.
+    static let subdivisionTickOpacity: CGFloat = 0.08
+    static let beatGridMaximumDuration: TimeInterval = 10 * 60
+    static let minimumBeatTickSpacing: CGFloat = 8
+    static let minimumSubdivisionTickSpacing: CGFloat = 6
 }
 
 /// Scroll-offset math for zooming the setlist waveform around the playhead.
@@ -390,13 +405,13 @@ struct LiveSongWaveformView: View {
 
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
 
-    @State private var sourcePeaks: [Float] = []
-    @State private var cachedDisplayPeaks: [Float] = []
+    @State private var sourceSeries = WaveformMinMax.empty
+    @State private var cachedDisplaySeries = WaveformMinMax.empty
 
     /// Above this lane width, use tiled AppKit drawing (macOS) / viewport tiles (iOS).
     private static let tiledLaneMinContentWidth: CGFloat = 1_600
     /// Beat grids are too dense for long songs.
-    private static let beatGridMaxDuration: TimeInterval = 10 * 60
+    private static let beatGridMaxDuration = LiveSetlistWaveformMetrics.beatGridMaximumDuration
 
     private var safeTimelineDuration: TimeInterval {
         max(timelineDuration, 0.001)
@@ -419,13 +434,16 @@ struct LiveSongWaveformView: View {
     }
 
     private var peaksLoadIdentity: String {
+        if !trackSources.isEmpty {
+            return trackSources
+                .map { "\($0.url.path)|\($0.duration)" }
+                .joined(separator: ";")
+        }
         if let precomputedSourcePeaks {
             let head = precomputedSourcePeaks.prefix(4).map { String(format: "%.4f", $0) }.joined(separator: ",")
             return "precomputed:\(precomputedSourcePeaks.count):\(head)"
         }
-        return trackSources
-            .map { "\($0.url.path)|\($0.duration)" }
-            .joined(separator: ";")
+        return ""
     }
 
     private var hasPeakSource: Bool {
@@ -436,7 +454,7 @@ struct LiveSongWaveformView: View {
     }
 
     private var isLoadingWaveform: Bool {
-        hasPeakSource && cachedDisplayPeaks.isEmpty
+        hasPeakSource && cachedDisplaySeries.isEmpty
     }
 
     var body: some View {
@@ -513,7 +531,7 @@ struct LiveSongWaveformView: View {
             .onAppear {
                 refreshDisplayPeaks()
             }
-            .onChange(of: sourcePeaks.count) { _, _ in
+            .onChange(of: sourceSeries.count) { _, _ in
                 refreshDisplayPeaks()
             }
             .onChange(of: sections.map(\.id)) { _, _ in
@@ -523,20 +541,24 @@ struct LiveSongWaveformView: View {
                 refreshDisplayPeaks()
             }
             .task(id: peaksLoadIdentity) {
+                guard hasPeakSource else {
+                    sourceSeries = .empty
+                    cachedDisplaySeries = .empty
+                    return
+                }
+                if !trackSources.isEmpty {
+                    let summed = await WaveformCache.shared.summedMinMax(for: trackSources)
+                    if !summed.isEmpty {
+                        sourceSeries = summed
+                        refreshDisplayPeaks()
+                        return
+                    }
+                }
                 if let precomputedSourcePeaks {
-                    sourcePeaks = precomputedSourcePeaks
-                    refreshDisplayPeaks()
-                    return
-                }
-                guard !trackSources.isEmpty else {
-                    sourcePeaks = []
-                    cachedDisplayPeaks = []
-                    return
-                }
-                if let cached = WaveformCache.shared.cachedSummedPeaks(for: trackSources) {
-                    sourcePeaks = cached
+                    sourceSeries = .mirrored(precomputedSourcePeaks)
                 } else {
-                    sourcePeaks = await WaveformCache.shared.summedPeaks(for: trackSources)
+                    let peaks = await WaveformCache.shared.summedPeaks(for: trackSources)
+                    sourceSeries = .mirrored(peaks)
                 }
                 refreshDisplayPeaks()
             }
@@ -566,7 +588,8 @@ struct LiveSongWaveformView: View {
         LiveSongWaveformScrollBacking(
             contentWidth: contentWidth,
             timelineDuration: safeTimelineDuration,
-            peaks: cachedDisplayPeaks,
+            mins: cachedDisplaySeries.mins,
+            maxes: cachedDisplaySeries.maxes,
             sections: sections,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
@@ -703,19 +726,6 @@ struct LiveSongWaveformView: View {
             duration: safeTimelineDuration,
             contentWidth: contentWidth
         )
-        let tileBars: [Float] = {
-            guard !cachedDisplayPeaks.isEmpty else { return [] }
-            if tile.lowerBound > 0 || tile.upperBound < contentWidth {
-                return WaveformPeakResampler.peaksSlice(
-                    from: cachedDisplayPeaks,
-                    timelineStart: timelineStart,
-                    timelineEnd: timelineEnd,
-                    timelineDuration: safeTimelineDuration
-                )
-            }
-            return cachedDisplayPeaks
-        }()
-
         // Same identity whether playing or paused, so toggling playback never rebuilds the canvas.
         Group {
             if showsPlayhead {
@@ -723,21 +733,11 @@ struct LiveSongWaveformView: View {
                     let time = resolvedPlayheadTime(live: resolvedIsPlaying)
                     let span = max(0.0001, timelineEnd - timelineStart)
                     let fraction = CGFloat((time - timelineStart) / span)
-                    WaveformBarsCanvas(
-                        bars: tileBars,
-                        showsEmptyBaseline: isLoadingWaveform || showsFullSourceWaveform,
-                        fillColor: .white,
-                        style: .filledEnvelope,
-                        playheadFraction: fraction,
-                        usesDrawingGroup: false
-                    )
+                    waveformCanvas(tile: tile, playheadFraction: fraction, usesDrawingGroup: false)
                 }
             } else {
-                WaveformBarsCanvas(
-                    bars: tileBars,
-                    showsEmptyBaseline: isLoadingWaveform || showsFullSourceWaveform,
-                    fillColor: .white,
-                    style: .filledEnvelope,
+                waveformCanvas(
+                    tile: tile,
                     playheadFraction: nil,
                     usesDrawingGroup: contentWidth <= Self.tiledLaneMinContentWidth
                 )
@@ -807,7 +807,9 @@ struct LiveSongWaveformView: View {
             guard size.width > 0, size.height > 0, !tempoChanges.isEmpty else { return }
 
             let showBeats = safeTimelineDuration <= Self.beatGridMaxDuration
-                && shouldShowBeatLines(contentWidth: contentWidth)
+                && pixelsPerBeat(contentWidth: contentWidth) >= LiveSetlistWaveformMetrics.minimumBeatTickSpacing
+            let showSubdivisions = showBeats
+                && pixelsPerBeat(contentWidth: contentWidth) / 2 >= LiveSetlistWaveformMetrics.minimumSubdivisionTickSpacing
 
             let measureBoundaries = MeasureTiming.visibleMeasureBoundaries(
                 duration: safeTimelineDuration,
@@ -826,11 +828,41 @@ struct LiveSongWaveformView: View {
                 )
             )
 
-            let beatLineColor = Color.white.opacity(0.22)
-            let measureLineColor = Color.white.opacity(0.65)
+            let subdivisionLineColor = Color.white.opacity(LiveSetlistWaveformMetrics.subdivisionTickOpacity)
+            let beatLineColor = Color.white.opacity(LiveSetlistWaveformMetrics.beatTickOpacity)
+            let measureLineColor = Color.white.opacity(LiveSetlistWaveformMetrics.downbeatTickOpacity)
+            let grid = showBeats
+                ? MeasureTiming.beatGridTimes(
+                    duration: safeTimelineDuration,
+                    tempoChanges: tempoChanges,
+                    timeSignatureChanges: timeSignatureChanges,
+                    visibleTimeRange: TimelineLayout.time(
+                        at: tile.lowerBound,
+                        duration: safeTimelineDuration,
+                        contentWidth: contentWidth
+                    )...TimelineLayout.time(
+                        at: tile.upperBound,
+                        duration: safeTimelineDuration,
+                        contentWidth: contentWidth
+                    )
+                )
+                : MeasureTiming.BeatGridTimes(beats: [], subdivisions: [])
+
+            if showSubdivisions {
+                for time in grid.subdivisions {
+                    strokeGridLine(
+                        at: time,
+                        contentWidth: contentWidth,
+                        tileOrigin: tileOrigin,
+                        size: size,
+                        color: subdivisionLineColor,
+                        in: context
+                    )
+                }
+            }
 
             if showBeats {
-                for time in beatBoundaries() {
+                for time in grid.beats {
                     strokeGridLine(
                         at: time,
                         contentWidth: contentWidth,
@@ -858,67 +890,21 @@ struct LiveSongWaveformView: View {
         .allowsHitTesting(false)
     }
 
-    private func shouldShowBeatLines(contentWidth: CGFloat) -> Bool {
+    private func pixelsPerBeat(contentWidth: CGFloat) -> CGFloat {
         let bpm = MeasureTiming.bpmForMeasure(1, tempoChanges: tempoChanges)
         let signature = MeasureTiming.numeratorDenominatorForMeasure(1, changes: timeSignatureChanges)
         let beatsInMeasure = MeasureTiming.beatsPerMeasure(
             numerator: signature.numerator,
             denominator: signature.denominator
         )
-        guard beatsInMeasure > 0 else { return false }
+        guard beatsInMeasure > 0 else { return 0 }
 
         let beatDuration = MeasureTiming.measureDuration(
             bpm: bpm,
             numerator: signature.numerator,
             denominator: signature.denominator
         ) / beatsInMeasure
-        let pixelsPerBeat = CGFloat(beatDuration) * contentWidth / CGFloat(safeTimelineDuration)
-        return pixelsPerBeat >= 8
-    }
-
-    private func beatBoundaries() -> [TimeInterval] {
-        var times: [TimeInterval] = []
-        var measure = 1
-
-        while measure < 1_000_000 {
-            let measureStart = MeasureTiming.timeAtStartOfMeasure(
-                measure,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
-            guard measureStart < safeTimelineDuration - 0.0001 else { break }
-
-            let bpm = MeasureTiming.bpmForMeasure(measure, tempoChanges: tempoChanges)
-            let signature = MeasureTiming.numeratorDenominatorForMeasure(
-                measure,
-                changes: timeSignatureChanges
-            )
-            let beatsInMeasure = MeasureTiming.beatsPerMeasure(
-                numerator: signature.numerator,
-                denominator: signature.denominator
-            )
-            let measureDuration = MeasureTiming.measureDuration(
-                bpm: bpm,
-                numerator: signature.numerator,
-                denominator: signature.denominator
-            )
-            guard beatsInMeasure > 0, measureDuration > 0 else {
-                measure += 1
-                continue
-            }
-
-            let beatDuration = measureDuration / beatsInMeasure
-            let beatCount = max(0, Int(beatsInMeasure.rounded(.down)))
-            for beatIndex in 1..<beatCount {
-                let time = measureStart + TimeInterval(beatIndex) * beatDuration
-                guard time < safeTimelineDuration - 0.0001 else { break }
-                times.append(time)
-            }
-
-            measure += 1
-        }
-
-        return times
+        return CGFloat(beatDuration) * contentWidth / CGFloat(safeTimelineDuration)
     }
 
     private static let gridLineVerticalInset: CGFloat = 8
@@ -1082,17 +1068,36 @@ struct LiveSongWaveformView: View {
         return AudioEngineManager.shared.isPlaying
     }
 
+    private func waveformCanvas(
+        tile: ClosedRange<CGFloat>,
+        playheadFraction: CGFloat?,
+        usesDrawingGroup: Bool
+    ) -> some View {
+        WaveformBarsCanvas(
+            bars: [],
+            showsEmptyBaseline: isLoadingWaveform || showsFullSourceWaveform,
+            fillColor: .white,
+            style: .filledEnvelope,
+            playheadFraction: playheadFraction,
+            usesDrawingGroup: usesDrawingGroup,
+            columnMins: cachedDisplaySeries.mins,
+            columnMaxes: cachedDisplaySeries.maxes,
+            columnContentWidth: contentWidth,
+            columnOriginX: tile.lowerBound
+        )
+    }
+
     private func refreshDisplayPeaks() {
-        guard !sourcePeaks.isEmpty else {
-            cachedDisplayPeaks = []
+        guard !sourceSeries.isEmpty else {
+            cachedDisplaySeries = .empty
             return
         }
 
         if showsFullSourceWaveform {
-            cachedDisplayPeaks = sourcePeaks
+            cachedDisplaySeries = sourceSeries
         } else {
-            cachedDisplayPeaks = WaveformPeakResampler.timelinePeaks(
-                from: sourcePeaks,
+            cachedDisplaySeries = WaveformPeakResampler.timelineMinMax(
+                from: sourceSeries,
                 fileDuration: fileDuration,
                 clips: peakClips,
                 timelineDuration: safeTimelineDuration

@@ -163,6 +163,88 @@ final class WaveformLoaderTests: XCTestCase {
         XCTAssertEqual(WaveformLoader.loadPeaks(from: url).max() ?? 0, 1, accuracy: 0.02)
     }
 
+    func testSummedMinMaxAddsChannelsAndFiles() {
+        let loud = [Float](repeating: 0.5, count: 3_200) + [Float](repeating: -1, count: 3_200)
+        let quiet = [Float](repeating: 0.25, count: 6_400)
+        let left = WaveformFileOverview(
+            sampleRate: 3_200,
+            channels: [WaveformOverview.build(loud)]
+        )
+        let right = WaveformFileOverview(
+            sampleRate: 3_200,
+            channels: [WaveformOverview.build(quiet)]
+        )
+
+        let summed = WaveformPeakResampler.summedMinMax(
+            from: [(overview: left, duration: 2), (overview: right, duration: 2)],
+            columnsPerSecond: 10
+        )
+
+        XCTAssertEqual(summed.count, 20)
+        XCTAssertEqual(summed.mins[0], 1, accuracy: 0.02)
+        XCTAssertEqual(summed.maxes[0], 1, accuracy: 0.02)
+        XCTAssertEqual(summed.mins[19], -1, accuracy: 0.02)
+        XCTAssertEqual(summed.maxes[19], -1, accuracy: 0.02)
+    }
+
+    func testSummedMinMaxAddsStereoChannels() {
+        let overview = WaveformFileOverview(
+            sampleRate: 100,
+            channels: [
+                WaveformOverview.build([Float](repeating: 0.4, count: 128)),
+                WaveformOverview.build([Float](repeating: -0.2, count: 128))
+            ]
+        )
+        let summed = WaveformPeakResampler.summedMinMax(
+            from: [(overview: overview, duration: 1.28)],
+            columnsPerSecond: 10
+        )
+
+        XCTAssertGreaterThan(summed.count, 0)
+        XCTAssertEqual(summed.mins[0], 1, accuracy: 0.02)
+        XCTAssertEqual(summed.maxes[0], 1, accuracy: 0.02)
+    }
+
+    func testTimelineMinMaxLeavesGapsSilent() {
+        let source = WaveformMinMax(mins: [0.2, -0.4], maxes: [0.8, 0.1])
+        let clip = TrackClip(
+            trackID: UUID(),
+            timelineStartSeconds: 1,
+            duration: 1,
+            sourceStartSeconds: 0
+        )
+        let laid = WaveformPeakResampler.timelineMinMax(
+            from: source,
+            fileDuration: 2,
+            clips: [clip],
+            timelineDuration: 2
+        )
+
+        XCTAssertEqual(laid.mins[0], 0)
+        XCTAssertEqual(laid.maxes[0], 0)
+        XCTAssertEqual(laid.mins[1], 0.2, accuracy: 0.001)
+        XCTAssertEqual(laid.maxes[1], 0.8, accuracy: 0.001)
+    }
+
+    func testDisplayColumnsUseTheWindowExtrema() throws {
+        let mins: [Float] = [-0.2, -0.8, -0.1]
+        let maxes: [Float] = [0.2, 0.4, 0.9]
+        let prepared = try XCTUnwrap(
+            WaveformColumnGeometry.prepare(
+                mins: mins,
+                maxes: maxes,
+                contentWidth: 3,
+                rect: CGRect(x: 0, y: 0, width: 3, height: 10),
+                scale: 1,
+                half: 100
+            )
+        )
+
+        XCTAssertEqual(prepared.columns.count, 3)
+        XCTAssertEqual(prepared.columns[1].min, -0.8, accuracy: 0.001)
+        XCTAssertEqual(prepared.columns[1].max, 0.4, accuracy: 0.001)
+    }
+
     func testGroupedMaximaKeepsEachGroupsPeak() {
         let peaks: [Float] = [0.1, 0.5, 0.2, 0.9, 0.3, 0.4, 0.8]
         XCTAssertEqual(

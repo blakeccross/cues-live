@@ -176,6 +176,83 @@ enum MeasureTiming {
         return boundaries
     }
 
+    struct BeatGridTimes: Equatable {
+        var beats: [TimeInterval]
+        var subdivisions: [TimeInterval]
+    }
+
+    /// Beat ticks (not the downbeat) and the halfway subdivision of each beat.
+    /// A 4/4 bar yields quarters on `beats` and eighths on `subdivisions`.
+    static func beatGridTimes(
+        duration: TimeInterval,
+        tempoChanges: [TempoChange],
+        timeSignatureChanges: [TimeSignatureChange],
+        visibleTimeRange: ClosedRange<TimeInterval>? = nil
+    ) -> BeatGridTimes {
+        let safeDuration = max(duration, 0.001)
+        let rangeStart = max(0, visibleTimeRange?.lowerBound ?? 0)
+        let rangeEnd = min(safeDuration, visibleTimeRange?.upperBound ?? safeDuration)
+        guard rangeEnd > rangeStart, !tempoChanges.isEmpty else {
+            return BeatGridTimes(beats: [], subdivisions: [])
+        }
+
+        var beats: [TimeInterval] = []
+        var subdivisions: [TimeInterval] = []
+        var measure = 1
+        var measureStart: TimeInterval = 0
+
+        while measure < 1_000_000, measureStart < safeDuration - 0.0001 {
+            let length = measureDuration(
+                atMeasure: measure,
+                tempoChanges: tempoChanges,
+                timeSignatureChanges: timeSignatureChanges
+            )
+            guard length > 0 else { break }
+            let measureEnd = measureStart + length
+            if measureEnd < rangeStart {
+                measureStart = measureEnd
+                measure += 1
+                continue
+            }
+            if measureStart > rangeEnd { break }
+
+            let signature = numeratorDenominatorForMeasure(measure, changes: timeSignatureChanges)
+            let beatsInMeasure = beatsPerMeasure(
+                numerator: signature.numerator,
+                denominator: signature.denominator
+            )
+            let beatCount = max(0, Int(beatsInMeasure.rounded(.down)))
+            guard beatsInMeasure > 0, beatCount > 0 else {
+                measureStart = measureEnd
+                measure += 1
+                continue
+            }
+
+            let beatDuration = length / beatsInMeasure
+            let windowStart = rangeStart - beatDuration
+            let windowEnd = rangeEnd + beatDuration
+            for beatIndex in 1..<beatCount {
+                let time = measureStart + TimeInterval(beatIndex) * beatDuration
+                guard time < safeDuration - 0.0001 else { break }
+                if time >= windowStart, time <= windowEnd {
+                    beats.append(time)
+                }
+            }
+            for step in 0..<beatCount {
+                let time = measureStart + (TimeInterval(step) + 0.5) * beatDuration
+                guard time < safeDuration - 0.0001 else { break }
+                if time >= windowStart, time <= windowEnd {
+                    subdivisions.append(time)
+                }
+            }
+
+            measureStart = measureEnd
+            measure += 1
+        }
+
+        return BeatGridTimes(beats: beats, subdivisions: subdivisions)
+    }
+
     static func beatAtStartOfMeasure(
         _ measure: Int,
         timeSignatureChanges: [TimeSignatureChange]

@@ -281,7 +281,7 @@ final class PlaybackCoordinator {
     }
 
     /// Builds lightweight layout snapshots for every setlist song, then warms
-    /// summed peak overviews in the background so returning to setlist is instant.
+    /// summed min/max overviews in the background so returning to setlist is instant.
     @MainActor
     private func prefetchWaveformSnapshots() {
         waveformSnapshotPrefetchTask?.cancel()
@@ -373,19 +373,10 @@ final class PlaybackCoordinator {
                     return
                 }
                 let job = pendingWaveformPeakJobs.removeFirst()
-                let peaks = await WaveformCache.shared.summedPeaks(for: job.sources)
+                _ = await WaveformCache.shared.summedMinMax(for: job.sources)
                 guard !Task.isCancelled else {
                     pendingWaveformPeakJobs.removeAll()
                     return
-                }
-                guard let existing = waveformSnapshotsBySongID[job.songID],
-                      Self.trackSourcesMatch(existing.trackSources, job.sources) else {
-                    continue
-                }
-                let updated = existing.withPrecomputedPeaks(peaks)
-                waveformSnapshotsBySongID[job.songID] = updated
-                if job.songID == currentSong?.id {
-                    currentWaveformSnapshot = updated
                 }
             }
         }
@@ -400,18 +391,6 @@ final class PlaybackCoordinator {
             return snapshot
         }
         return snapshot.withPrecomputedPeaks(peaks)
-    }
-
-    private static func trackSourcesMatch(
-        _ lhs: [(url: URL, duration: TimeInterval)],
-        _ rhs: [(url: URL, duration: TimeInterval)]
-    ) -> Bool {
-        guard lhs.count == rhs.count else { return false }
-        for index in lhs.indices {
-            if lhs[index].url.path != rhs[index].url.path { return false }
-            if abs(lhs[index].duration - rhs[index].duration) > 0.001 { return false }
-        }
-        return true
     }
 
     private func handlePlaybackFinished() {

@@ -9,7 +9,8 @@ import SwiftUI
 struct LiveSongWaveformScrollBacking: NSViewRepresentable {
     var contentWidth: CGFloat
     var timelineDuration: TimeInterval
-    var peaks: [Float]
+    var mins: [Float]
+    var maxes: [Float]
     var sections: [SongSection]
     var tempoChanges: [TempoChange]
     var timeSignatureChanges: [TimeSignatureChange]
@@ -20,7 +21,8 @@ struct LiveSongWaveformScrollBacking: NSViewRepresentable {
     var showsPlayheadSplit: Bool
     var isLoading: Bool
 
-    private static let unplayedOpacity: CGFloat = 0.32
+    private static let unplayedOpacity = LiveSetlistWaveformMetrics.waveformUnplayedOpacity
+    private static let playedOpacity = LiveSetlistWaveformMetrics.waveformPlayedOpacity
 
     func makeNSView(context: Context) -> LiveSongWaveformScrollBackingView {
         let view = LiveSongWaveformScrollBackingView()
@@ -47,7 +49,8 @@ struct LiveSongWaveformScrollBacking: NSViewRepresentable {
         view.model = LiveSongWaveformScrollBackingView.Model(
             contentWidth: contentWidth,
             timelineDuration: max(timelineDuration, 0.001),
-            peaks: peaks,
+            mins: mins,
+            maxes: maxes,
             sections: sections,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
@@ -57,6 +60,7 @@ struct LiveSongWaveformScrollBacking: NSViewRepresentable {
             playheadTime: playheadTime,
             showsPlayheadSplit: showsPlayheadSplit,
             unplayedOpacity: Self.unplayedOpacity,
+            playedOpacity: Self.playedOpacity,
             isLoading: isLoading
         )
     }
@@ -66,7 +70,8 @@ final class LiveSongWaveformScrollBackingView: NSView {
     struct Model: Equatable {
         var contentWidth: CGFloat = 1
         var timelineDuration: TimeInterval = 1
-        var peaks: [Float] = []
+        var mins: [Float] = []
+        var maxes: [Float] = []
         var sections: [SongSection] = []
         var tempoChanges: [TempoChange] = []
         var timeSignatureChanges: [TimeSignatureChange] = []
@@ -75,13 +80,15 @@ final class LiveSongWaveformScrollBackingView: NSView {
         var cueFlashPhase = false
         var playheadTime: TimeInterval?
         var showsPlayheadSplit = false
-        var unplayedOpacity: CGFloat = 0.32
+        var unplayedOpacity: CGFloat = LiveSetlistWaveformMetrics.waveformUnplayedOpacity
+        var playedOpacity: CGFloat = LiveSetlistWaveformMetrics.waveformPlayedOpacity
         var isLoading = false
 
         func structurallyEquals(_ other: Model) -> Bool {
             contentWidth == other.contentWidth
                 && timelineDuration == other.timelineDuration
-                && peaks == other.peaks
+                && mins == other.mins
+                && maxes == other.maxes
                 && sections == other.sections
                 && tempoChanges == other.tempoChanges
                 && timeSignatureChanges == other.timeSignatureChanges
@@ -90,6 +97,7 @@ final class LiveSongWaveformScrollBackingView: NSView {
                 && cueFlashPhase == other.cueFlashPhase
                 && showsPlayheadSplit == other.showsPlayheadSplit
                 && unplayedOpacity == other.unplayedOpacity
+                && playedOpacity == other.playedOpacity
                 && isLoading == other.isLoading
         }
     }
@@ -237,13 +245,58 @@ final class LiveSongWaveformScrollBackingView: NSView {
             minimumPixelSpacing: model.timelineDuration > 30 * 60 ? 24 : 10,
             visibleTimeRange: pad
         )
+        let spacing = pixelsPerBeat()
+        let showBeats = model.timelineDuration <= LiveSetlistWaveformMetrics.beatGridMaximumDuration
+            && spacing >= LiveSetlistWaveformMetrics.minimumBeatTickSpacing
+        let showSubdivisions = showBeats
+            && spacing / 2 >= LiveSetlistWaveformMetrics.minimumSubdivisionTickSpacing
+        let grid = showBeats
+            ? MeasureTiming.beatGridTimes(
+                duration: model.timelineDuration,
+                tempoChanges: model.tempoChanges,
+                timeSignatureChanges: model.timeSignatureChanges,
+                visibleTimeRange: pad
+            )
+            : MeasureTiming.BeatGridTimes(beats: [], subdivisions: [])
 
-        NSColor.white.withAlphaComponent(0.65).setFill()
         let inset = min(Self.gridInset, bounds.height / 2)
         let lineHeight = max(0, bounds.height - inset * 2)
 
-        for boundary in boundaries {
-            let x = xPosition(for: boundary)
+        if showSubdivisions {
+            strokeGridLines(grid.subdivisions, in: rect, inset: inset, lineHeight: lineHeight, opacity: LiveSetlistWaveformMetrics.subdivisionTickOpacity)
+        }
+        if showBeats {
+            strokeGridLines(grid.beats, in: rect, inset: inset, lineHeight: lineHeight, opacity: LiveSetlistWaveformMetrics.beatTickOpacity)
+        }
+        strokeGridLines(boundaries, in: rect, inset: inset, lineHeight: lineHeight, opacity: LiveSetlistWaveformMetrics.downbeatTickOpacity)
+    }
+
+    private func pixelsPerBeat() -> CGFloat {
+        let bpm = MeasureTiming.bpmForMeasure(1, tempoChanges: model.tempoChanges)
+        let signature = MeasureTiming.numeratorDenominatorForMeasure(1, changes: model.timeSignatureChanges)
+        let beatsInMeasure = MeasureTiming.beatsPerMeasure(
+            numerator: signature.numerator,
+            denominator: signature.denominator
+        )
+        guard beatsInMeasure > 0, model.timelineDuration > 0, model.contentWidth > 0 else { return 0 }
+        let beatDuration = MeasureTiming.measureDuration(
+            bpm: bpm,
+            numerator: signature.numerator,
+            denominator: signature.denominator
+        ) / beatsInMeasure
+        return CGFloat(beatDuration) * model.contentWidth / CGFloat(model.timelineDuration)
+    }
+
+    private func strokeGridLines(
+        _ times: [TimeInterval],
+        in rect: NSRect,
+        inset: CGFloat,
+        lineHeight: CGFloat,
+        opacity: CGFloat
+    ) {
+        NSColor.white.withAlphaComponent(opacity).setFill()
+        for time in times {
+            let x = xPosition(for: time)
             guard x >= rect.minX - 1, x <= rect.maxX + 1 else { continue }
             NSRect(
                 x: (x - 0.5).rounded(),
@@ -256,46 +309,31 @@ final class LiveSongWaveformScrollBackingView: NSView {
 
     private func drawWaveformBars(in rect: NSRect) {
         let midY = bounds.midY
-        let maxBarHeight = (bounds.height / 2) * 0.92
-
-        if model.peaks.isEmpty {
+        guard !model.mins.isEmpty, !model.maxes.isEmpty else {
             guard model.isLoading else { return }
             NSColor.white.withAlphaComponent(0.25).setFill()
             NSRect(x: rect.minX, y: midY - 1, width: rect.width, height: 2).fill()
             return
         }
 
-        let barCount = model.peaks.count
-        let barWidth = model.contentWidth / CGFloat(barCount)
-        guard barWidth > 0 else { return }
+        let scale = max(window?.backingScaleFactor ?? layer?.contentsScale ?? 2, 1)
+        let half = bounds.height * WaveformColumnGeometry.amplitudeFraction
+        guard half > 0, let prepared = WaveformColumnGeometry.prepare(
+            mins: model.mins,
+            maxes: model.maxes,
+            contentWidth: model.contentWidth,
+            rect: rect,
+            scale: scale,
+            half: half
+        ) else { return }
 
-        // Long songs carry far more peaks than points of width. Filling a polygon with
-        // several vertices per pixel makes CoreGraphics' antialiasing crawl, and tiles
-        // draw on the main thread, so collapse peaks to roughly one vertex per point.
-        // Groups are aligned to multiples of `groupSize` so neighbouring tiles agree.
-        let groupSize = max(1, Int(ceil(1 / barWidth)))
-        let groupWidth = barWidth * CGFloat(groupSize)
-        let firstGroup = max(0, Int(floor(rect.minX / groupWidth)) - 1)
-        let lastGroup = Int(ceil(rect.maxX / groupWidth)) + 1
-        let heights = WaveformPeakResampler
-            .groupedMaxima(of: model.peaks, groupSize: groupSize, groups: firstGroup...lastGroup)
-            .map { max(1, CGFloat($0) * maxBarHeight) }
-        guard !heights.isEmpty else { return }
-
-        func centerX(ofBarAt offset: Int) -> CGFloat {
-            (CGFloat(firstGroup + offset) + 0.5) * groupWidth
-        }
-
-        let path = NSBezierPath()
-        path.move(to: NSPoint(x: CGFloat(firstGroup) * groupWidth, y: midY))
-        for (offset, height) in heights.enumerated() {
-            path.line(to: NSPoint(x: centerX(ofBarAt: offset), y: midY - height))
-        }
-        path.line(to: NSPoint(x: CGFloat(firstGroup + heights.count) * groupWidth, y: midY))
-        for (offset, height) in heights.enumerated().reversed() {
-            path.line(to: NSPoint(x: centerX(ofBarAt: offset), y: midY + height))
-        }
-        path.close()
+        let path = NSBezierPath(cgPath: WaveformColumnGeometry.envelopePath(
+            columns: prepared.columns,
+            originX: prepared.originX,
+            columnWidth: prepared.columnWidth,
+            centerY: midY,
+            half: half
+        ))
 
         let playheadX: CGFloat? = {
             guard model.showsPlayheadSplit, let playheadTime = model.playheadTime else { return nil }
@@ -305,11 +343,22 @@ final class LiveSongWaveformScrollBackingView: NSView {
         NSGraphicsContext.current?.saveGraphicsState()
         NSBezierPath(rect: rect).addClip()
         if let playheadX {
+            // Draw each side once so the played alpha replaces the unplayed
+            // alpha instead of compositing on top of it.
+            NSGraphicsContext.current?.saveGraphicsState()
+            NSBezierPath(rect: NSRect(
+                x: playheadX,
+                y: 0,
+                width: max(0, bounds.width - playheadX),
+                height: bounds.height
+            )).addClip()
             NSColor.white.withAlphaComponent(model.unplayedOpacity).setFill()
             path.fill()
+            NSGraphicsContext.current?.restoreGraphicsState()
+
             NSGraphicsContext.current?.saveGraphicsState()
             NSBezierPath(rect: NSRect(x: 0, y: 0, width: max(0, playheadX), height: bounds.height)).addClip()
-            NSColor.white.setFill()
+            NSColor.white.withAlphaComponent(model.playedOpacity).setFill()
             path.fill()
             NSGraphicsContext.current?.restoreGraphicsState()
         } else {

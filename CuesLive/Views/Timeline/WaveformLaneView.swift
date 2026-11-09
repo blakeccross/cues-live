@@ -741,7 +741,7 @@ private struct ClipSampleWaveform: View {
         let count = max(0, pixelEnd - pixelStart)
         // Soundcraft centers each column on its pixel and lets the window reach one point into its neighbours.
         let windowStart = origin + Double(pixelStart) / Double(scale) * framesPerPoint - overlap * 0.5
-        let half = band.height * 0.46
+        let half = band.height * WaveformColumnGeometry.amplitudeFraction
         let centerY = band.midY
         let color = Color.white.opacity(0.55)
 
@@ -796,44 +796,36 @@ private struct ClipSampleWaveform: View {
         color: Color,
         context: inout GraphicsContext
     ) {
-        var run: [(Int, Float, Float)] = []
+        var run: [WaveformColumnSpan] = []
+        var runStart = 0
 
         func flush() {
-            guard let first = run.first, let last = run.last else { return }
-            var path = Path()
-            func x(_ column: Int) -> CGFloat { CGFloat(pixelStart + column) * columnWidth }
-            func y(_ value: Float) -> CGFloat { centerY - CGFloat(clamp(value)) * half }
-            path.move(to: CGPoint(x: x(first.0), y: y(first.2)))
-            for column in run {
-                path.addLine(to: CGPoint(x: x(column.0) + columnWidth * 0.5, y: y(column.2)))
-            }
-            path.addLine(to: CGPoint(x: x(last.0) + columnWidth, y: y(last.2)))
-            path.addLine(to: CGPoint(x: x(last.0) + columnWidth, y: y(last.1)))
-            for column in run.reversed() {
-                path.addLine(to: CGPoint(x: x(column.0) + columnWidth * 0.5, y: y(column.1)))
-            }
-            path.closeSubpath()
+            guard !run.isEmpty else { return }
+            let path = Path(WaveformColumnGeometry.envelopePath(
+                columns: run,
+                originX: CGFloat(pixelStart + runStart) * columnWidth,
+                columnWidth: columnWidth,
+                centerY: centerY,
+                half: half
+            ))
             context.fill(path, with: .color(color))
             run.removeAll(keepingCapacity: true)
         }
 
         for (index, column) in columns.enumerated() {
             if let column {
-                let thickened = thicken(column, half: half, scale: scale)
-                run.append((index, thickened.0, thickened.1))
+                if run.isEmpty { runStart = index }
+                run.append(WaveformColumnGeometry.thicken(
+                    min: column.0,
+                    max: column.1,
+                    half: half,
+                    scale: scale
+                ))
             } else {
                 flush()
             }
         }
         flush()
-    }
-
-    /// Soundcraft keeps every column at least a pixel tall, so silence still shows a center line.
-    private func thicken(_ span: (Float, Float), half: CGFloat, scale: CGFloat) -> (Float, Float) {
-        let pixel = Float((1 / scale) / max(half, 1) / 2)
-        guard span.1 - span.0 < pixel * 2 else { return span }
-        let mid = (span.0 + span.1) / 2
-        return (mid - pixel, mid + pixel)
     }
 
     private func visibleWindow(clipWidth: CGFloat) -> (lower: CGFloat, upper: CGFloat) {
