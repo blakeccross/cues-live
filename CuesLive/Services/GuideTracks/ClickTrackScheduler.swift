@@ -24,6 +24,10 @@ enum ClickTrackScheduler {
         )
 
         let subdivisionsPerBeat = subdivision.subdivisionsPerBeat
+        let timeline = TempoTimeline(
+            tempoChanges: normalizedTempo,
+            timeSignatureChanges: normalizedSignatures
+        )
         var result: [ScheduledClick] = []
         var measure = max(
             1,
@@ -33,16 +37,17 @@ enum ClickTrackScheduler {
                 timeSignatureChanges: normalizedSignatures
             )
         )
+        var barTick = TempoTimeline.tick(
+            measure: measure,
+            beatOffset: 0,
+            timeSignatureChanges: normalizedSignatures
+        )
 
         while measure <= 1_000_000 {
-            let measureStart = MeasureTiming.timeAtStartOfMeasure(
-                measure,
-                tempoChanges: normalizedTempo,
-                timeSignatureChanges: normalizedSignatures
-            )
+            let measureStart = timeline.seconds(atTick: barTick)
             if measureStart >= endTime { break }
 
-            let bpm = MeasureTiming.bpmForMeasure(measure, tempoChanges: normalizedTempo)
+            let bpm = timeline.bpm(atTick: barTick)
             guard bpm > 0 else { break }
 
             let signature = MeasureTiming.numeratorDenominatorForMeasure(
@@ -55,12 +60,11 @@ enum ClickTrackScheduler {
                     denominator: signature.denominator
                 ).rounded(.down)
             )
-            let beatDuration = 60.0 / bpm
-            let subdivisionDuration = beatDuration / Double(subdivisionsPerBeat)
+            let tickStep = TempoChange.ticksPerQuarter / subdivisionsPerBeat
             let subdivisionsInMeasure = max(1, beatsInMeasure) * subdivisionsPerBeat
 
             for subdivisionIndex in 0..<subdivisionsInMeasure {
-                let clickTime = measureStart + TimeInterval(subdivisionIndex) * subdivisionDuration
+                let clickTime = timeline.seconds(atTick: barTick + subdivisionIndex * tickStep)
                 if clickTime >= endTime { break }
                 if clickTime >= startTime {
                     result.append(
@@ -69,6 +73,11 @@ enum ClickTrackScheduler {
                 }
             }
 
+            let quarters = MeasureTiming.beatsPerMeasure(
+                numerator: signature.numerator,
+                denominator: signature.denominator
+            )
+            barTick += max(0, Int((quarters * Double(TempoChange.ticksPerQuarter)).rounded()))
             measure += 1
         }
 

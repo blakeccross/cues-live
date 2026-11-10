@@ -17,7 +17,6 @@ struct TimelineSectionMarkerRowView: View {
     let onAddSection: (TimeInterval) -> Void
     let onRenameSection: (SongSection) -> Void
     let onRemoveMarker: (SongSection) -> Void
-    let onDeleteSection: (SongSection) -> Void
 
     @State private var pointerX: CGFloat = 0
     @State private var markerFrames: [UUID: CGRect] = [:]
@@ -36,6 +35,7 @@ struct TimelineSectionMarkerRowView: View {
             }
         }
         .frame(width: displayWidth, height: height, alignment: .leading)
+        .background(Color.dawStickyRulerBackground)
         .onPreferenceChange(SectionMarkerFramePreference.self) { markerFrames = $0 }
         .overlay {
             Color.clear
@@ -60,9 +60,6 @@ struct TimelineSectionMarkerRowView: View {
                         Divider()
                         Button("Remove Marker") {
                             onRemoveMarker(section)
-                        }
-                        Button("Delete Section and Audio", role: .destructive) {
-                            onDeleteSection(section)
                         }
                     }
                 }
@@ -150,7 +147,7 @@ struct TimelineSectionMarkerRowView: View {
             duration: safeDuration,
             contentWidth: contentWidth
         )
-        let side = height - 6
+        let side = max(0, height - Self.triangleInset * 2)
         let triangleWidth = side * Self.triangleAltitude
         return (x, side, triangleWidth, x + triangleWidth + 4)
     }
@@ -190,6 +187,8 @@ struct TimelineSectionMarkerRowView: View {
 
     /// Altitude of an equilateral triangle, as a fraction of its side.
     private static let triangleAltitude = CGFloat(3).squareRoot() / 2
+    /// Space left above and below the triangle inside the marker row.
+    private static let triangleInset: CGFloat = 4
 }
 
 /// An equilateral triangle. The vertical side is the marker time and the point faces right.

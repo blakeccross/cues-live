@@ -26,7 +26,7 @@ struct TimelineTimeSignatureRulerView: View {
     var body: some View {
         ZStack(alignment: .leading) {
             Rectangle()
-                .fill(Color.primary.opacity(0.04))
+                .fill(Color.dawStickyRulerBackground)
 
             ForEach(Array(timeSignatureSegments.enumerated()), id: \.offset) { index, segment in
                 let startX = TimelineLayout.xPosition(
@@ -152,6 +152,7 @@ struct TimelineTempoRulerView: View {
     let onTap: (TimeInterval) -> Void
     let onEditMarker: (TempoChange) -> Void
     let onDeleteMarker: (TempoChange) -> Void
+    let onTempoOperations: () -> Void
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -166,17 +167,24 @@ struct TimelineTempoRulerView: View {
     }
 
     var body: some View {
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
         ZStack(alignment: .leading) {
             Rectangle()
-                .fill(Color.primary.opacity(0.04))
+                .fill(Color.dawStickyRulerBackground)
+                .contextMenu {
+                    Button("Tempo Operations…") {
+                        onTempoOperations()
+                    }
+                }
 
-            ForEach(Array(tempoSegments.enumerated()), id: \.offset) { index, segment in
+            let segments = tempoSegments(timeline: timeline)
+            ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
                 let startX = TimelineLayout.xPosition(
                     for: segment.startTime,
                     duration: safeDuration,
                     contentWidth: contentWidth
                 )
-                let endX = index + 1 == tempoSegments.count
+                let endX = index + 1 == segments.count
                     ? effectiveDisplayWidth
                     : TimelineLayout.xPosition(
                         for: segment.endTime,
@@ -189,24 +197,27 @@ struct TimelineTempoRulerView: View {
                     Rectangle()
                         .fill(tempoColor(index).opacity(0.22))
 
-                    Text(String(format: "%.0f", segment.bpm))
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(tempoColor(index))
-                        .padding(.horizontal, 4)
-                        .frame(width: segmentWidth, alignment: .leading)
-                        .lineLimit(1)
+                    if segmentWidth >= 28 {
+                        Text(String(format: "%.0f", segment.bpm))
+                            .font(.system(size: 9, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(tempoColor(index))
+                            .padding(.horizontal, 4)
+                            .frame(width: segmentWidth, alignment: .leading)
+                            .lineLimit(1)
+                    }
                 }
                 .frame(width: segmentWidth, height: height)
                 .offset(x: startX)
             }
 
             ForEach(sortedMarkers) { marker in
-                let time = MeasureTiming.timeAtStartOfMeasure(
-                    marker.startMeasure,
-                    tempoChanges: tempoChanges,
+                let tick = TempoTimeline.tick(
+                    measure: marker.startMeasure,
+                    beatOffset: marker.beatOffset,
                     timeSignatureChanges: timeSignatureChanges
                 )
+                let time = timeline.seconds(atTick: tick)
                 let x = TimelineLayout.xPosition(
                     for: time,
                     duration: safeDuration,
@@ -221,7 +232,10 @@ struct TimelineTempoRulerView: View {
                         Button("Edit Tempo") {
                             onEditMarker(marker)
                         }
-                        if marker.startMeasure > 1 {
+                        Button("Tempo Operations…") {
+                            onTempoOperations()
+                        }
+                        if !marker.isOrigin {
                             Button("Delete Marker", role: .destructive) {
                                 onDeleteMarker(marker)
                             }
@@ -232,10 +246,10 @@ struct TimelineTempoRulerView: View {
         .frame(width: effectiveDisplayWidth, height: height)
         .contentShape(Rectangle())
         .gesture(
-            DragGesture(minimumDistance: 0)
-                .onEnded { value in
+            SpatialTapGesture(count: 2)
+                .onEnded { event in
                     let time = TimelineLayout.time(
-                        at: min(value.location.x, contentWidth),
+                        at: min(event.location.x, contentWidth),
                         duration: safeDuration,
                         contentWidth: contentWidth
                     )
@@ -250,23 +264,26 @@ struct TimelineTempoRulerView: View {
         let bpm: Double
     }
 
-    private var tempoSegments: [TempoSegment] {
+    private func tempoSegments(timeline: TempoTimeline) -> [TempoSegment] {
         let markers = sortedMarkers
         guard !markers.isEmpty else { return [] }
 
         return markers.enumerated().map { index, marker in
-            let startTime = MeasureTiming.timeAtStartOfMeasure(
-                marker.startMeasure,
-                tempoChanges: tempoChanges,
+            let startTick = TempoTimeline.tick(
+                measure: marker.startMeasure,
+                beatOffset: marker.beatOffset,
                 timeSignatureChanges: timeSignatureChanges
             )
+            let startTime = timeline.seconds(atTick: startTick)
             let endTime: TimeInterval
             if index + 1 < markers.count {
-                endTime = MeasureTiming.timeAtStartOfMeasure(
-                    markers[index + 1].startMeasure,
-                    tempoChanges: tempoChanges,
+                let next = markers[index + 1]
+                let nextTick = TempoTimeline.tick(
+                    measure: next.startMeasure,
+                    beatOffset: next.beatOffset,
                     timeSignatureChanges: timeSignatureChanges
                 )
+                endTime = timeline.seconds(atTick: nextTick)
             } else {
                 endTime = safeDuration
             }

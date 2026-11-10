@@ -2,6 +2,21 @@ import XCTest
 @testable import CuesLive
 
 final class MeasureBoundaryTests: XCTestCase {
+    func testGridDetailAppearsAsTheBeatGrowsPastSevenPoints() {
+        // 120 BPM is a 0.5 s quarter. Soundcraft waits until a level is more than 7 points apart.
+        let hidden = MeasureTiming.LaneGridDetail.detail(pixelsPerSecond: 10, fastestBPM: 120)
+        XCTAssertFalse(hidden.showsBeats)
+        XCTAssertFalse(hidden.showsSubdivisions)
+
+        let beatsOnly = MeasureTiming.LaneGridDetail.detail(pixelsPerSecond: 16, fastestBPM: 120)
+        XCTAssertTrue(beatsOnly.showsBeats)
+        XCTAssertFalse(beatsOnly.showsSubdivisions)
+
+        let withEighths = MeasureTiming.LaneGridDetail.detail(pixelsPerSecond: 30, fastestBPM: 120)
+        XCTAssertTrue(withEighths.showsBeats)
+        XCTAssertTrue(withEighths.showsSubdivisions)
+    }
+
     func testBeatGridPlacesQuartersAndEighths() {
         // 120 BPM in 4/4 is a 0.5 s beat. Downbeats stay out of both lists.
         let grid = MeasureTiming.beatGridTimes(

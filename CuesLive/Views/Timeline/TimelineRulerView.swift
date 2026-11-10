@@ -31,6 +31,24 @@ struct TimelineMeasureGridOverlay: View {
         return safeDuration * TimeInterval(canvasWidth / mappingWidth)
     }
 
+    /// Beats, then eighths, once each level is far enough apart to read.
+    private var fineGridTimes: MeasureTiming.BeatGridTimes {
+        let pixelsPerSecond = mappingWidth / CGFloat(safeDuration)
+        let fastest = tempoChanges.map(\.bpm).filter { $0 > 0 }.max() ?? 0
+        let detail = MeasureTiming.LaneGridDetail.detail(pixelsPerSecond: pixelsPerSecond, fastestBPM: fastest)
+        guard detail.showsBeats else { return MeasureTiming.BeatGridTimes(beats: [], subdivisions: []) }
+        let grid = MeasureTiming.beatGridTimes(
+            duration: safeDuration,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges,
+            visibleTimeRange: 0...extendedMaximumTime
+        )
+        return MeasureTiming.BeatGridTimes(
+            beats: grid.beats,
+            subdivisions: detail.showsSubdivisions ? grid.subdivisions : []
+        )
+    }
+
     private func measureBoundaries(for contentWidth: CGFloat) -> [TimeInterval] {
         guard !tempoChanges.isEmpty, contentWidth > 0 else { return [] }
         return MeasureTiming.visibleMeasureBoundaries(
@@ -44,42 +62,95 @@ struct TimelineMeasureGridOverlay: View {
 
     var body: some View {
         let boundaries = measureBoundaries(for: mappingWidth)
+        let fine = fineGridTimes
         Canvas { context, size in
             guard size.width > 0, size.height > 0, mappingWidth > 0 else { return }
 
             let rulerLineColor = Color.dawMeasureGridLine
-            let trackLineColor = showsThroughContent
+            let barColor = showsThroughContent
                 ? Color.soundcraftGridVeil(over: .dawTimelineBackground, environment: environment)
                 : Color.dawMeasureGridLine.opacity(0.75)
+            let tickColor = showsThroughContent
+                ? Color.soundcraftGridVeil(over: .dawTimelineBackground, environment: environment, contrast: 0.45)
+                : Color.dawMeasureGridLine.opacity(0.4)
             let rulerLineEnd = min(rulerHeight, size.height)
 
+            for time in fine.subdivisions {
+                strokeTick(at: time, in: &context, size: size, rulerColor: tickColor, trackColor: tickColor, rulerLineEnd: rulerLineEnd)
+            }
+            for time in fine.beats {
+                strokeTick(at: time, in: &context, size: size, rulerColor: tickColor, trackColor: tickColor, rulerLineEnd: rulerLineEnd)
+            }
             for time in boundaries {
-                let x = TimelineLayout.xPosition(
-                    for: time,
-                    duration: safeDuration,
-                    contentWidth: mappingWidth
-                )
-                guard x >= 0, x <= size.width else { continue }
-
-                var rulerPath = Path()
-                rulerPath.move(to: CGPoint(x: x, y: 0))
-                rulerPath.addLine(to: CGPoint(x: x, y: rulerLineEnd))
-                context.stroke(rulerPath, with: .color(rulerLineColor), lineWidth: 1)
-
-                guard size.height > rulerLineEnd else { continue }
-
-                let gaps = showsThroughContent
-                    ? MeasureGridSpans.gaps(at: x, in: headerBands)
-                    : []
-                for (start, end) in MeasureGridSpans.verticalSegments(from: rulerLineEnd, to: size.height, skipping: gaps) {
-                    var trackPath = Path()
-                    trackPath.move(to: CGPoint(x: x, y: start))
-                    trackPath.addLine(to: CGPoint(x: x, y: end))
-                    context.stroke(trackPath, with: .color(trackLineColor), lineWidth: 1)
-                }
+                strokeTick(at: time, in: &context, size: size, rulerColor: rulerLineColor, trackColor: barColor, rulerLineEnd: rulerLineEnd)
             }
         }
         .frame(width: canvasWidth > 0 ? canvasWidth : nil)
+        .allowsHitTesting(false)
+    }
+
+    private func strokeTick(
+        at time: TimeInterval,
+        in context: inout GraphicsContext,
+        size: CGSize,
+        rulerColor: Color,
+        trackColor: Color,
+        rulerLineEnd: CGFloat
+    ) {
+        let x = TimelineLayout.xPosition(
+            for: time,
+            duration: safeDuration,
+            contentWidth: mappingWidth
+        )
+        guard x >= 0, x <= size.width else { return }
+
+        var rulerPath = Path()
+        rulerPath.move(to: CGPoint(x: x, y: 0))
+        rulerPath.addLine(to: CGPoint(x: x, y: rulerLineEnd))
+        context.stroke(rulerPath, with: .color(rulerColor), lineWidth: 1)
+
+        guard size.height > rulerLineEnd else { return }
+
+        let gaps = showsThroughContent
+            ? MeasureGridSpans.gaps(at: x, in: headerBands)
+            : []
+        for (start, end) in MeasureGridSpans.verticalSegments(from: rulerLineEnd, to: size.height, skipping: gaps) {
+            var trackPath = Path()
+            trackPath.move(to: CGPoint(x: x, y: start))
+            trackPath.addLine(to: CGPoint(x: x, y: end))
+            context.stroke(trackPath, with: .color(trackColor), lineWidth: 1)
+        }
+    }
+}
+
+/// Section-marker ticks. A dark gray stroke over the track viewport, from the top of
+/// the lanes to the bottom of that area, on top of the clips.
+struct TimelineSectionMarkerLines: View {
+    let times: [TimeInterval]
+    let duration: TimeInterval
+    let contentWidth: CGFloat
+    let horizontalScrollOffset: CGFloat
+    let viewportWidth: CGFloat
+
+    var body: some View {
+        Canvas { context, size in
+            guard size.width > 0, size.height > 0, contentWidth > 0 else { return }
+            let safeDuration = max(duration, 0.001)
+            let color = GraphicsContext.Shading.color(.sectionMarkerLine)
+            for time in times {
+                let x = TimelineLayout.xPosition(
+                    for: time,
+                    duration: safeDuration,
+                    contentWidth: contentWidth
+                ) - horizontalScrollOffset
+                guard x > 0, x < size.width else { continue }
+                var path = Path()
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x, y: size.height))
+                context.stroke(path, with: color, lineWidth: 1)
+            }
+        }
+        .frame(width: viewportWidth)
         .allowsHitTesting(false)
     }
 }
@@ -145,13 +216,13 @@ struct TimelineRulerView: View {
     let onAddSection: (TimeInterval) -> Void
     let onRenameSection: (SongSection) -> Void
     let onRemoveMarker: (SongSection) -> Void
-    let onDeleteSection: (SongSection) -> Void
     let onTimeSignatureRulerTap: (TimeInterval) -> Void
     let onEditTimeSignatureMarker: (TimeSignatureChange) -> Void
     let onDeleteTimeSignatureMarker: (TimeSignatureChange) -> Void
     let onTempoRulerTap: (TimeInterval) -> Void
     let onEditTempoMarker: (TempoChange) -> Void
     let onDeleteTempoMarker: (TempoChange) -> Void
+    let onTempoOperations: () -> Void
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -184,13 +255,15 @@ struct TimelineRulerView: View {
                 height: tempoRulerHeight,
                 onTap: onTempoRulerTap,
                 onEditMarker: onEditTempoMarker,
-                onDeleteMarker: onDeleteTempoMarker
+                onDeleteMarker: onDeleteTempoMarker,
+                onTempoOperations: onTempoOperations
             )
 
             sectionMarkerRow
                 .frame(width: effectiveDisplayWidth, height: sectionMarkerHeight)
         }
         .frame(width: effectiveDisplayWidth, alignment: .leading)
+        .background(Color.dawStickyRulerBackground)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(Color.dawTimelineDivider)
@@ -214,8 +287,7 @@ struct TimelineRulerView: View {
             onToggleLoopSection: onToggleLoopSection,
             onAddSection: onAddSection,
             onRenameSection: onRenameSection,
-            onRemoveMarker: onRemoveMarker,
-            onDeleteSection: onDeleteSection
+            onRemoveMarker: onRemoveMarker
         )
     }
 }

@@ -34,6 +34,9 @@ struct EditSongTransportCluster: View {
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
+    let onPlay: () -> Void
+    /// Position shown in the counter while stopped. Playback leaves this where the insertion is.
+    let stoppedDisplayTime: TimeInterval
 
     @State private var showingTempoToolbarEditor = false
     @State private var showingKeyToolbarEditor = false
@@ -48,7 +51,7 @@ struct EditSongTransportCluster: View {
                     transportStrip(at: audioEngine.currentTime)
                 }
             } else {
-                transportStrip(at: audioEngine.currentTime)
+                transportStrip(at: stoppedDisplayTime)
             }
         }
     }
@@ -68,7 +71,7 @@ struct EditSongTransportCluster: View {
                 }
                 onStopTransport()
             },
-            onPlay: viewModel.play,
+            onPlay: onPlay,
             onPause: viewModel.pause,
             onToggleLoop: { onToggleLoopAtTime(time) },
             isFadedOut: groupMixFade.isFadedOut,
@@ -158,6 +161,8 @@ struct EditSongToolbarContent: ToolbarContent {
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
+    let onPlay: () -> Void
+    let stoppedDisplayTime: TimeInterval
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
     let onClickTrackGenerated: () -> Void
@@ -231,7 +236,9 @@ struct EditSongToolbarContent: ToolbarContent {
             loopSectionIDs: loopSectionIDs,
             currentSectionAtTime: currentSectionAtTime,
             onStopTransport: onStopTransport,
-            onToggleLoopAtTime: onToggleLoopAtTime
+            onToggleLoopAtTime: onToggleLoopAtTime,
+            onPlay: onPlay,
+            stoppedDisplayTime: stoppedDisplayTime
         )
     }
 

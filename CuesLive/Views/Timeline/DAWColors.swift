@@ -43,6 +43,11 @@ extension Color {
         AppColors.separator.opacity(0.6)
     }
 
+    /// Section-marker tick, drawn over the tracks.
+    static var sectionMarkerLine: Color {
+        Color(white: 0.38)
+    }
+
     /// Soundcraft's edit-selection wash: the dark-theme selection composited over the lanes.
     static var soundcraftSelection: Color {
         let alpha = 110.0 / 255.0
@@ -51,10 +56,15 @@ extension Color {
 
     /// Soundcraft's lane grid: a white or black veil that becomes its bar line on the lane
     /// background, and stays visible when the same stroke crosses a clip.
-    static func soundcraftGridVeil(over background: Color, environment: EnvironmentValues) -> Color {
+    /// `contrast` below 1 is the lighter beat and subdivision tick.
+    static func soundcraftGridVeil(
+        over background: Color,
+        environment: EnvironmentValues,
+        contrast: Double = 1
+    ) -> Color {
         let resolved = background.resolve(in: environment)
         let level = (Double(resolved.red) + Double(resolved.green) + Double(resolved.blue)) / 3
-        let shift = level < 0.5 ? 30.0 / 255.0 : -48.0 / 255.0
+        let shift = (level < 0.5 ? 30.0 / 255.0 : -48.0 / 255.0) * contrast
         let lineLevel = min(max(level + shift, 0), 1)
         if lineLevel > level {
             return Color.white.opacity((lineLevel - level) / max(1 - level, 0.001))
@@ -89,6 +99,20 @@ extension Color {
 
     static var dawPlayheadBorder: Color {
         Color(white: 0.12)
+    }
+
+    /// Soundcraft's playback playhead. Dark theme is rgb(232, 60, 50); light is rgb(210, 48, 42).
+    static func soundcraftPlayhead(colorScheme: ColorScheme) -> Color {
+        colorScheme == .light
+            ? Color(red: 210.0 / 255.0, green: 48.0 / 255.0, blue: 42.0 / 255.0)
+            : Color(red: 232.0 / 255.0, green: 60.0 / 255.0, blue: 50.0 / 255.0)
+    }
+
+    /// Soundcraft's stopped insertion cursor. Dark theme is rgb(230, 230, 230); light is rgb(35, 36, 40).
+    static func soundcraftInsertion(colorScheme: ColorScheme) -> Color {
+        colorScheme == .light
+            ? Color(red: 35.0 / 255.0, green: 36.0 / 255.0, blue: 40.0 / 255.0)
+            : Color(white: 230.0 / 255.0)
     }
 }
 

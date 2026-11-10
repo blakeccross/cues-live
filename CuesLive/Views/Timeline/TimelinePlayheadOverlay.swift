@@ -58,16 +58,27 @@ struct TimelinePlayheadLayer<Content: View>: View {
     }
 }
 
-/// Logic Pro–style playhead drawn in one canvas pass with a shared pixel-aligned center.
+enum TimelinePlayheadStyle {
+    /// Triangle handle and gray line.
+    case handle
+    /// Soundcraft's full-height red line, drawn only while playing.
+    case line
+}
+
+/// Playhead drawn in one canvas pass with a shared pixel-aligned center.
 struct TimelinePlayheadOverlay: View {
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.colorScheme) private var colorScheme
 
     let playheadTime: TimeInterval
     let duration: TimeInterval
     let contentWidth: CGFloat
     let height: CGFloat
+    var style: TimelinePlayheadStyle = .handle
     /// When the overlay is pinned to the viewport, subtract the lane horizontal scroll offset.
     var horizontalScrollOffset: CGFloat = 0
+    /// Width of a pinned overlay. The playhead is still positioned in timeline coordinates.
+    var canvasWidth: CGFloat? = nil
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -89,13 +100,25 @@ struct TimelinePlayheadOverlay: View {
             )
             drawPlayhead(in: context, size: size, centerX: centerX)
         }
-        .frame(width: contentWidth, height: height, alignment: .topLeading)
+        .frame(width: canvasWidth ?? contentWidth, height: height, alignment: .topLeading)
         .allowsHitTesting(false)
     }
 
     private func drawPlayhead(in context: GraphicsContext, size: CGSize, centerX: CGFloat) {
-        drawLine(in: context, size: size, centerX: centerX)
-        drawHandle(in: context, centerX: centerX)
+        switch style {
+        case .handle:
+            drawLine(in: context, size: size, centerX: centerX)
+            drawHandle(in: context, centerX: centerX)
+        case .line:
+            var path = Path()
+            path.move(to: CGPoint(x: centerX, y: 0))
+            path.addLine(to: CGPoint(x: centerX, y: size.height))
+            context.stroke(
+                path,
+                with: .color(.soundcraftPlayhead(colorScheme: colorScheme)),
+                style: StrokeStyle(lineWidth: 1.5)
+            )
+        }
     }
 
     private func drawLine(in context: GraphicsContext, size: CGSize, centerX: CGFloat) {
@@ -155,6 +178,52 @@ struct TimelinePlayheadOverlay: View {
     private func pixelAligned(_ value: CGFloat, scale: CGFloat) -> CGFloat {
         guard scale > 0 else { return value.rounded(.toNearestOrAwayFromZero) }
         return (value * scale).rounded(.toNearestOrAwayFromZero) / scale
+    }
+}
+
+/// Blinking insertion on the selected lanes. Visible while stopped, until playback starts.
+struct TimelineInsertionCursor: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let time: TimeInterval
+    let duration: TimeInterval
+    let contentWidth: CGFloat
+    let rows: [Int]
+    let laneHeight: CGFloat
+    let rowStride: CGFloat
+    let areaHeight: CGFloat
+
+    @State private var anchor = Date()
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.25)) { context in
+            let elapsed = context.date.timeIntervalSince(anchor)
+            let visible = Int(elapsed * 2) % 2 == 0
+            Canvas { canvas, _ in
+                guard visible else { return }
+                let x = TimelineLayout.xPosition(
+                    for: min(max(0, time), max(duration, 0.001)),
+                    duration: max(duration, 0.001),
+                    contentWidth: contentWidth
+                )
+                let color = Color.soundcraftInsertion(colorScheme: colorScheme)
+                for row in rows {
+                    var path = Path()
+                    let y = CGFloat(row) * rowStride
+                    path.move(to: CGPoint(x: x, y: y))
+                    path.addLine(to: CGPoint(x: x, y: y + laneHeight))
+                    canvas.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 1))
+                }
+            }
+            .frame(width: contentWidth, height: areaHeight, alignment: .topLeading)
+        }
+        .onChange(of: time) { _, _ in
+            anchor = Date()
+        }
+        .onChange(of: rows) { _, _ in
+            anchor = Date()
+        }
+        .allowsHitTesting(false)
     }
 }
 

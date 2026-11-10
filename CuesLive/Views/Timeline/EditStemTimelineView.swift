@@ -1,5 +1,10 @@
 import Observation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
 
 /// Extra viewports of waveform kept painted around the scroll position.
 /// Scrolling inside that slice does not redraw the lanes.
@@ -91,6 +96,7 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
     let timelineDuration: TimeInterval
     let timelineContentWidth: CGFloat
     let timelineDisplayWidth: CGFloat
+    let sectionTimes: [TimeInterval]
     let laneCount: Int
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
@@ -104,6 +110,12 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
     @State private var scrollModel = TimelineHorizontalScrollModel()
 
     private let timelineHorizontalScrollSpace = "editTimelineHorizontalScroll"
+
+    private var laneAreaHeight: CGFloat {
+        guard laneCount > 0 else { return 0 }
+        return CGFloat(laneCount) * TimelineLayout.laneHeight
+            + CGFloat(laneCount - 1) * TimelineLayout.laneSpacing
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -127,27 +139,47 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
                 ScrollView(.vertical, showsIndicators: true) {
                     HStack(alignment: .top, spacing: 0) {
                         headers()
-                            .frame(width: TimelineLayout.trackHeaderWidth)
+                            .frame(width: TimelineLayout.trackHeaderWidth, height: laneAreaHeight, alignment: .top)
 
                         ScrollView(.horizontal, showsIndicators: true) {
                             VStack(spacing: 0) {
                                 horizontalScrollOffsetProbe
                                 lanes()
                                     .environment(\.timelineScrollModel, scrollModel)
-                                    .frame(width: timelineDisplayWidth, alignment: .leading)
+                                    .frame(width: timelineDisplayWidth, height: laneAreaHeight, alignment: .topLeading)
                             }
+                            .frame(width: timelineDisplayWidth, height: laneAreaHeight, alignment: .topLeading)
+                            .background(TimelineScrollEdgeClamp())
                         }
+                        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                        .contentMargins(0, for: .scrollContent)
                         .coordinateSpace(name: timelineHorizontalScrollSpace)
                         .applyTimelineHorizontalOffsetObserver { scrollModel.setOffset($0) }
-                        .frame(width: timelineColumnWidth)
+                        .frame(width: timelineColumnWidth, height: laneAreaHeight)
                     }
+                    .frame(height: laneAreaHeight, alignment: .top)
+                    .background(TimelineScrollEdgeClamp())
                     .overlay(alignment: .topLeading) {
                         // Drawn on the row that holds both columns. A line inside either
                         // column is clipped before it can cross into the track names.
                         trackLaneDividers
                     }
                 }
+                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+                .contentMargins(0, for: .scrollContent)
                 .frame(height: tracksViewportHeight)
+                .overlay(alignment: .topLeading) {
+                    TimelineSectionMarkerLines(
+                        times: sectionTimes,
+                        duration: timelineDuration,
+                        contentWidth: timelineContentWidth,
+                        horizontalScrollOffset: scrollModel.offset,
+                        viewportWidth: timelineColumnWidth
+                    )
+                    .frame(height: tracksViewportHeight)
+                    .padding(.leading, TimelineLayout.trackHeaderWidth)
+                    .allowsHitTesting(false)
+                }
 
                 HStack(alignment: .top, spacing: 0) {
                     timeRulerCorner()
@@ -252,8 +284,9 @@ extension EnvironmentValues {
     }
 }
 
-/// Playhead pinned to the viewport. Reads the scroll model so the lanes stay put.
+/// Red playhead pinned to the viewport, drawn only while audio is playing.
 private struct TimelineFollowingPlayhead: View {
+    @Bindable private var audioEngine = AudioEngineManager.shared
     var model: TimelineHorizontalScrollModel
     let duration: TimeInterval
     let contentWidth: CGFloat
@@ -261,18 +294,21 @@ private struct TimelineFollowingPlayhead: View {
     let height: CGFloat
 
     var body: some View {
-        let offset = model.offset
-        TimelinePlayheadTimeReader { playheadTime in
-            TimelinePlayheadOverlay(
-                playheadTime: playheadTime,
-                duration: duration,
-                contentWidth: contentWidth,
-                height: height,
-                horizontalScrollOffset: offset,
-                canvasWidth: viewportWidth
-            )
+        if audioEngine.isPlaying {
+            let offset = model.offset
+            TimelinePlayheadTimeReader { playheadTime in
+                TimelinePlayheadOverlay(
+                    playheadTime: playheadTime,
+                    duration: duration,
+                    contentWidth: contentWidth,
+                    height: height,
+                    style: .line,
+                    horizontalScrollOffset: offset,
+                    canvasWidth: viewportWidth
+                )
+            }
+            .animation(nil, value: offset)
         }
-        .animation(nil, value: offset)
     }
 }
 
@@ -283,6 +319,107 @@ struct TimelineHorizontalScrollOffsetKey: PreferenceKey {
         value = nextValue()
     }
 }
+
+/// Stops the enclosing scroll view from moving past its content.
+private struct TimelineScrollEdgeClamp: View {
+    var body: some View {
+        TimelineScrollEdgeClampRepresentable()
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+    }
+}
+
+#if os(macOS)
+private struct TimelineScrollEdgeClampRepresentable: NSViewRepresentable {
+    func makeNSView(context: Context) -> TimelineScrollEdgeClampView {
+        TimelineScrollEdgeClampView()
+    }
+
+    func updateNSView(_ view: TimelineScrollEdgeClampView, context: Context) {
+        view.clampEnclosingScrollView()
+    }
+}
+
+private final class TimelineScrollEdgeClampView: NSView {
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        clampEnclosingScrollView()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        clampEnclosingScrollView()
+    }
+
+    override func layout() {
+        super.layout()
+        clampEnclosingScrollView()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    func clampEnclosingScrollView() {
+        guard let scrollView = enclosingScrollView else { return }
+        scrollView.horizontalScrollElasticity = .none
+        scrollView.verticalScrollElasticity = .none
+    }
+}
+#else
+private struct TimelineScrollEdgeClampRepresentable: UIViewRepresentable {
+    func makeUIView(context: Context) -> TimelineScrollEdgeClampView {
+        TimelineScrollEdgeClampView()
+    }
+
+    func updateUIView(_ view: TimelineScrollEdgeClampView, context: Context) {
+        view.clampEnclosingScrollView()
+    }
+}
+
+private final class TimelineScrollEdgeClampView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        clampEnclosingScrollView()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        clampEnclosingScrollView()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        clampEnclosingScrollView()
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        nil
+    }
+
+    func clampEnclosingScrollView() {
+        var ancestor: UIView? = superview
+        while let view = ancestor {
+            if let scrollView = view as? UIScrollView {
+                scrollView.bounces = false
+                scrollView.alwaysBounceHorizontal = false
+                scrollView.alwaysBounceVertical = false
+                return
+            }
+            ancestor = view.superview
+        }
+    }
+}
+#endif
 
 struct TimelineHorizontalScrollOffsetReporter: View {
     let coordinateSpaceName: String

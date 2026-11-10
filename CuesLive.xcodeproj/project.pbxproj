@@ -164,6 +164,11 @@
 		AA0000010000000000000034 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
 		AA000001000000000000003C /* TempoChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003E /* TempoChange.swift */; };
+		AA0000010000000000000B20 /* TempoTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B20 /* TempoTimeline.swift */; };
+		AA0000010000000000000B21 /* TempoOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B21 /* TempoOperations.swift */; };
+		AA0000010000000000000B22 /* TempoOperationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B22 /* TempoOperationsTests.swift */; };
+		B10000010000000000000B20 /* TempoTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B20 /* TempoTimeline.swift */; };
+		B10000010000000000000B21 /* TempoOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B21 /* TempoOperations.swift */; };
 		AA0000010000000000000041 /* SongTrackLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000041 /* SongTrackLoader.swift */; };
 		AA0000010000000000000042 /* LiveSetlistNowPlayingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */; };
 		AA0000010000000000000043 /* ClickTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000043 /* ClickTrackGenerator.swift */; };
@@ -468,6 +473,9 @@
 		AA0000020000000000000034 /* SongFolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderImporter.swift; sourceTree = "<group>"; };
 		AA0000020000000000000035 /* TimeSignatureChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSignatureChange.swift; sourceTree = "<group>"; };
 		AA000002000000000000003E /* TempoChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoChange.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B20 /* TempoTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoTimeline.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B21 /* TempoOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoOperations.swift; sourceTree = "<group>"; };
+		AA0000020000000000000B22 /* TempoOperationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoOperationsTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000041 /* SongTrackLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongTrackLoader.swift; sourceTree = "<group>"; };
 		AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistNowPlayingInfoView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000043 /* ClickTrackGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackGenerator.swift; sourceTree = "<group>"; };
@@ -764,6 +772,7 @@
 				AA0000020000000000000035 /* TimeSignatureChange.swift */,
 				AA0000020000000000000B02 /* MeasureAnchoredChange.swift */,
 				AA000002000000000000003E /* TempoChange.swift */,
+				AA0000020000000000000B20 /* TempoTimeline.swift */,
 				AA0000020000000000000047 /* ClickTrackSubdivision.swift */,
 				AA0000F20000000000000001 /* SongTimeline.swift */,
 				AA0000020000000000000004 /* Setlist.swift */,
@@ -911,6 +920,7 @@
 				AA00000200000000000004A2 /* GainRampTests.swift */,
 				AA00000200000000000009F1 /* TrackMixControlsTests.swift */,
 				AA0000020000000000000B01 /* MeasureBoundaryTests.swift */,
+				AA0000020000000000000B22 /* TempoOperationsTests.swift */,
 				AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */,
 				AA00000200000000000000D8 /* SongEditSnapshotTests.swift */,
 				AA000002000000000000012B /* SongMusicalKeyTests.swift */,
@@ -1133,6 +1143,7 @@
 				AA0000020000000000000A01 /* SongSectionDetector.swift */,
 				AA00000200000000000000D7 /* SongUndoController.swift */,
 				AA00000200000000000000A0 /* TimelineRippleStore.swift */,
+				AA0000020000000000000B21 /* TempoOperations.swift */,
 				AA000002000000000000002B /* TrackGroupStore.swift */,
 			);
 			path = Editing;
@@ -1363,6 +1374,8 @@
 				AA0000010000000000000019 /* AbletonProjectImporter.swift in Sources */,
 				AA000001000000000000001A /* PersistenceController.swift in Sources */,
 				AA000001000000000000003C /* TempoChange.swift in Sources */,
+				AA0000010000000000000B20 /* TempoTimeline.swift in Sources */,
+				AA0000010000000000000B21 /* TempoOperations.swift in Sources */,
 				AA0000010000000000000041 /* SongTrackLoader.swift in Sources */,
 				AA0000010000000000000043 /* ClickTrackGenerator.swift in Sources */,
 				AA000001000000000000004E /* ClickTrackScheduler.swift in Sources */,
@@ -1506,6 +1519,7 @@
 				AA00000100000000000004A2 /* GainRampTests.swift in Sources */,
 				AA00000100000000000009F1 /* TrackMixControlsTests.swift in Sources */,
 				AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */,
+				AA0000010000000000000B22 /* TempoOperationsTests.swift in Sources */,
 				AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */,
 				AA00000100000000000000D8 /* SongEditSnapshotTests.swift in Sources */,
 				AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */,
@@ -1586,6 +1600,8 @@
 				3048121C0B3EE1404EE0187A /* AbletonProjectImporter.swift in Sources */,
 				8B68D7E09EA9FAA4F8A97D3A /* PersistenceController.swift in Sources */,
 				39644CE53879671A2EABEAB4 /* TempoChange.swift in Sources */,
+				B10000010000000000000B20 /* TempoTimeline.swift in Sources */,
+				B10000010000000000000B21 /* TempoOperations.swift in Sources */,
 				C4127164C36D8FBC754013DF /* SongTrackLoader.swift in Sources */,
 				00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */,
 				1C67899A8054E132507425D9 /* ClickTrackScheduler.swift in Sources */,

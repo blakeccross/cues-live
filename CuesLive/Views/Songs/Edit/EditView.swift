@@ -6,6 +6,13 @@ import AppKit
 #endif
 
 
+private struct TempoLanePrompt: Identifiable {
+    let id = UUID()
+    let measure: Int
+    let bpm: Double
+    let markerID: UUID?
+}
+
 struct EditView: View {
     @Environment(\.modelContext) private var modelContext
 
@@ -44,8 +51,8 @@ struct EditView: View {
     @State private var showingTimeSignatureEditor = false
     @State private var showingGroupEditor = false
     @State private var showingChangeKey = false
-    @State private var showingTempoEditor = false
-    @State private var editingTempoMarkerID: UUID?
+    @State private var showingTempoOperations = false
+    @State private var tempoLanePrompt: TempoLanePrompt?
     @State private var showingTimeSignatureMarkerEditor = false
     @State private var editingTimeSignatureMarkerID: UUID?
     @State private var sectionPendingRename: SongSection?
@@ -56,8 +63,12 @@ struct EditView: View {
     /// Shift-press on an already selected clip; removed on release unless the press became a drag.
     @State private var pendingShiftDeselectID: UUID?
     @State private var clipDrag: ClipDrag?
-    @State private var rangeDrag: ClipRangeDrag?
+    /// Soundcraft's edit selection. A selector drag writes it, and it stays after the pointer
+    /// goes up. A click replaces it with an insertion, which has no range.
+    @State private var editSelection: ClipRangeDrag?
     @State private var selectedTrackIDs: Set<UUID> = []
+    /// Snapped lane position Play starts from. A click places it; playback does not move it.
+    @State private var insertionTime: TimeInterval = 0
     @FocusState private var isTimelineFocused: Bool
     @State private var isTimelineReady = false
 
@@ -104,11 +115,12 @@ struct EditView: View {
 
         performUndoableChange("Edit Tempo") {
             song.bpm = bpm
-            if let index = tempoChanges.firstIndex(where: { $0.startMeasure == 1 }) {
+            if let index = tempoChanges.firstIndex(where: \.isOrigin) {
                 let existing = tempoChanges[index]
                 tempoChanges[index] = TempoChange(
                     id: existing.id,
                     startMeasure: 1,
+                    beatOffset: existing.beatOffset,
                     bpm: bpm,
                     sortOrder: existing.sortOrder
                 )
@@ -242,26 +254,23 @@ struct EditView: View {
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
-
-        if let existing = normalizedTempoChanges.first(where: { $0.startMeasure == boundary.measure }) {
-            editingTempoMarkerID = existing.id
-        } else {
-            let activeBPM = MeasureTiming.activeBPM(
-                at: boundary.time,
-                tempoChanges: normalizedTempoChanges,
-                timeSignatureChanges: normalizedTimeSignatureChanges
-            )
-            let newMarker = TempoChange(startMeasure: boundary.measure, bpm: activeBPM)
-            tempoChanges = (normalizedTempoChanges + [newMarker]).normalizedEnsuringInitialMarker(
-                defaultBPM: song.bpm ?? TempoChange.defaultBPM
-            )
-            editingTempoMarkerID = tempoChanges.first(where: { $0.startMeasure == boundary.measure })?.id
+        let existing = normalizedTempoChanges.first {
+            $0.startMeasure == boundary.measure && $0.isDownbeat
         }
-        showingTempoEditor = true
+        let bpm = existing?.bpm ?? MeasureTiming.activeBPM(
+            at: boundary.time,
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges
+        )
+        tempoLanePrompt = TempoLanePrompt(
+            measure: boundary.measure,
+            bpm: bpm,
+            markerID: existing?.id
+        )
     }
 
     private func deleteTempoMarker(_ marker: TempoChange) {
-        guard marker.startMeasure > 1 else { return }
+        guard !marker.isOrigin else { return }
         performUndoableChange("Delete Tempo Marker") {
             tempoChanges.removeAll { $0.id == marker.id }
             tempoChanges = normalizedTempoChanges
@@ -320,6 +329,11 @@ struct EditView: View {
 
     private var displaySections: [SongSection] {
         timeline.sections(songEnd: timeline.duration)
+    }
+
+    /// Start of each section marker, in timeline seconds.
+    private var sectionMarkerTimes: [TimeInterval] {
+        displaySections.map(\.timelineStartSeconds)
     }
 
     private var loopSectionIDs: Set<UUID> {
@@ -768,6 +782,25 @@ struct EditView: View {
                 applySectionRename(newName)
             }
         }
+#if os(iOS)
+        .sheet(item: $tempoLanePrompt) { prompt in
+            TempoChangePrompt(
+                measure: prompt.measure,
+                currentBPM: prompt.bpm,
+                onCancel: { tempoLanePrompt = nil },
+                onChange: { bpm in
+                    applyTempoChange(prompt: prompt, bpm: bpm)
+                }
+            )
+        }
+#else
+        .onChange(of: tempoLanePrompt?.id) { _, _ in
+            syncTempoChangeWindow()
+        }
+        .onDisappear {
+            TempoChangeWindowController.shared.close()
+        }
+#endif
         .modifier(detectSectionsModifier)
         .alert("Rename Track", isPresented: Binding(
             get: { trackPendingRename != nil },
@@ -817,6 +850,8 @@ struct EditView: View {
                     guard let section = displaySections.section(atTimeline: time) else { return }
                     toggleLoopSection(section)
                 },
+                onPlay: playFromInsertion,
+                stoppedDisplayTime: playbackStart,
                 captureSnapshot: captureSnapshot,
                 registerUndo: { actionName, before, after in
                     undoController.registerChange(
@@ -898,6 +933,8 @@ struct EditView: View {
                 pendingShiftDeselectID = wasSelected ? clipID : nil
             },
             click: { clipID, modifiers, time in
+                // A click is an insertion, so the range selection does not stay underneath it.
+                editSelection = nil
                 if pendingShiftDeselectID == clipID {
                     clipSelection.deselect(clipID)
                 } else if modifiers.option {
@@ -908,13 +945,16 @@ struct EditView: View {
             drag: updateClipDrag,
             endDrag: commitClipDrag,
             marquee: updateRangeDrag,
-            endMarquee: { rangeDrag = nil },
+            endMarquee: {
+                // Mouse-up keeps editSelection. Soundcraft leaves the range in place.
+            },
             clickBlank: { trackID, time in
+                editSelection = nil
                 clipSelection.deselectAll()
-                selectedTrackIDs = [trackID]
-                if !audioEngine.isPlaying {
-                    AudioEngineManager.shared.seek(to: time)
-                }
+                placeInsertion(on: trackID, at: time)
+            },
+            locate: { trackID, time in
+                placeInsertion(on: trackID, at: time)
             },
             menu: performClipMenuAction
         )
@@ -1000,7 +1040,7 @@ struct EditView: View {
         let highRow = max(row(at: start.y), row(at: current.y))
         let startTime = snappedToBeat(time(atX: start.x))
         let endTime = snappedToBeat(time(atX: current.x))
-        rangeDrag = ClipRangeDrag(
+        editSelection = ClipRangeDrag(
             start: min(startTime, endTime),
             end: max(startTime, endTime),
             firstRow: lowRow,
@@ -1250,6 +1290,24 @@ struct EditView: View {
         viewModel.seekAndPlay(to: time)
     }
 
+    /// Where Play begins: the range start while a selection is showing, otherwise the insertion.
+    private var playbackStart: TimeInterval {
+        if let selection = editSelection, selection.end - selection.start > ClipEditing.tolerance {
+            return selection.start
+        }
+        return insertionTime
+    }
+
+    /// Selector press records the insertion. Play is what moves the red playhead there.
+    private func placeInsertion(on trackID: UUID, at time: TimeInterval) {
+        insertionTime = max(0, time)
+        selectedTrackIDs = [trackID]
+    }
+
+    private func playFromInsertion() {
+        viewModel.seekAndPlay(to: playbackStart)
+    }
+
     private func clampTimelineZoom() {
         guard timelineViewportWidth > 0 else { return }
         let minZoom = timelineMinZoom
@@ -1288,7 +1346,9 @@ struct EditView: View {
             onToggleLoopAtTime: { time in
                 guard let section = displaySections.section(atTimeline: time) else { return }
                 toggleLoopSection(section)
-            }
+            },
+            onPlay: playFromInsertion,
+            stoppedDisplayTime: playbackStart
         )
     }
     #endif
@@ -1362,6 +1422,8 @@ struct EditView: View {
                 guard let section = displaySections.section(atTimeline: time) else { return }
                 toggleLoopSection(section)
             },
+            onPlay: playFromInsertion,
+            stoppedDisplayTime: playbackStart,
             registerUndo: { actionName, before, after in
                 undoController.registerChange(
                     actionName: actionName,
@@ -1388,6 +1450,7 @@ struct EditView: View {
             timelineDuration: timelineDuration,
             timelineContentWidth: timelineContentWidth,
             timelineDisplayWidth: timelineDisplayWidth,
+            sectionTimes: sectionMarkerTimes,
             laneCount: song.sortedTracks.count + midiTracks.count,
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
@@ -1402,55 +1465,18 @@ struct EditView: View {
     }
 
     private var timelineRulerStack: some View {
-        ZStack(alignment: .topLeading) {
-            Rectangle()
-                .fill(Color.dawStickyRulerBackground)
-                .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight)
-
-            ZStack(alignment: .topLeading) {
-                timelineRulerSection
-
-                TimelineMeasureGridOverlay(
-                    duration: timelineDuration,
-                    tempoChanges: normalizedTempoChanges,
-                    timeSignatureChanges: normalizedTimeSignatureChanges,
-                    contentWidth: timelineContentWidth,
-                    displayWidth: timelineDisplayWidth,
-                    rulerHeight: TimelineLayout.topRulerHeight
-                )
-                .allowsHitTesting(false)
-            }
+        timelineRulerSection
+            .background(Color.dawStickyRulerBackground)
             .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
-        }
-        .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
     }
 
     private var timelineTimeRuler: some View {
-        ZStack(alignment: .topLeading) {
-            Rectangle()
-                .fill(Color.dawStickyRulerBackground)
-                .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight)
-
-            ZStack(alignment: .topLeading) {
-                TimelineTimeRulerView(
-                    duration: timelineDuration,
-                    contentWidth: timelineContentWidth,
-                    displayWidth: timelineDisplayWidth,
-                    height: TimelineLayout.rulerHeight
-                )
-
-                TimelineMeasureGridOverlay(
-                    duration: timelineDuration,
-                    tempoChanges: normalizedTempoChanges,
-                    timeSignatureChanges: normalizedTimeSignatureChanges,
-                    contentWidth: timelineContentWidth,
-                    displayWidth: timelineDisplayWidth,
-                    rulerHeight: TimelineLayout.rulerHeight
-                )
-                .allowsHitTesting(false)
-            }
-            .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
-        }
+        TimelineTimeRulerView(
+            duration: timelineDuration,
+            contentWidth: timelineContentWidth,
+            displayWidth: timelineDisplayWidth,
+            height: TimelineLayout.rulerHeight
+        )
         .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
         .allowsHitTesting(false)
     }
@@ -1475,7 +1501,6 @@ struct EditView: View {
             onAddSection: addSection,
             onRenameSection: beginRenameSection,
             onRemoveMarker: removeMarker,
-            onDeleteSection: deleteSection,
             onTimeSignatureRulerTap: handleTimeSignatureRulerTap,
             onEditTimeSignatureMarker: { marker in
                 editingTimeSignatureMarkerID = marker.id
@@ -1484,10 +1509,14 @@ struct EditView: View {
             onDeleteTimeSignatureMarker: deleteTimeSignatureMarker,
             onTempoRulerTap: handleTempoRulerTap,
             onEditTempoMarker: { marker in
-                editingTempoMarkerID = marker.id
-                showingTempoEditor = true
+                tempoLanePrompt = TempoLanePrompt(
+                    measure: marker.startMeasure,
+                    bpm: marker.bpm,
+                    markerID: marker.id
+                )
             },
-            onDeleteTempoMarker: deleteTempoMarker
+            onDeleteTempoMarker: deleteTempoMarker,
+            onTempoOperations: { showingTempoOperations = true }
         )
         .frame(height: TimelineLayout.topRulerHeight)
         .id("\(displaySections.map(\.id))|\(timelineContentWidth)|\(normalizedTempoChanges.map(\.id))|\(normalizedTimeSignatureChanges.map(\.id))")
@@ -1514,24 +1543,21 @@ struct EditView: View {
                 )
             }
         }
-        .popover(isPresented: $showingTempoEditor, arrowEdge: .bottom) {
-            if let markerID = editingTempoMarkerID,
-               let marker = tempoChanges.first(where: { $0.id == markerID }) {
-                TempoMarkerEditorMenu(
-                    marker: marker,
-                    canDelete: marker.startMeasure > 1,
-                    onApply: { bpm in
-                        applyTempoMarker(markerID: markerID, bpm: bpm)
-                    },
-                    onDelete: {
-                        if let marker = tempoChanges.first(where: { $0.id == markerID }) {
-                            deleteTempoMarker(marker)
-                        }
-                        showingTempoEditor = false
-                        editingTempoMarkerID = nil
-                    }
-                )
-            }
+        .popover(isPresented: $showingTempoOperations, arrowEdge: .bottom) {
+            TempoOperationsMenu(
+                tempoChanges: normalizedTempoChanges,
+                timeSignatureChanges: normalizedTimeSignatureChanges,
+                playhead: audioEngine.currentTime,
+                onApply: applyTempoOperation
+            )
+        }
+    }
+
+    private func applyTempoOperation(_ changes: [TempoChange]) {
+        performUndoableChange("Tempo Operation") {
+            tempoChanges = changes
+            persistTempoChanges()
+            showingTempoOperations = false
         }
     }
 
@@ -1557,6 +1583,7 @@ struct EditView: View {
             )
 
             clipRangeSelectionOverlay
+            insertionCursorOverlay
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
     }
@@ -1609,10 +1636,11 @@ struct EditView: View {
         .coordinateSpace(name: TimelineLayout.trackLanesCoordinateSpace)
     }
 
-    /// Full-lane wash for the dragged time range, painted over the clips and the grid.
+    /// Full-lane wash for the edit selection, painted over the clips and the grid.
+    /// It stays after the drag that created it.
     @ViewBuilder
     private var clipRangeSelectionOverlay: some View {
-        if let drag = rangeDrag, drag.end - drag.start > ClipEditing.tolerance {
+        if let drag = editSelection, drag.end - drag.start > ClipEditing.tolerance {
             let x0 = TimelineLayout.xPosition(
                 for: drag.start,
                 duration: timelineDuration,
@@ -1634,6 +1662,35 @@ struct EditView: View {
             }
             .frame(width: timelineContentWidth, height: trackAreaHeight, alignment: .topLeading)
             .allowsHitTesting(false)
+        }
+    }
+
+    private var insertionRows: [Int] {
+        displayedTrackIDs.enumerated().compactMap { index, id in
+            selectedTrackIDs.contains(id) ? index : nil
+        }
+    }
+
+    private var showsInsertionCursor: Bool {
+        guard !audioEngine.isPlaying, !insertionRows.isEmpty else { return false }
+        if let selection = editSelection, selection.end - selection.start > ClipEditing.tolerance {
+            return false
+        }
+        return true
+    }
+
+    @ViewBuilder
+    private var insertionCursorOverlay: some View {
+        if showsInsertionCursor {
+            TimelineInsertionCursor(
+                time: insertionTime,
+                duration: timelineDuration,
+                contentWidth: timelineContentWidth,
+                rows: insertionRows,
+                laneHeight: TimelineLayout.laneHeight,
+                rowStride: TimelineLayout.laneHeight + TimelineLayout.laneSpacing,
+                areaHeight: trackAreaHeight
+            )
         }
     }
 
@@ -1818,23 +1875,48 @@ struct EditView: View {
         }
     }
 
-    private func applyTempoMarker(markerID: UUID, bpm: Double) {
+    #if os(macOS)
+    private func syncTempoChangeWindow() {
+        guard let prompt = tempoLanePrompt else {
+            TempoChangeWindowController.shared.close()
+            return
+        }
+        TempoChangeWindowController.shared.show(
+            measure: prompt.measure,
+            bpm: prompt.bpm,
+            onChange: { bpm in
+                applyTempoChange(prompt: prompt, bpm: bpm)
+            },
+            onDismiss: {
+                if tempoLanePrompt?.id == prompt.id {
+                    tempoLanePrompt = nil
+                }
+            }
+        )
+    }
+    #endif
+
+    private func applyTempoChange(prompt: TempoLanePrompt, bpm: Double) {
         guard TempoChange.validBPMRange.contains(bpm) else { return }
 
         performUndoableChange("Edit Tempo") {
-            tempoChanges = tempoChanges.map { change in
-                guard change.id == markerID else { return change }
-                return TempoChange(
-                    id: change.id,
-                    startMeasure: change.startMeasure,
-                    bpm: bpm,
-                    sortOrder: change.sortOrder
-                )
-            }.normalizedEnsuringInitialMarker(defaultBPM: song.bpm ?? TempoChange.defaultBPM)
-
+            if let markerID = prompt.markerID,
+               tempoChanges.contains(where: { $0.id == markerID }) {
+                tempoChanges = tempoChanges.map { change in
+                    guard change.id == markerID else { return change }
+                    return TempoChange(
+                        id: change.id,
+                        startMeasure: change.startMeasure,
+                        beatOffset: change.beatOffset,
+                        bpm: bpm,
+                        sortOrder: change.sortOrder
+                    )
+                }
+            } else {
+                tempoChanges.append(TempoChange(startMeasure: prompt.measure, bpm: bpm))
+            }
             persistTempoChanges()
-            showingTempoEditor = false
-            editingTempoMarkerID = nil
+            tempoLanePrompt = nil
         }
     }
 

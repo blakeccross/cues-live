@@ -135,13 +135,14 @@ enum MeasureTiming {
         let safeDuration = max(duration, 0.001)
         let timeLimit = max(safeDuration, maximumTime ?? safeDuration)
         guard safeDuration > 0, contentWidth > 0, !tempoChanges.isEmpty else { return [] }
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
 
         // Estimate stride from the first measure so we never allocate every
         // measure for multi‑hour songs just to throw most of them away.
         let firstMeasureTime = measureDuration(
-            atMeasure: 1,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
+            startingAt: 0,
+            tickLength: tickLength(ofMeasure: 1, timeSignatureChanges: timeSignatureChanges),
+            timeline: timeline
         )
         guard firstMeasureTime < timeLimit - 0.0001 else { return [] }
         let pixelsPerMeasure = CGFloat(firstMeasureTime) * contentWidth / CGFloat(safeDuration)
@@ -162,6 +163,7 @@ enum MeasureTiming {
         // drawn independently agree on which ones to show.
         var boundaries: [TimeInterval] = []
         var time: TimeInterval = 0
+        var barTick = 0
         for measure in 1..<1_000_000 {
             if measure > 1, (measure - 1) % stride == 0 {
                 guard time < timeLimit - 0.0001, time <= rangeEnd + firstMeasureTime else { break }
@@ -171,13 +173,11 @@ enum MeasureTiming {
                 }
             }
 
-            let duration = measureDuration(
-                atMeasure: measure,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
+            let length = tickLength(ofMeasure: measure, timeSignatureChanges: timeSignatureChanges)
+            let duration = measureDuration(startingAt: barTick, tickLength: length, timeline: timeline)
             guard duration > 0 else { break }
             time += duration
+            barTick += length
         }
         return boundaries
     }
@@ -185,6 +185,26 @@ enum MeasureTiming {
     struct BeatGridTimes: Equatable {
         var beats: [TimeInterval]
         var subdivisions: [TimeInterval]
+    }
+
+    /// Which grid levels fit on screen. Soundcraft draws a level only when its steps
+    /// are more than 7 points apart, so zooming in reveals beats and then eighths.
+    struct LaneGridDetail: Equatable {
+        var showsBeats: Bool
+        var showsSubdivisions: Bool
+
+        static let minimumSpacing: CGFloat = 7
+
+        static func detail(pixelsPerSecond: CGFloat, fastestBPM: Double) -> LaneGridDetail {
+            guard pixelsPerSecond > 0, fastestBPM > 0 else {
+                return LaneGridDetail(showsBeats: false, showsSubdivisions: false)
+            }
+            let quarterPoints = CGFloat(60.0 / fastestBPM) * pixelsPerSecond
+            return LaneGridDetail(
+                showsBeats: quarterPoints > minimumSpacing,
+                showsSubdivisions: quarterPoints > minimumSpacing * 2
+            )
+        }
     }
 
     /// Beat ticks (not the downbeat) and the halfway subdivision of each beat.
@@ -201,22 +221,22 @@ enum MeasureTiming {
         guard rangeEnd > rangeStart, !tempoChanges.isEmpty else {
             return BeatGridTimes(beats: [], subdivisions: [])
         }
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
 
         var beats: [TimeInterval] = []
         var subdivisions: [TimeInterval] = []
         var measure = 1
         var measureStart: TimeInterval = 0
+        var barTick = 0
 
         while measure < 1_000_000, measureStart < safeDuration - 0.0001 {
-            let length = measureDuration(
-                atMeasure: measure,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
+            let lengthTicks = tickLength(ofMeasure: measure, timeSignatureChanges: timeSignatureChanges)
+            let length = measureDuration(startingAt: barTick, tickLength: lengthTicks, timeline: timeline)
             guard length > 0 else { break }
             let measureEnd = measureStart + length
             if measureEnd < rangeStart {
                 measureStart = measureEnd
+                barTick += lengthTicks
                 measure += 1
                 continue
             }
@@ -230,6 +250,7 @@ enum MeasureTiming {
             let beatCount = max(0, Int(beatsInMeasure.rounded(.down)))
             guard beatsInMeasure > 0, beatCount > 0 else {
                 measureStart = measureEnd
+                barTick += lengthTicks
                 measure += 1
                 continue
             }
@@ -238,14 +259,14 @@ enum MeasureTiming {
             let windowStart = rangeStart - beatDuration
             let windowEnd = rangeEnd + beatDuration
             for beatIndex in 1..<beatCount {
-                let time = measureStart + TimeInterval(beatIndex) * beatDuration
+                let time = timeline.seconds(atTick: barTick + beatIndex * TempoChange.ticksPerQuarter)
                 guard time < safeDuration - 0.0001 else { break }
                 if time >= windowStart, time <= windowEnd {
                     beats.append(time)
                 }
             }
             for step in 0..<beatCount {
-                let time = measureStart + (TimeInterval(step) + 0.5) * beatDuration
+                let time = timeline.seconds(atTick: barTick + step * TempoChange.ticksPerQuarter + TempoChange.ticksPerQuarter / 2)
                 guard time < safeDuration - 0.0001 else { break }
                 if time >= windowStart, time <= windowEnd {
                     subdivisions.append(time)
@@ -253,6 +274,7 @@ enum MeasureTiming {
             }
 
             measureStart = measureEnd
+            barTick += lengthTicks
             measure += 1
         }
 
@@ -352,18 +374,37 @@ enum MeasureTiming {
         )
     }
 
-    /// Duration of `measure` under the tempo and meter in effect there.
+    /// Duration of `measure`, integrating any tempo events inside it.
     static func measureDuration(
         atMeasure measure: Int,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]
     ) -> TimeInterval {
+        guard bpmForMeasure(measure, tempoChanges: tempoChanges) > 0 else { return 0 }
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        let barTick = TempoTimeline.tick(measure: measure, beatOffset: 0, timeSignatureChanges: timeSignatureChanges)
+        let length = tickLength(ofMeasure: measure, timeSignatureChanges: timeSignatureChanges)
+        return measureDuration(startingAt: barTick, tickLength: length, timeline: timeline)
+    }
+
+    private static func tickLength(
+        ofMeasure measure: Int,
+        timeSignatureChanges: [TimeSignatureChange]
+    ) -> Int {
         let signature = numeratorDenominatorForMeasure(measure, changes: timeSignatureChanges)
-        return measureDuration(
-            bpm: bpmForMeasure(measure, tempoChanges: tempoChanges),
-            numerator: signature.numerator,
-            denominator: signature.denominator
-        )
+        let quarters = beatsPerMeasure(numerator: signature.numerator, denominator: signature.denominator)
+        return max(0, Int((quarters * Double(TempoChange.ticksPerQuarter)).rounded()))
+    }
+
+    private static func measureDuration(
+        startingAt barTick: Int,
+        tickLength: Int,
+        timeline: TempoTimeline
+    ) -> TimeInterval {
+        guard tickLength > 0, timeline.bpm(atTick: barTick) > 0 else { return 0 }
+        let delta = timeline.seconds(atTick: barTick + tickLength) - timeline.seconds(atTick: barTick)
+        guard delta.isFinite, delta > 0 else { return 0 }
+        return delta
     }
 
     static func bpmForMeasure(
@@ -379,16 +420,9 @@ enum MeasureTiming {
         timeSignatureChanges: [TimeSignatureChange]
     ) -> TimeInterval {
         guard measure > 1 else { return 0 }
-
-        var time: TimeInterval = 0
-        for index in 1..<measure {
-            time += measureDuration(
-                atMeasure: index,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
-        }
-        return time
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        let tick = TempoTimeline.tick(measure: measure, beatOffset: 0, timeSignatureChanges: timeSignatureChanges)
+        return timeline.seconds(atTick: tick)
     }
 
     static func measureIndex(
@@ -397,21 +431,21 @@ enum MeasureTiming {
         timeSignatureChanges: [TimeSignatureChange]
     ) -> Int {
         guard time > 0, !tempoChanges.isEmpty else { return 1 }
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
 
         var measure = 1
         var elapsed: TimeInterval = 0
+        var barTick = 0
 
         while measure < 1_000_000 {
-            let duration = measureDuration(
-                atMeasure: measure,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
+            let length = tickLength(ofMeasure: measure, timeSignatureChanges: timeSignatureChanges)
+            let duration = measureDuration(startingAt: barTick, tickLength: length, timeline: timeline)
             guard duration > 0 else { return measure }
             if time < elapsed + duration - 0.0001 {
                 return measure
             }
             elapsed += duration
+            barTick += length
             measure += 1
         }
 
@@ -450,12 +484,11 @@ enum MeasureTiming {
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]
     ) -> Double {
-        let measure = measureIndex(
-            at: time,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        )
-        return bpmForMeasure(measure, tempoChanges: tempoChanges)
+        guard !tempoChanges.isEmpty else { return TempoChange.defaultBPM }
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        let tick = Int(timeline.tick(atSeconds: max(0, time)).rounded(.down))
+        let bpm = timeline.bpm(atTick: tick)
+        return bpm > 0 ? bpm : TempoChange.defaultBPM
     }
 
     /// Snaps a timeline time to the nearest beat grid line.
@@ -465,36 +498,29 @@ enum MeasureTiming {
         timeSignatureChanges: [TimeSignatureChange]
     ) -> TimeInterval {
         guard time > 0, !tempoChanges.isEmpty else { return max(0, time) }
-
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        let quarters = timeline.tick(atSeconds: time) / Double(TempoChange.ticksPerQuarter)
         let measure = measureIndex(
-            at: time,
+            atBeat: quarters,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges
         )
-        let measureStart = timeAtStartOfMeasure(
-            measure,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        )
-        let bpm = bpmForMeasure(measure, tempoChanges: tempoChanges)
+        let startQuarters = beatAtStartOfMeasure(measure, timeSignatureChanges: timeSignatureChanges)
         let signature = numeratorDenominatorForMeasure(measure, changes: timeSignatureChanges)
         let beatsInMeasure = beatsPerMeasure(
             numerator: signature.numerator,
             denominator: signature.denominator
         )
-        let beatDuration = measureDuration(
-            bpm: bpm,
-            numerator: signature.numerator,
-            denominator: signature.denominator
-        ) / beatsInMeasure
-
-        guard beatDuration > 0 else { return max(0, time) }
-
-        let timeInMeasure = max(0, time - measureStart)
-        let beatIndex = (timeInMeasure / beatDuration).rounded()
-        let maxBeatIndex = max(0, Int(beatsInMeasure.rounded(.down)))
-        let clampedBeatIndex = min(max(0, Int(beatIndex)), maxBeatIndex)
-        return measureStart + TimeInterval(clampedBeatIndex) * beatDuration
+        guard beatsInMeasure > 0 else { return max(0, time) }
+        let maxBeatIndex = Double(max(0, Int(beatsInMeasure.rounded(.down))))
+        let rounded = (quarters - startQuarters).rounded()
+        let clamped = min(max(0, rounded), maxBeatIndex)
+        let tick = TempoTimeline.tick(
+            measure: measure,
+            beatOffset: clamped,
+            timeSignatureChanges: timeSignatureChanges
+        )
+        return timeline.seconds(atTick: tick)
     }
 
     static func nearestMeasureBoundary(
@@ -540,25 +566,21 @@ enum MeasureTiming {
             return MeasurePosition(bar: 1, beat: 1, subdivision: 1)
         }
 
+        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        let quarters = timeline.tick(atSeconds: time) / Double(TempoChange.ticksPerQuarter)
         let bar = measureIndex(
-            at: time,
+            atBeat: quarters,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges
         )
-        let measureStart = timeAtStartOfMeasure(
-            bar,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        )
-        let timeInMeasure = max(0, time - measureStart)
-        let bpm = bpmForMeasure(bar, tempoChanges: tempoChanges)
+        let startQuarters = beatAtStartOfMeasure(bar, timeSignatureChanges: timeSignatureChanges)
+        let beatsElapsed = max(0, quarters - startQuarters)
         let signature = numeratorDenominatorForMeasure(bar, changes: timeSignatureChanges)
         let beatsInMeasure = beatsPerMeasure(
             numerator: signature.numerator,
             denominator: signature.denominator
         )
 
-        let beatsElapsed = timeInMeasure * bpm / 60.0
         let wholeBeats = Int(floor(beatsElapsed))
         let maxBeat = max(1, Int(beatsInMeasure.rounded(.down)))
         let beat = min(max(wholeBeats + 1, 1), maxBeat)
@@ -609,21 +631,25 @@ struct TempoPlaybackMap: Sendable {
         }
 
         let markers = tempoChanges.sortedByMeasure
+        let timeline = TempoTimeline(tempoChanges: markers, timeSignatureChanges: timeSignatureChanges)
         var segments: [Segment] = []
 
         for (index, marker) in markers.enumerated() {
-            let sourceStart = MeasureTiming.timeAtStartOfMeasure(
-                marker.startMeasure,
-                tempoChanges: markers,
+            let startTick = TempoTimeline.tick(
+                measure: marker.startMeasure,
+                beatOffset: marker.beatOffset,
                 timeSignatureChanges: timeSignatureChanges
             )
+            let sourceStart = timeline.seconds(atTick: startTick)
             let sourceEnd: TimeInterval
             if index + 1 < markers.count {
-                sourceEnd = MeasureTiming.timeAtStartOfMeasure(
-                    markers[index + 1].startMeasure,
-                    tempoChanges: markers,
+                let next = markers[index + 1]
+                let nextTick = TempoTimeline.tick(
+                    measure: next.startMeasure,
+                    beatOffset: next.beatOffset,
                     timeSignatureChanges: timeSignatureChanges
                 )
+                sourceEnd = timeline.seconds(atTick: nextTick)
             } else {
                 sourceEnd = max(maxSourceTime, sourceStart + 1)
             }

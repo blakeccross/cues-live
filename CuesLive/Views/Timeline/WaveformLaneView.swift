@@ -225,9 +225,12 @@ struct ClipLaneActions {
     var endDrag: () -> Void
     /// Time-range drag across lanes, in `TimelineLayout.trackLanesCoordinateSpace`.
     var marquee: (_ start: CGPoint, _ current: CGPoint, _ modifiers: PointerModifiers) -> Void
+    /// The pointer went up after a range drag. The edit selection stays.
     var endMarquee: () -> Void
     /// Click on blank lane space at a snapped timeline time.
     var clickBlank: (_ trackID: UUID, _ time: TimeInterval) -> Void
+    /// Selector press. Places the insertion cursor on this track at the snapped beat.
+    var locate: (_ trackID: UUID, _ time: TimeInterval) -> Void
     var menu: (_ action: ClipMenuAction, _ clipID: UUID) -> Void
 }
 
@@ -271,6 +274,8 @@ struct WaveformLaneView: View {
         let modifiers: PointerModifiers
         /// Press landed in the top half of the lane, so a drag selects a time range.
         let selectsRange: Bool
+        /// Upper half, away from the trim handles. Soundcraft's selector places the playhead here.
+        let movesPlayhead: Bool
         var isDragging = false
     }
 
@@ -349,8 +354,8 @@ struct WaveformLaneView: View {
         .coordinateSpace(name: TimelineDragSpace.name)
     }
 
-    /// Clicking blank space clears the selection; on macOS, dragging there selects a time range.
-    /// Touch drags are left to the scroll view.
+    /// Clicking blank space clears the selection. On macOS, dragging there selects a time range
+    /// that stays after the pointer goes up. Touch drags are left to the scroll view.
     @ViewBuilder
     private var blankSpace: some View {
         let area = Color.clear
@@ -366,7 +371,7 @@ struct WaveformLaneView: View {
                     ClipPointerCursor.reset()
                 }
             }
-            .gesture(
+            .highPriorityGesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .named(TimelineLayout.trackLanesCoordinateSpace))
                 .onChanged { value in
                     let distance = hypot(value.translation.width, value.translation.height)
@@ -376,7 +381,8 @@ struct WaveformLaneView: View {
                     actions.marquee(value.startLocation, value.location, .current)
                 }
                 .onEnded { value in
-                    if isMarqueeDragging {
+                    let distance = hypot(value.translation.width, value.translation.height)
+                    if isMarqueeDragging || distance >= 3 {
                         isMarqueeDragging = false
                         ClipPointerCursor.reset()
                         actions.endMarquee()
@@ -432,7 +438,7 @@ struct WaveformLaneView: View {
         let section = sections.section(atTimeline: clip.timelineStartSeconds + ClipEditing.tolerance)
 
         clipChrome(clip: clip, clipWidth: max(0, endX - startX), contentX: startX)
-            .gesture(clipPointerGesture(for: clip))
+            .gesture(clipPointerGesture(for: clip, clipWidth: max(0, endX - startX), contentX: startX))
             .contextMenu {
                 Button("Split at Playhead") { actions.menu(.splitAtPlayhead, clip.id) }
                 Button("Join") { actions.menu(.join, clip.id) }
@@ -602,18 +608,25 @@ struct WaveformLaneView: View {
     }
 
     /// The top half of a clip drags a time-range selection. The bottom half moves the selection
-    /// (Command copies it). Option-click splits at the pointer.
-    private func clipPointerGesture(for clip: TrackClip) -> some Gesture {
+    /// (Command copies it). Option-click splits at the pointer. A click in the top half, away
+    /// from the trim handles, places the insertion cursor. Play starts from there.
+    private func clipPointerGesture(for clip: TrackClip, clipWidth: CGFloat, contentX: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(TimelineDragSpace.name))
             .onChanged { value in
                 if clipPointer?.clipID != clip.id {
                     let modifiers = PointerModifiers.current
+                    let local = CGPoint(x: value.startLocation.x - contentX, y: value.startLocation.y)
+                    let zone = ClipPointerCursor.zone(at: local, clipWidth: clipWidth, laneHeight: laneHeight)
                     clipPointer = ClipPointer(
                         clipID: clip.id,
                         modifiers: modifiers,
-                        selectsRange: value.startLocation.y < laneHeight / 2
+                        selectsRange: value.startLocation.y < laneHeight / 2,
+                        movesPlayhead: zone == .select
                     )
                     actions.press(clip.id, track.id, modifiers)
+                    if zone == .select {
+                        actions.locate(track.id, snappedTime(atContentX: value.startLocation.x))
+                    }
                 }
                 guard var pointer = clipPointer, !pointer.modifiers.option else { return }
                 let distance = hypot(value.translation.width, value.translation.height)
@@ -638,7 +651,9 @@ struct WaveformLaneView: View {
             .onEnded { value in
                 guard let pointer = clipPointer else { return }
                 clipPointer = nil
-                if pointer.isDragging {
+                let distance = hypot(value.translation.width, value.translation.height)
+                // Option-click splits even if the pointer drifted. A real drag keeps the selection.
+                if !pointer.modifiers.option && (pointer.isDragging || distance >= 3) {
                     ClipPointerCursor.reset()
                     if pointer.selectsRange {
                         actions.endMarquee()
@@ -646,7 +661,11 @@ struct WaveformLaneView: View {
                         actions.endDrag()
                     }
                 } else {
-                    actions.click(clip.id, pointer.modifiers, snappedTime(atContentX: value.location.x))
+                    let time = snappedTime(atContentX: value.location.x)
+                    if pointer.movesPlayhead {
+                        actions.locate(track.id, time)
+                    }
+                    actions.click(clip.id, pointer.modifiers, time)
                 }
             }
     }

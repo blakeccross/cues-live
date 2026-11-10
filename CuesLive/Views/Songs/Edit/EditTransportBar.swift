@@ -25,6 +25,9 @@ struct EditTransportBar<Chrome: View>: View {
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
+    let onPlay: () -> Void
+    /// Position shown in the counter while stopped. Playback leaves this where the insertion is.
+    let stoppedDisplayTime: TimeInterval
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
     let onClickTrackGenerated: () -> Void
     let onBack: () -> Void
@@ -180,7 +183,7 @@ struct EditTransportBar<Chrome: View>: View {
                     transportStrip(at: audioEngine.currentTime)
                 }
             } else {
-                transportStrip(at: audioEngine.currentTime)
+                transportStrip(at: stoppedDisplayTime)
             }
         }
     }
@@ -202,7 +205,7 @@ struct EditTransportBar<Chrome: View>: View {
                 }
                 onStopTransport()
             },
-            onPlay: viewModel.play,
+            onPlay: onPlay,
             onPause: viewModel.pause,
             onToggleLoop: { onToggleLoopAtTime(time) },
             isFadedOut: groupMixFade.isFadedOut,

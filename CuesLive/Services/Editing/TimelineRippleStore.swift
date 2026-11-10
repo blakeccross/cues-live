@@ -79,8 +79,28 @@ enum TimelineRippleStore {
         if let boundary = changes.active(atMeasure: endMeasure) {
             let precedingBPM = result.active(atMeasure: startMeasure - 1)?.bpm
             if startMeasure == 1 || precedingBPM != boundary.bpm {
-                result.append(TempoChange(id: boundary.id, startMeasure: startMeasure, bpm: boundary.bpm))
+                let boundaryID = boundary.startMeasure >= startMeasure ? boundary.id : UUID()
+                result.append(
+                    TempoChange(
+                        id: boundaryID,
+                        startMeasure: startMeasure,
+                        beatOffset: 0,
+                        bpm: boundary.bpm
+                    )
+                )
             }
+        }
+
+        for change in changes where change.startMeasure == endMeasure && !change.isDownbeat {
+            result.append(
+                TempoChange(
+                    id: change.id,
+                    startMeasure: startMeasure,
+                    beatOffset: change.beatOffset,
+                    bpm: change.bpm,
+                    sortOrder: change.sortOrder
+                )
+            )
         }
 
         for change in changes where change.startMeasure > endMeasure {
@@ -88,7 +108,9 @@ enum TimelineRippleStore {
                 TempoChange(
                     id: change.id,
                     startMeasure: change.startMeasure - removedMeasures,
-                    bpm: change.bpm
+                    beatOffset: change.beatOffset,
+                    bpm: change.bpm,
+                    sortOrder: change.sortOrder
                 )
             )
         }
