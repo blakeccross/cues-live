@@ -1,13 +1,4 @@
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
-
-/// A timeline ruler selection spanning whole measures `[startMeasure, endMeasure)`.
-struct MeasureRangeSelection: Equatable {
-    var startMeasure: Int
-    var endMeasure: Int
-}
 
 struct TimelineMeasureGridOverlay: View {
     let duration: TimeInterval
@@ -148,11 +139,7 @@ struct TimelineRulerView: View {
     let sectionMarkerHeight: CGFloat
     let timeSignatureRulerHeight: CGFloat
     let tempoRulerHeight: CGFloat
-    let rulerHeight: CGFloat
     let isPlaying: Bool
-    let measureSelectionEnabled: Bool
-    let onSeek: (TimeInterval) -> Void
-    let onSelectMeasures: (Int, Int) -> Void
     let onCueSection: (SongSection) -> Void
     let onToggleLoopSection: (SongSection) -> Void
     let onAddSection: (TimeInterval) -> Void
@@ -200,41 +187,6 @@ struct TimelineRulerView: View {
                 onDeleteMarker: onDeleteTempoMarker
             )
 
-            ZStack(alignment: .topLeading) {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.06))
-
-                ForEach(tickTimes, id: \.self) { time in
-                    let x = TimelineLayout.xPosition(
-                        for: time,
-                        duration: safeDuration,
-                        contentWidth: contentWidth
-                    )
-
-                    VStack(spacing: 2) {
-                        Rectangle()
-                            .fill(Color.secondary.opacity(0.5))
-                            .frame(width: 1, height: 8)
-                        Text(formatRulerTime(time))
-                            .font(.system(size: 9, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                    }
-                    .offset(x: x)
-                }
-            }
-            .frame(width: effectiveDisplayWidth, height: rulerHeight)
-            .contentShape(Rectangle())
-            .gesture(seekGesture)
-            #if os(macOS)
-            .onHover { hovering in
-                if hovering {
-                    NSCursor.pointingHand.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
-            #endif
-
             sectionMarkerRow
                 .frame(width: effectiveDisplayWidth, height: sectionMarkerHeight)
         }
@@ -246,44 +198,68 @@ struct TimelineRulerView: View {
         }
     }
 
-    private static let measureDragThreshold: CGFloat = 4
-
-    private var seekGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { value in
-                guard measureSelectionEnabled else { return }
-                guard abs(value.location.x - value.startLocation.x) >= Self.measureDragThreshold else { return }
-                reportMeasureSelection(from: value.startLocation.x, to: value.location.x)
-            }
-            .onEnded { value in
-                let dragDistance = abs(value.location.x - value.startLocation.x)
-                if measureSelectionEnabled, dragDistance >= Self.measureDragThreshold {
-                    reportMeasureSelection(from: value.startLocation.x, to: value.location.x)
-                } else {
-                    onSeek(rulerTime(at: value.location.x))
-                }
-            }
-    }
-
-    private func reportMeasureSelection(from startX: CGFloat, to endX: CGFloat) {
-        let firstMeasure = measureIndex(at: startX)
-        let secondMeasure = measureIndex(at: endX)
-        let lower = min(firstMeasure, secondMeasure)
-        let upper = max(firstMeasure, secondMeasure) + 1
-        onSelectMeasures(lower, upper)
-    }
-
-    private func measureIndex(at x: CGFloat) -> Int {
-        MeasureTiming.measureIndex(
-            at: rulerTime(at: x),
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
+    @ViewBuilder
+    private var sectionMarkerRow: some View {
+        TimelineSectionMarkerRowView(
+            sections: sections,
+            duration: safeDuration,
+            contentWidth: contentWidth,
+            displayWidth: effectiveDisplayWidth,
+            height: sectionMarkerHeight,
+            cuedSectionID: cuedSectionID,
+            cueFlashPhase: cueFlashPhase,
+            loopSectionIDs: loopSectionIDs,
+            isPlaying: isPlaying,
+            onCueSection: onCueSection,
+            onToggleLoopSection: onToggleLoopSection,
+            onAddSection: onAddSection,
+            onRenameSection: onRenameSection,
+            onRemoveMarker: onRemoveMarker,
+            onDeleteSection: onDeleteSection
         )
     }
+}
 
-    private func rulerTime(at x: CGFloat) -> TimeInterval {
-        let clampedX = min(max(0, x), effectiveDisplayWidth)
-        return safeDuration * TimeInterval(clampedX / contentWidth)
+/// Minutes-and-seconds ruler. Pinned below the tracks and above the transport.
+struct TimelineTimeRulerView: View {
+    let duration: TimeInterval
+    let contentWidth: CGFloat
+    let displayWidth: CGFloat
+    let height: CGFloat
+
+    private var safeDuration: TimeInterval {
+        max(duration, 0.001)
+    }
+
+    private var effectiveDisplayWidth: CGFloat {
+        max(contentWidth, displayWidth)
+    }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            Rectangle()
+                .fill(Color.dawStickyRulerBackground)
+
+            ForEach(tickTimes, id: \.self) { time in
+                let x = TimelineLayout.xPosition(
+                    for: time,
+                    duration: safeDuration,
+                    contentWidth: contentWidth
+                )
+
+                VStack(spacing: 1) {
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.5))
+                        .frame(width: 1, height: 6)
+                    Text(formatRulerTime(time))
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                .offset(x: x)
+            }
+        }
+        .frame(width: effectiveDisplayWidth, height: height)
+        .allowsHitTesting(false)
     }
 
     private var extendedMaximumTime: TimeInterval {
@@ -309,27 +285,6 @@ struct TimelineRulerView: View {
         let rawInterval = Double(pixelsPerTick / pixelsPerSecond)
         let candidates: [TimeInterval] = [1, 2, 5, 10, 15, 30, 60, 120, 300]
         return candidates.first(where: { $0 >= rawInterval }) ?? 300
-    }
-
-    @ViewBuilder
-    private var sectionMarkerRow: some View {
-        TimelineSectionMarkerRowView(
-            sections: sections,
-            duration: safeDuration,
-            contentWidth: contentWidth,
-            displayWidth: effectiveDisplayWidth,
-            height: sectionMarkerHeight,
-            cuedSectionID: cuedSectionID,
-            cueFlashPhase: cueFlashPhase,
-            loopSectionIDs: loopSectionIDs,
-            isPlaying: isPlaying,
-            onCueSection: onCueSection,
-            onToggleLoopSection: onToggleLoopSection,
-            onAddSection: onAddSection,
-            onRenameSection: onRenameSection,
-            onRemoveMarker: onRemoveMarker,
-            onDeleteSection: onDeleteSection
-        )
     }
 
     private func formatRulerTime(_ value: TimeInterval) -> String {

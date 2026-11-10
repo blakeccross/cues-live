@@ -60,11 +60,17 @@ enum TimelineLayout {
     static let sectionMarkerHeight: CGFloat = 22
     static let timeSignatureRulerHeight: CGFloat = 24
     static let tempoRulerHeight: CGFloat = 24
-    static let rulerHeight: CGFloat = 28
+    /// Minutes-and-seconds ruler. Pinned below the tracks, above the transport.
+    static let rulerHeight: CGFloat = 22
     static let trackHeaderWidth: CGFloat = 204
 
+    /// Section, time-signature, and tempo rulers above the tracks.
+    static var topRulerHeight: CGFloat {
+        sectionMarkerHeight + timeSignatureRulerHeight + tempoRulerHeight
+    }
+
     static var rulerTotalHeight: CGFloat {
-        sectionMarkerHeight + timeSignatureRulerHeight + tempoRulerHeight + rulerHeight
+        topRulerHeight + rulerHeight
     }
 
     static func pixelsPerSecond(zoom: CGFloat) -> CGFloat {

@@ -26,8 +26,22 @@ struct InputMappingSettingsView: View {
                 }
             } header: {
                 Text("Songs")
+            }
+
+            Section {
+                let sections = store.sectionMappings
+                if sections.isEmpty {
+                    Text("No section mappings yet. Use Key Mapping or MIDI Mapping on the live setlist, then tap a section on a song waveform.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(sections) { item in
+                        mappingRow(for: item.action)
+                    }
+                }
+            } header: {
+                Text("Sections")
             } footer: {
-                Text("Mapped keys and MIDI notes trigger the same actions as tapping Stop, Play, Fade, Loop, or a setlist song. Escape cancels mapping.")
+                Text("Mapped keys and MIDI notes trigger the same actions as tapping Stop, Play, Fade, Loop, a setlist song, or a song section. Escape cancels mapping.")
             }
         }
         .formStyle(.grouped)

@@ -280,7 +280,24 @@ struct RemoteLivePlaybackView: View {
             client.send(.toggleSectionLoop)
         case .goToSong(let index):
             client.send(.goToSong(index: index, autoPlay: state.isAudiblePlaying))
+        case .goToSection(let songIndex, let sectionIndex):
+            performMappedSection(songIndex: songIndex, sectionIndex: sectionIndex)
         }
+    }
+
+    private func performMappedSection(songIndex: Int, sectionIndex: Int) {
+        guard let song = song(atPlaybackIndex: songIndex),
+              song.sections.indices.contains(sectionIndex) else { return }
+        let section = song.sections[sectionIndex]
+        if songIndex == state.currentIndex {
+            client.send(.cueSection(sectionID: section.id))
+            return
+        }
+        client.send(.goToSong(
+            index: songIndex,
+            autoPlay: state.isAudiblePlaying,
+            startTime: section.timelineStartSeconds
+        ))
     }
 
     private var transportBar: some View {

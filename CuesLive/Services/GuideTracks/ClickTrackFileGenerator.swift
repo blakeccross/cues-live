@@ -124,6 +124,7 @@ enum ClickTrackFileGenerator {
 
         TrackGroupStore.ensureDefaults(in: context)
         track.group = TrackGroupStore.findOrCreateGroup(named: "Click", in: context)
+        track.includeInKeyChange = false
         TrackGroupStore.reorderTracksByGroup(in: song, context: context)
 
         try context.save()

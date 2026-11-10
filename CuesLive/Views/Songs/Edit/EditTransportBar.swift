@@ -13,6 +13,7 @@ struct EditTransportBar<Chrome: View>: View {
     let normalizedTempoChanges: [TempoChange]
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
+    @Binding var showingChangeKey: Bool
     let arrangementActions: ArrangementSectionActions
     let loopSectionIDs: Set<UUID>
     @Binding var showingSongLibrary: Bool
@@ -116,6 +117,13 @@ struct EditTransportBar<Chrome: View>: View {
 
     private var overflowMenu: some View {
         Menu {
+            Button {
+                showingChangeKey = true
+            } label: {
+                Label("Change Key", systemImage: "key")
+            }
+            .disabled(song.sortedTracks.isEmpty)
+
             Button {
                 showingClickEditor = true
             } label: {

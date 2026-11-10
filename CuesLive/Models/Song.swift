@@ -9,8 +9,10 @@ final class Song {
     var bpm: Double?
     var timeSignatureNumerator: Int?
     var timeSignatureDenominator: Int?
-    /// User-selected root pitch class (`SongMusicalKey.rawValue`).
+    /// User-selected root pitch class (`SongMusicalKey.rawValue`). Displayed key applies `transposeSemitones`.
     var baseKeyRaw: String?
+    /// Semitone offset baked into included stems. Zero plays the original files.
+    var transposeSemitones: Int = 0
     var smartGuideEnabled: Bool = false
     var projectFilePath: String?
 
@@ -28,6 +30,7 @@ final class Song {
         timeSignatureNumerator = nil
         timeSignatureDenominator = nil
         baseKeyRaw = nil
+        transposeSemitones = 0
         smartGuideEnabled = false
         projectFilePath = nil
         tracks = []

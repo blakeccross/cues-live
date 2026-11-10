@@ -476,6 +476,7 @@ struct SongLibraryPanel: View {
         copy.timeSignatureNumerator = source.timeSignatureNumerator
         copy.timeSignatureDenominator = source.timeSignatureDenominator
         copy.baseKeyRaw = source.baseKeyRaw
+        copy.transposeSemitones = source.transposeSemitones
         copy.smartGuideEnabled = source.smartGuideEnabled
         modelContext.insert(copy)
 
@@ -498,6 +499,7 @@ struct SongLibraryPanel: View {
                 newTrack.isSolo = track.isSolo
                 newTrack.trimStartSeconds = track.trimStartSeconds
                 newTrack.trimEndSeconds = track.trimEndSeconds
+                newTrack.includeInKeyChange = track.includeInKeyChange
                 newTrack.sourceDurationSeconds = track.sourceDurationSeconds
                 newTrack.mediaPath = track.mediaPath
                 newTrack.mediaPathStyle = track.mediaPathStyle

@@ -17,6 +17,8 @@ final class AudioTrack {
     var isSolo: Bool
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
+    /// When false, a song key change leaves this stem at its original pitch.
+    var includeInKeyChange: Bool = true
     /// Length of the source file the last time it was readable, so layout survives missing media.
     var sourceDurationSeconds: Double?
 
@@ -44,6 +46,7 @@ final class AudioTrack {
         isSolo = false
         trimStartSeconds = 0.0
         trimEndSeconds = nil
+        includeInKeyChange = true
         sourceDurationSeconds = nil
         mediaPath = nil
         mediaPathStyleRaw = nil

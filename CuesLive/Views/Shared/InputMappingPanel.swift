@@ -46,6 +46,7 @@ struct InputMappingPanel: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 transportSection
                 songsSection
+                sectionsSection
                 helpText
             }
             .padding(.horizontal, AppSpacing.sm)
@@ -107,8 +108,43 @@ struct InputMappingPanel: View {
             .padding(.horizontal, AppSpacing.xs)
     }
 
+    private var sectionsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            AppSectionHeader(title: "Sections")
+
+            let sections = mappedSectionActions
+            VStack(alignment: .leading, spacing: 0) {
+                if sections.isEmpty {
+                    Text(emptySectionsMessage)
+                        .font(.callout)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(AppSpacing.sm)
+                } else {
+                    ForEach(Array(sections.enumerated()), id: \.element.id) { index, action in
+                        mappingRow(for: action)
+                        if index < sections.count - 1 {
+                            Divider()
+                                .background(AppColors.separator)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        }
+    }
+
     private var mappedSongActions: [MappableLiveAction] {
         store.songMappings
+            .compactMap { record -> MappableLiveAction? in
+                guard sessionBindingLabel(for: record) != nil else { return nil }
+                return record.action
+            }
+    }
+
+    private var mappedSectionActions: [MappableLiveAction] {
+        store.sectionMappings
             .compactMap { record -> MappableLiveAction? in
                 guard sessionBindingLabel(for: record) != nil else { return nil }
                 return record.action
@@ -123,6 +159,17 @@ struct InputMappingPanel: View {
             "No song MIDI notes mapped yet. Tap a song in the setlist, then send a MIDI note."
         case .idle:
             "No song mappings yet."
+        }
+    }
+
+    private var emptySectionsMessage: String {
+        switch mapping.session {
+        case .keyMapping:
+            "No section keys mapped yet. Tap a section on a song waveform, then press a key."
+        case .midiMapping:
+            "No section MIDI notes mapped yet. Tap a section on a song waveform, then send a MIDI note."
+        case .idle:
+            "No section mappings yet."
         }
     }
 

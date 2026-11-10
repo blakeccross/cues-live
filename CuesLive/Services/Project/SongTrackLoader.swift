@@ -9,9 +9,9 @@ enum SongTrackLoader {
         groupID: UUID?
     )
 
-    static func trackInputs(for song: Song) -> [TrackInput] {
-        song.sortedTracks.compactMap { track in
-            guard let url = FileStore.trackURL(for: song, track: track) else { return nil }
+    static func trackInputs(for song: Song) throws -> [TrackInput] {
+        try song.sortedTracks.compactMap { track in
+            guard let url = try playbackURL(for: song, track: track) else { return nil }
             return (
                 id: track.id,
                 url: url,
@@ -22,12 +22,21 @@ enum SongTrackLoader {
         }
     }
 
+    /// Original media, or the baked pitched file when this stem is included in the song's key change.
+    static func playbackURL(for song: Song, track: AudioTrack) throws -> URL? {
+        guard let original = FileStore.trackURL(for: song, track: track) else { return nil }
+        guard let baked = try KeyChangeRenderer.ensureBakedFile(for: track, song: song) else {
+            return original
+        }
+        return baked
+    }
+
     /// Live and setlist playback payloads. Missing files are skipped. When none are
     /// left, load an empty song so the timeline, cues, and MIDI still run.
     static func playbackPayloads(
         for song: Song
     ) throws -> [AudioEngineManager.PreparedTrackPayload] {
-        let trackInputs = trackInputs(for: song)
+        let trackInputs = try trackInputs(for: song)
         if trackInputs.isEmpty, !song.sortedTracks.isEmpty {
             return []
         }

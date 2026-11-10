@@ -90,6 +90,22 @@ final class InputMappingStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.mapping(for: .goToSong(0))?.midi?.note, 48)
         XCTAssertEqual(reloaded.mapping(for: .goToSong(0))?.midi?.channel, 2)
         XCTAssertEqual(reloaded.songMappings.count, 1)
+        XCTAssertTrue(reloaded.sectionMappings.isEmpty)
+    }
+
+    func testSectionMappingRoundTripStaysOutOfSongList() {
+        let action = MappableLiveAction.goToSection(songIndex: 2, sectionIndex: 1)
+        store.assignKey(
+            KeyBinding(keyCode: 2, character: "d", keyName: "D", command: false, shift: false, option: false, control: false),
+            to: action
+        )
+        store.assignMIDI(MIDINoteBinding(note: 48, channel: 2, sourceName: "Keys"), to: .goToSong(0))
+
+        let reloaded = InputMappingStore(defaults: defaults)
+        XCTAssertEqual(reloaded.mapping(for: action)?.key?.keyName, "D")
+        XCTAssertEqual(action.title, "Song 3 · Section 2")
+        XCTAssertEqual(reloaded.sectionMappings.map(\.action), [action])
+        XCTAssertEqual(reloaded.songMappings.map(\.action), [.goToSong(0)])
     }
 
     func testMIDINoteDisplayUsesC4For60() {

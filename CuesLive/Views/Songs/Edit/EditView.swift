@@ -43,6 +43,7 @@ struct EditView: View {
     @State private var showingArrangementEditor = false
     @State private var showingTimeSignatureEditor = false
     @State private var showingGroupEditor = false
+    @State private var showingChangeKey = false
     @State private var showingTempoEditor = false
     @State private var editingTempoMarkerID: UUID?
     @State private var showingTimeSignatureMarkerEditor = false
@@ -56,7 +57,6 @@ struct EditView: View {
     @State private var pendingShiftDeselectID: UUID?
     @State private var clipDrag: ClipDrag?
     @State private var rangeDrag: ClipRangeDrag?
-    @State private var rulerMeasureSelection: MeasureRangeSelection?
     @State private var selectedTrackIDs: Set<UUID> = []
     @FocusState private var isTimelineFocused: Bool
     @State private var isTimelineReady = false
@@ -169,10 +169,12 @@ struct EditView: View {
         clipSelection.retain(existing: timeline.clips)
         midiEvents = snapshot.midiEvents
 
+        let pitchBeforeApply = pitchPlaybackSignature
         snapshot.applyMetadata(to: song)
         let trackIDsBeforeApply = Set(song.sortedTracks.map(\.id))
         snapshot.applyTracks(to: song, context: modelContext)
         let trackIDsChanged = trackIDsBeforeApply != Set(song.sortedTracks.map(\.id))
+        let pitchChanged = pitchBeforeApply != pitchPlaybackSignature
 
         let defaultBPM = song.bpm ?? TempoChange.defaultBPM
         let defaultNumerator = song.timeSignatureNumerator ?? MeasureTiming.defaultNumerator
@@ -204,9 +206,16 @@ struct EditView: View {
 
         reconfigureMIDI()
 
-        if trackIDsChanged {
+        if trackIDsChanged || pitchChanged {
             viewModel.loadSong(context: modelContext)
         }
+    }
+
+    private var pitchPlaybackSignature: String {
+        let tracks = song.sortedTracks
+            .map { "\($0.id.uuidString):\($0.includeInKeyChange)" }
+            .joined(separator: ",")
+        return "\(song.transposeSemitones)|\(tracks)"
     }
 
     private func performUndoableChange(_ actionName: String, _ change: () -> Void) {
@@ -649,7 +658,6 @@ struct EditView: View {
         }
         .onChange(of: clipSelection) { _, newValue in
             if !newValue.isEmpty {
-                rulerMeasureSelection = nil
                 isTimelineFocused = true
             }
         }
@@ -699,11 +707,7 @@ struct EditView: View {
         }
 #if os(macOS)
         .onDeleteCommand {
-            if rulerMeasureSelection != nil {
-                rippleDeleteSelectedMeasures()
-            } else {
-                removeClipSelection()
-            }
+            removeClipSelection()
         }
         .onCommand(#selector(NSResponder.selectAll(_:))) {
             selectAllClips()
@@ -714,6 +718,23 @@ struct EditView: View {
 #endif
         .sheet(isPresented: $showingGroupEditor) {
             TrackGroupEditorView()
+        }
+        .sheet(isPresented: $showingChangeKey) {
+            ChangeKeyDialog(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: { actionName, before, after in
+                    undoController.registerChange(
+                        actionName: actionName,
+                        before: before,
+                        after: after,
+                        apply: { snapshot in
+                            applySnapshot(snapshot)
+                        }
+                    )
+                }
+            )
         }
         .sheet(isPresented: $showingMIDIDevicePicker) {
             MIDIDevicePickerView { device in
@@ -777,6 +798,7 @@ struct EditView: View {
                 normalizedTempoChanges: normalizedTempoChanges,
                 onApplyTempo: applyReferenceTempo,
                 onApplyBaseKey: applyBaseKey,
+                showingChangeKey: $showingChangeKey,
                 arrangementActions: arrangementActions,
                 loopSectionIDs: loopSectionIDs,
                 showingSongLibrary: $showingSongLibrary,
@@ -821,35 +843,6 @@ struct EditView: View {
         }
         clipSelection.deselectAll()
         clearMarkerCue(cancellingScheduledTransition: false)
-    }
-
-    /// Ripple-deletes the ruler measure selection: removes that span from every track and shifts
-    /// all later content, tempo/time-signature changes, section markers, and MIDI events earlier.
-    private func rippleDeleteSelectedMeasures() {
-        guard let selection = rulerMeasureSelection else { return }
-
-        performUndoableChange("Ripple Delete") {
-            TimelineRippleStore.rippleDeleteMeasures(
-                startMeasure: selection.startMeasure,
-                endMeasure: selection.endMeasure,
-                timeline: &timeline,
-                tempoChanges: &tempoChanges,
-                timeSignatureChanges: &timeSignatureChanges,
-                midiEvents: &midiEvents,
-                defaultBPM: song.bpm ?? TempoChange.defaultBPM,
-                defaultNumerator: song.timeSignatureNumerator ?? MeasureTiming.defaultNumerator,
-                defaultDenominator: song.timeSignatureDenominator ?? MeasureTiming.defaultDenominator
-            )
-
-            rulerMeasureSelection = nil
-            clipSelection.deselectAll()
-            clearMarkerCue(cancellingScheduledTransition: false)
-
-            persistTempoChanges()
-            persistTimeSignatureChanges()
-            reconfigureMIDI()
-            syncPlayback()
-        }
     }
 
     // MARK: - Clip selection
@@ -1349,6 +1342,7 @@ struct EditView: View {
             normalizedTempoChanges: normalizedTempoChanges,
             onApplyTempo: applyReferenceTempo,
             onApplyBaseKey: applyBaseKey,
+            showingChangeKey: $showingChangeKey,
             arrangementActions: arrangementActions,
             loopSectionIDs: loopSectionIDs,
             showingSongLibrary: $showingSongLibrary,
@@ -1398,8 +1392,10 @@ struct EditView: View {
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
             ruler: { timelineRulerStack },
+            timeRuler: { timelineTimeRuler },
             lanes: { trackTimelineScrollContent },
             headerRulerCorner: { trackHeaderRulerCorner },
+            timeRulerCorner: { trackHeaderTimeRulerCorner },
             headers: { trackHeaderList }
         )
         .simultaneousGesture(timelinePinchGesture)
@@ -1409,7 +1405,7 @@ struct EditView: View {
         ZStack(alignment: .topLeading) {
             Rectangle()
                 .fill(Color.dawStickyRulerBackground)
-                .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerTotalHeight)
+                .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight)
 
             ZStack(alignment: .topLeading) {
                 timelineRulerSection
@@ -1420,53 +1416,43 @@ struct EditView: View {
                     timeSignatureChanges: normalizedTimeSignatureChanges,
                     contentWidth: timelineContentWidth,
                     displayWidth: timelineDisplayWidth,
-                    rulerHeight: TimelineLayout.rulerTotalHeight
+                    rulerHeight: TimelineLayout.topRulerHeight
                 )
                 .allowsHitTesting(false)
             }
-            .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerTotalHeight, alignment: .leading)
-
-            if let selectionRect = rulerSelectionRect {
-                Rectangle()
-                    .fill(Color.accentColor.opacity(0.25))
-                    .overlay(alignment: .leading) {
-                        Rectangle().fill(Color.accentColor.opacity(0.8)).frame(width: 1)
-                    }
-                    .overlay(alignment: .trailing) {
-                        Rectangle().fill(Color.accentColor.opacity(0.8)).frame(width: 1)
-                    }
-                    .frame(width: selectionRect.width, height: TimelineLayout.rulerTotalHeight)
-                    .offset(x: selectionRect.minX)
-                    .allowsHitTesting(false)
-            }
+            .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
         }
-        .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerTotalHeight, alignment: .leading)
+        .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
     }
 
-    /// Pixel bounds of the ruler measure selection highlight, if any.
-    private var rulerSelectionRect: (minX: CGFloat, width: CGFloat)? {
-        guard let selection = rulerMeasureSelection else { return nil }
-        let startTime = MeasureTiming.timeAtStartOfMeasure(
-            selection.startMeasure,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges
-        )
-        let endTime = MeasureTiming.timeAtStartOfMeasure(
-            selection.endMeasure,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges
-        )
-        let startX = TimelineLayout.xPosition(
-            for: startTime,
-            duration: timelineDuration,
-            contentWidth: timelineContentWidth
-        )
-        let endX = TimelineLayout.xPosition(
-            for: endTime,
-            duration: timelineDuration,
-            contentWidth: timelineContentWidth
-        )
-        return (startX, max(0, endX - startX))
+    private var timelineTimeRuler: some View {
+        ZStack(alignment: .topLeading) {
+            Rectangle()
+                .fill(Color.dawStickyRulerBackground)
+                .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight)
+
+            ZStack(alignment: .topLeading) {
+                TimelineTimeRulerView(
+                    duration: timelineDuration,
+                    contentWidth: timelineContentWidth,
+                    displayWidth: timelineDisplayWidth,
+                    height: TimelineLayout.rulerHeight
+                )
+
+                TimelineMeasureGridOverlay(
+                    duration: timelineDuration,
+                    tempoChanges: normalizedTempoChanges,
+                    timeSignatureChanges: normalizedTimeSignatureChanges,
+                    contentWidth: timelineContentWidth,
+                    displayWidth: timelineDisplayWidth,
+                    rulerHeight: TimelineLayout.rulerHeight
+                )
+                .allowsHitTesting(false)
+            }
+            .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
+        }
+        .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
+        .allowsHitTesting(false)
     }
 
     private var timelineRulerSection: some View {
@@ -1483,22 +1469,7 @@ struct EditView: View {
             sectionMarkerHeight: TimelineLayout.sectionMarkerHeight,
             timeSignatureRulerHeight: TimelineLayout.timeSignatureRulerHeight,
             tempoRulerHeight: TimelineLayout.tempoRulerHeight,
-            rulerHeight: TimelineLayout.rulerHeight,
             isPlaying: audioEngine.isPlaying,
-            measureSelectionEnabled: !displaySections.isEmpty,
-            onSeek: { time in
-                rulerMeasureSelection = nil
-                clearMarkerCue()
-                seekOnTimeline(to: time)
-            },
-            onSelectMeasures: { startMeasure, endMeasure in
-                clipSelection.deselectAll()
-                rulerMeasureSelection = MeasureRangeSelection(
-                    startMeasure: startMeasure,
-                    endMeasure: endMeasure
-                )
-                isTimelineFocused = true
-            },
             onCueSection: cueSection,
             onToggleLoopSection: toggleLoopSection,
             onAddSection: addSection,
@@ -1518,7 +1489,7 @@ struct EditView: View {
             },
             onDeleteTempoMarker: deleteTempoMarker
         )
-        .frame(height: TimelineLayout.rulerTotalHeight)
+        .frame(height: TimelineLayout.topRulerHeight)
         .id("\(displaySections.map(\.id))|\(timelineContentWidth)|\(normalizedTempoChanges.map(\.id))|\(normalizedTimeSignatureChanges.map(\.id))")
         .popover(isPresented: $showingTimeSignatureMarkerEditor, arrowEdge: .bottom) {
             if let markerID = editingTimeSignatureMarkerID,
@@ -1900,10 +1871,6 @@ struct EditView: View {
             Color.clear
                 .frame(height: TimelineLayout.tempoRulerHeight)
 
-            Rectangle()
-                .fill(Color.primary.opacity(0.06))
-                .frame(height: TimelineLayout.rulerHeight)
-
             ZStack {
                 HStack(spacing: 6) {
                     Text("Tracks")
@@ -1928,7 +1895,7 @@ struct EditView: View {
             }
             .frame(height: TimelineLayout.sectionMarkerHeight)
         }
-        .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerTotalHeight)
+        .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.topRulerHeight)
         .background(Color.dawTrackHeaderBackground)
         .overlay(alignment: .bottom) {
             Rectangle()
@@ -1940,6 +1907,18 @@ struct EditView: View {
                 .fill(Color.dawTimelineDivider)
                 .frame(width: 1)
         }
+    }
+
+    private var trackHeaderTimeRulerCorner: some View {
+        Rectangle()
+            .fill(Color.dawStickyRulerBackground)
+            .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerHeight)
+            .overlay(alignment: .trailing) {
+                Rectangle()
+                    .fill(Color.dawTimelineDivider)
+                    .frame(width: 1)
+            }
+            .allowsHitTesting(false)
     }
 
     private var timelinePinchGesture: some Gesture {

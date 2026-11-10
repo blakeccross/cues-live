@@ -392,6 +392,17 @@
 		FE240D938D9768F049D4540A /* InputMappingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000322 /* InputMappingStore.swift */; };
 		FF2FFB7A15E804182473C592 /* RemoteSessionHostService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000304 /* RemoteSessionHostService.swift */; };
 		FF5D2101985F288556C6A5CE /* SpeechSampleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F7 /* SpeechSampleRenderer.swift */; };
+		AA0000010000000000000A11 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A11 /* PitchShiftBridge.mm */; settings = {COMPILER_FLAGS = "-O3 -DSIGNALSMITH_USE_ACCELERATE=1"; }; };
+		AA0000010000000000000A12 /* KeyChangeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A12 /* KeyChangeRenderer.swift */; };
+		AA0000010000000000000A13 /* PitchedStemStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A13 /* PitchedStemStore.swift */; };
+		AA0000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */; };
+		AA0000010000000000000A15 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A15 /* ChangeKeyDialog.swift */; };
+		AA0000010000000000000A17 /* KeyChangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A17 /* KeyChangeTests.swift */; };
+		B10000010000000000000A11 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A11 /* PitchShiftBridge.mm */; settings = {COMPILER_FLAGS = "-O3 -DSIGNALSMITH_USE_ACCELERATE=1"; }; };
+		B10000010000000000000A12 /* KeyChangeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A12 /* KeyChangeRenderer.swift */; };
+		B10000010000000000000A13 /* PitchedStemStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A13 /* PitchedStemStore.swift */; };
+		B10000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */; };
+		B10000010000000000000A15 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A15 /* ChangeKeyDialog.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -619,6 +630,14 @@
 		AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackSupportViews.swift; sourceTree = "<group>"; };
 		AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistSnapshots.swift; sourceTree = "<group>"; };
 		AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorError.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A10 /* PitchShiftBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PitchShiftBridge.h; sourceTree = "<group>"; };
+		AA0000020000000000000A11 /* PitchShiftBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PitchShiftBridge.mm; sourceTree = "<group>"; };
+		AA0000020000000000000A12 /* KeyChangeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeRenderer.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A13 /* PitchedStemStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchedStemStore.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeTrackSelection.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A15 /* ChangeKeyDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeKeyDialog.swift; sourceTree = "<group>"; };
+		AA0000020000000000000A16 /* CuesLive-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CuesLive-Bridging-Header.h"; sourceTree = "<group>"; };
+		AA0000020000000000000A17 /* KeyChangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeTests.swift; sourceTree = "<group>"; };
 		AA0000030000000000000001 /* cues.live.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cues.live.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000030000000000000002 /* CuesLiveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CuesLiveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -675,9 +694,30 @@
 			);
 			sourceTree = "<group>";
 		};
+		AA0000050000000000000A01 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000020000000000000A10 /* PitchShiftBridge.h */,
+				AA0000020000000000000A11 /* PitchShiftBridge.mm */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		AA0000050000000000000A02 /* Pitch */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000020000000000000A12 /* KeyChangeRenderer.swift */,
+				AA0000020000000000000A13 /* PitchedStemStore.swift */,
+				AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */,
+			);
+			path = Pitch;
+			sourceTree = "<group>";
+		};
 		AA0000050000000000000002 /* CuesLive */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000050000000000000A01 /* Audio */,
+				AA0000020000000000000A16 /* CuesLive-Bridging-Header.h */,
 				AA0000020000000000000001 /* CuesLiveApp.swift */,
 				AA0000020000000000000200 /* CuesLive.entitlements */,
 				AA00000500000000000000A2 /* DesignSystem */,
@@ -751,6 +791,7 @@
 				AA00000500000000000BB006 /* Input */,
 				AA00000500000000000BB008 /* Project */,
 				AA00000500000000000BB009 /* Editing */,
+				AA0000050000000000000A02 /* Pitch */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -884,6 +925,7 @@
 				AA0000020000000000000102 /* SpeechSampleRendererTests.swift */,
 				AA0000020000000000000329 /* InputMappingStoreTests.swift */,
 				AA000002000000000000032A /* InputMappingControllerTests.swift */,
+				AA0000020000000000000A17 /* KeyChangeTests.swift */,
 			);
 			path = CuesLiveTests;
 			sourceTree = "<group>";
@@ -1123,6 +1165,7 @@
 				AA00000200000000000ED004 /* EditToolbar.swift */,
 				AA00000200000000000ED005 /* EditTransportBar.swift */,
 				AA00000200000000000ED006 /* RenameSectionSheet.swift */,
+				AA0000020000000000000A15 /* ChangeKeyDialog.swift */,
 			);
 			path = Edit;
 			sourceTree = "<group>";
@@ -1262,6 +1305,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0000010000000000000A11 /* PitchShiftBridge.mm in Sources */,
+				AA0000010000000000000A12 /* KeyChangeRenderer.swift in Sources */,
+				AA0000010000000000000A13 /* PitchedStemStore.swift in Sources */,
+				AA0000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */,
+				AA0000010000000000000A15 /* ChangeKeyDialog.swift in Sources */,
 				AA0000010000000000000001 /* CuesLiveApp.swift in Sources */,
 				AA0000010000000000000002 /* Song.swift in Sources */,
 				AA000001000000000000012A /* SongMusicalKey.swift in Sources */,
@@ -1472,6 +1520,7 @@
 				AA0000010000000000000102 /* SpeechSampleRendererTests.swift in Sources */,
 				AA0000010000000000000329 /* InputMappingStoreTests.swift in Sources */,
 				AA000001000000000000032A /* InputMappingControllerTests.swift in Sources */,
+				AA0000010000000000000A17 /* KeyChangeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1479,6 +1528,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000010000000000000A11 /* PitchShiftBridge.mm in Sources */,
+				B10000010000000000000A12 /* KeyChangeRenderer.swift in Sources */,
+				B10000010000000000000A13 /* PitchedStemStore.swift in Sources */,
+				B10000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */,
+				B10000010000000000000A15 /* ChangeKeyDialog.swift in Sources */,
 				4C41DD9AEDCFAE6113E7E89F /* CuesLiveApp.swift in Sources */,
 				5683783753979D5D44AA769D /* Song.swift in Sources */,
 				88CF0E142B71D61032550EC0 /* SongMusicalKey.swift in Sources */,
@@ -1667,6 +1721,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/ThirdParty/signalsmith-stretch",
+					"$(SRCROOT)/ThirdParty/signalsmith-linear/include",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Accelerate,
+				);
+				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				CODE_SIGN_ENTITLEMENTS = "CuesLive/CuesLive-AppStore.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1743,6 +1807,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/ThirdParty/signalsmith-stretch",
+					"$(SRCROOT)/ThirdParty/signalsmith-linear/include",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Accelerate,
+				);
+				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				CODE_SIGN_ENTITLEMENTS = "CuesLive/CuesLive-AppStore.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1913,6 +1987,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/ThirdParty/signalsmith-stretch",
+					"$(SRCROOT)/ThirdParty/signalsmith-linear/include",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Accelerate,
+				);
+				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				CODE_SIGN_ENTITLEMENTS = CuesLive/CuesLive.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1989,6 +2073,16 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/ThirdParty/signalsmith-stretch",
+					"$(SRCROOT)/ThirdParty/signalsmith-linear/include",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					Accelerate,
+				);
+				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				CODE_SIGN_ENTITLEMENTS = CuesLive/CuesLive.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;

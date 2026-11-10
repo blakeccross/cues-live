@@ -82,6 +82,12 @@ final class InputMappingStore {
             .sorted { $0.action.sortOrder < $1.action.sortOrder }
     }
 
+    var sectionMappings: [InputMapping] {
+        mappings
+            .filter { $0.action.sectionTarget != nil }
+            .sorted { $0.action.sortOrder < $1.action.sortOrder }
+    }
+
     private func upsert(_ action: MappableLiveAction, mutate: (inout InputMapping) -> Void) {
         if let index = mappings.firstIndex(where: { $0.action == action }) {
             mutate(&mappings[index])

@@ -32,8 +32,6 @@ struct TrackLaneHeaderView: View {
                 .background(trackColors.body)
 
             VStack(alignment: .leading, spacing: 6) {
-                groupPicker
-
                 HStack(spacing: 6) {
                     TrackMixButton(
                         label: "M",
@@ -65,6 +63,8 @@ struct TrackLaneHeaderView: View {
                         onEditingEnded: onMixChange
                     )
                 }
+
+                groupPicker
             }
             .padding(.horizontal, 8)
             .padding(.bottom, 6)
@@ -690,16 +690,17 @@ private struct ClipSampleWaveform: View {
     let showsBaseline: Bool
 
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.timelineVisibleContentX) private var visibleContentX
+    @Environment(\.timelineScrollModel) private var scrollModel
     @State private var sampleStrips: [[Float]] = []
     @State private var sampleOrigin: Int = 0
 
     var body: some View {
+        let visibleContentX = scrollModel?.paintedRange
         Canvas { context, size in
-            draw(in: &context, size: size)
+            draw(in: &context, size: size, visibleContentX: visibleContentX)
         }
-        .task(id: sampleTaskID) {
-            await loadSamplesIfNeeded()
+        .task(id: sampleTaskID(visibleContentX: visibleContentX)) {
+            await loadSamplesIfNeeded(visibleContentX: visibleContentX)
         }
     }
 
@@ -709,14 +710,25 @@ private struct ClipSampleWaveform: View {
         max(0, sourceDuration) * overview.sampleRate
     }
 
-    private func draw(in context: inout GraphicsContext, size: CGSize) {
+    private func draw(
+        in context: inout GraphicsContext,
+        size: CGSize,
+        visibleContentX: ClosedRange<CGFloat>?
+    ) {
         let channels = max(overview.channels.count, 1)
         let bandHeight = size.height / CGFloat(channels)
         for index in 0..<channels {
             let band = CGRect(x: 0, y: CGFloat(index) * bandHeight, width: size.width, height: bandHeight)
             let peaks = index < overview.channels.count ? overview.channels[index] : nil
             let samples = index < sampleStrips.count ? sampleStrips[index] : []
-            drawChannel(peaks, samples: samples, in: band, context: &context, clipWidth: size.width)
+            drawChannel(
+                peaks,
+                samples: samples,
+                in: band,
+                context: &context,
+                clipWidth: size.width,
+                visibleContentX: visibleContentX
+            )
         }
     }
 
@@ -725,13 +737,14 @@ private struct ClipSampleWaveform: View {
         samples: [Float],
         in band: CGRect,
         context: inout GraphicsContext,
-        clipWidth: CGFloat
+        clipWidth: CGFloat,
+        visibleContentX: ClosedRange<CGFloat>?
     ) {
         guard clipWidth > 0, band.height > 0, overview.sampleRate > 0, sourceFrames > 0 else {
             if showsBaseline { strokeBaseline(in: band, context: &context) }
             return
         }
-        let window = visibleWindow(clipWidth: clipWidth)
+        let window = visibleWindow(clipWidth: clipWidth, visibleContentX: visibleContentX)
         let framesPerPoint = sourceFrames / Double(clipWidth)
         let step = framesPerPoint / Double(scale)
         let overlap = max(0, framesPerPoint - step)
@@ -828,7 +841,10 @@ private struct ClipSampleWaveform: View {
         flush()
     }
 
-    private func visibleWindow(clipWidth: CGFloat) -> (lower: CGFloat, upper: CGFloat) {
+    private func visibleWindow(
+        clipWidth: CGFloat,
+        visibleContentX: ClosedRange<CGFloat>?
+    ) -> (lower: CGFloat, upper: CGFloat) {
         guard let visible = visibleContentX else { return (0, clipWidth) }
         let lower = max(0, visible.lowerBound - contentX)
         let upper = min(clipWidth, visible.upperBound - contentX)
@@ -837,9 +853,9 @@ private struct ClipSampleWaveform: View {
     }
 
     /// The frames of the file to load samples for, or `nil` while zoomed out far enough to use peaks.
-    private var sampleRange: (first: Int, last: Int)? {
+    private func sampleRange(visibleContentX: ClosedRange<CGFloat>?) -> (first: Int, last: Int)? {
         guard overview.sampleRate > 0, sourceFrames > 1, clipWidth > 1 else { return nil }
-        let window = visibleWindow(clipWidth: clipWidth)
+        let window = visibleWindow(clipWidth: clipWidth, visibleContentX: visibleContentX)
         guard window.upper > window.lower else { return nil }
         let origin = sourceStart * overview.sampleRate
         let framesPerPoint = sourceFrames / Double(clipWidth)
@@ -850,13 +866,13 @@ private struct ClipSampleWaveform: View {
         return (first, last)
     }
 
-    private var sampleTaskID: String {
-        guard let range = sampleRange else { return "peaks" }
+    private func sampleTaskID(visibleContentX: ClosedRange<CGFloat>?) -> String {
+        guard let range = sampleRange(visibleContentX: visibleContentX) else { return "peaks" }
         return "samples|\(fileURL.path)|\(range.first)|\(range.last)"
     }
 
-    private func loadSamplesIfNeeded() async {
-        guard let range = sampleRange else {
+    private func loadSamplesIfNeeded(visibleContentX: ClosedRange<CGFloat>?) async {
+        guard let range = sampleRange(visibleContentX: visibleContentX) else {
             sampleStrips = []
             return
         }

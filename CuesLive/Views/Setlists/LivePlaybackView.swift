@@ -751,7 +751,28 @@ struct LivePlaybackView: View {
             toggleSectionLoop()
         case .goToSong(let index):
             coordinator.goToSong(at: index, autoPlay: coordinator.isAudiblePlaying)
+        case .goToSection(let songIndex, let sectionIndex):
+            performMappedSection(songIndex: songIndex, sectionIndex: sectionIndex)
         }
+    }
+
+    private func performMappedSection(songIndex: Int, sectionIndex: Int) {
+        guard coordinator.songs.indices.contains(songIndex) else { return }
+        let song = coordinator.songs[songIndex]
+        guard let snapshot = coordinator.resolveWaveformSnapshot(for: song),
+              snapshot.sections.indices.contains(sectionIndex) else { return }
+        let section = snapshot.sections[sectionIndex]
+        if songIndex == coordinator.currentIndex {
+            cueSection(section)
+            return
+        }
+        clearMarkerCue()
+        sectionLoop.endLoopIfActive()
+        coordinator.goToSong(
+            at: songIndex,
+            autoPlay: coordinator.isAudiblePlaying,
+            startTime: section.timelineStartSeconds
+        )
     }
 
     private func syncRemoteHostSession(for setlist: Setlist) {

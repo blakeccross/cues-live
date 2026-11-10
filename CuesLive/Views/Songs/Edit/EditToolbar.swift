@@ -147,6 +147,7 @@ struct EditSongToolbarContent: ToolbarContent {
     let normalizedTempoChanges: [TempoChange]
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
+    @Binding var showingChangeKey: Bool
     let arrangementActions: ArrangementSectionActions
     let loopSectionIDs: Set<UUID>
     @Binding var showingSongLibrary: Bool
@@ -174,6 +175,11 @@ struct EditSongToolbarContent: ToolbarContent {
             } else {
                 editorTransportCluster
             }
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .automatic) {
+            changeKeyButton
         }
         .cuesHideSharedBackground()
 
@@ -235,6 +241,17 @@ struct EditSongToolbarContent: ToolbarContent {
                 .labelStyle(.iconOnly)
         }
         .help("Back")
+    }
+
+    private var changeKeyButton: some View {
+        Button {
+            showingChangeKey = true
+        } label: {
+            Label("Change Key", systemImage: "key")
+                .labelStyle(.iconOnly)
+        }
+        .disabled(song.sortedTracks.isEmpty)
+        .help("Change Key")
     }
 
     private var arrangementEditorButton: some View {

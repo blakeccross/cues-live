@@ -167,9 +167,9 @@ struct TimelineSectionMarkerRowView: View {
         return max(0, nextX - labelX)
     }
 
-    /// A cued marker pulses between the gray and a dimmer gray.
+    /// A cued marker pulses between the palette dark gray and a dimmer gray.
     private func markerColor(for section: SongSection) -> Color {
-        let gray = AppColors.textTertiary
+        let gray = TrackGroupPalette.Key.darkGray.color
         guard cuedSectionID == section.id else { return gray }
         return cueFlashPhase ? gray : gray.opacity(0.35)
     }

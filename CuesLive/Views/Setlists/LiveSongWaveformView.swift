@@ -338,6 +338,73 @@ extension EnvironmentValues {
     }
 }
 
+/// How the setlist split pane should react when MIDI lanes appear after the
+/// divider has already been placed. `VSplitView` keeps that first height, so a
+/// later lane row is clipped until the measured waveform height shrinks to
+/// make room or the pane's minimum is raised long enough for the divider to move.
+enum LiveSetlistWaveformPaneAdjustment {
+    struct Measurement: Equatable {
+        var assignedHeight: CGFloat
+        var midiOverhead: CGFloat
+        var storedWaveformHeight: CGFloat
+        var previousAssignedHeight: CGFloat?
+        var previousMIDIOverhead: CGFloat?
+        /// The pane did not grow for the new lanes. Fit them into the height it has.
+        var forceFit: Bool = false
+    }
+
+    struct Decision: Equatable {
+        /// `nil` leaves the current waveform height alone so a pending pane
+        /// resize can keep the saved waveform size.
+        var waveformHeight: CGFloat?
+        var persistWaveformHeight: Bool
+    }
+
+    static func decision(for measurement: Measurement) -> Decision {
+        let fitted = LiveSetlistWaveformMetrics.clampedWaveformHeight(
+            measurement.assignedHeight - measurement.midiOverhead
+        )
+        let isInitial = measurement.previousMIDIOverhead == nil
+        let overheadStable: Bool
+        let paneChanged: Bool
+        // A divider move only counts as a user resize once the pane has already
+        // held the saved waveform. The first layouts often settle from the
+        // minimum height up to the real one.
+        let previousFitsSavedWaveform: Bool
+        if let previousMIDIOverhead = measurement.previousMIDIOverhead {
+            overheadStable = abs(measurement.midiOverhead - previousMIDIOverhead) < 0.5
+            let previousAssigned = measurement.previousAssignedHeight ?? measurement.assignedHeight
+            paneChanged = abs(measurement.assignedHeight - previousAssigned) > 0.5
+            previousFitsSavedWaveform = previousAssigned + 0.5
+                >= measurement.storedWaveformHeight + previousMIDIOverhead
+        } else {
+            overheadStable = false
+            paneChanged = false
+            previousFitsSavedWaveform = false
+        }
+        let userAdjusted = paneChanged && overheadStable && previousFitsSavedWaveform
+        let paneFitsSavedWaveform = measurement.assignedHeight + 0.5
+            >= measurement.storedWaveformHeight + measurement.midiOverhead
+        let apply = userAdjusted || paneFitsSavedWaveform || measurement.forceFit
+        guard apply else {
+            return Decision(waveformHeight: nil, persistWaveformHeight: false)
+        }
+        let persist = userAdjusted || (isInitial && paneFitsSavedWaveform)
+        return Decision(waveformHeight: fitted, persistWaveformHeight: persist)
+    }
+
+    /// Minimum content height that forces the split divider down when lanes
+    /// appear. `nil` uses the normal drag floor.
+    static func reservedPaneHeight(
+        storedWaveformHeight: CGFloat,
+        midiOverhead: CGFloat,
+        isReserving: Bool
+    ) -> CGFloat? {
+        guard isReserving, midiOverhead > 0.5 else { return nil }
+        return storedWaveformHeight + midiOverhead
+    }
+}
+
 #if os(macOS)
 /// Gives the top pane of a `VSplitView` (see
 /// `LivePlaybackView.playbackMainSection`) a reasonable initial/minimum
@@ -351,20 +418,70 @@ struct LiveSetlistWaveformResizablePane<Content: View>: View {
 
     @AppStorage(LiveSetlistWaveformMetrics.appStorageKey)
     private var storedWaveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeightStorageValue
+    /// Briefly holds the pane open at the saved waveform height plus MIDI rows.
+    /// The split view ignores a later `idealHeight`, but it will honor a minimum
+    /// that's taller than the current divider position.
+    @State private var reservesMIDILaneHeight = false
+    @State private var midiReserveGeneration = 0
 
     private var overheadHeight: CGFloat {
         LiveSetlistWaveformMetrics.midiLanesHeight(forRowCount: maxMIDILaneCount)
     }
 
+    private var storedContentHeight: CGFloat {
+        LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight)
+    }
+
+    private var minimumPaneHeight: CGFloat {
+        let base = LiveSetlistWaveformMetrics.minimumWaveformHeight + overheadHeight
+        guard let reserved = LiveSetlistWaveformPaneAdjustment.reservedPaneHeight(
+            storedWaveformHeight: storedContentHeight,
+            midiOverhead: overheadHeight,
+            isReserving: reservesMIDILaneHeight
+        ) else {
+            return base
+        }
+        return max(base, reserved)
+    }
+
     var body: some View {
         content()
             .frame(
-                minHeight: LiveSetlistWaveformMetrics.minimumWaveformHeight + overheadHeight,
-                idealHeight: LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight) + overheadHeight,
+                minHeight: minimumPaneHeight,
+                idealHeight: storedContentHeight + overheadHeight,
                 maxHeight: LiveSetlistWaveformMetrics.maximumWaveformHeight + overheadHeight
             )
             // Keeps the VSplitView divider from sitting flush against the waveform.
             .padding(.bottom, AppSpacing.xs)
+            .animation(.none, value: reservesMIDILaneHeight)
+            .animation(.none, value: overheadHeight)
+            .onAppear {
+                reserveSpaceForMIDILanes()
+            }
+            .onChange(of: overheadHeight) { _, _ in
+                reserveSpaceForMIDILanes()
+            }
+    }
+
+    private func reserveSpaceForMIDILanes() {
+        guard overheadHeight > 0.5 else { return }
+        midiReserveGeneration += 1
+        let generation = midiReserveGeneration
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            reservesMIDILaneHeight = true
+        }
+        Task { @MainActor in
+            await Task.yield()
+            await Task.yield()
+            guard generation == midiReserveGeneration else { return }
+            var clear = Transaction()
+            clear.disablesAnimations = true
+            withTransaction(clear) {
+                reservesMIDILaneHeight = false
+            }
+        }
     }
 }
 #endif
@@ -402,8 +519,11 @@ struct LiveSongWaveformView: View {
     var isPlayingProvider: (() -> Bool)?
     let onSeek: (TimeInterval) -> Void
     let onCueSection: (SongSection) -> Void
+    /// Setlist position of this lane. When set, each section can be key- or MIDI-mapped.
+    var playbackIndex: Int? = nil
 
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
+    @Environment(InputMappingController.self) private var mapping
 
     @State private var sourceSeries = WaveformMinMax.empty
     @State private var cachedDisplaySeries = WaveformMinMax.empty
@@ -511,8 +631,13 @@ struct LiveSongWaveformView: View {
                         .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
                 }
             }
+            .overlay(alignment: .topLeading) {
+                if let playbackIndex, mapping.showsLiveHighlights {
+                    sectionMappingTargets(playbackIndex: playbackIndex, contentWidth: contentWidth)
+                }
+            }
             .modifier(WaveformSeekGestureModifier(
-                isEnabled: isInteractive,
+                isEnabled: isInteractive && !mapping.showsLiveHighlights,
                 contentWidth: contentWidth,
                 duration: safeTimelineDuration,
                 sections: sections.map {
@@ -938,6 +1063,34 @@ struct LiveSongWaveformView: View {
     }
 
     @ViewBuilder
+    private func sectionMappingTargets(playbackIndex: Int, contentWidth: CGFloat) -> some View {
+        ZStack(alignment: .leading) {
+            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+                let startX = TimelineLayout.xPosition(
+                    for: section.timelineStartSeconds,
+                    duration: safeTimelineDuration,
+                    contentWidth: contentWidth
+                )
+                let endX = TimelineLayout.xPosition(
+                    for: section.timelineEndSeconds,
+                    duration: safeTimelineDuration,
+                    contentWidth: contentWidth
+                )
+                let segmentWidth = max(0, endX - startX)
+
+                Color.clear
+                    .frame(width: segmentWidth, height: waveformHeight)
+                    .mappableLiveControl(
+                        .goToSection(songIndex: playbackIndex, sectionIndex: index),
+                        cornerRadius: AppRadius.sm
+                    )
+                    .offset(x: startX)
+            }
+        }
+        .frame(width: contentWidth, height: waveformHeight, alignment: .leading)
+    }
+
+    @ViewBuilder
     private func sectionTapTargets(contentWidth: CGFloat) -> some View {
         if usesArrangementLayout {
             ZStack(alignment: .leading) {
@@ -1171,6 +1324,8 @@ struct LiveSetlistWaveformScrollView: View {
     /// song's row reserves the same height and switching songs doesn't jump.
     var maxMIDILaneCount: Int = 0
 
+    @Environment(InputMappingController.self) private var mapping
+
     @AppStorage(LiveSetlistWaveformMetrics.horizontalZoomAppStorageKey)
     private var storedHorizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoomStorageValue
 
@@ -1182,6 +1337,10 @@ struct LiveSetlistWaveformScrollView: View {
     @AppStorage(LiveSetlistWaveformMetrics.appStorageKey)
     private var storedWaveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeightStorageValue
     @State private var waveformHeight = LiveSetlistWaveformMetrics.defaultWaveformHeight
+    @State private var assignedPaneHeight: CGFloat = 0
+    /// `-1` until the first pane measurement. `0` is a real "no MIDI lanes" overhead.
+    @State private var measuredMIDIOverhead: CGFloat = -1
+    @State private var isMIDILaneRevealScheduled = false
     #else
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
     #endif
@@ -1335,6 +1494,9 @@ struct LiveSetlistWaveformScrollView: View {
                     }
             }
         }
+        .onChange(of: midiLanesExtraHeight) { _, _ in
+            scheduleMIDILaneReveal()
+        }
         .environment(\.liveSetlistWaveformHeight, waveformHeight)
         #else
         .frame(height: laneHeight)
@@ -1345,6 +1507,7 @@ struct LiveSetlistWaveformScrollView: View {
             horizontalZoom = LiveSetlistWaveformMetrics.horizontalZoom(fromStorage: storedHorizontalZoom)
             #if os(macOS)
             waveformHeight = LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight)
+            scheduleMIDILaneReveal()
             #endif
         }
         .accessibilityAdjustableAction { direction in
@@ -1360,15 +1523,60 @@ struct LiveSetlistWaveformScrollView: View {
     }
 
     #if os(macOS)
-    private func updateWaveformHeight(forAssignedHeight assignedHeight: CGFloat) {
-        let clamped = LiveSetlistWaveformMetrics.clampedWaveformHeight(assignedHeight - midiLanesExtraHeight)
-        guard clamped != waveformHeight else { return }
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            waveformHeight = clamped
+    private func updateWaveformHeight(forAssignedHeight assignedHeight: CGFloat, forceFit: Bool = false) {
+        guard assignedHeight > 1 else { return }
+        let overhead = midiLanesExtraHeight
+        let decision = LiveSetlistWaveformPaneAdjustment.decision(
+            for: .init(
+                assignedHeight: assignedHeight,
+                midiOverhead: overhead,
+                storedWaveformHeight: LiveSetlistWaveformMetrics.waveformHeight(fromStorage: storedWaveformHeight),
+                previousAssignedHeight: measuredMIDIOverhead < 0 ? nil : assignedPaneHeight,
+                previousMIDIOverhead: measuredMIDIOverhead < 0 ? nil : measuredMIDIOverhead,
+                forceFit: forceFit
+            )
+        )
+        assignedPaneHeight = assignedHeight
+        measuredMIDIOverhead = overhead
+
+        if let fitted = decision.waveformHeight, fitted != waveformHeight {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                waveformHeight = fitted
+            }
         }
-        storedWaveformHeight = LiveSetlistWaveformMetrics.storageValue(forHeight: clamped)
+        if decision.persistWaveformHeight, let fitted = decision.waveformHeight {
+            storedWaveformHeight = LiveSetlistWaveformMetrics.storageValue(forHeight: fitted)
+        } else if decision.waveformHeight == nil {
+            // Divider hasn't moved for these lanes yet. Give the pane's temporary
+            // minimum a layout pass, then fit into whatever height it actually got.
+            scheduleMIDILaneReveal()
+        }
+    }
+
+    private func scheduleMIDILaneReveal(attempt: Int = 0) {
+        guard midiLanesExtraHeight > 0.5, !isMIDILaneRevealScheduled, attempt < 5 else { return }
+        isMIDILaneRevealScheduled = true
+        let overhead = midiLanesExtraHeight
+        Task { @MainActor in
+            await Task.yield()
+            await Task.yield()
+            isMIDILaneRevealScheduled = false
+            guard abs(midiLanesExtraHeight - overhead) < 0.5 else {
+                scheduleMIDILaneReveal()
+                return
+            }
+            // The pane measurement arrives on the first layout pass, which can
+            // be after this wait. Try again instead of leaving the lanes clipped.
+            guard assignedPaneHeight > 1 else {
+                scheduleMIDILaneReveal(attempt: attempt + 1)
+                return
+            }
+            let fitted = LiveSetlistWaveformMetrics.clampedWaveformHeight(assignedPaneHeight - overhead)
+            guard fitted + 0.5 < waveformHeight else { return }
+            updateWaveformHeight(forAssignedHeight: assignedPaneHeight, forceFit: true)
+        }
     }
     #endif
 
@@ -1580,7 +1788,7 @@ struct LiveSetlistWaveformScrollView: View {
 
         Group {
             if let snapshot = laneSnapshot {
-                waveformLane(snapshot: snapshot, isCurrent: isCurrent)
+                waveformLane(snapshot: snapshot, playbackIndex: playbackIndex, isCurrent: isCurrent)
             } else {
                 LiveSetlistWaveformLanePlaceholder(isCurrent: isCurrent)
                     .frame(minHeight: waveformHeight + midiLanesExtraHeight, alignment: .top)
@@ -1590,7 +1798,7 @@ struct LiveSetlistWaveformScrollView: View {
             }
         }
         .modifier(NonCurrentSongSelectTapModifier(
-            isEnabled: !isCurrent && onSelectSong != nil,
+            isEnabled: !isCurrent && onSelectSong != nil && !mapping.showsLiveHighlights,
             contentWidth: laneSnapshot.map { laneContentWidth(for: $0) } ?? 0,
             duration: laneSnapshot?.timelineDuration ?? 0,
             sections: laneSnapshot?.sections ?? [],
@@ -1601,6 +1809,7 @@ struct LiveSetlistWaveformScrollView: View {
     @ViewBuilder
     private func waveformLane(
         snapshot: LiveSongWaveformSnapshot,
+        playbackIndex: Int,
         isCurrent: Bool
     ) -> some View {
         let laneContentWidth = laneContentWidth(for: snapshot)
@@ -1630,7 +1839,8 @@ struct LiveSetlistWaveformScrollView: View {
                 playheadTimeProvider: isCurrent ? playheadTimeProvider : nil,
                 isPlayingProvider: isCurrent ? isPlayingProvider : nil,
                 onSeek: onSeek,
-                onCueSection: onCueSection
+                onCueSection: onCueSection,
+                playbackIndex: playbackIndex
             )
 
             ForEach(snapshot.midiLanes) { lane in

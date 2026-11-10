@@ -16,6 +16,7 @@ struct TrackEditSnapshot: Equatable, Hashable {
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
     var groupName: String?
+    var includeInKeyChange: Bool
 }
 
 struct SongMetadataSnapshot: Equatable, Hashable {
@@ -23,6 +24,7 @@ struct SongMetadataSnapshot: Equatable, Hashable {
     var timeSignatureNumerator: Int?
     var timeSignatureDenominator: Int?
     var baseKeyRaw: String?
+    var transposeSemitones: Int
     var smartGuideEnabled: Bool
 }
 
@@ -51,6 +53,7 @@ struct SongEditSnapshot: Equatable {
                 timeSignatureNumerator: song.timeSignatureNumerator,
                 timeSignatureDenominator: song.timeSignatureDenominator,
                 baseKeyRaw: song.baseKeyRaw,
+                transposeSemitones: song.transposeSemitones,
                 smartGuideEnabled: song.smartGuideEnabled
             ),
             tracks: song.sortedTracks.map { track in
@@ -68,7 +71,8 @@ struct SongEditSnapshot: Equatable {
                     isSolo: track.isSolo,
                     trimStartSeconds: track.trimStartSeconds,
                     trimEndSeconds: track.trimEndSeconds,
-                    groupName: track.group?.name
+                    groupName: track.group?.name,
+                    includeInKeyChange: track.includeInKeyChange
                 )
             }
         )
@@ -79,6 +83,7 @@ struct SongEditSnapshot: Equatable {
         song.timeSignatureNumerator = songMetadata.timeSignatureNumerator
         song.timeSignatureDenominator = songMetadata.timeSignatureDenominator
         song.baseKeyRaw = songMetadata.baseKeyRaw
+        song.transposeSemitones = songMetadata.transposeSemitones
         song.smartGuideEnabled = songMetadata.smartGuideEnabled
     }
 
@@ -115,6 +120,7 @@ struct SongEditSnapshot: Equatable {
             track.isSolo = trackSnapshot.isSolo
             track.trimStartSeconds = trackSnapshot.trimStartSeconds
             track.trimEndSeconds = trackSnapshot.trimEndSeconds
+            track.includeInKeyChange = trackSnapshot.includeInKeyChange
             if let groupName = trackSnapshot.groupName {
                 track.group = groupsByName[groupName]
             } else {

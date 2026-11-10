@@ -46,6 +46,18 @@ final class SongEditorViewModel {
         reloadSong()
     }
 
+    /// Bakes included stems at `song.transposeSemitones`, persists the project, and reloads playback.
+    @MainActor
+    func applyKeyChange(
+        context: ModelContext,
+        onProgress: @escaping @MainActor (KeyChangeRenderer.Progress) -> Void
+    ) async throws {
+        try await KeyChangeRenderer.bake(song: song, onProgress: onProgress)
+        try context.save()
+        try SongProjectBridge.syncProjectFile(for: song, context: context)
+        reloadSongAfterMediaChange()
+    }
+
     @MainActor
     private func performReload() async {
         claimEngineForSongEditing()
@@ -60,21 +72,13 @@ final class SongEditorViewModel {
             }
         }
 
-        let trackInputs = song.sortedTracks.compactMap { track -> (
-            id: UUID,
-            url: URL,
-            relativePath: String,
-            settings: AudioEngineManager.TrackSettings,
-            groupID: UUID?
-        )? in
-            guard let url = FileStore.trackURL(for: song, track: track) else { return nil }
-            return (
-                id: track.id,
-                url: url,
-                relativePath: track.mediaPath ?? track.relativeFilePath,
-                settings: AudioEngineManager.TrackSettings(track: track),
-                groupID: track.group?.id
-            )
+        let trackInputs: [SongTrackLoader.TrackInput]
+        do {
+            trackInputs = try SongTrackLoader.trackInputs(for: song)
+        } catch {
+            isLoaded = false
+            loadError = error.localizedDescription
+            return
         }
 
         guard !trackInputs.isEmpty else {

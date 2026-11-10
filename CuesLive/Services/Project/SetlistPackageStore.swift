@@ -80,6 +80,7 @@ enum SetlistPackageStore {
                 "\(songFolderName).\(ProjectUTType.songProjectExtension)"
             )
             try packageSong(song, into: songFolderURL, projectURL: packagedProjectURL)
+            try copyPitchedFolder(for: song, into: songFolderURL)
             packagedSongURLs[song.id] = packagedProjectURL
         }
 
@@ -265,6 +266,17 @@ enum SetlistPackageStore {
 
         document.tracks = updatedTracks
         try ProjectFileStore.save(document, to: packagedProjectURL)
+    }
+
+    private static func copyPitchedFolder(for song: Song, into songFolderURL: URL) throws {
+        guard let sourceProjectURL = SongProjectBridge.projectURL(for: song) else { return }
+        let source = PitchedStemStore.directory(forProjectFile: sourceProjectURL)
+        guard FileManager.default.fileExists(atPath: source.path) else { return }
+        let destination = songFolderURL.appendingPathComponent(PitchedStemStore.folderName, isDirectory: true)
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
+        }
+        try FileManager.default.copyItem(at: source, to: destination)
     }
 
     private static func uniqueSongFolderName(
