@@ -49,6 +49,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # PitchShiftBridge includes signalsmith-stretch.h from these submodules.
+          submodules: recursive
 
       - name: Select Xcode
         run: |
