@@ -15,7 +15,6 @@
 		00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000043 /* ClickTrackGenerator.swift */; };
 		027BFA4C1F9227309DCAE3FE /* AppBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* AppBadge.swift */; };
 		0491D0CB258BB532C4D262E8 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
-		051EE6FC573BDB8874E49773 /* SongBakeFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D1 /* SongBakeFingerprint.swift */; };
 		055A7DD4FF49A64810EC90F1 /* InputMappingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000328 /* InputMappingSettingsView.swift */; };
 		060975E7911FF7D5A6DFA990 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		0635B9806DB2025259712FA7 /* CueshowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033E /* CueshowDocument.icns */; };
@@ -40,12 +39,9 @@
 		24D870479A431B3965428D2E /* SectionAnnouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F2 /* SectionAnnouncer.swift */; };
 		27D2A245DFF5C591D697AC21 /* SectionLoopController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004C /* SectionLoopController.swift */; };
 		286CB25439511310D21D5039 /* WaveformBarsCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004D /* WaveformBarsCanvas.swift */; };
-		298868F51A2CBEE361DA8531 /* SongGroupBaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D3 /* SongGroupBaker.swift */; };
 		2E2CAAA36957618AF72A8A34 /* MappableControlModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000326 /* MappableControlModifier.swift */; };
 		3048121C0B3EE1404EE0187A /* AbletonProjectImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001A /* AbletonProjectImporter.swift */; };
-		327D8979234007649DDCB55B /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000039 /* PitchShiftBridge.mm */; };
 		33B1D1D0F78066D7DC4F76F9 /* AddTrackTypeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED001 /* AddTrackTypeSheet.swift */; };
-		3676BF19E8A4A2E5D90F6077 /* BakeSongSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D4 /* BakeSongSheet.swift */; };
 		376CE795C5085A6296C2E115 /* MeasureAnchoredChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000B02 /* MeasureAnchoredChange.swift */; };
 		3783F545E83A9FCE76DD3909 /* EditToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED004 /* EditToolbar.swift */; };
 		39644CE53879671A2EABEAB4 /* TempoChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003E /* TempoChange.swift */; };
@@ -57,7 +53,6 @@
 		448064EE42E8399691EC85BD /* DocsWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033C /* DocsWindowView.swift */; };
 		44E1F5758574E69D7A0983E6 /* ClickTrackSubdivision.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000047 /* ClickTrackSubdivision.swift */; };
 		4926CEE83BB294F3E6CD4DCC /* MediaReferenceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000075 /* MediaReferenceResolver.swift */; };
-		4B88EC0A362514098B123157 /* SongBakeManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D0 /* SongBakeManifest.swift */; };
 		4C41DD9AEDCFAE6113E7E89F /* CuesLiveApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000001 /* CuesLiveApp.swift */; };
 		4C73EDBD3D31E2979C49EE21 /* ArrangementEditorMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000020 /* ArrangementEditorMenu.swift */; };
 		4F709236950C532CBB37D313 /* RemoteSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000301 /* RemoteSessionModels.swift */; };
@@ -86,7 +81,6 @@
 		79EC3821EFF35D7A1FB3BBEE /* click-normal.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000045 /* click-normal.wav */; };
 		7A71235334CE0DD935D64451 /* ArrangementTimelineMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000021 /* ArrangementTimelineMapper.swift */; };
 		7B0B0B631AF53DE1C5C98D2A /* EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000F /* EditView.swift */; };
-		7BA9FACA96FB7F0855F31423 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000037 /* ChangeKeyDialog.swift */; };
 		7D412A866B68E52B871B8246 /* DAWColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000018 /* DAWColors.swift */; };
 		7E1007493D2F275F94D7A49B /* SongSectionPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F3 /* SongSectionPresets.swift */; };
 		7F74D91A2A30D76DE139D15C /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000D /* SongDetailView.swift */; };
@@ -118,7 +112,6 @@
 		9DF88DAA085CABDF5DFAD08E /* RemoteSessionClientService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000305 /* RemoteSessionClientService.swift */; };
 		A0098CC5375653F730D0E085 /* HelpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033A /* HelpSettingsView.swift */; };
 		A226C680E0B88DB12B7ACAD2 /* LiveSetlistSnapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */; };
-		A2AF74D227FB5096335253CB /* SongBakeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D2 /* SongBakeStore.swift */; };
 		A384FD84AA2A32587F49F3FB /* LiveSetlistRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000310 /* LiveSetlistRows.swift */; };
 		A471859ECA9875C2DABDAA29 /* GroupOutputRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002F /* GroupOutputRoute.swift */; };
 		A52C618F779EC1571CFD0792 /* SetlistPackageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E0 /* SetlistPackageStore.swift */; };
@@ -170,12 +163,7 @@
 		AA0000010000000000000033 /* ManageOutputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000033 /* ManageOutputsView.swift */; };
 		AA0000010000000000000034 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
-		AA0000010000000000000037 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000037 /* ChangeKeyDialog.swift */; };
-		AA0000010000000000000038 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000039 /* PitchShiftBridge.mm */; };
-		AA000001000000000000003A /* RubberBandPitchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003A /* RubberBandPitchProcessor.swift */; };
-		AA000001000000000000003B /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003D /* Accelerate.framework */; };
 		AA000001000000000000003C /* TempoChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003E /* TempoChange.swift */; };
-		AA0000010000000000000040 /* TrackBakeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000040 /* TrackBakeCache.swift */; };
 		AA0000010000000000000041 /* SongTrackLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000041 /* SongTrackLoader.swift */; };
 		AA0000010000000000000042 /* LiveSetlistNowPlayingInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */; };
 		AA0000010000000000000043 /* ClickTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000043 /* ClickTrackGenerator.swift */; };
@@ -231,12 +219,6 @@
 		AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C7 /* AudioTimelineMathTests.swift */; };
 		AA0000010000000000000CA1 /* LiveSetlistZoomAnchorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */; };
 		AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */; };
-		AA00000100000000000000D0 /* SongBakeManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D0 /* SongBakeManifest.swift */; };
-		AA00000100000000000000D1 /* SongBakeFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D1 /* SongBakeFingerprint.swift */; };
-		AA00000100000000000000D2 /* SongBakeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D2 /* SongBakeStore.swift */; };
-		AA00000100000000000000D3 /* SongGroupBaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D3 /* SongGroupBaker.swift */; };
-		AA00000100000000000000D4 /* BakeSongSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D4 /* BakeSongSheet.swift */; };
-		AA00000100000000000000D5 /* SongBakeFingerprintTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D5 /* SongBakeFingerprintTests.swift */; };
 		AA00000100000000000000D6 /* SongEditSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D6 /* SongEditSnapshot.swift */; };
 		AA00000100000000000000D7 /* SongUndoController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D7 /* SongUndoController.swift */; };
 		AA00000100000000000000D8 /* SongEditSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D8 /* SongEditSnapshotTests.swift */; };
@@ -363,7 +345,6 @@
 		BF77226E75BDB6462A0A2787 /* MIDILaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000065 /* MIDILaneView.swift */; };
 		C04FAE1C7E419A35B562C367 /* RemoteSessionProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000302 /* RemoteSessionProtocol.swift */; };
 		C29C84FAA41C93CF453CCD67 /* DocsTopic.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033B /* DocsTopic.swift */; };
-		C3A673D653243066C6BC0B95 /* RubberBandPitchProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003A /* RubberBandPitchProcessor.swift */; };
 		C4127164C36D8FBC754013DF /* SongTrackLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000041 /* SongTrackLoader.swift */; };
 		C5BAE856EF7F7C8C55C3A9AB /* LiveSetlistMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033D /* LiveSetlistMenuController.swift */; };
 		C645950FE0BEFC91246500EF /* SparkleUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000201 /* SparkleUpdater.swift */; };
@@ -395,7 +376,6 @@
 		E7829A3DD0DF8198590037E4 /* GroupMixStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000079 /* GroupMixStore.swift */; };
 		EA72A290E1CDEF653DCF596D /* OverlapTransitionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B1 /* OverlapTransitionConfig.swift */; };
 		EB3AF7FE98B3C448D5DC936E /* ShowProjectDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000073 /* ShowProjectDocument.swift */; };
-		EC73924EB981D1B6905FF2E4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003D /* Accelerate.framework */; };
 		EC7EF5AB04A4B9AB2BCEBDD3 /* LTCGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000114 /* LTCGenerator.swift */; };
 		ECA2184AEF722006934A4BB2 /* OverlapPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B4 /* OverlapPreviewEngine.swift */; };
 		EF5737E818752ACA57944474 /* ProjectUTType.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000074 /* ProjectUTType.swift */; };
@@ -408,7 +388,6 @@
 		F7BCB858706383EA368E569F /* AppButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000085 /* AppButtons.swift */; };
 		F7BED7B50FB7FABF262C9B83 /* OverlapTrackGraphBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */; };
 		F8A0670D0FA3E9DD3D013F8D /* ClickTrackFileGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */; };
-		F99B13CD70B9FC2FB944112A /* TrackBakeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000040 /* TrackBakeCache.swift */; };
 		F9D4CA76FF6F90A58CEB2DED /* TimecodePlaybackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000115 /* TimecodePlaybackSupport.swift */; };
 		FE240D938D9768F049D4540A /* InputMappingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000322 /* InputMappingStore.swift */; };
 		FF2FFB7A15E804182473C592 /* RemoteSessionHostService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000304 /* RemoteSessionHostService.swift */; };
@@ -477,15 +456,7 @@
 		AA0000020000000000000033 /* ManageOutputsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageOutputsView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000034 /* SongFolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderImporter.swift; sourceTree = "<group>"; };
 		AA0000020000000000000035 /* TimeSignatureChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSignatureChange.swift; sourceTree = "<group>"; };
-		AA0000020000000000000037 /* ChangeKeyDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeKeyDialog.swift; sourceTree = "<group>"; };
-		AA0000020000000000000038 /* PitchShiftBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PitchShiftBridge.h; sourceTree = "<group>"; };
-		AA0000020000000000000039 /* PitchShiftBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PitchShiftBridge.mm; sourceTree = "<group>"; };
-		AA000002000000000000003A /* RubberBandPitchProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RubberBandPitchProcessor.swift; sourceTree = "<group>"; };
-		AA000002000000000000003B /* CuesLive-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CuesLive-Bridging-Header.h"; sourceTree = "<group>"; };
-		AA000002000000000000003C /* RubberBandSingle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RubberBandSingle.cpp; path = ThirdParty/rubberband/single/RubberBandSingle.cpp; sourceTree = SOURCE_ROOT; };
-		AA000002000000000000003D /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		AA000002000000000000003E /* TempoChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoChange.swift; sourceTree = "<group>"; };
-		AA0000020000000000000040 /* TrackBakeCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackBakeCache.swift; sourceTree = "<group>"; };
 		AA0000020000000000000041 /* SongTrackLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongTrackLoader.swift; sourceTree = "<group>"; };
 		AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistNowPlayingInfoView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000043 /* ClickTrackGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickTrackGenerator.swift; sourceTree = "<group>"; };
@@ -541,12 +512,6 @@
 		AA00000200000000000000C7 /* AudioTimelineMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTimelineMathTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomAnchorTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackTransportTests.swift; sourceTree = "<group>"; };
-		AA00000200000000000000D0 /* SongBakeManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongBakeManifest.swift; sourceTree = "<group>"; };
-		AA00000200000000000000D1 /* SongBakeFingerprint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongBakeFingerprint.swift; sourceTree = "<group>"; };
-		AA00000200000000000000D2 /* SongBakeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongBakeStore.swift; sourceTree = "<group>"; };
-		AA00000200000000000000D3 /* SongGroupBaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongGroupBaker.swift; sourceTree = "<group>"; };
-		AA00000200000000000000D4 /* BakeSongSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BakeSongSheet.swift; sourceTree = "<group>"; };
-		AA00000200000000000000D5 /* SongBakeFingerprintTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongBakeFingerprintTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D6 /* SongEditSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditSnapshot.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D7 /* SongUndoController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongUndoController.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D8 /* SongEditSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditSnapshotTests.swift; sourceTree = "<group>"; };
@@ -663,7 +628,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA000001000000000000003B /* Accelerate.framework in Frameworks */,
 				AA0000010000000000000200 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -679,7 +643,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EC73924EB981D1B6905FF2E4 /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -692,14 +655,6 @@
 				4991940D1E34D1B160FEE5AA /* OS X */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		4566C29B2FF807D5009DDE90 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				AA000002000000000000003D /* Accelerate.framework */,
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		4991940D1E34D1B160FEE5AA /* OS X */ = {
@@ -716,7 +671,6 @@
 				AA0000050000000000000002 /* CuesLive */,
 				AA0000050000000000000011 /* CuesLiveTests */,
 				AA0000050000000000000003 /* Products */,
-				4566C29B2FF807D5009DDE90 /* Recovered References */,
 				31EBA79CD826626A6E42A89C /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -725,10 +679,8 @@
 			isa = PBXGroup;
 			children = (
 				AA0000020000000000000001 /* CuesLiveApp.swift */,
-				AA000002000000000000003B /* CuesLive-Bridging-Header.h */,
 				AA0000020000000000000200 /* CuesLive.entitlements */,
 				AA00000500000000000000A2 /* DesignSystem */,
-				AA000005000000000000000E /* Audio */,
 				AA0000050000000000000004 /* Models */,
 				AA0000050000000000000005 /* Services */,
 				AA0000050000000000000006 /* ViewModels */,
@@ -797,7 +749,6 @@
 				AA00000500000000000BB004 /* Timecode */,
 				AA00000500000000000BB005 /* MIDI */,
 				AA00000500000000000BB006 /* Input */,
-				AA00000500000000000BB007 /* Bake */,
 				AA00000500000000000BB008 /* Project */,
 				AA00000500000000000BB009 /* Editing */,
 			);
@@ -832,9 +783,7 @@
 			children = (
 				AA000002000000000000000C /* SongLibraryView.swift */,
 				AA000002000000000000000D /* SongDetailView.swift */,
-				AA00000200000000000000D4 /* BakeSongSheet.swift */,
 				AA0000020000000000000020 /* ArrangementEditorMenu.swift */,
-				AA0000020000000000000037 /* ChangeKeyDialog.swift */,
 				AA000002000000000000002C /* TrackGroupEditorView.swift */,
 				AA0000020000000000000033 /* ManageOutputsView.swift */,
 				AA0000020000000000000068 /* MIDIDeviceViews.swift */,
@@ -874,16 +823,6 @@
 				AA000002000000000000032B /* InputMappingPanel.swift */,
 			);
 			path = Shared;
-			sourceTree = "<group>";
-		};
-		AA000005000000000000000E /* Audio */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000020000000000000038 /* PitchShiftBridge.h */,
-				AA0000020000000000000039 /* PitchShiftBridge.mm */,
-				AA000002000000000000003C /* RubberBandSingle.cpp */,
-			);
-			path = Audio;
 			sourceTree = "<group>";
 		};
 		AA000005000000000000000F /* Resources */ = {
@@ -932,7 +871,6 @@
 				AA00000200000000000009F1 /* TrackMixControlsTests.swift */,
 				AA0000020000000000000B01 /* MeasureBoundaryTests.swift */,
 				AA00000200000000000004A5 /* OutputRecoveryBackoffTests.swift */,
-				AA00000200000000000000D5 /* SongBakeFingerprintTests.swift */,
 				AA00000200000000000000D8 /* SongEditSnapshotTests.swift */,
 				AA000002000000000000012B /* SongMusicalKeyTests.swift */,
 				AA00000200000000000000D9 /* SongUndoControllerTests.swift */,
@@ -955,7 +893,6 @@
 			children = (
 				AA0000020000000000000071 /* MediaReference.swift */,
 				AA0000020000000000000072 /* SongProjectDocument.swift */,
-				AA00000200000000000000D0 /* SongBakeManifest.swift */,
 				AA0000020000000000000073 /* ShowProjectDocument.swift */,
 			);
 			path = Project;
@@ -1062,7 +999,6 @@
 				AA00000200000000000000F2 /* SectionAnnouncer.swift */,
 				AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */,
 				AA00000200000000000005A3 /* AnnouncementSource.swift */,
-				AA000002000000000000003A /* RubberBandPitchProcessor.swift */,
 			);
 			path = Playback;
 			sourceTree = "<group>";
@@ -1122,17 +1058,6 @@
 				AA0000020000000000000324 /* KeyboardInputMonitor.swift */,
 			);
 			path = Input;
-			sourceTree = "<group>";
-		};
-		AA00000500000000000BB007 /* Bake */ = {
-			isa = PBXGroup;
-			children = (
-				AA00000200000000000000D1 /* SongBakeFingerprint.swift */,
-				AA00000200000000000000D2 /* SongBakeStore.swift */,
-				AA00000200000000000000D3 /* SongGroupBaker.swift */,
-				AA0000020000000000000040 /* TrackBakeCache.swift */,
-			);
-			path = Bake;
 			sourceTree = "<group>";
 		};
 		AA00000500000000000BB008 /* Project */ = {
@@ -1390,7 +1315,6 @@
 				AA0000010000000000000019 /* AbletonProjectImporter.swift in Sources */,
 				AA000001000000000000001A /* PersistenceController.swift in Sources */,
 				AA000001000000000000003C /* TempoChange.swift in Sources */,
-				AA0000010000000000000040 /* TrackBakeCache.swift in Sources */,
 				AA0000010000000000000041 /* SongTrackLoader.swift in Sources */,
 				AA0000010000000000000043 /* ClickTrackGenerator.swift in Sources */,
 				AA000001000000000000004E /* ClickTrackScheduler.swift in Sources */,
@@ -1445,9 +1369,6 @@
 				AA000001000000000000033C /* DocsWindowView.swift in Sources */,
 				AA000001000000000000032B /* InputMappingPanel.swift in Sources */,
 				AA000001000000000000001F /* ArrangementEditorMenu.swift in Sources */,
-				AA0000010000000000000037 /* ChangeKeyDialog.swift in Sources */,
-				AA0000010000000000000038 /* PitchShiftBridge.mm in Sources */,
-				AA000001000000000000003A /* RubberBandPitchProcessor.swift in Sources */,
 				AA0000010000000000000020 /* ArrangementTimelineMapper.swift in Sources */,
 				AA0000010000000000000021 /* AudioPlaybackTransport.swift in Sources */,
 				AA0000010000000000000026 /* DecodedStemBuffer.swift in Sources */,
@@ -1488,15 +1409,10 @@
 				AA00000100000000000000E0 /* SetlistPackageStore.swift in Sources */,
 				AA00000100000000000000E1 /* SongMediaHealth.swift in Sources */,
 				AA00000100000000000000E2 /* MissingMediaRelinkView.swift in Sources */,
-				AA00000100000000000000D0 /* SongBakeManifest.swift in Sources */,
-				AA00000100000000000000D1 /* SongBakeFingerprint.swift in Sources */,
-				AA00000100000000000000D2 /* SongBakeStore.swift in Sources */,
-				AA00000100000000000000D3 /* SongGroupBaker.swift in Sources */,
 				AA00000100000000000000D6 /* SongEditSnapshot.swift in Sources */,
 				AA00000100000000000000D7 /* SongUndoController.swift in Sources */,
 				AA00000100000000000000DA /* SharedTransportStrip.swift in Sources */,
 				AA00000100000000000004A4 /* AudioOutputLostBanner.swift in Sources */,
-				AA00000100000000000000D4 /* BakeSongSheet.swift in Sources */,
 				AA0000010000000000000079 /* GroupMixStore.swift in Sources */,
 				AA000001000000000000007A /* TrackMixControls.swift in Sources */,
 				AA000001000000000000007B /* LiveGroupMixerView.swift in Sources */,
@@ -1543,7 +1459,6 @@
 				AA00000100000000000009F1 /* TrackMixControlsTests.swift in Sources */,
 				AA0000010000000000000B01 /* MeasureBoundaryTests.swift in Sources */,
 				AA00000100000000000004A5 /* OutputRecoveryBackoffTests.swift in Sources */,
-				AA00000100000000000000D5 /* SongBakeFingerprintTests.swift in Sources */,
 				AA00000100000000000000D8 /* SongEditSnapshotTests.swift in Sources */,
 				AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */,
 				AA00000100000000000000D9 /* SongUndoControllerTests.swift in Sources */,
@@ -1617,7 +1532,6 @@
 				3048121C0B3EE1404EE0187A /* AbletonProjectImporter.swift in Sources */,
 				8B68D7E09EA9FAA4F8A97D3A /* PersistenceController.swift in Sources */,
 				39644CE53879671A2EABEAB4 /* TempoChange.swift in Sources */,
-				F99B13CD70B9FC2FB944112A /* TrackBakeCache.swift in Sources */,
 				C4127164C36D8FBC754013DF /* SongTrackLoader.swift in Sources */,
 				00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */,
 				1C67899A8054E132507425D9 /* ClickTrackScheduler.swift in Sources */,
@@ -1672,9 +1586,6 @@
 				448064EE42E8399691EC85BD /* DocsWindowView.swift in Sources */,
 				804846CAC3A1D70D00F981EA /* InputMappingPanel.swift in Sources */,
 				4C73EDBD3D31E2979C49EE21 /* ArrangementEditorMenu.swift in Sources */,
-				7BA9FACA96FB7F0855F31423 /* ChangeKeyDialog.swift in Sources */,
-				327D8979234007649DDCB55B /* PitchShiftBridge.mm in Sources */,
-				C3A673D653243066C6BC0B95 /* RubberBandPitchProcessor.swift in Sources */,
 				7A71235334CE0DD935D64451 /* ArrangementTimelineMapper.swift in Sources */,
 				E5FC8C57A71C36DCFDB2BD4A /* AudioPlaybackTransport.swift in Sources */,
 				0D35133A1D42A2B20A0D0EE8 /* DecodedStemBuffer.swift in Sources */,
@@ -1715,15 +1626,10 @@
 				A52C618F779EC1571CFD0792 /* SetlistPackageStore.swift in Sources */,
 				85637C1DE835C41B3E08A91F /* SongMediaHealth.swift in Sources */,
 				BF157A5352834146CE276B79 /* MissingMediaRelinkView.swift in Sources */,
-				4B88EC0A362514098B123157 /* SongBakeManifest.swift in Sources */,
-				051EE6FC573BDB8874E49773 /* SongBakeFingerprint.swift in Sources */,
-				A2AF74D227FB5096335253CB /* SongBakeStore.swift in Sources */,
-				298868F51A2CBEE361DA8531 /* SongGroupBaker.swift in Sources */,
 				06FA428DC827C466F4686F62 /* SongEditSnapshot.swift in Sources */,
 				93C9773E4124A35B433FBA71 /* SongUndoController.swift in Sources */,
 				A6E4CA0EE895CD0A70ED6748 /* SharedTransportStrip.swift in Sources */,
 				E5C5977DB09E54250B578B38 /* AudioOutputLostBanner.swift in Sources */,
-				3676BF19E8A4A2E5D90F6077 /* BakeSongSheet.swift in Sources */,
 				E7829A3DD0DF8198590037E4 /* GroupMixStore.swift in Sources */,
 				9A22FB2DF0BB81E4E73B9C2A /* TrackMixControls.swift in Sources */,
 				6716D03BAD0715BD25B720CB /* LiveGroupMixerView.swift in Sources */,
@@ -1777,10 +1683,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/ThirdParty/rubberband",
-				);
 				INFOPLIST_FILE = CuesLive/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -1825,7 +1727,6 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APP_STORE";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1858,10 +1759,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/ThirdParty/rubberband",
-				);
 				INFOPLIST_FILE = CuesLive/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -1907,7 +1804,6 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APP_STORE";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2034,10 +1930,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/ThirdParty/rubberband",
-				);
 				INFOPLIST_FILE = CuesLive/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -2081,7 +1973,6 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2115,10 +2006,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/ThirdParty/rubberband",
-				);
 				INFOPLIST_FILE = CuesLive/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = cues.live;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
@@ -2163,7 +2050,6 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "CuesLive/CuesLive-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

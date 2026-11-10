@@ -767,9 +767,6 @@ private struct RemoteHostSongLibraryPanel: View {
                         song: song,
                         onAddToSetlist: { onAddToSetlist(song) }
                     )
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
                     .contextMenu {
                         Button {
                             onAddToSetlist(song)
@@ -789,10 +786,6 @@ private struct RemoteHostSongLibraryPanel: View {
 private struct RemoteHostSongLibraryRow: View {
     let song: RemoteLibrarySongDTO
     let onAddToSetlist: () -> Void
-
-    #if os(macOS)
-    @State private var isHovering = false
-    #endif
 
     private var subtitle: String {
         let trackText = song.trackCount == 0 ? "No tracks" : "\(song.trackCount) tracks"
@@ -832,21 +825,5 @@ private struct RemoteHostSongLibraryRow: View {
             .appLinkPointer()
             .accessibilityLabel("Add to setlist")
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        #if os(macOS)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isHovering ? AppColors.textPrimary.opacity(0.08) : .clear)
-        )
-        .padding(.horizontal, AppSpacing.xs)
-        .onHover { isHovering = $0 }
-        #else
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(AppColors.separator)
-                .frame(height: 0.5)
-        }
-        #endif
     }
 }

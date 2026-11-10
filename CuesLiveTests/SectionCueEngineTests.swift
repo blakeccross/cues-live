@@ -251,8 +251,7 @@ final class SectionCueEngineTests: XCTestCase {
         let stream = try StreamingStemBuffer(url: fixture.url)
         let settings = AudioEngineManager.TrackSettings(
             volume: 1, isMuted: false, isSolo: false,
-            trimStart: 0, trimEnd: songSeconds, pitchCents: 0,
-            excludeFromTranspose: true,
+            trimStart: 0, trimEnd: songSeconds,
             bypassesArrangementMapping: bypassArrangement
         )
         if !bypassArrangement {

@@ -13,11 +13,9 @@ struct EditTransportBar<Chrome: View>: View {
     let normalizedTempoChanges: [TempoChange]
     let onApplyTempo: (Double) -> Void
     let onApplyBaseKey: (String?) -> Void
-    @Binding var showingChangeKey: Bool
     let arrangementActions: ArrangementSectionActions
     let loopSectionIDs: Set<UUID>
     @Binding var showingSongLibrary: Bool
-    @Binding var showingBakeSheet: Bool
     @Binding var showingGroupEditor: Bool
     let isDetectingSections: Bool
     let onDetectSections: () -> Void
@@ -119,13 +117,6 @@ struct EditTransportBar<Chrome: View>: View {
     private var overflowMenu: some View {
         Menu {
             Button {
-                showingChangeKey = true
-            } label: {
-                Label("Change Key", systemImage: "key")
-            }
-            .disabled(song.sortedTracks.isEmpty)
-
-            Button {
                 showingClickEditor = true
             } label: {
                 Label("Click Track", systemImage: "metronome")
@@ -159,11 +150,6 @@ struct EditTransportBar<Chrome: View>: View {
             Button("Manage Groups…") {
                 showingGroupEditor = true
             }
-
-            Button("Bake Tracks…") {
-                showingBakeSheet = true
-            }
-            .disabled(song.sortedTracks.isEmpty)
         } label: {
             Label("More", systemImage: "ellipsis.circle")
                 .labelStyle(.iconOnly)

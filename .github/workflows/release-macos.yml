@@ -49,8 +49,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Select Xcode
         run: |
@@ -66,12 +64,6 @@ jobs:
 
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project CuesLive.xcodeproj -scheme CuesLive
-
-      - name: Verify rubberband submodule
-        run: |
-          test -f ThirdParty/rubberband/single/RubberBandSingle.cpp
-          test -f ThirdParty/rubberband/rubberband/rubberband-c.h
-          echo "rubberband submodule OK"
 
       - name: Resolve versions
         id: versions

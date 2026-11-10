@@ -56,8 +56,7 @@ enum SongProjectBridge {
         timeline: SongTimeline,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
-        midiEvents: [MIDIEvent],
-        bakeManifest: SongBakeManifest? = nil
+        midiEvents: [MIDIEvent]
     ) -> SongProjectDocument {
         let tracks = song.sortedTracks.compactMap { track -> ProjectTrack? in
             guard let path = track.mediaPath, let style = track.mediaPathStyle else { return nil }
@@ -107,8 +106,7 @@ enum SongProjectBridge {
             arrangement: SongProjectArrangement(timeline: storedTimeline),
             tempo: tempoChanges,
             timeSignatures: timeSignatureChanges,
-            midiEvents: midiEvents,
-            bakeManifest: bakeManifest
+            midiEvents: midiEvents
         )
     }
 
@@ -140,12 +138,10 @@ enum SongProjectBridge {
             ),
             tempoChanges: resolvedTempo,
             timeSignatureChanges: resolvedTimeSignatures,
-            midiEvents: resolvedMIDIEvents,
-            bakeManifest: existingDocument?.bakeManifest
+            midiEvents: resolvedMIDIEvents
         )
         try ProjectFileStore.save(document, to: projectURL)
         try context.save()
-        try SongBakeStore.syncValidityOnPersist(for: song)
     }
 
     static func persist(
@@ -170,12 +166,10 @@ enum SongProjectBridge {
             ),
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
-            midiEvents: midiEvents,
-            bakeManifest: existingDocument?.bakeManifest
+            midiEvents: midiEvents
         )
         try ProjectFileStore.save(document, to: projectURL)
         try context.save()
-        try SongBakeStore.syncValidityOnPersist(for: song)
     }
 
     static func projectStateOrDefaults(for song: Song) -> ProjectState {

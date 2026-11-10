@@ -12,8 +12,7 @@ Requires macOS 14+ or iOS/iPadOS 17+.
 - Arrangement sections with tempo and time-signature maps, and a section-loop mode
 - Generated click tracks and Smart Guide, a live voice that calls sections one measure early and on every loop pass
 - MIDI lanes that send cues to external devices
-- Key changes by transposing selected tracks, either live or with high-quality offline processing ([Rubber Band](https://breakfastquay.com/rubberband/))
-- Track groups with colors, per-group mix, and optional baking to rendered stems
+- Track groups with colors and per-group mix
 
 **Setlists & live playback**
 - Ordered setlists with overlap transitions between songs
@@ -31,15 +30,7 @@ An in-app guide (Help → cues.live Help) covers each of these in more detail.
 
 ## Getting started
 
-Clone with submodules (Rubber Band is vendored under `ThirdParty/`):
-
-```bash
-git clone --recurse-submodules <repo-url>
-# or, in an existing checkout:
-git submodule update --init
-```
-
-Then open the project and run the **CuesLive** scheme on **My Mac** or an iPad destination:
+Clone the repo, then open the project and run the **CuesLive** scheme on **My Mac** or an iPad destination:
 
 ```bash
 open CuesLive.xcodeproj
@@ -58,7 +49,6 @@ Sample stems for manual testing are in `TestStems/`.
 
 ```
 CuesLive/
-├── Audio/            Objective-C++ bridge to Rubber Band
 ├── DesignSystem/     Colors, spacing, typography, shared components
 ├── Models/           SwiftData models and project-file documents
 ├── Resources/        Click samples, spoken section guides, document icons
@@ -69,7 +59,6 @@ CuesLive/
 │   ├── Timecode/     LTC generation and timecode settings
 │   ├── MIDI/         MIDI input, output and cue scheduling
 │   ├── Input/        Key and MIDI mapping
-│   ├── Bake/         Rendering track groups to stems
 │   ├── Editing/      Arrangement, trims, regions, ripple edits, undo
 │   ├── Project/      Project/setlist files, imports, media resolution
 │   └── RemoteSession/ Host/client remote control over the network

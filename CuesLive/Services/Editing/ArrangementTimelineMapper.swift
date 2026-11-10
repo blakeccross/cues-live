@@ -2,8 +2,8 @@ import Foundation
 
 /// Maps master-timeline seconds to absolute source-file seconds for one track.
 ///
-/// Arranged tracks play their clips; between clips they are silent. Linear tracks (baked stems,
-/// previews of raw files) play the file from `trimStart` at master time zero.
+/// Arranged tracks play their clips; between clips they are silent. Linear tracks
+/// play the file from `trimStart` at master time zero.
 struct ArrangementTimelineMapper: Sendable {
     private let clips: [TrackClip]
     private let sourceStart: TimeInterval

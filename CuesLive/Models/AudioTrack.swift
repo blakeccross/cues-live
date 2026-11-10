@@ -17,7 +17,6 @@ final class AudioTrack {
     var isSolo: Bool
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
-    var excludeFromTranspose: Bool
     /// Length of the source file the last time it was readable, so layout survives missing media.
     var sourceDurationSeconds: Double?
 
@@ -45,7 +44,6 @@ final class AudioTrack {
         isSolo = false
         trimStartSeconds = 0.0
         trimEndSeconds = nil
-        excludeFromTranspose = false
         sourceDurationSeconds = nil
         mediaPath = nil
         mediaPathStyleRaw = nil

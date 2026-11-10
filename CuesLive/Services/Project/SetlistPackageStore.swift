@@ -217,7 +217,6 @@ enum SetlistPackageStore {
         }
 
         var document = try ProjectFileStore.load(from: sourceProjectURL)
-        document.bakeManifest = nil
 
         let stemsDirectory = songFolderURL.appendingPathComponent("Stems", isDirectory: true)
 

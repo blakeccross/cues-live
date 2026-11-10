@@ -14,8 +14,6 @@ final class AudioEngineManager {
         var isSolo: Bool
         var trimStart: TimeInterval
         var trimEnd: TimeInterval?
-        var pitchCents: Float
-        var excludeFromTranspose: Bool
         var ignoresSolo: Bool = false
         /// Generated stems (e.g. click) that follow the master timeline 1:1.
         var bypassesArrangementMapping: Bool = false
@@ -172,16 +170,14 @@ final class AudioEngineManager {
 
     func loadTracks(
         _ payloads: [(id: UUID, url: URL, settings: TrackSettings, groupID: UUID?)],
-        routing: OutputRoutingSnapshot? = nil,
-        bakePitchShift: Bool = false
+        routing: OutputRoutingSnapshot? = nil
     ) throws {
         let prepared = try payloads.map { payload in
             try Self.prepareTrackPayload(
                 id: payload.id,
                 url: payload.url,
                 settings: payload.settings,
-                groupID: payload.groupID,
-                bakePitchShift: bakePitchShift
+                groupID: payload.groupID
             )
         }
         try loadPreparedTracks(prepared, routing: routing)
@@ -229,41 +225,20 @@ final class AudioEngineManager {
         }
     }
 
-    static func pitchShiftedBuffer(
-        from decodedBuffer: DecodedStemBuffer,
-        settings: TrackSettings
-    ) throws -> DecodedStemBuffer {
-        let semitones = Int((settings.pitchCents / 100).rounded())
-        guard semitones != 0 else { return decodedBuffer }
-        return try decodedBuffer.applyingSemitoneShift(semitones)
-    }
-
     static func prepareTrackPayload(
         id: UUID,
         decodedBuffer: DecodedStemBuffer,
         settings: TrackSettings,
-        groupID: UUID?,
-        bakePitchShift: Bool = false
+        groupID: UUID?
     ) throws -> PreparedTrackPayload {
-        let playbackBuffer: DecodedStemBuffer
         var resolvedSettings = settings
-
-        if bakePitchShift {
-            playbackBuffer = try pitchShiftedBuffer(from: decodedBuffer, settings: settings)
-            if Int((settings.pitchCents / 100).rounded()) != 0 {
-                resolvedSettings.pitchCents = 0
-            }
-        } else {
-            playbackBuffer = decodedBuffer
-        }
-
-        let fileDuration = Double(playbackBuffer.frameCount) / playbackBuffer.sampleRate
+        let fileDuration = Double(decodedBuffer.frameCount) / decodedBuffer.sampleRate
         if resolvedSettings.trimEnd == nil {
             resolvedSettings.trimEnd = fileDuration
         }
         return PreparedTrackPayload(
             id: id,
-            buffer: playbackBuffer,
+            buffer: decodedBuffer,
             settings: resolvedSettings,
             groupID: groupID
         )
@@ -273,16 +248,14 @@ final class AudioEngineManager {
         id: UUID,
         url: URL,
         settings: TrackSettings,
-        groupID: UUID?,
-        bakePitchShift: Bool = false
+        groupID: UUID?
     ) throws -> PreparedTrackPayload {
         let decodedBuffer = try DecodedStemBuffer.decode(from: url)
         return try prepareTrackPayload(
             id: id,
             decodedBuffer: decodedBuffer,
             settings: settings,
-            groupID: groupID,
-            bakePitchShift: bakePitchShift
+            groupID: groupID
         )
     }
 
@@ -307,9 +280,9 @@ final class AudioEngineManager {
         )
 
         let timePitchNode = AVAudioUnitTimePitch()
-        timePitchNode.pitch = settings.pitchCents
+        timePitchNode.pitch = 0
         timePitchNode.rate = 1.0
-        timePitchNode.auAudioUnit.shouldBypassEffect = abs(settings.pitchCents) < 0.5
+        timePitchNode.auAudioUnit.shouldBypassEffect = true
 
         let format = playbackBuffer.audioFormat
         engine.attach(memoryPlayer.sourceNode)
@@ -1500,10 +1473,9 @@ final class AudioEngineManager {
 
         for id in tracks.keys {
             guard let track = tracks[id] else { continue }
-            let cents = track.settings.pitchCents + compensationCents
             track.timePitchNode.rate = 1.0
-            track.timePitchNode.pitch = cents
-            track.timePitchNode.auAudioUnit.shouldBypassEffect = abs(cents) < 0.5
+            track.timePitchNode.pitch = compensationCents
+            track.timePitchNode.auAudioUnit.shouldBypassEffect = abs(compensationCents) < 0.5
         }
     }
 
@@ -1536,8 +1508,5 @@ extension AudioEngineManager.TrackSettings {
         isSolo = track.isSolo
         trimStart = track.trimStartSeconds
         trimEnd = track.trimEndSeconds
-        excludeFromTranspose = track.excludeFromTranspose
-        let semitones = track.song?.transposeSemitones ?? 0
-        pitchCents = track.excludeFromTranspose ? 0 : Float(semitones * 100)
     }
 }

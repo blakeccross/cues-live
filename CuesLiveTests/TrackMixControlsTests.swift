@@ -157,38 +157,6 @@ final class TrackPanTests: XCTestCase {
     }
 }
 
-final class TrackPanBakeTests: XCTestCase {
-    private func renderMonoSource(pan: Float, gain: Float = 1) throws -> DecodedStemBuffer {
-        let frames = 480
-        let source = try DecodedStemBuffer.silent(frameCount: frames, channelCount: 1)
-        let samples = source.mutableChannelPointer(0)
-        for frame in 0..<frames { samples[frame] = 1 }
-
-        let output = try DecodedStemBuffer.silent(frameCount: frames, channelCount: 2)
-        let mapper = ArrangementTimelineMapper.linear(trimStart: 0, trimEnd: Double(frames) / source.sampleRate)
-        GroupStemOfflineRenderer.mix(source: source, into: output, mapper: mapper, gain: gain, pan: pan)
-        return output
-    }
-
-    func testCentredMonoSourceFeedsBothChannelsAtUnity() throws {
-        let output = try renderMonoSource(pan: 0)
-        XCTAssertEqual(output.channelPointer(0)[100], 1, accuracy: 1e-6)
-        XCTAssertEqual(output.channelPointer(1)[100], 1, accuracy: 1e-6)
-    }
-
-    func testHardRightMonoSourceSilencesLeft() throws {
-        let output = try renderMonoSource(pan: 1)
-        XCTAssertEqual(output.channelPointer(0)[100], 0, accuracy: 1e-6)
-        XCTAssertEqual(output.channelPointer(1)[100], 1, accuracy: 1e-6)
-    }
-
-    func testPanComposesWithGain() throws {
-        let output = try renderMonoSource(pan: 0.5, gain: 0.5)
-        XCTAssertEqual(output.channelPointer(0)[100], 0.25, accuracy: 1e-6)
-        XCTAssertEqual(output.channelPointer(1)[100], 0.5, accuracy: 1e-6)
-    }
-}
-
 final class TrackPanPersistenceTests: XCTestCase {
     func testProjectTrackMixRoundTripsPan() throws {
         let track = AudioTrack(displayName: "Kick", relativeFilePath: "kick.wav", sortOrder: 0)
@@ -205,7 +173,7 @@ final class TrackPanPersistenceTests: XCTestCase {
 
     func testProjectTrackMixWithoutPanDecodesAsCentred() throws {
         let legacy = """
-        {"volume":0.5,"isMuted":false,"isSolo":true,"trimStartSeconds":1.5,"excludeFromTranspose":false}
+        {"volume":0.5,"isMuted":false,"isSolo":true,"trimStartSeconds":1.5}
         """
         let decoded = try JSONDecoder().decode(ProjectTrackMix.self, from: Data(legacy.utf8))
         XCTAssertEqual(decoded.pan, 0)
@@ -250,32 +218,5 @@ final class TrackPanPersistenceTests: XCTestCase {
         track.pan = -1
         snapshot.applyTracks(to: song, context: context)
         XCTAssertEqual(song.sortedTracks.first?.pan, 0.6)
-    }
-}
-
-final class TrackPanFingerprintTests: XCTestCase {
-    private func fingerprint(for song: Song) -> String {
-        let projectState = SongProjectBridge.ProjectState(
-            timeline: SongTimeline(),
-            tempoChanges: SongProjectBridge.defaultTempoChanges(for: song),
-            timeSignatureChanges: SongProjectBridge.defaultTimeSignatureChanges(for: song),
-            midiEvents: []
-        )
-        return SongBakeFingerprint.compute(for: song, projectState: projectState)
-    }
-
-    func testFingerprintChangesWhenTrackPanChanges() {
-        let song = Song(name: "Bake Test")
-        let track = AudioTrack(displayName: "Kick", relativeFilePath: "kick.wav", sortOrder: 0)
-        song.tracks = [track]
-
-        let centred = fingerprint(for: song)
-        track.pan = 0.5
-        let panned = fingerprint(for: song)
-        track.pan = 0
-        let recentred = fingerprint(for: song)
-
-        XCTAssertNotEqual(centred, panned)
-        XCTAssertEqual(centred, recentred)
     }
 }

@@ -328,9 +328,6 @@ struct SongLibraryPanel: View {
                             onSelect: { onEdit(song) },
                             onAddToSetlist: { onAddToSetlist(song) }
                         )
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
                         #if os(macOS)
                         .draggable(SongDragPayload.string(for: song.id))
                         #endif
@@ -479,8 +476,6 @@ struct SongLibraryPanel: View {
         copy.timeSignatureNumerator = source.timeSignatureNumerator
         copy.timeSignatureDenominator = source.timeSignatureDenominator
         copy.baseKeyRaw = source.baseKeyRaw
-        copy.transposeSemitones = source.transposeSemitones
-        copy.transposeHighQuality = source.transposeHighQuality
         copy.smartGuideEnabled = source.smartGuideEnabled
         modelContext.insert(copy)
 
@@ -503,7 +498,6 @@ struct SongLibraryPanel: View {
                 newTrack.isSolo = track.isSolo
                 newTrack.trimStartSeconds = track.trimStartSeconds
                 newTrack.trimEndSeconds = track.trimEndSeconds
-                newTrack.excludeFromTranspose = track.excludeFromTranspose
                 newTrack.sourceDurationSeconds = track.sourceDurationSeconds
                 newTrack.mediaPath = track.mediaPath
                 newTrack.mediaPathStyle = track.mediaPathStyle
@@ -661,10 +655,6 @@ private struct SongLibraryRow: View {
     let onSelect: () -> Void
     let onAddToSetlist: () -> Void
 
-    #if os(macOS)
-    @State private var isHovering = false
-    #endif
-
     private var subtitle: String {
         let trackText = song.tracks.isEmpty ? "No tracks" : "\(song.tracks.count) tracks"
         if let bpm = song.bpm {
@@ -710,22 +700,6 @@ private struct SongLibraryRow: View {
             .appLinkPointer()
             .accessibilityLabel("Add to setlist")
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        #if os(macOS)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isHovering ? AppColors.textPrimary.opacity(0.08) : .clear)
-        )
-        .padding(.horizontal, AppSpacing.xs)
-        .onHover { isHovering = $0 }
-        #else
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(AppColors.separator)
-                .frame(height: 0.5)
-        }
-        #endif
     }
 }
 

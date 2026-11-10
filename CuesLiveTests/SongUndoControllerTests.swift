@@ -23,8 +23,6 @@ final class SongUndoControllerTests: XCTestCase {
                 timeSignatureNumerator: 4,
                 timeSignatureDenominator: 4,
                 baseKeyRaw: nil,
-                transposeSemitones: 0,
-                transposeHighQuality: false,
                 smartGuideEnabled: false
             ),
             tracks: []

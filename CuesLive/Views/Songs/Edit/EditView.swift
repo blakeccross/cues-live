@@ -17,7 +17,6 @@ struct EditView: View {
     @Binding var timeSignatureChanges: [TimeSignatureChange]
     @Binding var midiEvents: [MIDIEvent]
     @Binding var showingSongLibrary: Bool
-    @Binding var showingBakeSheet: Bool
     var onBack: () -> Void = {}
 
     @State private var showingMIDIDevicePicker = false
@@ -44,7 +43,6 @@ struct EditView: View {
     @State private var showingArrangementEditor = false
     @State private var showingTimeSignatureEditor = false
     @State private var showingGroupEditor = false
-    @State private var showingChangeKey = false
     @State private var showingTempoEditor = false
     @State private var editingTempoMarkerID: UUID?
     @State private var showingTimeSignatureMarkerEditor = false
@@ -205,16 +203,6 @@ struct EditView: View {
         }
 
         reconfigureMIDI()
-
-        if snapshot.songMetadata.transposeHighQuality {
-            Task {
-                await viewModel.applyKeyChange(context: modelContext, highQuality: true)
-            }
-        } else if snapshot.songMetadata.transposeSemitones != 0 {
-            Task {
-                await viewModel.applyKeyChange(context: modelContext, highQuality: false)
-            }
-        }
 
         if trackIDsChanged {
             viewModel.loadSong(context: modelContext)
@@ -727,23 +715,6 @@ struct EditView: View {
         .sheet(isPresented: $showingGroupEditor) {
             TrackGroupEditorView()
         }
-        .sheet(isPresented: $showingChangeKey) {
-            ChangeKeyDialog(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: { actionName, before, after in
-                    undoController.registerChange(
-                        actionName: actionName,
-                        before: before,
-                        after: after,
-                        apply: { snapshot in
-                            applySnapshot(snapshot)
-                        }
-                    )
-                }
-            )
-        }
         .sheet(isPresented: $showingMIDIDevicePicker) {
             MIDIDevicePickerView { device in
                 createMIDITrack(for: device)
@@ -806,11 +777,9 @@ struct EditView: View {
                 normalizedTempoChanges: normalizedTempoChanges,
                 onApplyTempo: applyReferenceTempo,
                 onApplyBaseKey: applyBaseKey,
-                showingChangeKey: $showingChangeKey,
                 arrangementActions: arrangementActions,
                 loopSectionIDs: loopSectionIDs,
                 showingSongLibrary: $showingSongLibrary,
-                showingBakeSheet: $showingBakeSheet,
                 showingGroupEditor: $showingGroupEditor,
                 isDetectingSections: isDetectingSections,
                 onDetectSections: requestDetectSections,
@@ -1380,11 +1349,9 @@ struct EditView: View {
             normalizedTempoChanges: normalizedTempoChanges,
             onApplyTempo: applyReferenceTempo,
             onApplyBaseKey: applyBaseKey,
-            showingChangeKey: $showingChangeKey,
             arrangementActions: arrangementActions,
             loopSectionIDs: loopSectionIDs,
             showingSongLibrary: $showingSongLibrary,
-            showingBakeSheet: $showingBakeSheet,
             showingGroupEditor: $showingGroupEditor,
             isDetectingSections: isDetectingSections,
             onDetectSections: requestDetectSections,
@@ -2002,7 +1969,6 @@ struct EditView: View {
             TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0)
         ]),
         midiEvents: .constant([]),
-        showingSongLibrary: .constant(false),
-        showingBakeSheet: .constant(false)
+        showingSongLibrary: .constant(false)
     )
 }

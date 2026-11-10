@@ -66,9 +66,9 @@ enum OverlapTrackGraphBuilder {
         )
 
         let timePitchNode = AVAudioUnitTimePitch()
-        timePitchNode.pitch = resolved.settings.pitchCents
+        timePitchNode.pitch = 0
         timePitchNode.rate = 1.0
-        timePitchNode.auAudioUnit.shouldBypassEffect = abs(resolved.settings.pitchCents) < 0.5
+        timePitchNode.auAudioUnit.shouldBypassEffect = true
 
         let format = payload.buffer.audioFormat
         engine.attach(memoryPlayer.sourceNode)

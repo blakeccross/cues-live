@@ -6,8 +6,6 @@ struct SongProjectMetadata: Codable, Hashable {
     var timeSignatureNumerator: Int?
     var timeSignatureDenominator: Int?
     var baseKeyRaw: String?
-    var transposeSemitones: Int
-    var transposeHighQuality: Bool
     var smartGuideEnabled: Bool
 
     enum CodingKeys: String, CodingKey {
@@ -15,8 +13,6 @@ struct SongProjectMetadata: Codable, Hashable {
         case timeSignatureNumerator
         case timeSignatureDenominator
         case baseKeyRaw
-        case transposeSemitones
-        case transposeHighQuality
         case smartGuideEnabled
     }
 
@@ -25,8 +21,6 @@ struct SongProjectMetadata: Codable, Hashable {
         timeSignatureNumerator = song.timeSignatureNumerator
         timeSignatureDenominator = song.timeSignatureDenominator
         baseKeyRaw = song.baseKeyRaw
-        transposeSemitones = song.transposeSemitones
-        transposeHighQuality = song.transposeHighQuality
         smartGuideEnabled = song.smartGuideEnabled
     }
 
@@ -36,8 +30,6 @@ struct SongProjectMetadata: Codable, Hashable {
         timeSignatureNumerator = try container.decodeIfPresent(Int.self, forKey: .timeSignatureNumerator)
         timeSignatureDenominator = try container.decodeIfPresent(Int.self, forKey: .timeSignatureDenominator)
         baseKeyRaw = try container.decodeIfPresent(String.self, forKey: .baseKeyRaw)
-        transposeSemitones = try container.decodeIfPresent(Int.self, forKey: .transposeSemitones) ?? 0
-        transposeHighQuality = try container.decodeIfPresent(Bool.self, forKey: .transposeHighQuality) ?? false
         smartGuideEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartGuideEnabled) ?? false
     }
 
@@ -47,8 +39,6 @@ struct SongProjectMetadata: Codable, Hashable {
         try container.encodeIfPresent(timeSignatureNumerator, forKey: .timeSignatureNumerator)
         try container.encodeIfPresent(timeSignatureDenominator, forKey: .timeSignatureDenominator)
         try container.encodeIfPresent(baseKeyRaw, forKey: .baseKeyRaw)
-        try container.encode(transposeSemitones, forKey: .transposeSemitones)
-        try container.encode(transposeHighQuality, forKey: .transposeHighQuality)
         try container.encode(smartGuideEnabled, forKey: .smartGuideEnabled)
     }
 
@@ -57,8 +47,6 @@ struct SongProjectMetadata: Codable, Hashable {
         song.timeSignatureNumerator = timeSignatureNumerator
         song.timeSignatureDenominator = timeSignatureDenominator
         song.baseKeyRaw = baseKeyRaw
-        song.transposeSemitones = transposeSemitones
-        song.transposeHighQuality = transposeHighQuality
         song.smartGuideEnabled = smartGuideEnabled
     }
 }
@@ -70,7 +58,6 @@ struct ProjectTrackMix: Codable, Hashable {
     var isSolo: Bool
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
-    var excludeFromTranspose: Bool
 
     init(from track: AudioTrack) {
         volume = track.volume
@@ -79,7 +66,6 @@ struct ProjectTrackMix: Codable, Hashable {
         isSolo = track.isSolo
         trimStartSeconds = track.trimStartSeconds
         trimEndSeconds = track.trimEndSeconds
-        excludeFromTranspose = track.excludeFromTranspose
     }
 
     init(from decoder: Decoder) throws {
@@ -90,7 +76,6 @@ struct ProjectTrackMix: Codable, Hashable {
         isSolo = try container.decode(Bool.self, forKey: .isSolo)
         trimStartSeconds = try container.decode(Double.self, forKey: .trimStartSeconds)
         trimEndSeconds = try container.decodeIfPresent(Double.self, forKey: .trimEndSeconds)
-        excludeFromTranspose = try container.decode(Bool.self, forKey: .excludeFromTranspose)
     }
 
     func apply(to track: AudioTrack) {
@@ -100,7 +85,6 @@ struct ProjectTrackMix: Codable, Hashable {
         track.isSolo = isSolo
         track.trimStartSeconds = trimStartSeconds
         track.trimEndSeconds = trimEndSeconds
-        track.excludeFromTranspose = excludeFromTranspose
     }
 }
 
@@ -162,8 +146,6 @@ struct SongProjectDocument: Codable, Identifiable {
     var tempo: [TempoChange]
     var timeSignatures: [TimeSignatureChange]
     var midiEvents: [MIDIEvent]
-    /// Read-only performance cache metadata. Audio files live under `Baked/`.
-    var bakeManifest: SongBakeManifest?
 
     init(
         id: UUID,
@@ -176,8 +158,7 @@ struct SongProjectDocument: Codable, Identifiable {
         arrangement: SongProjectArrangement,
         tempo: [TempoChange] = [],
         timeSignatures: [TimeSignatureChange] = [],
-        midiEvents: [MIDIEvent] = [],
-        bakeManifest: SongBakeManifest? = nil
+        midiEvents: [MIDIEvent] = []
     ) {
         formatVersion = Self.currentFormatVersion
         self.id = id
@@ -191,6 +172,5 @@ struct SongProjectDocument: Codable, Identifiable {
         self.tempo = tempo
         self.timeSignatures = timeSignatures
         self.midiEvents = midiEvents
-        self.bakeManifest = bakeManifest
     }
 }

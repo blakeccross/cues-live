@@ -4,8 +4,6 @@ import SwiftData
 
 @Observable
 final class SongEditorViewModel {
-    private typealias CachedDecodedTrack = SongTrackLoader.CachedDecodedTrack
-
     private let audioEngine = AudioEngineManager.shared
 
     let song: Song
@@ -13,7 +11,6 @@ final class SongEditorViewModel {
     private(set) var isLoaded = false
     private(set) var isReloadingSong = false
     private var trackDurations: [UUID: TimeInterval] = [:]
-    private var decodedBufferCache: [UUID: CachedDecodedTrack] = [:]
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var modelContext: ModelContext?
@@ -35,31 +32,6 @@ final class SongEditorViewModel {
         audioEngine.onPlaybackFinished = nil
         audioEngine.applyGroupMix(.default)
         audioEngine.pause()
-    }
-
-    func applyKeyChange(context: ModelContext, highQuality: Bool) async {
-        let wasHighQuality = song.transposeHighQuality
-        song.transposeHighQuality = highQuality
-        try? context.save()
-
-        if highQuality || wasHighQuality {
-            reloadTask?.cancel()
-            await performReload()
-            return
-        }
-
-        applyRealtimePitch()
-    }
-
-    private func applyRealtimePitch() {
-        guard isLoaded else { return }
-
-        for track in song.sortedTracks {
-            audioEngine.updateTrackSettings(
-                id: track.id,
-                settings: AudioEngineManager.TrackSettings(track: track)
-            )
-        }
     }
 
     private func reloadSong() {
@@ -112,55 +84,9 @@ final class SongEditorViewModel {
         }
 
         audioEngine.stop()
-        pruneDecodedBufferCache()
-        TrackBakeCache.shared.prune(activeTrackIDs: Set(trackInputs.map(\.id)))
 
-        let bakePitchShift = song.transposeHighQuality
-
-        let preparationResult: Result<[AudioEngineManager.PreparedTrackPayload], Error>
-        if bakePitchShift {
-            let sourceModificationDates = SongTrackLoader.sourceModificationDates(for: trackInputs)
-
-            let decodedBuffers: [UUID: DecodedStemBuffer]
-            do {
-                decodedBuffers = try await SongTrackLoader.decodeTracks(
-                    inputs: trackInputs,
-                    sourceModificationDates: sourceModificationDates,
-                    decodedBufferCache: decodedBufferCache
-                )
-                for input in trackInputs {
-                    guard let buffer = decodedBuffers[input.id] else { continue }
-                    let modificationDate = sourceModificationDates[input.id] ?? .distantPast
-                    decodedBufferCache[input.id] = CachedDecodedTrack(
-                        relativePath: input.relativePath,
-                        sourceModificationDate: modificationDate,
-                        buffer: buffer
-                    )
-                }
-            } catch {
-                isLoaded = false
-                loadError = error.localizedDescription
-                return
-            }
-
-            preparationResult = await Task.detached(priority: .userInitiated) {
-                do {
-                    return .success(
-                        try await SongTrackLoader.prepareTrackPayloads(
-                            inputs: trackInputs,
-                            decodedBuffers: decodedBuffers,
-                            sourceModificationDates: sourceModificationDates,
-                            bakePitchShift: true
-                        )
-                    )
-                } catch {
-                    return .failure(error)
-                }
-            }.value
-        } else {
-            preparationResult = Result {
-                try SongTrackLoader.streamingPayloads(trackInputs: trackInputs)
-            }
+        let preparationResult = Result {
+            try SongTrackLoader.streamingPayloads(trackInputs: trackInputs)
         }
 
         guard generation == reloadGeneration, !Task.isCancelled else { return }
@@ -348,10 +274,5 @@ final class SongEditorViewModel {
             referenceBPM: normalizedTempo.referenceBPM,
             timeSignatureChanges: normalizedSignatures
         )
-    }
-
-    private func pruneDecodedBufferCache() {
-        let activeTrackIDs = Set(song.sortedTracks.map(\.id))
-        decodedBufferCache = decodedBufferCache.filter { activeTrackIDs.contains($0.key) }
     }
 }

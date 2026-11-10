@@ -12,7 +12,7 @@ struct SongKeyEditorMenu: View {
             Text("Key")
                 .font(.headline)
 
-            Text("Sets the song’s root key. Transpose updates the live key.")
+            Text("Sets the song’s key.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

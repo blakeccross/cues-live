@@ -770,22 +770,11 @@ final class PlaybackCoordinator {
     static func makeWaveformSnapshot(for song: Song) -> LiveSongWaveformSnapshot? {
         guard !song.sortedTracks.isEmpty else { return nil }
 
-        let trackSources: [(url: URL, duration: TimeInterval)]
-        if SongBakeStore.hasValidBake(for: song),
-           let manifest = SongBakeStore.manifest(for: song) {
-            trackSources = manifest.groupStems.compactMap { stem in
-                guard let url = SongBakeStore.bakedStemURL(for: song, relativePath: stem.relativePath) else {
-                    return nil
-                }
-                return (url, stem.duration)
-            }
-        } else {
-            trackSources = song.sortedTracks.compactMap { track in
-                guard let url = FileStore.trackURL(for: song, track: track),
-                      let duration = FileStore.fileDuration(at: url) else { return nil }
-                FileStore.cacheSourceDuration(duration, for: track)
-                return (url, duration)
-            }
+        let trackSources: [(url: URL, duration: TimeInterval)] = song.sortedTracks.compactMap { track in
+            guard let url = FileStore.trackURL(for: song, track: track),
+                  let duration = FileStore.fileDuration(at: url) else { return nil }
+            FileStore.cacheSourceDuration(duration, for: track)
+            return (url, duration)
         }
 
         // Missing media keeps its cached length so sections still lay out, just without a waveform.

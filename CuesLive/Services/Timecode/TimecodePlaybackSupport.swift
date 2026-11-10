@@ -31,8 +31,6 @@ enum TimecodePlaybackSupport {
             isSolo: false,
             trimStart: 0,
             trimEnd: duration,
-            pitchCents: 0,
-            excludeFromTranspose: true,
             ignoresSolo: true,
             bypassesArrangementMapping: true
         )

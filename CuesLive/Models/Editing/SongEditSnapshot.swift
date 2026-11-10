@@ -15,7 +15,6 @@ struct TrackEditSnapshot: Equatable, Hashable {
     var isSolo: Bool
     var trimStartSeconds: Double
     var trimEndSeconds: Double?
-    var excludeFromTranspose: Bool
     var groupName: String?
 }
 
@@ -24,8 +23,6 @@ struct SongMetadataSnapshot: Equatable, Hashable {
     var timeSignatureNumerator: Int?
     var timeSignatureDenominator: Int?
     var baseKeyRaw: String?
-    var transposeSemitones: Int
-    var transposeHighQuality: Bool
     var smartGuideEnabled: Bool
 }
 
@@ -54,8 +51,6 @@ struct SongEditSnapshot: Equatable {
                 timeSignatureNumerator: song.timeSignatureNumerator,
                 timeSignatureDenominator: song.timeSignatureDenominator,
                 baseKeyRaw: song.baseKeyRaw,
-                transposeSemitones: song.transposeSemitones,
-                transposeHighQuality: song.transposeHighQuality,
                 smartGuideEnabled: song.smartGuideEnabled
             ),
             tracks: song.sortedTracks.map { track in
@@ -73,7 +68,6 @@ struct SongEditSnapshot: Equatable {
                     isSolo: track.isSolo,
                     trimStartSeconds: track.trimStartSeconds,
                     trimEndSeconds: track.trimEndSeconds,
-                    excludeFromTranspose: track.excludeFromTranspose,
                     groupName: track.group?.name
                 )
             }
@@ -85,8 +79,6 @@ struct SongEditSnapshot: Equatable {
         song.timeSignatureNumerator = songMetadata.timeSignatureNumerator
         song.timeSignatureDenominator = songMetadata.timeSignatureDenominator
         song.baseKeyRaw = songMetadata.baseKeyRaw
-        song.transposeSemitones = songMetadata.transposeSemitones
-        song.transposeHighQuality = songMetadata.transposeHighQuality
         song.smartGuideEnabled = songMetadata.smartGuideEnabled
     }
 
@@ -123,7 +115,6 @@ struct SongEditSnapshot: Equatable {
             track.isSolo = trackSnapshot.isSolo
             track.trimStartSeconds = trackSnapshot.trimStartSeconds
             track.trimEndSeconds = trackSnapshot.trimEndSeconds
-            track.excludeFromTranspose = trackSnapshot.excludeFromTranspose
             if let groupName = trackSnapshot.groupName {
                 track.group = groupsByName[groupName]
             } else {

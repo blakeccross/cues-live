@@ -1160,24 +1160,17 @@ struct LivePlaybackView: View {
             }
         } else if coordinator.isLoadingSong {
             LiveSetlistWaveformLoadingPlaceholder(
-                message: loadingMessage(for: coordinator.currentSong)
+                message: "Loading audio…"
             )
         } else {
             LiveSetlistWaveformLoadingPlaceholder()
         }
     }
 
-    private func loadingMessage(for song: Song?) -> String {
-        guard let song, song.transposeHighQuality, song.transposeSemitones != 0 else {
-            return "Loading audio…"
-        }
-        return "Processing audio…"
-    }
-
     private var loadingOverlay: some View {
         ZStack {
             Color.black.opacity(0.12)
-            ProgressView(loadingMessage(for: coordinator.currentSong))
+            ProgressView("Loading audio…")
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         }

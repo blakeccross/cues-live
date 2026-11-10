@@ -38,7 +38,6 @@ struct SongDetailView: View {
     @State private var showingAbletonImporter = false
     @State private var abletonImportError: String?
     @State private var abletonImportSummary: String?
-    @State private var showingBakeSheet = false
     @State private var timeline = SongTimeline()
     @State private var tempoChanges: [TempoChange] = []
     @State private var timeSignatureChanges: [TimeSignatureChange] = []
@@ -96,9 +95,6 @@ struct SongDetailView: View {
             }
             .onAppear(perform: handleAppear)
             .navigationBarBackButtonHidden(true)
-            .sheet(isPresented: $showingBakeSheet) {
-                BakeSongSheet(song: activeSong)
-            }
             #if os(iOS)
             .sheet(isPresented: $showingSongLibrary) {
                 AppSheetContainer {
@@ -148,7 +144,6 @@ struct SongDetailView: View {
                         timeSignatureChanges: $timeSignatureChanges,
                         midiEvents: $midiEvents,
                         showingSongLibrary: $showingSongLibrary,
-                        showingBakeSheet: $showingBakeSheet,
                         onBack: attemptDismiss
                     )
 
@@ -182,7 +177,7 @@ struct SongDetailView: View {
             ProgressView()
                 .controlSize(.small)
                 .tint(AppColors.accent)
-            Text(viewModel.isReloadingSong && activeSong.transposeHighQuality ? "Processing audio…" : "Loading audio…")
+            Text("Loading audio…")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(AppColors.textPrimary)
             Spacer(minLength: 0)
@@ -201,7 +196,7 @@ struct SongDetailView: View {
             VStack(spacing: AppSpacing.sm) {
                 ProgressView()
                     .tint(AppColors.accent)
-                Text(viewModel.isReloadingSong && activeSong.transposeHighQuality ? "Processing audio…" : "Loading audio…")
+                Text("Loading audio…")
                     .font(.headline)
                     .foregroundStyle(AppColors.textPrimary)
                 if let loadError = viewModel.loadError {
