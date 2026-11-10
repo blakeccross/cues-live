@@ -42,8 +42,9 @@ permissions:
 
 jobs:
   release:
-    # macos-15's Xcode.app is still 16.4, which cannot compile AppIcon.icon.
-    runs-on: macos-26
+    # Section detection links MusicUnderstanding, which only exists in the macOS 27 SDK.
+    # A macos-26 runner compiles that menu out even when the app later runs on macOS 27.
+    runs-on: xcode-27
     timeout-minutes: 120
 
     steps:
@@ -56,12 +57,16 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
-          sudo xcode-select -s /Applications/Xcode.app
+          if [[ -d /Applications/Xcode_27.2.app ]]; then
+            sudo xcode-select -s /Applications/Xcode_27.2.app
+          else
+            sudo xcode-select -s /Applications/Xcode.app
+          fi
           xcodebuild -version
           xcrun --show-sdk-version --sdk macosx
           XCODE_MAJOR="$(xcodebuild -version | awk '/Xcode/{split($2,a,"."); print a[1]}')"
-          if [[ "${XCODE_MAJOR}" -lt 26 ]]; then
-            echo "Xcode 26+ is required to compile AppIcon.icon (got $(xcodebuild -version | head -n 1))"
+          if [[ "${XCODE_MAJOR}" -lt 27 ]]; then
+            echo "Xcode 27+ is required so Detect Sections can link MusicUnderstanding (got $(xcodebuild -version | head -n 1))"
             exit 1
           fi
 

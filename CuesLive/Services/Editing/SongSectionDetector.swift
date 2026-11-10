@@ -29,6 +29,8 @@ enum SongSectionDetectorError: LocalizedError {
 /// The framework returns time ranges without labels, so detected sections are
 /// named "Section N" and left for the user to rename.
 enum SongSectionDetector {
+    /// False when this binary was compiled without MusicUnderstanding.
+    /// Xcode 26 and earlier omit the framework, so the menu stays hidden on macOS 27 until a rebuild with Xcode 27.
     static var isAvailable: Bool {
         #if canImport(MusicUnderstanding)
         if #available(macOS 27, iOS 27, *) { return true }
