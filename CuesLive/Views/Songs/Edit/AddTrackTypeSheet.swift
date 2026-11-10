@@ -125,7 +125,7 @@ struct AddTrackFlowModifier: ViewModifier {
     }
 }
 
-/// Audio files dragged onto the song editor. Soundcraft places each one on a new track at the
+/// Audio files dragged onto the song editor. Each one lands on a new track at the
 /// edit insertion; the editor reads the files here and the caller does the placement.
 enum AudioFileDrop {
     struct OpenedFile {

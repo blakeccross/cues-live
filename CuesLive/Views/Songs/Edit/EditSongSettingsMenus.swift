@@ -529,7 +529,7 @@ struct TempoMarkerEditorMenu: View {
     }
 }
 
-/// SoundCraft's Tempo Operations window: a constant, a ramp, a stretch, or a scale
+/// Tempo Operations window: a constant, a ramp, a stretch, or a scale
 /// over a bar range. The tempo in effect at the end bar is left in place.
 struct TempoOperationsMenu: View {
     let tempoChanges: [TempoChange]

@@ -7,7 +7,7 @@ struct TimelineMeasureGridOverlay: View {
     var contentWidth: CGFloat?
     var displayWidth: CGFloat?
     let rulerHeight: CGFloat
-    /// Draws the lane lines over the clips, the way Soundcraft draws a shown grid.
+    /// Draws the lane lines over the clips when the grid is shown.
     var showsThroughContent = false
     /// Opaque clip headers. Lane lines stop at these rects so the name bar stays solid.
     var headerBands: [CGRect] = []

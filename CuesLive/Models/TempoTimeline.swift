@@ -1,7 +1,7 @@
 import Foundation
 
-/// Stepwise tempo map. Each event holds its BPM until the next event, which is how
-/// SoundCraft stores tempo — ramps are written as a run of these events.
+/// Stepwise tempo map. Each event holds its BPM until the next event.
+/// Ramps are written as a run of these events.
 struct TempoTimeline: Equatable {
     struct Point: Equatable {
         var tick: Int

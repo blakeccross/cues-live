@@ -21,6 +21,13 @@ private struct TimeSignatureLanePrompt: Identifiable {
     let markerID: UUID?
 }
 
+private struct ClipGainPromptRequest: Identifiable {
+    let id = UUID()
+    /// Shared gain when every selected clip matches. Empty when the selection is mixed.
+    let decibels: Double?
+    let clipCount: Int
+}
+
 struct EditView: View {
     @Environment(\.modelContext) private var modelContext
 
@@ -72,10 +79,8 @@ struct EditView: View {
     /// Shift-press on an already selected clip; removed on release unless the press became a drag.
     @State private var pendingShiftDeselectID: UUID?
     @State private var clipDrag: ClipDrag?
-    /// Soundcraft's clip-gain drag. The fader follows the pointer and lands as one undo step.
-    @State private var gainDrag: ClipGainDrag?
-    @State private var gainUndoBefore: SongEditSnapshot?
-    /// Soundcraft's edit selection. A selector drag writes it, and it stays after the pointer
+    @State private var gainPrompt: ClipGainPromptRequest?
+    /// The edit selection. A selector drag writes it, and it stays after the pointer
     /// goes up. A click replaces it with an insertion, which has no range.
     @State private var editSelection: ClipRangeDrag?
     @State private var selectedTrackIDs: Set<UUID> = []
@@ -436,11 +441,13 @@ struct EditView: View {
             canJoin: !clipSelection.isEmpty,
             canDuplicate: !clipSelection.isEmpty,
             canDeselect: !clipSelection.isEmpty,
+            canAdjustGain: !clipSelection.isEmpty,
             canNudgeGain: !clipSelection.isEmpty,
             split: { splitSelectedClips(at: AudioEngineManager.shared.currentTime) },
             join: { joinSelectedClips() },
             duplicate: { duplicateSelectedClips() },
             deselectAll: { clipSelection.deselectAll() },
+            adjustGain: { beginAdjustGain() },
             nudgeGainUp: { nudgeSelectedClipGain(by: 1) },
             nudgeGainDown: { nudgeSelectedClipGain(by: -1) }
         )
@@ -586,7 +593,7 @@ struct EditView: View {
     }
 
     /// Each file becomes its own track. `timelineStart` is where the clip begins: the file picker
-    /// uses the start of the song, and a Finder drop uses the edit insertion, as Soundcraft does.
+    /// uses the start of the song, and a Finder drop uses the edit insertion.
     private func importAudioTracks(
         from urls: [URL],
         at timelineStart: TimeInterval = 0,
@@ -943,6 +950,14 @@ struct EditView: View {
                 trackPendingRename = nil
             }
         }
+        .sheet(item: $gainPrompt) { prompt in
+            ClipGainPrompt(
+                initialDecibels: prompt.decibels,
+                clipCount: prompt.clipCount,
+                onCancel: { gainPrompt = nil },
+                onApply: applyClipGain
+            )
+        }
 #if os(macOS)
         .toolbar {
             EditSongToolbarContent(
@@ -1021,10 +1036,45 @@ struct EditView: View {
 
     /// Splits every selected clip that spans `time`; both halves stay selected.
     private func splitSelectedClips(at time: TimeInterval) {
-        let ids = clipSelection.clipIDs
-        guard timeline.clips.contains(where: { ids.contains($0.id) && $0.containsTimelineTime(time) }) else { return }
+        splitClips(clipSelection.clipIDs, at: [time])
+    }
+
+    /// Where Split cuts. A range is cut at both edges. An insertion is one cut.
+    private var editSplitPoints: [TimeInterval] {
+        if let selection = editSelection, selection.end - selection.start > ClipEditing.tolerance {
+            return [selection.start, selection.end]
+        }
+        return [insertionTime]
+    }
+
+    /// Split from the clip menu, at the edit selection.
+    /// A clip already in the selection splits with every other selected clip, and with every clip
+    /// on a selected track that the cut runs through. Any other clip splits alone.
+    private func splitAtEditSelection(clickedClipID: UUID, clipWasSelected: Bool) {
+        if !clipWasSelected {
+            clipSelection = ClipSelection([clickedClipID])
+        }
+        var ids = clipSelection.clipIDs
+        if clipWasSelected {
+            for clip in timeline.clips where selectedTrackIDs.contains(clip.trackID) && editSplitPoints.contains(where: clip.containsTimelineTime) {
+                ids.insert(clip.id)
+            }
+        }
+        splitClips(ids, at: editSplitPoints)
+    }
+
+    /// Splits `ids` at each time. Pieces from an earlier cut are included in the later ones.
+    private func splitClips(_ ids: Set<UUID>, at times: [TimeInterval]) {
+        let canSplit = timeline.clips.contains { clip in
+            guard ids.contains(clip.id) else { return false }
+            return times.contains { time in
+                time - clip.timelineStartSeconds >= TrackClip.minimumDuration
+                    && clip.timelineEndSeconds - time >= TrackClip.minimumDuration
+            }
+        }
+        guard canSplit else { return }
         commitTimelineEdit("Split Clips") { timeline in
-            let rightIDs = ClipEditing.split(clipIDs: ids, at: time, in: &timeline.clips)
+            let rightIDs = ClipEditing.split(clipIDs: ids, at: times, in: &timeline.clips)
             clipSelection.select(rightIDs)
         }
     }
@@ -1068,10 +1118,14 @@ struct EditView: View {
             click: { clipID, modifiers, time in
                 // A click is an insertion, so the range selection does not stay underneath it.
                 editSelection = nil
-                if pendingShiftDeselectID == clipID {
-                    clipSelection.deselect(clipID)
-                } else if modifiers.option {
+                if modifiers.option {
                     splitSelectedClips(at: time)
+                } else {
+                    clipSelection.click(
+                        clipID,
+                        extending: modifiers.shift,
+                        removing: pendingShiftDeselectID == clipID
+                    )
                 }
                 pendingShiftDeselectID = nil
             },
@@ -1079,7 +1133,7 @@ struct EditView: View {
             endDrag: commitClipDrag,
             marquee: updateRangeDrag,
             endMarquee: {
-                // Mouse-up keeps editSelection. Soundcraft leaves the range in place.
+                // Mouse-up keeps editSelection. The range stays in place.
             },
             clickBlank: { trackID, time in
                 editSelection = nil
@@ -1089,9 +1143,7 @@ struct EditView: View {
             locate: { trackID, time in
                 placeInsertion(on: trackID, at: time)
             },
-            menu: performClipMenuAction,
-            updateGain: updateClipGain,
-            endGain: endClipGain
+            menu: performClipMenuAction
         )
     }
 
@@ -1107,53 +1159,27 @@ struct EditView: View {
         }
     }
 
-    /// The fader drag writes the clip immediately so the waveform and playback follow it.
-    /// Mouse-up stores that whole drag as one undo step.
-    private func updateClipGain(clipID: UUID, decibels: Double, anchor: CGPoint) {
-        if gainUndoBefore == nil {
-            if clipSelection.isEmpty {
-                clipSelection.press(clipID, extending: false)
-            }
-            gainUndoBefore = captureSnapshot()
-        }
-        let db = ClipGain.stored(decibels)
-        if let index = timeline.clips.firstIndex(where: { $0.id == clipID }),
-           abs(timeline.clips[index].gainDB - db) > 0.001 {
-            timeline.clips[index].gainDB = db
-            viewModel.syncArrangementClips(timeline)
-        }
-        gainDrag = ClipGainDrag(
-            clipID: clipID,
-            position: ClipGain.position(forDecibels: db),
-            decibels: db,
-            anchor: anchor
-        )
+    /// Opens the gain prompt for the current selection. Mixed gains start with an empty field.
+    private func beginAdjustGain() {
+        let clips = selectedClips
+        guard let first = clips.first else { return }
+        let shared = clips.allSatisfy { abs($0.gainDB - first.gainDB) < 0.05 } ? first.gainDB : nil
+        gainPrompt = ClipGainPromptRequest(decibels: shared, clipCount: clips.count)
     }
 
-    private func endClipGain() {
-        let before = gainUndoBefore
-        gainUndoBefore = nil
-        gainDrag = nil
-        guard let before else { return }
-        let after = captureSnapshot()
-        guard before != after else { return }
-        undoController.registerChange(
-            actionName: "Clip Gain",
-            before: before,
-            after: after,
-            apply: { snapshot in
-                applySnapshot(snapshot)
-            }
-        )
-        persistProjectState()
-    }
-
-    private func clampedFaderBottom(_ anchor: CGPoint) -> CGPoint {
-        let minY = ClipGain.faderTravel + 30
-        let maxY = max(minY, Double(trackAreaHeight) - 10)
-        let y = min(max(Double(anchor.y), minY), maxY)
-        let x = min(max(Double(anchor.x), 26), Double(timelineContentWidth) - 26)
-        return CGPoint(x: x, y: y)
+    private func applyClipGain(_ decibels: Double) {
+        let ids = clipSelection.clipIDs
+        guard !ids.isEmpty else {
+            gainPrompt = nil
+            return
+        }
+        var edited = timeline.clips
+        ClipEditing.setGain(clipIDs: ids, decibels: decibels, in: &edited)
+        gainPrompt = nil
+        guard edited != timeline.clips else { return }
+        commitTimelineEdit("Adjust Gain") { timeline in
+            timeline.clips = edited
+        }
     }
 
     /// Snaps the reference clip's moved edge to the beat grid and applies that change to the whole selection.
@@ -1203,19 +1229,22 @@ struct EditView: View {
     }
 
     /// A context-menu action on a clip outside the selection first makes it the only selected clip.
+    /// Split uses the edit selection, so it decides that itself.
     private func performClipMenuAction(_ action: ClipMenuAction, clipID: UUID) {
-        if !clipSelection.contains(clipID) {
+        let clipWasSelected = clipSelection.contains(clipID)
+        if action != .split, !clipWasSelected {
             clipSelection = ClipSelection([clipID])
         }
         switch action {
-        case .splitAtPlayhead: splitSelectedClips(at: AudioEngineManager.shared.currentTime)
+        case .split: splitAtEditSelection(clickedClipID: clipID, clipWasSelected: clipWasSelected)
         case .join: joinSelectedClips()
         case .duplicate: duplicateSelectedClips()
+        case .adjustGain: beginAdjustGain()
         case .delete: removeClipSelection()
         }
     }
 
-    /// A Soundcraft selector drag: a snapped time range across every row from the press to the pointer.
+    /// A selector drag: a snapped time range across every row from the press to the pointer.
     private struct ClipRangeDrag: Equatable {
         var start: TimeInterval
         var end: TimeInterval
@@ -1765,7 +1794,6 @@ struct EditView: View {
 
             clipRangeSelectionOverlay
             insertionCursorOverlay
-            clipGainFader
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
     }
@@ -1816,19 +1844,6 @@ struct EditView: View {
         .frame(width: timelineContentWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
         .coordinateSpace(name: TimelineLayout.trackLanesCoordinateSpace)
-    }
-
-    @ViewBuilder
-    private var clipGainFader: some View {
-        if let drag = gainDrag {
-            let bottom = clampedFaderBottom(drag.anchor)
-            ClipGainFaderPopup(position: drag.position, decibels: drag.decibels)
-                .offset(
-                    x: bottom.x - ClipGainFaderPopup.width / 2,
-                    y: bottom.y - ClipGainFaderPopup.faderBottom
-                )
-                .allowsHitTesting(false)
-        }
     }
 
     /// Full-lane wash for the edit selection, painted over the clips and the grid.

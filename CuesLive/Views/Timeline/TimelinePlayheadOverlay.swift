@@ -61,7 +61,7 @@ struct TimelinePlayheadLayer<Content: View>: View {
 enum TimelinePlayheadStyle {
     /// Triangle handle and gray line.
     case handle
-    /// Soundcraft's full-height red line, drawn only while playing.
+    /// Full-height red line, drawn only while playing.
     case line
 }
 

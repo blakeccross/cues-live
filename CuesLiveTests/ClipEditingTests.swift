@@ -392,6 +392,21 @@ final class ClipEditingTests: XCTestCase {
         XCTAssertEqual(selection.clipIDs, [a, b])
         XCTAssertTrue(selection.press(a, extending: true), "removal waits for a click without drag")
         XCTAssertEqual(selection.clipIDs, [a, b])
+        selection.click(a, extending: true, removing: true)
+        XCTAssertEqual(selection.clipIDs, [b])
+    }
+
+    func testPlainClickOnASelectedClipReplacesTheShiftSelection() {
+        let clip1 = UUID(), clip2 = UUID()
+        var selection = ClipSelection([clip1])
+        selection.press(clip2, extending: true)
+        selection.click(clip2, extending: true, removing: false)
+        XCTAssertEqual(selection.clipIDs, [clip1, clip2])
+
+        XCTAssertFalse(selection.press(clip2, extending: false))
+        XCTAssertEqual(selection.clipIDs, [clip1, clip2], "the press keeps both so a drag can move them")
+        selection.click(clip2, extending: false, removing: false)
+        XCTAssertEqual(selection.clipIDs, [clip2])
     }
 
     func testClipCursorMatchesTheZoneUnderThePointer() {
@@ -508,6 +523,24 @@ final class ClipEditingTests: XCTestCase {
         XCTAssertEqual(rightIDs.count, 2)
         XCTAssertEqual(timeline.clips.count, 4)
         XCTAssertEqual(source(timeline, bass, at: 31), 31)
+    }
+
+    func testSplitAtRangeEdgesLeavesTheSelectionAsItsOwnClip() {
+        var timeline = makeTimeline()
+        let ids = Set(timeline.clips.map(\.id))
+
+        let created = ClipEditing.split(clipIDs: ids, at: [40, 20], in: &timeline.clips)
+
+        let drumsClips = timeline.clips(forTrack: drums)
+        XCTAssertEqual(drumsClips.map(\.timelineStartSeconds), [0, 20, 40])
+        XCTAssertEqual(drumsClips.map(\.duration), [20, 20, 20])
+        let bassClips = timeline.clips(forTrack: bass)
+        XCTAssertEqual(bassClips.map(\.timelineStartSeconds), [0, 20, 40])
+        XCTAssertEqual(bassClips.map(\.duration), [20, 20, 10])
+        XCTAssertEqual(source(timeline, drums, at: 25), 25)
+        XCTAssertEqual(source(timeline, bass, at: 45), 45)
+        XCTAssertEqual(created.count, 4)
+        XCTAssertTrue(created.isDisjoint(with: ids))
     }
 
     func testJoinSelectionMergesAdjacentSelectedClips() throws {

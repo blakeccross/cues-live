@@ -53,7 +53,7 @@ extension Color {
         Color(white: 0.38)
     }
 
-    /// Soundcraft's edit-selection wash: the dark-theme selection composited over the lanes.
+    /// Edit-selection wash: the dark-theme selection composited over the lanes.
     static var soundcraftSelection: Color {
         let alpha = 110.0 / 255.0
         return Color(red: 40.0 / 110.0, green: 70.0 / 110.0, blue: 1).opacity(alpha)
@@ -88,14 +88,14 @@ extension Color {
         Color(white: 0.12)
     }
 
-    /// Soundcraft's playback playhead. Dark theme is rgb(232, 60, 50); light is rgb(210, 48, 42).
+    /// Playback playhead. Dark theme is rgb(232, 60, 50); light is rgb(210, 48, 42).
     static func soundcraftPlayhead(colorScheme: ColorScheme) -> Color {
         colorScheme == .light
             ? Color(red: 210.0 / 255.0, green: 48.0 / 255.0, blue: 42.0 / 255.0)
             : Color(red: 232.0 / 255.0, green: 60.0 / 255.0, blue: 50.0 / 255.0)
     }
 
-    /// Soundcraft's stopped insertion cursor. Dark theme is rgb(230, 230, 230); light is rgb(35, 36, 40).
+    /// Stopped insertion cursor. Dark theme is rgb(230, 230, 230); light is rgb(35, 36, 40).
     static func soundcraftInsertion(colorScheme: ColorScheme) -> Color {
         colorScheme == .light
             ? Color(red: 35.0 / 255.0, green: 36.0 / 255.0, blue: 40.0 / 255.0)

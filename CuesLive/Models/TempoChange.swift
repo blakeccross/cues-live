@@ -3,7 +3,7 @@ import Foundation
 struct TempoChange: Codable, Identifiable, Hashable {
     static let defaultBPM: Double = 120
     static let validBPMRange = 20.0...999.0
-    /// Quarter-note resolution. SoundCraft uses the same 960 ticks per quarter.
+    /// Quarter-note resolution: 960 ticks per quarter.
     static let ticksPerQuarter = 960
 
     let id: UUID

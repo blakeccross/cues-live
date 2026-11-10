@@ -187,7 +187,7 @@ enum MeasureTiming {
         var subdivisions: [TimeInterval]
     }
 
-    /// Which grid levels fit on screen. Soundcraft draws a level only when its steps
+    /// Which grid levels fit on screen. A level is drawn only when its steps
     /// are more than 7 points apart, so zooming in reveals beats and then eighths.
     struct LaneGridDetail: Equatable {
         var showsBeats: Bool

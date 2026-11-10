@@ -1,7 +1,6 @@
 import Foundation
 
-/// How a tempo ramp approaches its end BPM. These are SoundCraft's tempo curves:
-/// the map stays stepwise, and the curve is sampled onto it.
+/// How a tempo ramp approaches its end BPM. The map stays stepwise, and the curve is sampled onto it.
 enum TempoCurve: String, CaseIterable, Identifiable {
     case linear
     case parabolic
@@ -18,7 +17,7 @@ enum TempoCurve: String, CaseIterable, Identifiable {
     }
 }
 
-/// Spacing of the tempo events a curve writes. SoundCraft's default is an eighth note.
+/// Spacing of the tempo events a curve writes. The default is an eighth note.
 enum TempoResolution: String, CaseIterable, Identifiable {
     case whole = "1/1"
     case half = "1/2"
@@ -59,7 +58,7 @@ enum TempoOperationError: Equatable, Error {
     }
 }
 
-/// SoundCraft's Event ▸ Tempo Operations.
+/// Tempo operations on a bar range.
 ///
 /// Constant, linear, parabolic, and S-curve edits replace the tempo inside
 /// `[start, end)` and write the tempo that was in effect at `end` back onto

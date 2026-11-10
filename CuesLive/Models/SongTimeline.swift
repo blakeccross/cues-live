@@ -288,6 +288,19 @@ struct ClipSelection: Equatable {
         return false
     }
 
+    /// Pointer-up without a drag. A plain click replaces the selection,
+    /// including a click on a clip that was already part of it. Shift-click keeps what `press`
+    /// wrote, and `removing` drops a clip that shift-click landed on when it was already selected.
+    mutating func click(_ clipID: UUID, extending: Bool, removing: Bool) {
+        if removing {
+            clipIDs.remove(clipID)
+            return
+        }
+        if !extending {
+            clipIDs = [clipID]
+        }
+    }
+
     /// Clips on `trackIDs` that overlap the dragged time range. A point range selects nothing.
     /// `start` and `end` may arrive in either order.
     static func clipIDs(

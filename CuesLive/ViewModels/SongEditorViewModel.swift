@@ -261,12 +261,6 @@ final class SongEditorViewModel {
         audioEngine.setArrangement(SongPlaybackLayout(timeline: timeline))
     }
 
-    /// Pushes clip gain to the playing tracks without restarting the transport.
-    func syncArrangementClips(_ timeline: SongTimeline) {
-        guard isLoaded else { return }
-        audioEngine.updateArrangementClips(SongPlaybackLayout(timeline: timeline))
-    }
-
     func syncTempoMap(
         _ tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange]

@@ -1,11 +1,10 @@
 import Foundation
 
-/// Clip gain, matching Soundcraft. The value is decibels on the clip. The fader's top three
-/// quarters cover −36…+36 evenly, and the bottom quarter compresses down to −144.
+/// Clip gain in decibels. The top three
+/// quarters of the range cover −36…+36 evenly, and the bottom quarter compresses down to −144.
 enum ClipGain {
     static let minimumDB = -144.0
     static let maximumDB = 36.0
-    static let faderTravel = 200.0
 
     /// A value safe to store. Anything that is not a number stays at unity.
     static func stored(_ decibels: Double) -> Double {
@@ -343,6 +342,24 @@ enum ClipEditing {
             }
         }
         return rightIDs
+    }
+
+    /// Splits at each edit-selection time, earliest first.
+    /// A piece made by an earlier cut is split again when a later time falls inside it,
+    /// so a range's start and end leave the selection as its own clip. Returns every new right-hand clip.
+    @discardableResult
+    static func split(clipIDs: Set<UUID>, at times: [TimeInterval], in clips: inout [TrackClip]) -> Set<UUID> {
+        var pool = clipIDs
+        var created: Set<UUID> = []
+        var last: TimeInterval?
+        for time in times.sorted() {
+            if let last, abs(time - last) <= tolerance { continue }
+            last = time
+            let rightIDs = split(clipIDs: pool, at: time, in: &clips)
+            pool.formUnion(rightIDs)
+            created.formUnion(rightIDs)
+        }
+        return created
     }
 
     /// Joins selected clips that sit next to each other on a track. A track with only one selected

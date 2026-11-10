@@ -3,7 +3,7 @@ import XCTest
 
 final class MeasureBoundaryTests: XCTestCase {
     func testGridDetailAppearsAsTheBeatGrowsPastSevenPoints() {
-        // 120 BPM is a 0.5 s quarter. Soundcraft waits until a level is more than 7 points apart.
+        // 120 BPM is a 0.5 s quarter. A level stays hidden until its steps are more than 7 points apart.
         let hidden = MeasureTiming.LaneGridDetail.detail(pixelsPerSecond: 10, fastestBPM: 120)
         XCTAssertFalse(hidden.showsBeats)
         XCTAssertFalse(hidden.showsSubdivisions)

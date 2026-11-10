@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-/// Multi-resolution min/max overview of one channel, matching Soundcraft's `Peaks`.
+/// Multi-resolution min/max overview of one channel.
 /// Level 0 is one block per 32 samples. Each level above merges 4 blocks of the level below.
 struct WaveformOverview: Equatable, Sendable {
     static let block = 32
