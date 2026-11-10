@@ -5,6 +5,16 @@ import UniformTypeIdentifiers
 enum FileStore {
     static let supportedTypes: [UTType] = [.wav, .aiff, .audio, .mp3, .mpeg4Audio]
 
+    /// A Finder item this editor can place as a track. Folders and other documents are not audio.
+    static func isSupportedAudioFile(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
+            return false
+        }
+        guard let type = UTType(filenameExtension: url.pathExtension) else { return false }
+        return supportedTypes.contains { type.conforms(to: $0) }
+    }
+
     static var documentsDirectory: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }

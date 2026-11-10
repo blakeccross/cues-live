@@ -323,6 +323,13 @@ final class AudioEngineManager {
         refreshTrackMappers()
     }
 
+    /// Replaces the clip map the playing tracks read, without moving the playhead.
+    /// A clip-gain drag uses this so the level follows the fader.
+    func updateArrangementClips(_ layout: SongPlaybackLayout) {
+        playbackLayout = layout
+        refreshTrackMappers()
+    }
+
     func setTempoMap(
         _ changes: [TempoChange],
         referenceBPM: Double,

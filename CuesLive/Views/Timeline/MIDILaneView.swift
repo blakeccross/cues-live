@@ -22,13 +22,6 @@ struct MIDITrackHeaderView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
                     .onSubmit { onConfigChange() }
-
-                Button(role: .destructive, action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 10))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(AppColors.textTertiary)
             }
 
             Button(action: onEditDevice) {
@@ -78,6 +71,11 @@ struct MIDITrackHeaderView: View {
             }
         }
         .contentShape(Rectangle())
+        .contextMenu {
+            Button("Delete", role: .destructive) {
+                onDelete()
+            }
+        }
         .onTapGesture { onSelect(.current) }
     }
 

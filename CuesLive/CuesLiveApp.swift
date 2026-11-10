@@ -101,10 +101,13 @@ struct ClipEditorActions {
     var canJoin = false
     var canDuplicate = false
     var canDeselect = false
+    var canNudgeGain = false
     var split: () -> Void = {}
     var join: () -> Void = {}
     var duplicate: () -> Void = {}
     var deselectAll: () -> Void = {}
+    var nudgeGainUp: () -> Void = {}
+    var nudgeGainDown: () -> Void = {}
 }
 
 struct SongUndoActions {
@@ -259,6 +262,18 @@ struct ClipEditorCommands: Commands {
             }
             .keyboardShortcut("a", modifiers: [.command, .shift])
             .disabled(actions?.canDeselect != true)
+
+            Button("Nudge Clip Gain Up") {
+                actions?.nudgeGainUp()
+            }
+            .keyboardShortcut(.upArrow, modifiers: [.control, .shift])
+            .disabled(actions?.canNudgeGain != true)
+
+            Button("Nudge Clip Gain Down") {
+                actions?.nudgeGainDown()
+            }
+            .keyboardShortcut(.downArrow, modifiers: [.control, .shift])
+            .disabled(actions?.canNudgeGain != true)
         }
     }
 }

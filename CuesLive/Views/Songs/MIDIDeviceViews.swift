@@ -6,56 +6,60 @@ struct MIDIDevicePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \MIDIDevice.name) private var devices: [MIDIDevice]
     let onSelect: (MIDIDevice) -> Void
+    @State private var selectedDeviceID: UUID?
 
     var body: some View {
-        AppSheetContainer {
-            NavigationStack {
-                List {
-                    if !devices.isEmpty {
-                        Section("Devices") {
-                            ForEach(devices) { device in
-                                Button {
-                                    onSelect(device)
-                                    dismiss()
-                                } label: {
-                                    deviceRow(device)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-
-                    Section {
-                        NavigationLink {
-                            MIDIDeviceEditorView(device: nil) { created in
-                                onSelect(created)
-                                dismiss()
-                            }
-                        } label: {
-                            Label("Create New Device", systemImage: "plus")
+        NavigationStack {
+            List(selection: $selectedDeviceID) {
+                if !devices.isEmpty {
+                    Section("Devices") {
+                        ForEach(devices) { device in
+                            deviceRow(device)
+                                .tag(device.id)
                         }
                     }
                 }
-                .scrollContentBackground(.hidden)
-                .navigationTitle("Add MIDI Device")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { dismiss() }
-                            .foregroundStyle(AppColors.textSecondary)
+
+                Section {
+                    NavigationLink {
+                        MIDIDeviceEditorView(device: nil) { created in
+                            onSelect(created)
+                            dismiss()
+                        }
+                    } label: {
+                        Label("Create New Device", systemImage: "plus")
                     }
                 }
             }
+            #if os(macOS)
+            .listStyle(.inset)
+            #else
+            .listStyle(.insetGrouped)
+            #endif
+            .navigationTitle("Add MIDI Device")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .onChange(of: selectedDeviceID) { _, id in
+                guard let id, let device = devices.first(where: { $0.id == id }) else { return }
+                onSelect(device)
+                dismiss()
+            }
         }
-        .frame(minWidth: 360, minHeight: 360)
+        .formSheetFrame(minWidth: 420, minHeight: 460)
     }
 
     private func deviceRow(_ device: MIDIDevice) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(device.name)
-                .foregroundStyle(AppColors.textPrimary)
             Text(subtitle(for: device))
                 .font(.caption)
-                .foregroundStyle(AppColors.textTertiary)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -103,75 +107,45 @@ struct MIDIDeviceEditorView: View {
                 channelPicker
             }
 
-            Section("Commands") {
-                if commands.isEmpty {
-                    Text("Add commands to trigger on this device. Each command is a named MIDI note.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
+            Section {
                 ForEach($commands) { $command in
-                    commandRow($command)
+                    TextField("Name", text: $command.name)
+                    TextField("Note", value: $command.note, format: .number)
+                        .onChange(of: command.note) { _, newValue in
+                            command.note = min(127, max(0, newValue))
+                        }
                 }
                 .onDelete { offsets in
                     commands.remove(atOffsets: offsets)
                 }
 
-                Button {
+                Button("Add Command", systemImage: "plus") {
                     commands.append(MIDICommand(name: "", note: 60))
-                } label: {
-                    Label("Add Command", systemImage: "plus")
                 }
+            } header: {
+                Text("Commands")
+            } footer: {
+                Text("Add commands to trigger on this device. Each command is a named MIDI note.")
             }
         }
         .formStyle(.grouped)
-        .scrollContentBackground(.hidden)
-        .background(AppColors.backgroundSecondary)
         .navigationTitle(device == nil ? "New Device" : "Edit Device")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") { save() }
-                    .foregroundStyle(isValid ? AppColors.accent : AppColors.textTertiary)
                     .disabled(!isValid)
             }
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
-                    .foregroundStyle(AppColors.textSecondary)
             }
         }
         .onAppear { destinations = MIDIOutputService.shared.availableDestinations() }
         .onReceive(NotificationCenter.default.publisher(for: MIDIOutputService.destinationsDidChangeNotification)) { _ in
             destinations = MIDIOutputService.shared.availableDestinations()
         }
-    }
-
-    private func commandRow(_ command: Binding<MIDICommand>) -> some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 4) {
-                Text("Name")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("Name", text: command.name)
-                    .labelsHidden()
-                    .textFieldStyle(.roundedBorder)
-            }
-
-            HStack(spacing: 4) {
-                Text("Note")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("Note", value: command.note, format: .number)
-                    .labelsHidden()
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 44)
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: command.wrappedValue.note) { _, newValue in
-                        command.wrappedValue.note = min(127, max(0, newValue))
-                    }
-            }
-            .fixedSize()
-        }
-        .padding(.vertical, 2)
     }
 
     private var destinationPicker: some View {
@@ -217,5 +191,26 @@ struct MIDIDeviceEditorView: View {
 
         onSave(target)
         dismiss()
+    }
+}
+
+extension View {
+    /// System form-sheet size, with a minimum for macOS 14.
+    func formSheetFrame(minWidth: CGFloat, minHeight: CGFloat) -> some View {
+        modifier(FormSheetFrame(minWidth: minWidth, minHeight: minHeight))
+    }
+}
+
+private struct FormSheetFrame: ViewModifier {
+    let minWidth: CGFloat
+    let minHeight: CGFloat
+
+    func body(content: Content) -> some View {
+        let sized = content.frame(minWidth: minWidth, minHeight: minHeight)
+        if #available(macOS 15.0, iOS 18.0, *) {
+            sized.presentationSizing(.form)
+        } else {
+            sized
+        }
     }
 }

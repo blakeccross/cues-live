@@ -563,4 +563,94 @@ final class ClipEditingTests: XCTestCase {
         )
         XCTAssertEqual(selected, [tracks[0], tracks[1], tracks[2], tracks[4]])
     }
+
+    // MARK: - Clip gain
+
+    func testClipGainTaperRoundTripsAndClamps() {
+        XCTAssertEqual(ClipGain.decibels(forPosition: 0), -144, accuracy: 0.01)
+        XCTAssertEqual(ClipGain.decibels(forPosition: 1), 36, accuracy: 0.01)
+        XCTAssertEqual(ClipGain.decibels(forPosition: .nan), -144, accuracy: 0.01)
+        XCTAssertEqual(ClipGain.position(forDecibels: .infinity), 0, accuracy: 0.000_1)
+        for decibels in stride(from: -144.0, through: 36, by: 6) {
+            let roundTrip = ClipGain.decibels(forPosition: ClipGain.position(forDecibels: decibels))
+            XCTAssertEqual(roundTrip, decibels, accuracy: 0.01, "\(decibels)")
+        }
+        XCTAssertEqual(ClipGain.stored(400), 36)
+        XCTAssertEqual(ClipGain.stored(-200), -144)
+        XCTAssertEqual(ClipGain.stored(.nan), 0)
+        XCTAssertEqual(ClipGain.linearGain(decibels: 0), 1)
+        XCTAssertEqual(ClipGain.linearGain(decibels: -144), 0)
+        XCTAssertEqual(Double(ClipGain.linearGain(decibels: 6.020599913279624)), 2, accuracy: 0.001)
+        XCTAssertEqual(ClipGain.lineY(decibels: 0, bodyHeight: 80), 40, accuracy: 0.001)
+    }
+
+    func testSetGainClampsAndLeavesOtherClips() throws {
+        var timeline = makeTimeline()
+        let drumsID = try XCTUnwrap(timeline.clips(forTrack: drums).first?.id)
+        ClipEditing.setGain(clipIDs: [drumsID], decibels: 80, in: &timeline.clips)
+        XCTAssertEqual(timeline.clips(forTrack: drums)[0].gainDB, 36)
+        XCTAssertEqual(timeline.clips(forTrack: bass)[0].gainDB, 0)
+
+        ClipEditing.nudgeGain(clipIDs: [drumsID], by: 1, in: &timeline.clips)
+        XCTAssertEqual(timeline.clips(forTrack: drums)[0].gainDB, 36)
+        ClipEditing.setGain(clipIDs: [drumsID], decibels: 3, in: &timeline.clips)
+        ClipEditing.nudgeGain(clipIDs: [drumsID], by: -1, in: &timeline.clips)
+        XCTAssertEqual(timeline.clips(forTrack: drums)[0].gainDB, 2)
+    }
+
+    func testSplitAndCopyKeepClipGain() throws {
+        var timeline = makeTimeline()
+        let drumsID = try XCTUnwrap(timeline.clips(forTrack: drums).first?.id)
+        ClipEditing.setGain(clipIDs: [drumsID], decibels: -6, in: &timeline.clips)
+        let rightID = try XCTUnwrap(ClipEditing.split(clipID: drumsID, at: 20, in: &timeline.clips))
+        XCTAssertEqual(timeline.clips.first { $0.id == drumsID }?.gainDB, -6)
+        XCTAssertEqual(timeline.clips.first { $0.id == rightID }?.gainDB, -6)
+
+        let copies = ClipEditing.copy(clipIDs: [drumsID], by: 20, in: &timeline.clips)
+        let copy = try XCTUnwrap(copies.first)
+        XCTAssertEqual(timeline.clips.first { $0.id == copy }?.gainDB, -6)
+    }
+
+    func testMissingGainDecodesAsUnity() throws {
+        let clip = TrackClip(trackID: drums, timelineStartSeconds: 0, duration: 4, sourceStartSeconds: 1, gainDB: -3)
+        let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(clip)) as? [String: Any]
+        var legacy = try XCTUnwrap(encoded)
+        legacy.removeValue(forKey: "gainDB")
+        let data = try JSONSerialization.data(withJSONObject: legacy)
+        let decoded = try JSONDecoder().decode(TrackClip.self, from: data)
+        XCTAssertEqual(decoded.gainDB, 0)
+        XCTAssertEqual(decoded.sourceStartSeconds, 1)
+
+        let stored = try JSONDecoder().decode(TrackClip.self, from: JSONEncoder().encode(clip))
+        XCTAssertEqual(stored.gainDB, -3)
+    }
+
+    func testPlacedFileStartsWhereItWasDropped() {
+        let clip = TrackClip.placed(trackID: drums, sourceDuration: 10, timelineStart: 4)
+        XCTAssertEqual(clip?.timelineStartSeconds, 4)
+        XCTAssertEqual(clip?.duration, 10)
+        XCTAssertEqual(clip?.sourceStartSeconds, 0)
+    }
+
+    func testPlacedFileKeepsItsTrimAndWillNotStartBeforeZero() {
+        let clip = TrackClip.placed(
+            trackID: drums,
+            sourceDuration: 10,
+            trimStart: 1,
+            trimEnd: 6,
+            timelineStart: -3
+        )
+        XCTAssertEqual(clip?.timelineStartSeconds, 0)
+        XCTAssertEqual(clip?.sourceStartSeconds, 1)
+        XCTAssertEqual(clip?.duration, 5)
+        XCTAssertNil(TrackClip.placed(trackID: drums, sourceDuration: 10, trimStart: 9.95, trimEnd: 10))
+    }
+
+    func testAudioDropAcceptsAudioAndRefusesOtherFiles() {
+        XCTAssertTrue(FileStore.isSupportedAudioFile(URL(fileURLWithPath: "/tmp/kick.wav")))
+        XCTAssertTrue(FileStore.isSupportedAudioFile(URL(fileURLWithPath: "/tmp/room.aif")))
+        XCTAssertTrue(FileStore.isSupportedAudioFile(URL(fileURLWithPath: "/tmp/click.m4a")))
+        XCTAssertFalse(FileStore.isSupportedAudioFile(URL(fileURLWithPath: "/tmp/session.scraft")))
+        XCTAssertFalse(FileStore.isSupportedAudioFile(URL(fileURLWithPath: "/tmp/notes.txt")))
+    }
 }

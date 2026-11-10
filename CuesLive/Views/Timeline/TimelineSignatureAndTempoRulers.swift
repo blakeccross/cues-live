@@ -10,6 +10,9 @@ struct TimelineTimeSignatureRulerView: View {
     let onTap: (TimeInterval) -> Void
     let onEditMarker: (TimeSignatureChange) -> Void
     let onDeleteMarker: (TimeSignatureChange) -> Void
+    let onMoveMarker: (TimeSignatureChange, TimeInterval) -> Void
+
+    @State private var drag: RulerMarkerDrag?
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -43,66 +46,89 @@ struct TimelineTimeSignatureRulerView: View {
                     )
                 let segmentWidth = max(0, endX - startX)
 
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(timeSignatureColor(index).opacity(0.22))
-
-                    Text(segment.displayName)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(timeSignatureColor(index))
-                        .padding(.horizontal, 4)
-                        .frame(width: segmentWidth, alignment: .leading)
-                        .lineLimit(1)
-                }
-                .frame(width: segmentWidth, height: height)
-                .offset(x: startX)
+                Text(segment.displayName)
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.leading, RulerChangeDot.labelInset)
+                    .frame(width: segmentWidth, height: height, alignment: .leading)
+                    .clipped()
+                    .offset(x: startX + dragOffset(for: segment.marker.id))
             }
 
-            ForEach(sortedMarkers) { marker in
-                let time = MeasureTiming.timeAtStartOfMeasure(
-                    marker.startMeasure,
-                    tempoChanges: tempoChanges,
-                    timeSignatureChanges: timeSignatureChanges
-                )
-                let x = TimelineLayout.xPosition(
-                    for: time,
-                    duration: safeDuration,
-                    contentWidth: contentWidth
-                )
-
-                Rectangle()
-                    .fill(Color.indigo.opacity(0.85))
-                    .frame(width: 2, height: height)
-                    .offset(x: x)
-                    .contextMenu {
-                        Button("Edit Time Signature") {
-                            onEditMarker(marker)
-                        }
-                        if marker.startMeasure > 1 {
-                            Button("Delete Marker", role: .destructive) {
-                                onDeleteMarker(marker)
-                            }
+            ForEach(timeSignatureSegments, id: \.marker.id) { segment in
+                let startX = xPosition(for: segment.startTime)
+                RulerChangeMarker(
+                    x: startX,
+                    markerID: segment.marker.id,
+                    canDrag: segment.marker.startMeasure > 1,
+                    drag: $drag,
+                    coordinateSpace: Self.dragSpace,
+                    snappedTime: snappedTime(forDragEndX:),
+                    xPosition: xPosition(for:),
+                    onDrop: { onMoveMarker(segment.marker, $0) }
+                ) {
+                    Button("Edit Time Signature") {
+                        onEditMarker(segment.marker)
+                    }
+                    if segment.marker.startMeasure > 1 {
+                        Button("Delete Marker", role: .destructive) {
+                            onDeleteMarker(segment.marker)
                         }
                     }
+                }
             }
         }
+        .coordinateSpace(name: Self.dragSpace)
         .frame(width: effectiveDisplayWidth, height: height)
         .contentShape(Rectangle())
         .gesture(
-            DragGesture(minimumDistance: 0)
-                .onEnded { value in
+            SpatialTapGesture(count: 2)
+                .onEnded { event in
                     let time = TimelineLayout.time(
-                        at: min(value.location.x, contentWidth),
+                        at: min(event.location.x, contentWidth),
                         duration: safeDuration,
                         contentWidth: contentWidth
                     )
                     onTap(time)
                 }
         )
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.dawTimelineDivider)
+                .frame(height: 1)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private static let dragSpace = "timeSignatureRuler"
+
+    private func xPosition(for time: TimeInterval) -> CGFloat {
+        TimelineLayout.xPosition(for: time, duration: safeDuration, contentWidth: contentWidth)
+    }
+
+    private func dragOffset(for id: UUID) -> CGFloat {
+        guard drag?.id == id else { return 0 }
+        return drag?.translation ?? 0
+    }
+
+    /// Snaps a dragged time-signature marker onto a bar line.
+    private func snappedTime(forDragEndX x: CGFloat) -> TimeInterval {
+        let time = TimelineLayout.time(
+            at: min(max(0, x), contentWidth),
+            duration: safeDuration,
+            contentWidth: contentWidth
+        )
+        return MeasureTiming.nearestMeasureBoundary(
+            to: time,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        ).time
     }
 
     private struct TimeSignatureSegment {
+        let marker: TimeSignatureChange
         let startTime: TimeInterval
         let endTime: TimeInterval
         let displayName: String
@@ -129,16 +155,12 @@ struct TimelineTimeSignatureRulerView: View {
                 endTime = safeDuration
             }
             return TimeSignatureSegment(
+                marker: marker,
                 startTime: startTime,
                 endTime: endTime,
                 displayName: marker.displayName
             )
         }
-    }
-
-    private func timeSignatureColor(_ index: Int) -> Color {
-        let colors: [Color] = [.indigo, .teal, .cyan, .blue, .mint]
-        return colors[index % colors.count]
     }
 }
 
@@ -152,7 +174,10 @@ struct TimelineTempoRulerView: View {
     let onTap: (TimeInterval) -> Void
     let onEditMarker: (TempoChange) -> Void
     let onDeleteMarker: (TempoChange) -> Void
+    let onMoveMarker: (TempoChange, TimeInterval) -> Void
     let onTempoOperations: () -> Void
+
+    @State private var drag: RulerMarkerDrag?
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
@@ -193,56 +218,46 @@ struct TimelineTempoRulerView: View {
                     )
                 let segmentWidth = max(0, endX - startX)
 
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(tempoColor(index).opacity(0.22))
+                if segmentWidth >= 28 {
+                    Text(String(format: "%.0f", segment.bpm))
+                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .padding(.leading, RulerChangeDot.labelInset)
+                        .frame(width: segmentWidth, height: height, alignment: .leading)
+                        .clipped()
+                        .offset(x: startX + dragOffset(for: segment.marker.id))
+                }
+            }
 
-                    if segmentWidth >= 28 {
-                        Text(String(format: "%.0f", segment.bpm))
-                            .font(.system(size: 9, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(tempoColor(index))
-                            .padding(.horizontal, 4)
-                            .frame(width: segmentWidth, alignment: .leading)
-                            .lineLimit(1)
+            ForEach(segments, id: \.marker.id) { segment in
+                let startX = xPosition(for: segment.startTime)
+                RulerChangeMarker(
+                    x: startX,
+                    markerID: segment.marker.id,
+                    canDrag: !segment.marker.isOrigin,
+                    drag: $drag,
+                    coordinateSpace: Self.dragSpace,
+                    snappedTime: snappedTime(forDragEndX:),
+                    xPosition: xPosition(for:),
+                    onDrop: { onMoveMarker(segment.marker, $0) }
+                ) {
+                    Button("Edit Tempo") {
+                        onEditMarker(segment.marker)
+                    }
+                    Button("Tempo Operations…") {
+                        onTempoOperations()
+                    }
+                    if !segment.marker.isOrigin {
+                        Button("Delete Marker", role: .destructive) {
+                            onDeleteMarker(segment.marker)
+                        }
                     }
                 }
-                .frame(width: segmentWidth, height: height)
-                .offset(x: startX)
-            }
-
-            ForEach(sortedMarkers) { marker in
-                let tick = TempoTimeline.tick(
-                    measure: marker.startMeasure,
-                    beatOffset: marker.beatOffset,
-                    timeSignatureChanges: timeSignatureChanges
-                )
-                let time = timeline.seconds(atTick: tick)
-                let x = TimelineLayout.xPosition(
-                    for: time,
-                    duration: safeDuration,
-                    contentWidth: contentWidth
-                )
-
-                Rectangle()
-                    .fill(Color.orange.opacity(0.85))
-                    .frame(width: 2, height: height)
-                    .offset(x: x)
-                    .contextMenu {
-                        Button("Edit Tempo") {
-                            onEditMarker(marker)
-                        }
-                        Button("Tempo Operations…") {
-                            onTempoOperations()
-                        }
-                        if !marker.isOrigin {
-                            Button("Delete Marker", role: .destructive) {
-                                onDeleteMarker(marker)
-                            }
-                        }
-                    }
             }
         }
+        .coordinateSpace(name: Self.dragSpace)
         .frame(width: effectiveDisplayWidth, height: height)
         .contentShape(Rectangle())
         .gesture(
@@ -256,9 +271,41 @@ struct TimelineTempoRulerView: View {
                     onTap(time)
                 }
         )
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.dawTimelineDivider)
+                .frame(height: 1)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private static let dragSpace = "tempoRuler"
+
+    private func xPosition(for time: TimeInterval) -> CGFloat {
+        TimelineLayout.xPosition(for: time, duration: safeDuration, contentWidth: contentWidth)
+    }
+
+    private func dragOffset(for id: UUID) -> CGFloat {
+        guard drag?.id == id else { return 0 }
+        return drag?.translation ?? 0
+    }
+
+    /// Snaps a dragged tempo marker onto a beat.
+    private func snappedTime(forDragEndX x: CGFloat) -> TimeInterval {
+        let time = TimelineLayout.time(
+            at: min(max(0, x), contentWidth),
+            duration: safeDuration,
+            contentWidth: contentWidth
+        )
+        return MeasureTiming.snapToNearestBeat(
+            time,
+            tempoChanges: tempoChanges,
+            timeSignatureChanges: timeSignatureChanges
+        )
     }
 
     private struct TempoSegment {
+        let marker: TempoChange
         let startTime: TimeInterval
         let endTime: TimeInterval
         let bpm: Double
@@ -287,12 +334,68 @@ struct TimelineTempoRulerView: View {
             } else {
                 endTime = safeDuration
             }
-            return TempoSegment(startTime: startTime, endTime: endTime, bpm: marker.bpm)
+            return TempoSegment(marker: marker, startTime: startTime, endTime: endTime, bpm: marker.bpm)
         }
     }
+}
 
-    private func tempoColor(_ index: Int) -> Color {
-        let colors: [Color] = [.orange, .pink, .yellow, .red, .brown]
-        return colors[index % colors.count]
+private struct RulerMarkerDrag {
+    let id: UUID
+    var translation: CGFloat
+}
+
+/// Gray dot marking where a tempo or time signature change starts.
+private struct RulerChangeDot: View {
+    static let diameter: CGFloat = 6
+    static let hitExtent: CGFloat = 14
+    /// Distance from the change to the label: the dot's radius plus a small gap.
+    static let labelInset: CGFloat = diameter / 2 + 4
+
+    var body: some View {
+        Circle()
+            .fill(Color(white: 0.58))
+            .frame(width: Self.diameter, height: Self.diameter)
+            .frame(width: Self.hitExtent, height: Self.hitExtent)
+            .contentShape(Rectangle())
+    }
+}
+
+/// Centers a change dot on its time and drags it along the ruler.
+private struct RulerChangeMarker<Menu: View>: View {
+    let x: CGFloat
+    let markerID: UUID
+    let canDrag: Bool
+    @Binding var drag: RulerMarkerDrag?
+    let coordinateSpace: String
+    let snappedTime: (CGFloat) -> TimeInterval
+    let xPosition: (TimeInterval) -> CGFloat
+    let onDrop: (TimeInterval) -> Void
+    @ViewBuilder let menu: () -> Menu
+
+    private var translation: CGFloat {
+        guard drag?.id == markerID else { return 0 }
+        return drag?.translation ?? 0
+    }
+
+    var body: some View {
+        RulerChangeDot()
+            .contextMenu { menu() }
+            .highPriorityGesture(dragGesture)
+            .offset(x: x - RulerChangeDot.hitExtent / 2 + translation)
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .named(coordinateSpace))
+            .onChanged { value in
+                guard canDrag else { return }
+                let snappedX = xPosition(snappedTime(value.location.x))
+                drag = RulerMarkerDrag(id: markerID, translation: snappedX - x)
+            }
+            .onEnded { value in
+                guard canDrag else { return }
+                let time = snappedTime(value.location.x)
+                drag = nil
+                onDrop(time)
+            }
     }
 }

@@ -103,4 +103,10 @@ struct ArrangementTimelineMapper: Sendable {
 
         return nil
     }
+
+    /// Clip gain at `master`, or unity where the track is not playing arranged clips.
+    func linearGain(atMasterTimeline master: TimeInterval) -> Float {
+        guard usesClips, let clip = clip(containing: master) else { return 1 }
+        return clip.linearGain
+    }
 }

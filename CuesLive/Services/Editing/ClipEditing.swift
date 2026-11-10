@@ -1,5 +1,60 @@
 import Foundation
 
+/// Clip gain, matching Soundcraft. The value is decibels on the clip. The fader's top three
+/// quarters cover −36…+36 evenly, and the bottom quarter compresses down to −144.
+enum ClipGain {
+    static let minimumDB = -144.0
+    static let maximumDB = 36.0
+    static let faderTravel = 200.0
+
+    /// A value safe to store. Anything that is not a number stays at unity.
+    static func stored(_ decibels: Double) -> Double {
+        guard decibels.isFinite else { return 0 }
+        return min(max(decibels, minimumDB), maximumDB)
+    }
+
+    /// Amplitude multiplier. −144 dB, and anything quieter, is silence.
+    static func linearGain(decibels: Double) -> Float {
+        let db = stored(decibels)
+        guard db > minimumDB else { return 0 }
+        return Float(pow(10, db / 20))
+    }
+
+    /// Fader position 0…1 for a stored gain. A value that is not a number sits at the bottom.
+    static func position(forDecibels decibels: Double) -> Double {
+        let db = decibels.isFinite ? min(max(decibels, minimumDB), maximumDB) : minimumDB
+        if db >= -36 {
+            return 0.25 + (db + 36) / 72 * 0.75
+        }
+        return (1 - pow((-36 - db) / 108, 1 / 1.5)) * 0.25
+    }
+
+    static func decibels(forPosition position: Double) -> Double {
+        let p = position.isFinite ? min(max(position, 0), 1) : 0
+        let db: Double
+        if p >= 0.25 {
+            db = -36 + (p - 0.25) / 0.75 * 72
+        } else {
+            db = -36 - pow(1 - p / 0.25, 1.5) * 108
+        }
+        return stored(db)
+    }
+
+    static func showsLine(decibels: Double) -> Bool {
+        abs(decibels) > 0.01
+    }
+
+    /// Y inside the clip body. −36 dB sits at the bottom, +36 at the top.
+    static func lineY(decibels: Double, bodyHeight: Double) -> Double {
+        let db = min(max(decibels, -36), 36)
+        return bodyHeight - 3 - ((db + 36) / 72) * (bodyHeight - 6)
+    }
+
+    static func readout(_ decibels: Double) -> String {
+        String(format: "%+.1f", stored(decibels))
+    }
+}
+
 /// Pure edits over `TrackClip`s and timeline markers.
 ///
 /// Invariant kept by every function: on each track, clips are non-overlapping and at least
@@ -206,6 +261,22 @@ enum ClipEditing {
         clips.removeAll { clipIDs.contains($0.id) }
     }
 
+    /// Sets one absolute gain, in decibels, on each clip. Clamped to −144…+36.
+    static func setGain(clipIDs: Set<UUID>, decibels: Double, in clips: inout [TrackClip]) {
+        let db = ClipGain.stored(decibels)
+        for index in clips.indices where clipIDs.contains(clips[index].id) {
+            clips[index].gainDB = db
+        }
+    }
+
+    /// Adds `delta` decibels to each clip, clamped to the same ceiling and floor.
+    static func nudgeGain(clipIDs: Set<UUID>, by delta: Double, in clips: inout [TrackClip]) {
+        guard delta.isFinite else { return }
+        for index in clips.indices where clipIDs.contains(clips[index].id) {
+            clips[index].gainDB = ClipGain.stored(clips[index].gainDB + delta)
+        }
+    }
+
     // MARK: - Selection edits
 
     /// Copies the clips `delta` seconds later (earlier when negative) and returns the copies' IDs.
@@ -220,7 +291,8 @@ enum ClipEditing {
                 trackID: clip.trackID,
                 timelineStartSeconds: clip.timelineStartSeconds + clampedDelta,
                 duration: clip.duration,
-                sourceStartSeconds: clip.sourceStartSeconds
+                sourceStartSeconds: clip.sourceStartSeconds,
+                gainDB: clip.gainDB
             )
         }
         place(copies, in: &clips)
@@ -583,7 +655,8 @@ enum ClipEditing {
             trackID: clip.trackID,
             timelineStartSeconds: start,
             duration: end - start,
-            sourceStartSeconds: clip.sourceTime(atTimeline: start)
+            sourceStartSeconds: clip.sourceTime(atTimeline: start),
+            gainDB: clip.gainDB
         )
     }
 }

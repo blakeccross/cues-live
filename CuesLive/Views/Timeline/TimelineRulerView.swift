@@ -12,8 +12,6 @@ struct TimelineMeasureGridOverlay: View {
     /// Opaque clip headers. Lane lines stop at these rects so the name bar stays solid.
     var headerBands: [CGRect] = []
 
-    @Environment(\.self) private var environment
-
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
     }
@@ -66,20 +64,17 @@ struct TimelineMeasureGridOverlay: View {
         Canvas { context, size in
             guard size.width > 0, size.height > 0, mappingWidth > 0 else { return }
 
-            let rulerLineColor = Color.dawMeasureGridLine
-            let barColor = showsThroughContent
-                ? Color.soundcraftGridVeil(over: .dawTimelineBackground, environment: environment)
-                : Color.dawMeasureGridLine.opacity(0.75)
-            let tickColor = showsThroughContent
-                ? Color.soundcraftGridVeil(over: .dawTimelineBackground, environment: environment, contrast: 0.45)
-                : Color.dawMeasureGridLine.opacity(0.4)
+            let rulerLineColor = showsThroughContent ? Color.editorBarTick : Color.dawMeasureGridLine
+            let barColor = showsThroughContent ? Color.editorBarTick : Color.dawMeasureGridLine.opacity(0.75)
+            let beatColor = showsThroughContent ? Color.editorBeatTick : Color.dawMeasureGridLine.opacity(0.4)
+            let subdivisionColor = showsThroughContent ? Color.editorSubdivisionTick : Color.dawMeasureGridLine.opacity(0.4)
             let rulerLineEnd = min(rulerHeight, size.height)
 
             for time in fine.subdivisions {
-                strokeTick(at: time, in: &context, size: size, rulerColor: tickColor, trackColor: tickColor, rulerLineEnd: rulerLineEnd)
+                strokeTick(at: time, in: &context, size: size, rulerColor: subdivisionColor, trackColor: subdivisionColor, rulerLineEnd: rulerLineEnd)
             }
             for time in fine.beats {
-                strokeTick(at: time, in: &context, size: size, rulerColor: tickColor, trackColor: tickColor, rulerLineEnd: rulerLineEnd)
+                strokeTick(at: time, in: &context, size: size, rulerColor: beatColor, trackColor: beatColor, rulerLineEnd: rulerLineEnd)
             }
             for time in boundaries {
                 strokeTick(at: time, in: &context, size: size, rulerColor: rulerLineColor, trackColor: barColor, rulerLineEnd: rulerLineEnd)
@@ -219,9 +214,11 @@ struct TimelineRulerView: View {
     let onTimeSignatureRulerTap: (TimeInterval) -> Void
     let onEditTimeSignatureMarker: (TimeSignatureChange) -> Void
     let onDeleteTimeSignatureMarker: (TimeSignatureChange) -> Void
+    let onMoveTimeSignatureMarker: (TimeSignatureChange, TimeInterval) -> Void
     let onTempoRulerTap: (TimeInterval) -> Void
     let onEditTempoMarker: (TempoChange) -> Void
     let onDeleteTempoMarker: (TempoChange) -> Void
+    let onMoveTempoMarker: (TempoChange, TimeInterval) -> Void
     let onTempoOperations: () -> Void
 
     private var safeDuration: TimeInterval {
@@ -243,7 +240,8 @@ struct TimelineRulerView: View {
                 height: timeSignatureRulerHeight,
                 onTap: onTimeSignatureRulerTap,
                 onEditMarker: onEditTimeSignatureMarker,
-                onDeleteMarker: onDeleteTimeSignatureMarker
+                onDeleteMarker: onDeleteTimeSignatureMarker,
+                onMoveMarker: onMoveTimeSignatureMarker
             )
 
             TimelineTempoRulerView(
@@ -256,6 +254,7 @@ struct TimelineRulerView: View {
                 onTap: onTempoRulerTap,
                 onEditMarker: onEditTempoMarker,
                 onDeleteMarker: onDeleteTempoMarker,
+                onMoveMarker: onMoveTempoMarker,
                 onTempoOperations: onTempoOperations
             )
 

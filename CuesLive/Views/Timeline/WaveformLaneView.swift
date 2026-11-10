@@ -115,19 +115,36 @@ struct TrackLaneHeaderView: View {
             HStack(spacing: 4) {
                 Text(track.group?.name ?? "No Group")
                     .lineLimit(1)
+                Spacer(minLength: 4)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 8, weight: .semibold))
             }
             .font(.caption2)
             .foregroundStyle(trackColors.body)
-            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.dawMixButtonBackground)
             .clipShape(RoundedRectangle(cornerRadius: 3))
+            .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .buttonStyle(.plain)
         .controlSize(.small)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(FlexibleControlSizing())
+    }
+}
+
+private struct FlexibleControlSizing: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, macOS 26.0, *) {
+            content.buttonSizing(.flexible)
+        } else {
+            content
+        }
     }
 }
 
@@ -136,6 +153,10 @@ struct PointerModifiers: Equatable {
     var shift = false
     var command = false
     var option = false
+    var control = false
+
+    /// Command or Control. Soundcraft's clip-gain drag uses either for fine moves.
+    var fine: Bool { command || control }
 
     static var current: PointerModifiers {
         #if os(macOS)
@@ -143,7 +164,8 @@ struct PointerModifiers: Equatable {
         return PointerModifiers(
             shift: flags.contains(.shift),
             command: flags.contains(.command),
-            option: flags.contains(.option)
+            option: flags.contains(.option),
+            control: flags.contains(.control)
         )
         #else
         return PointerModifiers()
@@ -156,6 +178,7 @@ enum ClipPointerCursor: Equatable {
     case select
     case move
     case trim
+    case gain
 
     /// Trim handles own the header ends. The top half of the lane selects a range; the bottom half moves.
     static func zone(
@@ -184,6 +207,7 @@ enum ClipPointerCursor: Equatable {
         case .select: NSCursor.iBeam.set()
         case .move: NSCursor.openHand.set()
         case .trim: NSCursor.resizeLeftRight.set()
+        case .gain: NSCursor.resizeUpDown.set()
         }
         #endif
     }
@@ -232,6 +256,17 @@ struct ClipLaneActions {
     /// Selector press. Places the insertion cursor on this track at the snapped beat.
     var locate: (_ trackID: UUID, _ time: TimeInterval) -> Void
     var menu: (_ action: ClipMenuAction, _ clipID: UUID) -> Void
+    /// Vertical drag on the clip-gain icon. `anchor` is the press, in track-lane coordinates.
+    var updateGain: (_ clipID: UUID, _ decibels: Double, _ anchor: CGPoint) -> Void
+    var endGain: () -> Void
+}
+
+/// Where the clip-gain fader is drawn while it is dragged.
+struct ClipGainDrag: Equatable {
+    var clipID: UUID
+    var position: Double
+    var decibels: Double
+    var anchor: CGPoint
 }
 
 struct WaveformLaneView: View {
@@ -267,6 +302,8 @@ struct WaveformLaneView: View {
     @State private var isLoadingWaveformPeaks = false
     @State private var activeTrimEdge: (clipID: UUID, edge: ClipEditing.Edge)?
     @State private var clipPointer: ClipPointer?
+    @State private var gainPointer: GainPointer?
+    @State private var hoveredClipID: UUID?
     @State private var isMarqueeDragging = false
 
     private struct ClipPointer {
@@ -277,6 +314,14 @@ struct WaveformLaneView: View {
         /// Upper half, away from the trim handles. Soundcraft's selector places the playhead here.
         let movesPlayhead: Bool
         var isDragging = false
+    }
+
+    private struct GainPointer {
+        let clipID: UUID
+        var anchorY: CGFloat
+        var anchorPos: Double
+        var fine: Bool
+        var position: Double
     }
 
     private var laneOriginY: CGFloat {
@@ -483,6 +528,7 @@ struct WaveformLaneView: View {
                 sourceDuration: clip.duration,
                 contentX: contentX,
                 clipWidth: clipWidth,
+                linearGain: clip.linearGain,
                 showsBaseline: isLoadingWaveformPeaks || overview.channels.isEmpty
             )
             .frame(width: clipWidth, height: max(0, clipHeight - TimelineLayout.clipHeaderHeight))
@@ -516,18 +562,29 @@ struct WaveformLaneView: View {
             }
         }
         .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
+        .overlay(alignment: .topLeading) {
+            clipGainChrome(clip: clip, clipWidth: clipWidth, clipHeight: clipHeight)
+        }
         .contentShape(Rectangle())
         .padding(.vertical, TimelineLayout.clipLaneInset)
         #if os(macOS)
         .onContinuousHover { phase in
             switch phase {
             case .active(let location):
-                ClipPointerCursor.zone(
-                    at: location,
-                    clipWidth: clipWidth,
-                    laneHeight: laneHeight
-                ).apply()
+                hoveredClipID = clip.id
+                if ClipGainHandle.contains(location, clip: clip, clipWidth: clipWidth, clipHeight: clipHeight, revealed: gainRevealed(clip)) {
+                    ClipPointerCursor.gain.apply()
+                } else {
+                    ClipPointerCursor.zone(
+                        at: location,
+                        clipWidth: clipWidth,
+                        laneHeight: laneHeight
+                    ).apply()
+                }
             case .ended:
+                if hoveredClipID == clip.id {
+                    hoveredClipID = nil
+                }
                 ClipPointerCursor.reset()
             }
         }
@@ -613,9 +670,16 @@ struct WaveformLaneView: View {
     private func clipPointerGesture(for clip: TrackClip, clipWidth: CGFloat, contentX: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(TimelineDragSpace.name))
             .onChanged { value in
+                let local = CGPoint(x: value.startLocation.x - contentX, y: value.startLocation.y)
+                let distance = hypot(value.translation.width, value.translation.height)
+                if gainPointer?.clipID == clip.id || gainHandleContains(local, clip: clip, clipWidth: clipWidth) {
+                    guard gainPointer?.clipID == clip.id || distance >= 3 else { return }
+                    let anchor = CGPoint(x: value.startLocation.x, y: value.startLocation.y + laneOriginY)
+                    updateGainDrag(for: clip, at: value.location.y, anchor: anchor)
+                    return
+                }
                 if clipPointer?.clipID != clip.id {
                     let modifiers = PointerModifiers.current
-                    let local = CGPoint(x: value.startLocation.x - contentX, y: value.startLocation.y)
                     let zone = ClipPointerCursor.zone(at: local, clipWidth: clipWidth, laneHeight: laneHeight)
                     clipPointer = ClipPointer(
                         clipID: clip.id,
@@ -629,7 +693,6 @@ struct WaveformLaneView: View {
                     }
                 }
                 guard var pointer = clipPointer, !pointer.modifiers.option else { return }
-                let distance = hypot(value.translation.width, value.translation.height)
                 guard pointer.isDragging || distance >= 3 else { return }
                 pointer.isDragging = true
                 clipPointer = pointer
@@ -649,9 +712,23 @@ struct WaveformLaneView: View {
                 actions.drag(.move(reference: original, rawDelta: rawDelta, copy: PointerModifiers.current.command))
             }
             .onEnded { value in
+                let local = CGPoint(x: value.startLocation.x - contentX, y: value.startLocation.y)
+                let distance = hypot(value.translation.width, value.translation.height)
+                if gainPointer != nil {
+                    gainPointer = nil
+                    ClipPointerCursor.reset()
+                    actions.endGain()
+                    return
+                }
+                if gainHandleContains(local, clip: clip, clipWidth: clipWidth) {
+                    clipPointer = nil
+                    let modifiers = PointerModifiers.current
+                    actions.press(clip.id, track.id, modifiers)
+                    actions.click(clip.id, modifiers, snappedTime(atContentX: value.location.x))
+                    return
+                }
                 guard let pointer = clipPointer else { return }
                 clipPointer = nil
-                let distance = hypot(value.translation.width, value.translation.height)
                 // Option-click splits even if the pointer drifted. A real drag keeps the selection.
                 if !pointer.modifiers.option && (pointer.isDragging || distance >= 3) {
                     ClipPointerCursor.reset()
@@ -668,6 +745,85 @@ struct WaveformLaneView: View {
                     actions.click(clip.id, pointer.modifiers, time)
                 }
             }
+    }
+
+    private func gainRevealed(_ clip: TrackClip) -> Bool {
+        selection.contains(clip.id) || hoveredClipID == clip.id || gainPointer?.clipID == clip.id
+    }
+
+    private func gainHandleContains(_ location: CGPoint, clip: TrackClip, clipWidth: CGFloat) -> Bool {
+        ClipGainHandle.contains(
+            location,
+            clip: clip,
+            clipWidth: clipWidth,
+            clipHeight: clipChromeHeight,
+            revealed: gainRevealed(clip)
+        )
+    }
+
+    private var clipChromeHeight: CGFloat {
+        max(0, laneHeight - TimelineLayout.clipLaneInset * 2 - TimelineLayout.laneDividerHeight)
+    }
+
+    @ViewBuilder
+    private func clipGainChrome(clip: TrackClip, clipWidth: CGFloat, clipHeight: CGFloat) -> some View {
+        let bodyHeight = clipHeight - TimelineLayout.clipHeaderHeight
+        let dragging = gainPointer?.clipID == clip.id
+        let showLine = (ClipGain.showsLine(decibels: clip.gainDB) || dragging) && bodyHeight > 12
+        ZStack(alignment: .topLeading) {
+            if showLine {
+                let y = TimelineLayout.clipHeaderHeight + CGFloat(
+                    ClipGain.lineY(decibels: clip.gainDB, bodyHeight: Double(bodyHeight))
+                )
+                Canvas { context, size in
+                    var path = Path()
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y))
+                    context.stroke(path, with: .color(.white.opacity(170.0 / 255.0)), lineWidth: 1)
+                }
+                .frame(width: clipWidth, height: clipHeight)
+            }
+            if ClipGainHandle.shows(
+                clip: clip,
+                clipWidth: clipWidth,
+                bodyHeight: bodyHeight,
+                revealed: gainRevealed(clip)
+            ) {
+                ClipGainIcon(decibels: clip.gainDB)
+                    .padding(.leading, 4)
+                    .padding(.top, max(clipHeight - 16, 0))
+                    .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
+            }
+        }
+        .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
+        .allowsHitTesting(false)
+    }
+
+    /// Vertical drag on the gain icon. `y` is in this lane. The fader anchor is in the track stack.
+    private func updateGainDrag(for clip: TrackClip, at y: CGFloat, anchor: CGPoint) {
+        let fine = PointerModifiers.current.fine
+        if gainPointer?.clipID != clip.id {
+            let position = ClipGain.position(forDecibels: clip.gainDB)
+            gainPointer = GainPointer(
+                clipID: clip.id,
+                anchorY: y,
+                anchorPos: position,
+                fine: fine,
+                position: position
+            )
+        }
+        guard var pointer = gainPointer else { return }
+        if pointer.fine != fine {
+            pointer.fine = fine
+            pointer.anchorY = y
+            pointer.anchorPos = pointer.position
+        }
+        let scale = pointer.fine ? 0.1 : 1
+        let next = pointer.anchorPos + Double(pointer.anchorY - y) / ClipGain.faderTravel * scale
+        pointer.position = min(max(next, 0), 1)
+        gainPointer = pointer
+        ClipPointerCursor.gain.apply()
+        actions.updateGain(clip.id, ClipGain.decibels(forPosition: pointer.position), anchor)
     }
 
     private func clipTrimDragGesture(for clip: TrackClip, edge: ClipEditing.Edge) -> some Gesture {
@@ -706,6 +862,7 @@ private struct ClipSampleWaveform: View {
     /// The clip's x origin in timeline-content coordinates.
     let contentX: CGFloat
     let clipWidth: CGFloat
+    let linearGain: Float
     let showsBaseline: Bool
 
     @Environment(\.displayScale) private var displayScale
@@ -784,7 +941,7 @@ private struct ClipSampleWaveform: View {
                 let frame = Double(sampleOrigin + index)
                 let x = CGFloat((frame - origin) / sourceFrames) * clipWidth
                 guard x >= window.lower - 1, x <= window.upper + 1 else { continue }
-                let y = centerY - CGFloat(clamp(samples[index])) * half
+                let y = centerY - CGFloat(clamp(scaled(samples[index]))) * half
                 let point = CGPoint(x: x, y: y)
                 if started {
                     path.addLine(to: point)
@@ -806,7 +963,7 @@ private struct ClipSampleWaveform: View {
             overlap: overlap,
             count: count
         ) {
-            fillColumns(drawn, pixelStart: pixelStart, columnWidth: 1 / scale, centerY: centerY, half: half, color: color, context: &context)
+            fillColumns(scaled(drawn), pixelStart: pixelStart, columnWidth: 1 / scale, centerY: centerY, half: half, color: color, context: &context)
             return
         }
 
@@ -816,7 +973,7 @@ private struct ClipSampleWaveform: View {
         }
         guard count > 0 else { return }
         let columns = peaks.columns(start: windowStart, step: step, overlap: overlap, count: count)
-        fillColumns(columns, pixelStart: pixelStart, columnWidth: 1 / scale, centerY: centerY, half: half, color: color, context: &context)
+        fillColumns(scaled(columns), pixelStart: pixelStart, columnWidth: 1 / scale, centerY: centerY, half: half, color: color, context: &context)
     }
 
     private func fillColumns(
@@ -921,6 +1078,18 @@ private struct ClipSampleWaveform: View {
         guard value.isFinite else { return 0 }
         return min(1, max(-1, value))
     }
+
+    private func scaled(_ sample: Float) -> Float {
+        linearGain == 1 ? sample : sample * linearGain
+    }
+
+    private func scaled(_ columns: [(Float, Float)?]) -> [(Float, Float)?] {
+        guard linearGain != 1 else { return columns }
+        return columns.map { column in
+            guard let column else { return nil }
+            return (clamp(column.0 * linearGain), clamp(column.1 * linearGain))
+        }
+    }
 }
 
 private struct ClipHeaderEdgeTrimControl<G: Gesture>: View {
@@ -955,5 +1124,102 @@ private struct ClipHeaderEdgeTrimControl<G: Gesture>: View {
             #else
             .opacity(isEnabled && isActive ? 1 : 0)
             #endif
+    }
+}
+
+/// The bottom-left clip-gain icon. Shown when the clip is wide enough and either selected,
+/// under the pointer, or already gained.
+enum ClipGainHandle {
+    static func shows(clip: TrackClip, clipWidth: CGFloat, bodyHeight: CGFloat, revealed: Bool) -> Bool {
+        clipWidth >= 48 && bodyHeight >= 30 && (revealed || abs(clip.gainDB) > 0.01)
+    }
+
+    static func hitRect(clipHeight: CGFloat) -> CGRect {
+        CGRect(x: 0, y: clipHeight - 22, width: 78, height: 22)
+    }
+
+    static func contains(
+        _ location: CGPoint,
+        clip: TrackClip,
+        clipWidth: CGFloat,
+        clipHeight: CGFloat,
+        revealed: Bool
+    ) -> Bool {
+        let bodyHeight = clipHeight - TimelineLayout.clipHeaderHeight
+        guard shows(clip: clip, clipWidth: clipWidth, bodyHeight: bodyHeight, revealed: revealed) else { return false }
+        return hitRect(clipHeight: clipHeight).contains(location)
+    }
+}
+
+/// Soundcraft's clip-gain mark: a short fader, then the decibel readout.
+private struct ClipGainIcon: View {
+    let decibels: Double
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ZStack {
+                Rectangle()
+                    .frame(width: 1, height: 13)
+                RoundedRectangle(cornerRadius: 1)
+                    .frame(width: 9, height: 3)
+                    .offset(y: 2)
+            }
+            .frame(width: 9, height: 13)
+            Text("\(ClipGain.readout(decibels)) dB")
+                .font(.system(size: 9.5))
+                .lineLimit(1)
+        }
+        .foregroundStyle(Color.white.opacity(200.0 / 255.0))
+        .fixedSize()
+        .contentShape(Rectangle())
+        .accessibilityLabel("Clip gain \(ClipGain.readout(decibels)) decibels")
+    }
+}
+
+/// The fader that follows a clip-gain drag. 200 points of travel, −144 dB at the bottom and +36 at the top.
+struct ClipGainFaderPopup: View {
+    var position: Double
+    var decibels: Double
+
+    static let width: CGFloat = 48
+    static let height: CGFloat = 234
+    /// Distance from the top of the popup to the bottom of the fader track.
+    static let faderBottom: CGFloat = 226
+    private static let travel: CGFloat = 200
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color(red: 38.0 / 255.0, green: 38.0 / 255.0, blue: 40.0 / 255.0))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 3)
+                        .strokeBorder(Color(white: 10.0 / 255.0), lineWidth: 1)
+                }
+            Canvas { context, size in
+                let track = CGRect(
+                    x: size.width / 2 - 2,
+                    y: Self.faderBottom - Self.travel,
+                    width: 4,
+                    height: Self.travel
+                )
+                context.fill(Path(roundedRect: track, cornerRadius: 2), with: .color(.white.opacity(0.18)))
+                let zeroY = Self.faderBottom - Self.travel * CGFloat(ClipGain.position(forDecibels: 0))
+                var zero = Path()
+                zero.move(to: CGPoint(x: track.minX - 8, y: zeroY))
+                zero.addLine(to: CGPoint(x: track.minX - 2, y: zeroY))
+                context.stroke(zero, with: .color(Color(white: 150.0 / 255.0)), lineWidth: 1)
+                let capY = Self.faderBottom - Self.travel * CGFloat(min(max(position, 0), 1))
+                let cap = CGRect(x: size.width / 2 - 11, y: capY - 4.5, width: 22, height: 9)
+                let capPath = Path(roundedRect: cap, cornerRadius: 2)
+                context.fill(capPath, with: .color(Color(red: 210.0 / 255.0, green: 210.0 / 255.0, blue: 210.0 / 255.0)))
+                context.stroke(capPath, with: .color(Color(white: 20.0 / 255.0)), lineWidth: 1)
+            }
+            Text(ClipGain.readout(decibels))
+                .font(.system(size: 10.5))
+                .foregroundStyle(Color.white.opacity(0.92))
+                .padding(.top, 6)
+        }
+        .frame(width: Self.width, height: Self.height)
+        .accessibilityHidden(true)
     }
 }

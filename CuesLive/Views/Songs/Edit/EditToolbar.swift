@@ -157,6 +157,8 @@ struct EditSongToolbarContent: ToolbarContent {
     @Binding var showingGroupEditor: Bool
     let isDetectingSections: Bool
     let onDetectSections: () -> Void
+    let onImportAbleton: () -> Void
+    let onAddMIDILane: () -> Void
     let onBack: () -> Void
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
@@ -166,6 +168,8 @@ struct EditSongToolbarContent: ToolbarContent {
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
     let onClickTrackGenerated: () -> Void
+    @Binding var showingClickEditor: Bool
+    @Binding var showingSmartGuideEditor: Bool
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
@@ -183,38 +187,17 @@ struct EditSongToolbarContent: ToolbarContent {
         }
         .cuesHideSharedBackground()
 
-        ToolbarItem(placement: .automatic) {
-            changeKeyButton
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .automatic) {
-            ClickTrackEditorButton(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo,
-                onClickTrackGenerated: onClickTrackGenerated
-            )
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .automatic) {
-            SmartGuideEditorButton(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo
-            )
-        }
-        .cuesHideSharedBackground()
-
         if !arrangementActions.sections.isEmpty {
             ToolbarItem(placement: .automatic) {
                 arrangementEditorButton
             }
             .cuesHideSharedBackground()
         }
+
+        ToolbarItem(placement: .automatic) {
+            midiLaneButton
+        }
+        .cuesHideSharedBackground()
 
         ToolbarItem(placement: .automatic) {
             moreMenu
@@ -250,17 +233,6 @@ struct EditSongToolbarContent: ToolbarContent {
         .help("Back")
     }
 
-    private var changeKeyButton: some View {
-        Button {
-            showingChangeKey = true
-        } label: {
-            Label("Change Key", systemImage: "key")
-                .labelStyle(.iconOnly)
-        }
-        .disabled(song.sortedTracks.isEmpty)
-        .help("Change Key")
-    }
-
     private var arrangementEditorButton: some View {
         Button {
             showingArrangementEditor = true
@@ -274,8 +246,43 @@ struct EditSongToolbarContent: ToolbarContent {
         }
     }
 
+    private var midiLaneButton: some View {
+        Button(action: onAddMIDILane) {
+            Label("Add MIDI Lane", systemImage: "pianokeys")
+                .labelStyle(.iconOnly)
+        }
+        .help("Add MIDI Lane")
+    }
+
     private var moreMenu: some View {
         Menu {
+            Button {
+                showingChangeKey = true
+            } label: {
+                Label("Change Key", systemImage: "key")
+            }
+            .disabled(song.sortedTracks.isEmpty)
+
+            Button {
+                showingClickEditor = true
+            } label: {
+                Label("Generate Click", systemImage: "metronome")
+            }
+
+            Button {
+                showingSmartGuideEditor = true
+            } label: {
+                Label("Smart Cues", systemImage: "person.wave.2")
+            }
+
+            Button {
+                onImportAbleton()
+            } label: {
+                Label("Add Ableton File…", systemImage: "doc")
+            }
+
+            Divider()
+
             if SongSectionDetector.isAvailable {
                 Button(isDetectingSections ? "Detecting Sections…" : "Detect Sections") {
                     onDetectSections()
@@ -291,6 +298,25 @@ struct EditSongToolbarContent: ToolbarContent {
                 .labelStyle(.iconOnly)
         }
         .help("More")
+        .popover(isPresented: $showingClickEditor, arrowEdge: .bottom) {
+            ClickTrackEditorButton(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: registerUndo,
+                onClickTrackGenerated: onClickTrackGenerated,
+                chrome: .sheet
+            )
+        }
+        .popover(isPresented: $showingSmartGuideEditor, arrowEdge: .bottom) {
+            SmartGuideEditorButton(
+                song: song,
+                viewModel: viewModel,
+                captureSnapshot: captureSnapshot,
+                registerUndo: registerUndo,
+                chrome: .sheet
+            )
+        }
     }
 }
 #endif

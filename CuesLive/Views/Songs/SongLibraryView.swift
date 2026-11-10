@@ -517,7 +517,8 @@ struct SongLibraryPanel: View {
                     trackID: trackIDMap[clip.trackID] ?? clip.trackID,
                     timelineStartSeconds: clip.timelineStartSeconds,
                     duration: clip.duration,
-                    sourceStartSeconds: clip.sourceStartSeconds
+                    sourceStartSeconds: clip.sourceStartSeconds,
+                    gainDB: clip.gainDB
                 )
             }
             let midiEvents = sourceState.midiEvents.map { event in

@@ -160,6 +160,7 @@ struct RemoteLivePlaybackView: View {
                     }
                 }
             }
+            .standardDialogToolbar()
             .frame(minWidth: 480, minHeight: 420)
             #endif
         }

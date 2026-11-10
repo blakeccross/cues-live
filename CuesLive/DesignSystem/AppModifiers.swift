@@ -34,6 +34,13 @@ extension View {
         toolbarBackground(AppColors.surfaceElevated, for: .automatic)
     }
 
+    /// Lets a dialog use the system title bar. Sheets opened from the sidebar
+    /// otherwise keep an empty leading slot for the sidebar toggle, and they
+    /// inherit the main window's inline title.
+    func standardDialogToolbar() -> some View {
+        modifier(StandardDialogToolbarModifier())
+    }
+
     func appEditorToolbarPill(isDisabled: Bool = false) -> some View {
         buttonStyle(.plain)
             .padding(.horizontal, AppSpacing.sm)
@@ -165,7 +172,51 @@ private struct AppPressableModifier: ViewModifier {
     }
 }
 
+private struct StandardDialogToolbarModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .toolbar(removing: .sidebarToggle)
+            #if os(macOS)
+            .background(StandardDialogWindowStyle())
+            #endif
+    }
+}
+
 #if os(macOS)
+private struct StandardDialogWindowStyle: NSViewRepresentable {
+    func makeNSView(context: Context) -> DialogWindowStyleView {
+        DialogWindowStyleView()
+    }
+
+    func updateNSView(_ nsView: DialogWindowStyleView, context: Context) {
+        nsView.apply()
+    }
+}
+
+/// Sheets inherit the scene's unified toolbar, which leaves the title indented.
+/// Expanded is the system style where the title sits in the title bar.
+private final class DialogWindowStyleView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        apply()
+        DispatchQueue.main.async { [weak self] in
+            self?.apply()
+        }
+    }
+
+    override func layout() {
+        super.layout()
+        apply()
+    }
+
+    func apply() {
+        guard let window, window.isSheet else { return }
+        if window.toolbarStyle != .expanded {
+            window.toolbarStyle = .expanded
+        }
+    }
+}
+
 private struct MacToolbarDisplayModeLock: NSViewRepresentable {
     func makeNSView(context: Context) -> ToolbarDisplayModeLockView {
         ToolbarDisplayModeLockView()

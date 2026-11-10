@@ -11,19 +11,23 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
     var duration: TimeInterval
     /// Offset into the track's audio file where this clip starts playing.
     var sourceStartSeconds: TimeInterval
+    /// Static clip gain in decibels. 0 is unity. The audio file stays unchanged.
+    var gainDB: Double
 
     init(
         id: UUID = UUID(),
         trackID: UUID,
         timelineStartSeconds: TimeInterval,
         duration: TimeInterval,
-        sourceStartSeconds: TimeInterval
+        sourceStartSeconds: TimeInterval,
+        gainDB: Double = 0
     ) {
         self.id = id
         self.trackID = trackID
         self.timelineStartSeconds = timelineStartSeconds
         self.duration = duration
         self.sourceStartSeconds = sourceStartSeconds
+        self.gainDB = ClipGain.stored(gainDB)
     }
 
     var timelineEndSeconds: TimeInterval { timelineStartSeconds + duration }
@@ -41,9 +45,34 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
         sourceStartSeconds + (time - timelineStartSeconds)
     }
 
+    /// Linear amplitude for `gainDB`. −144 dB and below is silence.
+    var linearGain: Float {
+        ClipGain.linearGain(decibels: gainDB)
+    }
+
     /// The whole file placed at the start of the timeline.
     static func wholeFile(trackID: UUID, duration: TimeInterval) -> TrackClip {
         TrackClip(trackID: trackID, timelineStartSeconds: 0, duration: duration, sourceStartSeconds: 0)
+    }
+
+    /// The trimmed stretch of a source file, placed at `timelineStart`.
+    /// A start before the timeline is moved to zero. Nil when the trim is shorter than a clip.
+    static func placed(
+        trackID: UUID,
+        sourceDuration: TimeInterval,
+        trimStart: TimeInterval = 0,
+        trimEnd: TimeInterval? = nil,
+        timelineStart: TimeInterval = 0
+    ) -> TrackClip? {
+        let start = min(max(trimStart, 0), sourceDuration)
+        let end = min(trimEnd ?? sourceDuration, sourceDuration)
+        guard end - start >= minimumDuration else { return nil }
+        return TrackClip(
+            trackID: trackID,
+            timelineStartSeconds: max(0, timelineStart),
+            duration: end - start,
+            sourceStartSeconds: start
+        )
     }
 }
 
@@ -275,5 +304,38 @@ struct ClipSelection: Equatable {
                 .filter { trackIDs.contains($0.trackID) && $0.timelineStartSeconds < upper && $0.timelineEndSeconds > lower }
                 .map(\.id)
         )
+    }
+}
+
+extension TrackClip {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case trackID
+        case timelineStartSeconds
+        case duration
+        case sourceStartSeconds
+        case gainDB
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(UUID.self, forKey: .id),
+            trackID: try container.decode(UUID.self, forKey: .trackID),
+            timelineStartSeconds: try container.decode(TimeInterval.self, forKey: .timelineStartSeconds),
+            duration: try container.decode(TimeInterval.self, forKey: .duration),
+            sourceStartSeconds: try container.decode(TimeInterval.self, forKey: .sourceStartSeconds),
+            gainDB: try container.decodeIfPresent(Double.self, forKey: .gainDB) ?? 0
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(trackID, forKey: .trackID)
+        try container.encode(timelineStartSeconds, forKey: .timelineStartSeconds)
+        try container.encode(duration, forKey: .duration)
+        try container.encode(sourceStartSeconds, forKey: .sourceStartSeconds)
+        try container.encode(gainDB, forKey: .gainDB)
     }
 }

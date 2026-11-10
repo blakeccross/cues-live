@@ -5,6 +5,7 @@ struct AppSheetContainer<Content: View>: View {
 
     var body: some View {
         content()
+            .standardDialogToolbar()
             .background(AppColors.backgroundSecondary)
             #if os(iOS)
             .presentationBackground(AppColors.backgroundSecondary)

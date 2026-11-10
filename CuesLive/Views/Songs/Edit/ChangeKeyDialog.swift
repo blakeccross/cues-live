@@ -97,6 +97,7 @@ struct ChangeKeyDialog: View {
                 }
             }
         }
+        .standardDialogToolbar()
         .frame(minWidth: 380, minHeight: 460)
         .interactiveDismissDisabled(isApplying)
         .onAppear {

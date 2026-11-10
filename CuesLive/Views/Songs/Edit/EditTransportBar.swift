@@ -20,6 +20,8 @@ struct EditTransportBar<Chrome: View>: View {
     @Binding var showingGroupEditor: Bool
     let isDetectingSections: Bool
     let onDetectSections: () -> Void
+    let onImportAbleton: () -> Void
+    let onAddMIDILane: () -> Void
     let onClearMarkerCue: () -> Void
     let captureSnapshot: () -> SongEditSnapshot
     let currentSectionAtTime: (TimeInterval) -> SongSection?
@@ -114,6 +116,12 @@ struct EditTransportBar<Chrome: View>: View {
             .disabled(!undoController.canRedo)
             .accessibilityLabel(undoController.redoActionName.map { "Redo \($0)" } ?? "Redo")
 
+            Button(action: onAddMIDILane) {
+                Label("Add MIDI Lane", systemImage: "pianokeys")
+                    .labelStyle(.iconOnly)
+            }
+            .help("Add MIDI Lane")
+
             overflowMenu
         }
     }
@@ -130,13 +138,19 @@ struct EditTransportBar<Chrome: View>: View {
             Button {
                 showingClickEditor = true
             } label: {
-                Label("Click Track", systemImage: "metronome")
+                Label("Generate Click", systemImage: "metronome")
             }
 
             Button {
                 showingSmartGuideEditor = true
             } label: {
-                Label("Smart Guide", systemImage: "person.wave.2")
+                Label("Smart Cues", systemImage: "person.wave.2")
+            }
+
+            Button {
+                onImportAbleton()
+            } label: {
+                Label("Add Ableton File…", systemImage: "doc")
             }
 
             if !arrangementActions.sections.isEmpty {

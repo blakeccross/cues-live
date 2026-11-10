@@ -314,7 +314,8 @@ final class TrackMemoryPlayer {
                         ),
                         frameCount: runFrames,
                         into: outputBuffer,
-                        outputFrameOffset: renderedFrames
+                        outputFrameOffset: renderedFrames,
+                        gain: mapper.linearGain(atMasterTimeline: playbackMasterTime)
                     )
                 }
 
@@ -382,7 +383,8 @@ final class TrackMemoryPlayer {
                     sourceFrame: sourceFrame,
                     outputFrame: outputFrame,
                     outputBuffers: outputBuffers,
-                    outputChannelCount: outputChannelCount
+                    outputChannelCount: outputChannelCount,
+                    gain: 1
                 )
                 sourceFrame += sourceFrameStep
             }
@@ -458,13 +460,15 @@ final class TrackMemoryPlayer {
                 }
 
                 if let sourceStart = mapper.sourceSeconds(atMasterTimeline: playbackMasterTime) {
+                    let gain = mapper.linearGain(atMasterTimeline: playbackMasterTime)
                     var sourceFrame = sourceStart * sampleRate
                     for offset in 0..<runFrames {
                         writeResampledFrame(
                             sourceFrame: sourceFrame,
                             outputFrame: renderedFrames + offset,
                             outputBuffers: outputBuffers,
-                            outputChannelCount: outputChannelCount
+                            outputChannelCount: outputChannelCount,
+                            gain: gain
                         )
                         sourceFrame += masterStep
                     }
@@ -479,11 +483,12 @@ final class TrackMemoryPlayer {
             sourceFrame: Double,
             outputFrame: Int,
             outputBuffers: UnsafeMutableAudioBufferListPointer,
-            outputChannelCount: Int
+            outputChannelCount: Int,
+            gain: Float
         ) {
             if buffer.channelCount == 1 {
                 guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
-                let sample = buffer.interpolatedSample(channel: 0, frame: sourceFrame)
+                let sample = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * gain
                 outputData[outputFrame] = sample
                 for channel in 1..<outputChannelCount {
                     guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
@@ -494,17 +499,17 @@ final class TrackMemoryPlayer {
 
             if outputChannelCount >= 2, buffer.channelCount >= 2 {
                 if let leftOutput = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) {
-                    leftOutput[outputFrame] = buffer.interpolatedSample(channel: 0, frame: sourceFrame)
+                    leftOutput[outputFrame] = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * gain
                 }
                 if let rightOutput = outputBuffers[1].mData?.assumingMemoryBound(to: Float.self) {
-                    rightOutput[outputFrame] = buffer.interpolatedSample(channel: 1, frame: sourceFrame)
+                    rightOutput[outputFrame] = buffer.interpolatedSample(channel: 1, frame: sourceFrame) * gain
                 }
                 return
             }
 
             for channel in 0..<min(buffer.channelCount, outputChannelCount) {
                 guard let outputData = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
-                outputData[outputFrame] = buffer.interpolatedSample(channel: channel, frame: sourceFrame)
+                outputData[outputFrame] = buffer.interpolatedSample(channel: channel, frame: sourceFrame) * gain
             }
         }
 
@@ -512,7 +517,8 @@ final class TrackMemoryPlayer {
             startingFrame: Int,
             frameCount: Int,
             into outputBufferList: UnsafeMutablePointer<AudioBufferList>,
-            outputFrameOffset: Int
+            outputFrameOffset: Int,
+            gain: Float
         ) {
             let outputBuffers = UnsafeMutableAudioBufferListPointer(outputBufferList)
             let outputChannelCount = outputBuffers.count
@@ -529,7 +535,7 @@ final class TrackMemoryPlayer {
                     frameCount: frameCount,
                     into: outputData,
                     destinationOffset: outputFrameOffset,
-                    gain: 1
+                    gain: gain
                 )
                 for channel in 1..<outputChannelCount {
                     guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
@@ -548,7 +554,7 @@ final class TrackMemoryPlayer {
                         frameCount: frameCount,
                         into: leftOutput,
                         destinationOffset: outputFrameOffset,
-                        gain: 1
+                        gain: gain
                     )
                 }
 
@@ -559,7 +565,7 @@ final class TrackMemoryPlayer {
                         frameCount: frameCount,
                         into: rightOutput,
                         destinationOffset: outputFrameOffset,
-                        gain: 1
+                        gain: gain
                     )
                 }
                 return
@@ -573,7 +579,7 @@ final class TrackMemoryPlayer {
                     frameCount: frameCount,
                     into: outputData,
                     destinationOffset: outputFrameOffset,
-                    gain: 1
+                    gain: gain
                 )
             }
         }

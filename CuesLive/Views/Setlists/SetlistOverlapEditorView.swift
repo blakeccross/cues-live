@@ -155,6 +155,7 @@ struct SetlistOverlapEditorView: View {
                 }
             }
         }
+        .standardDialogToolbar()
         #if os(macOS)
         .frame(minWidth: 560, minHeight: 420)
         #endif

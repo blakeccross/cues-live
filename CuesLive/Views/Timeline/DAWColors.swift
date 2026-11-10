@@ -43,6 +43,11 @@ extension Color {
         AppColors.separator.opacity(0.6)
     }
 
+    /// Editor lane ticks. One black, heavier for bars than beats than eighths.
+    static var editorBarTick: Color { Color.black.opacity(0.20) }
+    static var editorBeatTick: Color { Color.black.opacity(0.12) }
+    static var editorSubdivisionTick: Color { Color.black.opacity(0.08) }
+
     /// Section-marker tick, drawn over the tracks.
     static var sectionMarkerLine: Color {
         Color(white: 0.38)
@@ -52,24 +57,6 @@ extension Color {
     static var soundcraftSelection: Color {
         let alpha = 110.0 / 255.0
         return Color(red: 40.0 / 110.0, green: 70.0 / 110.0, blue: 1).opacity(alpha)
-    }
-
-    /// Soundcraft's lane grid: a white or black veil that becomes its bar line on the lane
-    /// background, and stays visible when the same stroke crosses a clip.
-    /// `contrast` below 1 is the lighter beat and subdivision tick.
-    static func soundcraftGridVeil(
-        over background: Color,
-        environment: EnvironmentValues,
-        contrast: Double = 1
-    ) -> Color {
-        let resolved = background.resolve(in: environment)
-        let level = (Double(resolved.red) + Double(resolved.green) + Double(resolved.blue)) / 3
-        let shift = (level < 0.5 ? 30.0 / 255.0 : -48.0 / 255.0) * contrast
-        let lineLevel = min(max(level + shift, 0), 1)
-        if lineLevel > level {
-            return Color.white.opacity((lineLevel - level) / max(1 - level, 0.001))
-        }
-        return Color.black.opacity((level - lineLevel) / max(level, 0.001))
     }
 
     static var dawWaveformFill: Color {

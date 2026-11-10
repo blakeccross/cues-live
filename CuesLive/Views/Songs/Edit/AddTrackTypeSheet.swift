@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum AddTrackKind: CaseIterable, Identifiable {
     case audio
@@ -123,3 +124,94 @@ struct AddTrackFlowModifier: ViewModifier {
             }
     }
 }
+
+/// Audio files dragged onto the song editor. Soundcraft places each one on a new track at the
+/// edit insertion; the editor reads the files here and the caller does the placement.
+enum AudioFileDrop {
+    struct OpenedFile {
+        let url: URL
+        let scoped: Bool
+
+        func close() {
+            if scoped {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+    }
+
+    static func openAudioFiles(from providers: [NSItemProvider]) async -> [OpenedFile] {
+        var opened: [OpenedFile] = []
+        for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            guard let url = await loadFileURL(from: provider), FileStore.isSupportedAudioFile(url) else { continue }
+            opened.append(OpenedFile(url: url, scoped: url.startAccessingSecurityScopedResource()))
+        }
+        return opened
+    }
+
+    private static func loadFileURL(from provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                switch item {
+                case let url as URL:
+                    continuation.resume(returning: url)
+                case let data as Data:
+                    continuation.resume(returning: URL(dataRepresentation: data, relativeTo: nil))
+                default:
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+}
+
+/// Accepts a Finder drag of audio files. The outline shows while the drag is over the editor.
+struct AudioFileDropModifier: ViewModifier {
+    @Binding var isTargeted: Bool
+    let onDrop: ([NSItemProvider]) -> Bool
+
+    func body(content: Content) -> some View {
+        content
+        #if os(macOS)
+        .overlay {
+            if isTargeted {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(AppColors.accent, lineWidth: 2)
+                    .padding(AppSpacing.xs)
+                    .allowsHitTesting(false)
+            }
+        }
+        .onDrop(of: [.fileURL], delegate: AudioFileDropDelegate(
+            onHover: { isTargeted = $0 },
+            onPerform: onDrop
+        ))
+        #endif
+    }
+}
+
+#if os(macOS)
+private struct AudioFileDropDelegate: DropDelegate {
+    let onHover: (Bool) -> Void
+    let onPerform: ([NSItemProvider]) -> Bool
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.fileURL])
+    }
+
+    func dropEntered(info: DropInfo) {
+        onHover(true)
+    }
+
+    func dropExited(info: DropInfo) {
+        onHover(false)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .copy)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        onHover(false)
+        return onPerform(info.itemProviders(for: [.fileURL]))
+    }
+}
+#endif

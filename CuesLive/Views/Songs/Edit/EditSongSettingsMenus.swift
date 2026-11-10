@@ -1,8 +1,5 @@
 import SwiftData
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
 
 struct SongKeyEditorMenu: View {
     let baseKeyRaw: String?
@@ -284,87 +281,6 @@ struct TempoEditorMenu: View {
     }
 }
 
-#if os(macOS)
-/// A small titled window for the tempo prompt, separate from the editor.
-@MainActor
-final class TempoChangeWindowController: NSObject, NSWindowDelegate {
-    static let shared = TempoChangeWindowController()
-
-    private var panel: NSPanel?
-    private var onDismiss: () -> Void = {}
-    private var dismissOnClose = true
-
-    func show(
-        measure: Int,
-        bpm: Double,
-        onChange: @escaping (Double) -> Void,
-        onDismiss: @escaping () -> Void
-    ) {
-        close()
-        self.onDismiss = onDismiss
-        dismissOnClose = true
-
-        let prompt = TempoChangePrompt(
-            measure: measure,
-            currentBPM: bpm,
-            onCancel: { [weak self] in
-                self?.close()
-                onDismiss()
-            },
-            onChange: { value in
-                onChange(value)
-            }
-        )
-        let hosting = NSHostingController(rootView: prompt)
-        let panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 156),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        panel.title = "Change Tempo"
-        panel.delegate = self
-        panel.isFloatingPanel = true
-        panel.hidesOnDeactivate = false
-        panel.isReleasedWhenClosed = false
-        panel.contentViewController = hosting
-        panel.setContentSize(NSSize(width: 360, height: 156))
-        if let parent = NSApp.keyWindow ?? NSApp.mainWindow {
-            let size = panel.frame.size
-            let parentFrame = parent.frame
-            panel.setFrameOrigin(
-                NSPoint(
-                    x: parentFrame.midX - size.width / 2,
-                    y: parentFrame.midY - size.height / 2
-                )
-            )
-        } else {
-            panel.center()
-        }
-        self.panel = panel
-        panel.makeKeyAndOrderFront(nil)
-    }
-
-    func close() {
-        guard let panel else { return }
-        dismissOnClose = false
-        panel.close()
-        self.panel = nil
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        panel = nil
-        guard dismissOnClose else {
-            dismissOnClose = true
-            return
-        }
-        let dismiss = onDismiss
-        onDismiss = {}
-        dismiss()
-    }
-}
-#endif
-
 /// Asks which tempo a double-click on the tempo lane should use.
 struct TempoChangePrompt: View {
     let measure: Int
@@ -389,40 +305,42 @@ struct TempoChangePrompt: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Change tempo")
-                .font(.headline)
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("What tempo should measure \(measure) change to?")
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Text("What tempo should measure \(measure) change to?")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 8) {
-                TextField("BPM", text: $bpmText)
-                    .textFieldStyle(.roundedBorder)
-                    .monospacedDigit()
-                    .frame(width: 72)
-                    .focused($isFieldFocused)
-                    .onSubmit(submit)
+                HStack(spacing: 8) {
+                    TextField("BPM", text: $bpmText)
+                        .textFieldStyle(.roundedBorder)
+                        .monospacedDigit()
+                        .frame(width: 72)
+                        .focused($isFieldFocused)
+                        .onSubmit(submit)
 #if os(iOS)
-                    .keyboardType(.decimalPad)
+                        .keyboardType(.decimalPad)
 #endif
 
-                Text("BPM")
-                    .foregroundStyle(.secondary)
-
-                Spacer(minLength: 8)
-
-                Button("Cancel", role: .cancel, action: onCancel)
-
-                Button("Change", action: submit)
-                    .buttonStyle(.borderedProminent)
-                    .tint(AppColors.accent)
+                    Text("BPM")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .frame(minWidth: 320, alignment: .leading)
+            .navigationTitle("Change Tempo")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel, action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Change", action: submit)
+                }
             }
         }
-        .padding()
-        .frame(width: 280)
+        .standardDialogToolbar()
         .onAppear { isFieldFocused = true }
     }
 
@@ -436,6 +354,81 @@ struct TempoChangePrompt: View {
             TempoChange.validBPMRange.upperBound
         )
         onChange(clamped)
+    }
+}
+
+/// Asks which time signature a double-click on the time signature lane should use.
+struct TimeSignatureChangePrompt: View {
+    let measure: Int
+    let numerator: Int
+    let denominator: Int
+    let onCancel: () -> Void
+    let onChange: (Int, Int) -> Void
+
+    @State private var signatureText: String
+    @FocusState private var isFieldFocused: Bool
+
+    init(
+        measure: Int,
+        numerator: Int,
+        denominator: Int,
+        onCancel: @escaping () -> Void,
+        onChange: @escaping (Int, Int) -> Void
+    ) {
+        self.measure = measure
+        self.numerator = numerator
+        self.denominator = denominator
+        self.onCancel = onCancel
+        self.onChange = onChange
+        _signatureText = State(initialValue: "\(numerator)/\(denominator)")
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("What time signature should measure \(measure) change to?")
+                    .fixedSize(horizontal: false, vertical: true)
+
+                TextField("4/4", text: $signatureText)
+                    .textFieldStyle(.roundedBorder)
+                    .monospacedDigit()
+                    .frame(width: 72)
+                    .focused($isFieldFocused)
+                    .onSubmit(submit)
+#if os(iOS)
+                    .keyboardType(.numbersAndPunctuation)
+#endif
+            }
+            .padding()
+            .frame(minWidth: 320, alignment: .leading)
+            .navigationTitle("Change Time Signature")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel, action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Change", action: submit)
+                }
+            }
+        }
+        .standardDialogToolbar()
+        .onAppear { isFieldFocused = true }
+    }
+
+    private func submit() {
+        let parts = signatureText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: "/")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard parts.count == 2,
+              let numerator = Int(parts[0]),
+              let denominator = Int(parts[1]),
+              (1...32).contains(numerator),
+              TimeSignatureChange.validDenominators.contains(denominator) else { return }
+        onChange(numerator, denominator)
     }
 }
 
@@ -533,96 +526,6 @@ struct TempoMarkerEditorMenu: View {
         )
         bpm = clamped
         bpmText = String(format: "%.1f", clamped)
-    }
-}
-
-struct TimeSignatureMarkerEditorMenu: View {
-    let marker: TimeSignatureChange
-    let canDelete: Bool
-    let onApply: (Int, Int) -> Void
-    let onDelete: () -> Void
-
-    @State private var numerator: Int
-    @State private var denominator: Int
-
-    private static let presets: [(numerator: Int, denominator: Int)] = [
-        (4, 4), (3, 4), (2, 4), (6, 8), (5, 4), (7, 8), (12, 8)
-    ]
-
-    private static let denominators = [2, 4, 8, 16]
-
-    init(
-        marker: TimeSignatureChange,
-        canDelete: Bool,
-        onApply: @escaping (Int, Int) -> Void,
-        onDelete: @escaping () -> Void
-    ) {
-        self.marker = marker
-        self.canDelete = canDelete
-        self.onApply = onApply
-        self.onDelete = onDelete
-        _numerator = State(initialValue: marker.numerator)
-        _denominator = State(initialValue: marker.denominator)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Measure \(marker.startMeasure)")
-                .font(.headline)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
-                ForEach(Array(Self.presets.enumerated()), id: \.offset) { _, preset in
-                    Button {
-                        numerator = preset.numerator
-                        denominator = preset.denominator
-                    } label: {
-                        Text("\(preset.numerator)/\(preset.denominator)")
-                            .font(.body.monospacedDigit().weight(.medium))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
-                    }
-                    .appEditorToolbarPill()
-                    .tint(
-                        numerator == preset.numerator && denominator == preset.denominator
-                            ? AppColors.accent
-                            : .secondary
-                    )
-                }
-            }
-
-            Divider()
-
-            HStack(spacing: 16) {
-                Stepper(value: $numerator, in: 1...32) {
-                    Text("Beats: \(numerator)")
-                        .monospacedDigit()
-                }
-
-                Picker("Beat value", selection: $denominator) {
-                    ForEach(Self.denominators, id: \.self) { value in
-                        Text("1/\(value)").tag(value)
-                    }
-                }
-                .labelsHidden()
-                .frame(width: 100)
-            }
-
-            Button("Apply") {
-                onApply(numerator, denominator)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AppColors.accent)
-
-            if canDelete {
-                Divider()
-
-                Button("Delete Marker", role: .destructive) {
-                    onDelete()
-                }
-            }
-        }
-        .padding()
-        .frame(minWidth: 280)
     }
 }
 

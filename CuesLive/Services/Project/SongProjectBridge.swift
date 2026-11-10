@@ -210,17 +210,19 @@ enum SongProjectBridge {
         SongTimeline(clips: song.sortedTracks.compactMap { defaultClip(for: $0, in: song) })
     }
 
-    /// The track's trimmed file placed at the start of the timeline.
-    static func defaultClip(for track: AudioTrack, in song: Song) -> TrackClip? {
+    /// The track's trimmed file placed at `timelineStart`. Omitted, that is the start of the timeline.
+    static func defaultClip(
+        for track: AudioTrack,
+        in song: Song,
+        timelineStart: TimeInterval = 0
+    ) -> TrackClip? {
         guard let sourceDuration = FileStore.sourceDuration(for: song, track: track) else { return nil }
-        let start = min(max(track.trimStartSeconds, 0), sourceDuration)
-        let end = min(track.trimEndSeconds ?? sourceDuration, sourceDuration)
-        guard end - start >= TrackClip.minimumDuration else { return nil }
-        return TrackClip(
+        return TrackClip.placed(
             trackID: track.id,
-            timelineStartSeconds: 0,
-            duration: end - start,
-            sourceStartSeconds: start
+            sourceDuration: sourceDuration,
+            trimStart: track.trimStartSeconds,
+            trimEnd: track.trimEndSeconds,
+            timelineStart: timelineStart
         )
     }
 

@@ -66,6 +66,45 @@ final class SectionTransitionRenderTests: XCTestCase {
         return Array(UnsafeBufferPointer(start: floats, count: Int(blockFrames)))
     }
 
+    func testClipGainScalesTheRenderedBlock() throws {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(1)
+        let seconds = 1.0
+        let amplitude: Float = 0.25
+        let frames = Int(seconds * sampleRate)
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1))
+        let pcm = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames)))
+        pcm.frameLength = AVAudioFrameCount(frames)
+        let data = try XCTUnwrap(pcm.floatChannelData)[0]
+        for index in 0..<frames { data[index] = amplitude }
+        let buffer = try DecodedStemBuffer.monoStem(from: pcm)
+        let trackID = UUID()
+        func player(gainDB: Double) -> TrackMemoryPlayer {
+            let clip = TrackClip(
+                trackID: trackID,
+                timelineStartSeconds: 0,
+                duration: seconds,
+                sourceStartSeconds: 0,
+                gainDB: gainDB
+            )
+            let mapper = ArrangementTimelineMapper(clips: [clip], fileDuration: seconds)
+            return makePlayer(buffer: buffer, transport: transport, seconds: seconds, mapper: mapper)
+        }
+
+        let hostTime = hostTicks(seconds: 100)
+        transport.beginPlayback(from: 0)
+        let unity = try renderBlock(player(gainDB: 0), hostTime: hostTime)
+        XCTAssertEqual(unity[unity.count / 2], amplitude, accuracy: 0.000_1)
+
+        transport.beginPlayback(from: 0)
+        let boosted = try renderBlock(player(gainDB: 6.020599913279624), hostTime: hostTime)
+        XCTAssertEqual(boosted[boosted.count / 2], amplitude * 2, accuracy: 0.001)
+
+        transport.beginPlayback(from: 0)
+        let silenced = try renderBlock(player(gainDB: -144), hostTime: hostTime)
+        XCTAssertEqual(silenced[silenced.count / 2], 0, accuracy: 0.000_1)
+    }
+
     func testScheduledJumpPlaysTargetClickOnItsFirstFrame() throws {
         let transport = AudioPlaybackTransport()
         transport.setDuration(20)

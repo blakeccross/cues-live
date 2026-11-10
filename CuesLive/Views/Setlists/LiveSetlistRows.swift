@@ -1117,6 +1117,7 @@ struct SetlistHeaderEditorSheet: View {
                 }
             }
         }
+        .standardDialogToolbar()
     }
 
     private var editorContent: some View {
