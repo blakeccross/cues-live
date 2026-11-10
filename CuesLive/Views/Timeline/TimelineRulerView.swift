@@ -292,6 +292,7 @@ struct TimelineRulerView: View {
 }
 
 /// Minutes-and-seconds ruler. Pinned below the tracks and above the transport.
+/// Labeled times sit to the right of a tall tick; shorter ticks fill the gaps.
 struct TimelineTimeRulerView: View {
     let duration: TimeInterval
     let contentWidth: CGFloat
@@ -306,30 +307,65 @@ struct TimelineTimeRulerView: View {
         max(contentWidth, displayWidth)
     }
 
-    var body: some View {
-        ZStack(alignment: .leading) {
-            Rectangle()
-                .fill(Color.dawStickyRulerBackground)
+    private var pixelsPerSecond: CGFloat {
+        contentWidth / CGFloat(safeDuration)
+    }
 
-            ForEach(tickTimes, id: \.self) { time in
+    var body: some View {
+        Canvas { context, size in
+            let scale = TimeRulerScale(pixelsPerSecond: pixelsPerSecond)
+            let mark = GraphicsContext.Shading.color(Color.secondary.opacity(0.5))
+            let end = extendedMaximumTime
+            guard scale.minor > 0, end >= 0 else { return }
+
+            let subdivisions = max(1, Int((scale.major / scale.minor).rounded()))
+            let stepCount = Int((end / scale.minor).rounded(.down))
+            let minorTickHeight = min(4, size.height)
+            let majorTickHeight = min(max(9, size.height * 0.46), size.height)
+
+            var minorPath = Path()
+            var majorPath = Path()
+            for step in 0...stepCount {
+                let time = Double(step) * scale.minor
                 let x = TimelineLayout.xPosition(
                     for: time,
                     duration: safeDuration,
                     contentWidth: contentWidth
                 )
-
-                VStack(spacing: 1) {
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.5))
-                        .frame(width: 1, height: 6)
-                    Text(formatRulerTime(time))
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                guard x <= size.width + 1 else { break }
+                let isMajor = step % subdivisions == 0
+                var tick = Path()
+                tick.move(to: CGPoint(x: x, y: 0))
+                tick.addLine(to: CGPoint(x: x, y: isMajor ? majorTickHeight : minorTickHeight))
+                if isMajor {
+                    majorPath.addPath(tick)
+                } else {
+                    minorPath.addPath(tick)
                 }
-                .offset(x: x)
+            }
+
+            context.stroke(minorPath, with: mark, lineWidth: 1)
+            context.stroke(majorPath, with: mark, lineWidth: 1)
+
+            let labelFont = Font.system(size: 9, design: .monospaced)
+            for step in stride(from: 0, through: stepCount, by: subdivisions) {
+                let time = Double(step) * scale.minor
+                let x = TimelineLayout.xPosition(
+                    for: time,
+                    duration: safeDuration,
+                    contentWidth: contentWidth
+                )
+                guard x <= size.width - 8 else { break }
+                let label = context.resolve(
+                    Text(Self.formatRulerTime(time, showsFraction: scale.major < 1))
+                        .font(labelFont)
+                        .foregroundStyle(.secondary)
+                )
+                context.draw(label, at: CGPoint(x: x + 4, y: 6), anchor: .topLeading)
             }
         }
         .frame(width: effectiveDisplayWidth, height: height)
+        .background(Color.dawStickyRulerBackground)
         .allowsHitTesting(false)
     }
 
@@ -338,30 +374,47 @@ struct TimelineTimeRulerView: View {
         return safeDuration * TimeInterval(effectiveDisplayWidth / contentWidth)
     }
 
-    private var tickTimes: [TimeInterval] {
-        let tickInterval = tickIntervalSeconds
-        let maximumTime = extendedMaximumTime
-        var times: [TimeInterval] = []
-        var time: TimeInterval = 0
-        while time <= maximumTime + 0.0001 {
-            times.append(time)
-            time += tickInterval
+    private static func formatRulerTime(_ value: TimeInterval, showsFraction: Bool) -> String {
+        let clamped = max(0, value)
+        let minutes = Int(clamped) / 60
+        let seconds = clamped - Double(minutes * 60)
+        if showsFraction {
+            return String(format: "%d:%04.1f", minutes, seconds)
         }
-        return times
+        let wholeSeconds = Int((seconds + 0.000_1).rounded(.down))
+        return String(format: "%d:%02d", minutes, wholeSeconds)
+    }
+}
+
+/// Labeled spacing stays wide enough to read; unlabeled ticks subdivide it.
+private struct TimeRulerScale {
+    var major: TimeInterval
+    var minor: TimeInterval
+
+    init(pixelsPerSecond: CGFloat) {
+        let pps = max(pixelsPerSecond, 0.001)
+        let majors: [TimeInterval] = [0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600]
+        let raw = Double(140 / pps)
+        major = majors.first(where: { $0 >= raw - 0.000_1 }) ?? 600
+        let candidate = Self.preferredMinor(for: major)
+        minor = CGFloat(candidate) * pps >= 8 ? candidate : major
     }
 
-    private var tickIntervalSeconds: TimeInterval {
-        let pixelsPerTick: CGFloat = 80
-        let pixelsPerSecond = contentWidth / safeDuration
-        let rawInterval = Double(pixelsPerTick / pixelsPerSecond)
-        let candidates: [TimeInterval] = [1, 2, 5, 10, 15, 30, 60, 120, 300]
-        return candidates.first(where: { $0 >= rawInterval }) ?? 300
-    }
-
-    private func formatRulerTime(_ value: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(value))
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
+    private static func preferredMinor(for major: TimeInterval) -> TimeInterval {
+        switch major {
+        case 0.1: return 0.02
+        case 0.2: return 0.05
+        case 0.5: return 0.1
+        case 1: return 0.2
+        case 2: return 0.5
+        case 5: return 1
+        case 10: return 2
+        case 15: return 5
+        case 30: return 5
+        case 60: return 10
+        case 120: return 30
+        case 300: return 60
+        default: return 120
+        }
     }
 }

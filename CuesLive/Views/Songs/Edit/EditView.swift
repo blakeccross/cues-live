@@ -2180,11 +2180,6 @@ struct EditView: View {
         Rectangle()
             .fill(Color.dawStickyRulerBackground)
             .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerHeight)
-            .overlay(alignment: .trailing) {
-                Rectangle()
-                    .fill(Color.dawTimelineDivider)
-                    .frame(width: 1)
-            }
             .allowsHitTesting(false)
     }
 
