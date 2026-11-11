@@ -5,14 +5,6 @@ struct EditTransportBar<Chrome: View>: View {
     let viewModel: SongEditorViewModel
     @Bindable var song: Song
     @Binding var showingArrangementEditor: Bool
-    @Binding var showingTimeSignatureEditor: Bool
-    @Binding var timeSignatureChanges: [TimeSignatureChange]
-    let normalizedTimeSignatureChanges: [TimeSignatureChange]
-    let onPersistTimeSignatureChanges: () -> Void
-    @Binding var tempoChanges: [TempoChange]
-    let normalizedTempoChanges: [TempoChange]
-    let onApplyTempo: (Double) -> Void
-    let onApplyBaseKey: (String?) -> Void
     @Binding var showingChangeKey: Bool
     let arrangementActions: ArrangementSectionActions
     let loopSectionIDs: Set<UUID>
@@ -28,7 +20,7 @@ struct EditTransportBar<Chrome: View>: View {
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
     let onPlay: () -> Void
-    /// Position shown in the counter while stopped. Playback leaves this where the insertion is.
+    /// Time used for the loop button while stopped. Playback leaves this where the insertion is.
     let stoppedDisplayTime: TimeInterval
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
     let onClickTrackGenerated: () -> Void
@@ -36,8 +28,6 @@ struct EditTransportBar<Chrome: View>: View {
     let undoController: SongUndoController
     let content: Chrome
 
-    @State private var showingTempoToolbarEditor = false
-    @State private var showingKeyToolbarEditor = false
     @State private var showingClickEditor = false
     @State private var showingSmartGuideEditor = false
     @State private var groupMixFade = GroupMixFadeController()
@@ -203,10 +193,7 @@ struct EditTransportBar<Chrome: View>: View {
     }
 
     private func transportStrip(at time: TimeInterval) -> some View {
-        let snapshot = displaySnapshot(at: time)
-
-        return SharedTransportStrip(
-            snapshot: snapshot,
+        SharedTransportStrip(
             buttonSize: 44,
             isPlaying: audioEngine.isPlaying,
             isLoaded: viewModel.isLoaded,
@@ -230,54 +217,7 @@ struct EditTransportBar<Chrome: View>: View {
                 } onComplete: {
                     try? modelContext.save()
                 }
-            },
-            showingBPMPopover: $showingTempoToolbarEditor,
-            showingMeterPopover: $showingTimeSignatureEditor,
-            showingKeyPopover: $showingKeyToolbarEditor,
-            bpmPopover: {
-                TempoEditorMenu(
-                    currentBPM: normalizedTempoChanges.referenceBPM,
-                    onApply: onApplyTempo
-                )
-            },
-            meterPopover: {
-                TimeSignatureEditorMenu(
-                    song: song,
-                    timeSignatureChanges: $timeSignatureChanges,
-                    normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-                    onPersist: onPersistTimeSignatureChanges
-                )
-            },
-            keyPopover: {
-                SongKeyEditorMenu(
-                    baseKeyRaw: song.baseKeyRaw,
-                    onApply: onApplyBaseKey
-                )
             }
-        )
-    }
-
-    private func displaySnapshot(at time: TimeInterval) -> TransportStatusSnapshot {
-        let position = MeasureTiming.position(
-            at: time,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges
-        )
-        let signature = MeasureTiming.numeratorDenominatorForMeasure(
-            position.bar,
-            changes: normalizedTimeSignatureChanges
-        )
-        let bpm = MeasureTiming.activeBPM(
-            at: time,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges
-        )
-
-        return TransportStatusSnapshot(
-            position: MeasureTiming.formatTransportPosition(position),
-            bpm: String(format: "%.1f", bpm),
-            meter: "\(signature.numerator)/\(signature.denominator)",
-            key: song.transportKeyText
         )
     }
 

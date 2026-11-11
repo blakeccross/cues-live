@@ -21,6 +21,12 @@ private struct TimeSignatureLanePrompt: Identifiable {
     let markerID: UUID?
 }
 
+private struct LaneResizeDrag {
+    var trackID: UUID
+    var startHeight: CGFloat
+    var before: SongEditSnapshot
+}
+
 private struct ClipGainPromptRequest: Identifiable {
     let id = UUID()
     /// Shared gain when every selected clip matches. Empty when the selection is mixed.
@@ -63,7 +69,6 @@ struct EditView: View {
     @State private var sectionAnnouncer = SectionAnnouncer()
     @Bindable private var audioEngine = AudioEngineManager.shared
     @State private var showingArrangementEditor = false
-    @State private var showingTimeSignatureEditor = false
     @State private var showingGroupEditor = false
     @State private var showingChangeKey = false
     @State private var showingClickEditor = false
@@ -84,6 +89,8 @@ struct EditView: View {
     /// goes up. A click replaces it with an insertion, which has no range.
     @State private var editSelection: ClipRangeDrag?
     @State private var selectedTrackIDs: Set<UUID> = []
+    /// Bottom-edge drag. The snapshot is the height before the pointer moved.
+    @State private var laneResize: LaneResizeDrag?
     /// Snapped lane position Play starts from. A click places it; playback does not move it.
     @State private var insertionTime: TimeInterval = 0
     @FocusState private var isTimelineFocused: Bool
@@ -121,41 +128,6 @@ struct EditView: View {
         }
         persistProjectState()
         viewModel.syncTempoMap(normalized, timeSignatureChanges: normalizedTimeSignatureChanges)
-    }
-
-    private func applyReferenceTempo(_ bpm: Double) {
-        guard TempoChange.validBPMRange.contains(bpm) else { return }
-
-        let current = normalizedTempoChanges.referenceBPM
-        if abs(current - bpm) < 0.0001, abs((song.bpm ?? current) - bpm) < 0.0001 {
-            return
-        }
-
-        performUndoableChange("Edit Tempo") {
-            song.bpm = bpm
-            if let index = tempoChanges.firstIndex(where: \.isOrigin) {
-                let existing = tempoChanges[index]
-                tempoChanges[index] = TempoChange(
-                    id: existing.id,
-                    startMeasure: 1,
-                    beatOffset: existing.beatOffset,
-                    bpm: bpm,
-                    sortOrder: existing.sortOrder
-                )
-            } else {
-                tempoChanges.insert(TempoChange(startMeasure: 1, bpm: bpm, sortOrder: 0), at: 0)
-            }
-            persistTempoChanges()
-        }
-    }
-
-    private func applyBaseKey(_ keyRaw: String?) {
-        guard song.baseKeyRaw != keyRaw else { return }
-        performUndoableChange("Edit Key") {
-            song.baseKeyRaw = keyRaw
-            try? modelContext.save()
-            persistProjectState()
-        }
     }
 
     private func persistTimeSignatureChanges() {
@@ -203,6 +175,7 @@ struct EditView: View {
         snapshot.applyMetadata(to: song)
         let trackIDsBeforeApply = Set(song.sortedTracks.map(\.id))
         snapshot.applyTracks(to: song, context: modelContext)
+        snapshot.applyMIDILaneHeights(to: song)
         let trackIDsChanged = trackIDsBeforeApply != Set(song.sortedTracks.map(\.id))
         let pitchChanged = pitchBeforeApply != pitchPlaybackSignature
 
@@ -450,6 +423,14 @@ struct EditView: View {
             adjustGain: { beginAdjustGain() },
             nudgeGainUp: { nudgeSelectedClipGain(by: 1) },
             nudgeGainDown: { nudgeSelectedClipGain(by: -1) }
+        )
+    }
+
+    private var trackHeightActions: TrackHeightActions {
+        TrackHeightActions(
+            canStep: !selectedTrackIDs.isEmpty,
+            increase: { stepTrackHeight(taller: true, option: false, shift: false) },
+            decrease: { stepTrackHeight(taller: false, option: false, shift: false) }
         )
     }
 
@@ -784,6 +765,21 @@ struct EditView: View {
         .focused($isTimelineFocused)
         .focusEffectDisabled()
         .focusedValue(\.clipEditorActions, clipEditorActions)
+        .focusedValue(\.trackHeightActions, trackHeightActions)
+        .onKeyPress(phases: .down) { press in
+            guard isTimelineFocused else { return .ignored }
+            guard press.modifiers.contains(.control),
+                  press.modifiers.contains(.option),
+                  !press.modifiers.contains(.command),
+                  press.key == .upArrow || press.key == .downArrow
+            else { return .ignored }
+            stepTrackHeight(
+                taller: press.key == .upArrow,
+                option: true,
+                shift: press.modifiers.contains(.shift)
+            )
+            return .handled
+        }
         .onAppear {
             isTimelineFocused = true
             tempoChanges = normalizedTempoChanges
@@ -964,17 +960,6 @@ struct EditView: View {
                 viewModel: viewModel,
                 song: song,
                 showingArrangementEditor: $showingArrangementEditor,
-                showingTimeSignatureEditor: $showingTimeSignatureEditor,
-                timeSignatureChanges: $timeSignatureChanges,
-                normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-                onPersistTimeSignatureChanges: {
-                    performUndoableChange("Edit Time Signature") {
-                        persistTimeSignatureChanges()
-                    }
-                },
-                normalizedTempoChanges: normalizedTempoChanges,
-                onApplyTempo: applyReferenceTempo,
-                onApplyBaseKey: applyBaseKey,
                 showingChangeKey: $showingChangeKey,
                 arrangementActions: arrangementActions,
                 loopSectionIDs: loopSectionIDs,
@@ -1256,10 +1241,9 @@ struct EditView: View {
     private func updateRangeDrag(from start: CGPoint, to current: CGPoint, modifiers _: PointerModifiers) {
         let ids = displayedTrackIDs
         guard !ids.isEmpty else { return }
-        let rowHeight = TimelineLayout.laneHeight + TimelineLayout.laneSpacing
+        let frames = laneFrames
         func row(at y: CGFloat) -> Int {
-            let index = Int((y / rowHeight).rounded(.down))
-            return min(max(index, 0), ids.count - 1)
+            frames.rowIndex(at: y)
         }
         let lowRow = min(row(at: start.y), row(at: current.y))
         let highRow = max(row(at: start.y), row(at: current.y))
@@ -1548,18 +1532,6 @@ struct EditView: View {
     private var editorTransportCluster: some View {
         EditSongTransportCluster(
             viewModel: viewModel,
-            song: song,
-            timeSignatureChanges: $timeSignatureChanges,
-            normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-            onPersistTimeSignatureChanges: {
-                performUndoableChange("Edit Time Signature") {
-                    persistTimeSignatureChanges()
-                }
-            },
-            normalizedTempoChanges: normalizedTempoChanges,
-            onApplyTempo: applyReferenceTempo,
-            onApplyBaseKey: applyBaseKey,
-            showingTimeSignatureEditor: $showingTimeSignatureEditor,
             loopSectionIDs: loopSectionIDs,
             currentSectionAtTime: { time in
                 displaySections.section(atTimeline: time)
@@ -1615,18 +1587,6 @@ struct EditView: View {
             viewModel: viewModel,
             song: song,
             showingArrangementEditor: $showingArrangementEditor,
-            showingTimeSignatureEditor: $showingTimeSignatureEditor,
-            timeSignatureChanges: $timeSignatureChanges,
-            normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-            onPersistTimeSignatureChanges: {
-                performUndoableChange("Edit Time Signature") {
-                    persistTimeSignatureChanges()
-                }
-            },
-            tempoChanges: $tempoChanges,
-            normalizedTempoChanges: normalizedTempoChanges,
-            onApplyTempo: applyReferenceTempo,
-            onApplyBaseKey: applyBaseKey,
             showingChangeKey: $showingChangeKey,
             arrangementActions: arrangementActions,
             loopSectionIDs: loopSectionIDs,
@@ -1678,7 +1638,7 @@ struct EditView: View {
             timelineContentWidth: timelineContentWidth,
             timelineDisplayWidth: timelineDisplayWidth,
             sectionTimes: sectionMarkerTimes,
-            laneCount: song.sortedTracks.count + midiTracks.count,
+            laneHeights: laneFrames.rows.map(\.height),
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
             ruler: { timelineRulerStack },
@@ -1799,14 +1759,15 @@ struct EditView: View {
     }
 
     private var trackLanesContent: some View {
-        LazyVStack(spacing: TimelineLayout.laneSpacing) {
-            ForEach(midiTracks, id: \.id) { track in
+        let frames = laneFrames
+        return LazyVStack(spacing: TimelineLayout.laneSpacing) {
+            ForEach(Array(midiTracks.enumerated()), id: \.element.id) { index, track in
                 MIDILaneView(
                     track: track,
                     device: track.device,
                     timelineDuration: timelineDuration,
                     timelineContentWidth: timelineContentWidth,
-                    laneHeight: TimelineLayout.laneHeight,
+                    laneHeight: frames.rows[index].height,
                     events: $midiEvents,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
@@ -1817,6 +1778,7 @@ struct EditView: View {
 
             ForEach(Array(song.sortedTracks.enumerated()), id: \.element.id) { index, track in
                 if let fileURL = FileStore.trackURL(for: song, track: track) {
+                let row = frames.rows[midiTracks.count + index]
                 WaveformLaneView(
                     track: track,
                     fileURL: fileURL,
@@ -1830,8 +1792,8 @@ struct EditView: View {
                     actions: clipLaneActions,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
-                    laneHeight: TimelineLayout.laneHeight,
-                    rowIndex: midiTracks.count + index,
+                    laneHeight: row.height,
+                    laneOriginY: row.originY,
                     onCueSection: cueSection,
                     loopSectionIDs: loopSectionIDs,
                     onToggleLoopSection: toggleLoopSection,
@@ -1861,13 +1823,14 @@ struct EditView: View {
                 duration: timelineDuration,
                 contentWidth: timelineContentWidth
             )
-            let rowHeight = TimelineLayout.laneHeight + TimelineLayout.laneSpacing
+            let frames = laneFrames
             ZStack(alignment: .topLeading) {
                 ForEach(drag.firstRow...drag.lastRow, id: \.self) { row in
+                    let lane = frames.rows[row]
                     Rectangle()
                         .fill(Color.soundcraftSelection)
-                        .frame(width: max(x1 - x0, 1), height: TimelineLayout.laneHeight)
-                        .offset(x: x0, y: CGFloat(row) * rowHeight)
+                        .frame(width: max(x1 - x0, 1), height: lane.height)
+                        .offset(x: x0, y: lane.originY)
                 }
             }
             .frame(width: timelineContentWidth, height: trackAreaHeight, alignment: .topLeading)
@@ -1896,9 +1859,7 @@ struct EditView: View {
                 time: insertionTime,
                 duration: timelineDuration,
                 contentWidth: timelineContentWidth,
-                rows: insertionRows,
-                laneHeight: TimelineLayout.laneHeight,
-                rowStride: TimelineLayout.laneHeight + TimelineLayout.laneSpacing,
+                rows: insertionRows.compactMap { laneFrames.rows.indices.contains($0) ? laneFrames.rows[$0] : nil },
                 areaHeight: trackAreaHeight
             )
         }
@@ -1939,7 +1900,7 @@ struct EditView: View {
     private var clipHeaderBands: [CGRect] {
         let ids = displayedTrackIDs
         guard !ids.isEmpty else { return [] }
-        let rowHeight = TimelineLayout.laneHeight + TimelineLayout.laneSpacing
+        let frames = laneFrames
         let rowOf = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1, $0) })
         return previewClips.compactMap { clip in
             guard let row = rowOf[clip.trackID] else { return nil }
@@ -1957,7 +1918,7 @@ struct EditView: View {
             guard width > 0 else { return nil }
             return CGRect(
                 x: x0,
-                y: CGFloat(row) * rowHeight,
+                y: frames.rows[row].originY,
                 width: width,
                 height: TimelineLayout.clipHeaderHeight
             )
@@ -1969,7 +1930,7 @@ struct EditView: View {
             ForEach(midiTracks, id: \.id) { track in
                 MIDITrackHeaderView(
                     track: track,
-                    laneHeight: TimelineLayout.laneHeight,
+                    laneHeight: TrackLaneHeight.resolved(track.laneHeight),
                     isSelected: selectedTrackIDs.contains(track.id),
                     onSelect: { modifiers in
                         selectedTrackIDs = TrackSelection.click(
@@ -1982,14 +1943,16 @@ struct EditView: View {
                     onConfigChange: commitMIDIConfig,
                     onSendTest: { sendMIDITest(for: track) },
                     onEditDevice: { editDevice(for: track) },
-                    onDelete: { deleteMIDITrack(track) }
+                    onDelete: { deleteMIDITrack(track) },
+                    onResize: { resizeLane(track.id, by: $0) },
+                    onResizeEnded: finishLaneResize
                 )
             }
 
             ForEach(song.sortedTracks, id: \.id) { track in
                 TrackLaneHeaderView(
                     track: track,
-                    laneHeight: TimelineLayout.laneHeight,
+                    laneHeight: TrackLaneHeight.resolved(track.laneHeight),
                     isSelected: selectedTrackIDs.contains(track.id),
                     groups: trackGroups,
                     onSelect: { modifiers in
@@ -2018,7 +1981,9 @@ struct EditView: View {
                     },
                     onDelete: {
                         deleteAudioTrack(track)
-                    }
+                    },
+                    onResize: { resizeLane(track.id, by: $0) },
+                    onResizeEnded: finishLaneResize
                 )
             }
         }
@@ -2036,10 +2001,98 @@ struct EditView: View {
     }
 
     private var trackAreaHeight: CGFloat {
-        let count = song.sortedTracks.count + midiTracks.count
-        guard count > 0 else { return 0 }
-        return CGFloat(count) * TimelineLayout.laneHeight
-            + CGFloat(count - 1) * TimelineLayout.laneSpacing
+        laneFrames.totalHeight
+    }
+
+    private var laneFrames: TrackLaneFrames {
+        TrackLaneFrames(heights: displayedTrackIDs.map { laneHeight(for: $0) })
+    }
+
+    private func laneHeight(for id: UUID) -> CGFloat {
+        if let track = song.tracks.first(where: { $0.id == id }) {
+            return TrackLaneHeight.resolved(track.laneHeight)
+        }
+        if let track = song.midiTracks.first(where: { $0.id == id }) {
+            return TrackLaneHeight.resolved(track.laneHeight)
+        }
+        return TrackLaneHeight.medium
+    }
+
+    private func setLaneHeight(_ height: CGFloat, id: UUID) {
+        let stored = Double(height)
+        if let track = song.tracks.first(where: { $0.id == id }) {
+            if track.laneHeight != stored {
+                track.laneHeight = stored
+            }
+            return
+        }
+        if let track = song.midiTracks.first(where: { $0.id == id }), track.laneHeight != stored {
+            track.laneHeight = stored
+        }
+    }
+
+    /// Live resize. Command drags freely. Option resizes every track, Option-Shift the selected ones.
+    private func resizeLane(_ trackID: UUID, by delta: CGFloat) {
+        if laneResize?.trackID != trackID {
+            finishLaneResize()
+            laneResize = LaneResizeDrag(
+                trackID: trackID,
+                startHeight: laneHeight(for: trackID),
+                before: captureSnapshot()
+            )
+        }
+        guard let drag = laneResize else { return }
+        let modifiers = PointerModifiers.current
+        let want = drag.startHeight + delta
+        let height = modifiers.command ? TrackLaneHeight.free(want) : TrackLaneHeight.snapped(want)
+        let targets = TrackLaneHeight.targets(
+            owned: [trackID],
+            shown: displayedTrackIDs,
+            selected: selectedTrackIDs,
+            option: modifiers.option,
+            shift: modifiers.shift
+        )
+        for id in targets {
+            setLaneHeight(height, id: id)
+        }
+    }
+
+    private func finishLaneResize() {
+        guard let drag = laneResize else { return }
+        laneResize = nil
+        let after = captureSnapshot()
+        guard drag.before != after else { return }
+        undoController.registerChange(
+            actionName: "Track Height",
+            before: drag.before,
+            after: after,
+            apply: { snapshot in
+                applySnapshot(snapshot)
+            }
+        )
+        persistProjectState()
+    }
+
+    private func stepTrackHeight(taller: Bool, option: Bool, shift: Bool) {
+        let targets = TrackLaneHeight.targets(
+            owned: selectedTrackIDs,
+            shown: displayedTrackIDs,
+            selected: selectedTrackIDs,
+            option: option,
+            shift: shift
+        )
+        let updates = targets.compactMap { id -> (UUID, CGFloat)? in
+            let next = TrackLaneHeight.step(laneHeight(for: id), taller: taller)
+            guard next != laneHeight(for: id) else { return nil }
+            return (id, next)
+        }
+        guard !updates.isEmpty else { return }
+        performUndoableChange("Track Height") {
+            for (id, height) in updates {
+                setLaneHeight(height, id: id)
+            }
+            persistProjectState()
+        }
     }
 
     private func beginRenameTrack(_ track: AudioTrack) {

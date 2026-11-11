@@ -22,24 +22,14 @@ struct EditTransportStatusStrip: View {
 #if os(macOS)
 struct EditSongTransportCluster: View {
     let viewModel: SongEditorViewModel
-    @Bindable var song: Song
-    @Binding var timeSignatureChanges: [TimeSignatureChange]
-    let normalizedTimeSignatureChanges: [TimeSignatureChange]
-    let onPersistTimeSignatureChanges: () -> Void
-    let normalizedTempoChanges: [TempoChange]
-    let onApplyTempo: (Double) -> Void
-    let onApplyBaseKey: (String?) -> Void
-    @Binding var showingTimeSignatureEditor: Bool
     let loopSectionIDs: Set<UUID>
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
     let onPlay: () -> Void
-    /// Position shown in the counter while stopped. Playback leaves this where the insertion is.
+    /// Time used for the loop button while stopped. Playback leaves this where the insertion is.
     let stoppedDisplayTime: TimeInterval
 
-    @State private var showingTempoToolbarEditor = false
-    @State private var showingKeyToolbarEditor = false
     @State private var groupMixFade = GroupMixFadeController()
     @Bindable private var audioEngine = AudioEngineManager.shared
     @Environment(\.modelContext) private var modelContext
@@ -58,7 +48,6 @@ struct EditSongTransportCluster: View {
 
     private func transportStrip(at time: TimeInterval) -> some View {
         SharedTransportStrip(
-            snapshot: displaySnapshot(at: time),
             buttonSize: 44,
             isPlaying: audioEngine.isPlaying,
             isLoaded: viewModel.isLoaded,
@@ -82,54 +71,7 @@ struct EditSongTransportCluster: View {
                 } onComplete: {
                     try? modelContext.save()
                 }
-            },
-            showingBPMPopover: $showingTempoToolbarEditor,
-            showingMeterPopover: $showingTimeSignatureEditor,
-            showingKeyPopover: $showingKeyToolbarEditor,
-            bpmPopover: {
-                TempoEditorMenu(
-                    currentBPM: normalizedTempoChanges.referenceBPM,
-                    onApply: onApplyTempo
-                )
-            },
-            meterPopover: {
-                TimeSignatureEditorMenu(
-                    song: song,
-                    timeSignatureChanges: $timeSignatureChanges,
-                    normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-                    onPersist: onPersistTimeSignatureChanges
-                )
-            },
-            keyPopover: {
-                SongKeyEditorMenu(
-                    baseKeyRaw: song.baseKeyRaw,
-                    onApply: onApplyBaseKey
-                )
             }
-        )
-    }
-
-    private func displaySnapshot(at time: TimeInterval) -> TransportStatusSnapshot {
-        let position = MeasureTiming.position(
-            at: time,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges
-        )
-        let signature = MeasureTiming.numeratorDenominatorForMeasure(
-            position.bar,
-            changes: normalizedTimeSignatureChanges
-        )
-        let bpm = MeasureTiming.activeBPM(
-            at: time,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges
-        )
-
-        return TransportStatusSnapshot(
-            position: MeasureTiming.formatTransportPosition(position),
-            bpm: String(format: "%.1f", bpm),
-            meter: "\(signature.numerator)/\(signature.denominator)",
-            key: song.transportKeyText
         )
     }
 
@@ -143,13 +85,6 @@ struct EditSongToolbarContent: ToolbarContent {
     let viewModel: SongEditorViewModel
     @Bindable var song: Song
     @Binding var showingArrangementEditor: Bool
-    @Binding var showingTimeSignatureEditor: Bool
-    @Binding var timeSignatureChanges: [TimeSignatureChange]
-    let normalizedTimeSignatureChanges: [TimeSignatureChange]
-    let onPersistTimeSignatureChanges: () -> Void
-    let normalizedTempoChanges: [TempoChange]
-    let onApplyTempo: (Double) -> Void
-    let onApplyBaseKey: (String?) -> Void
     @Binding var showingChangeKey: Bool
     let arrangementActions: ArrangementSectionActions
     let loopSectionIDs: Set<UUID>
@@ -208,14 +143,6 @@ struct EditSongToolbarContent: ToolbarContent {
     private var editorTransportCluster: some View {
         EditSongTransportCluster(
             viewModel: viewModel,
-            song: song,
-            timeSignatureChanges: $timeSignatureChanges,
-            normalizedTimeSignatureChanges: normalizedTimeSignatureChanges,
-            onPersistTimeSignatureChanges: onPersistTimeSignatureChanges,
-            normalizedTempoChanges: normalizedTempoChanges,
-            onApplyTempo: onApplyTempo,
-            onApplyBaseKey: onApplyBaseKey,
-            showingTimeSignatureEditor: $showingTimeSignatureEditor,
             loopSectionIDs: loopSectionIDs,
             currentSectionAtTime: currentSectionAtTime,
             onStopTransport: onStopTransport,

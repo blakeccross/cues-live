@@ -15,6 +15,9 @@ struct TrackLaneHeaderView: View {
     let onManageGroups: () -> Void
     let onRename: () -> Void
     let onDelete: () -> Void
+    /// Drag distance downward from the press, in points.
+    let onResize: (CGFloat) -> Void
+    let onResizeEnded: () -> Void
 
     private var trackColors: (header: Color, body: Color) {
         TrackGroupPalette.colors(for: track.group)
@@ -70,6 +73,7 @@ struct TrackLaneHeaderView: View {
             .padding(.bottom, 6)
         }
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
+        .clipped()
         .background {
             if isSelected {
                 Rectangle()
@@ -86,6 +90,12 @@ struct TrackLaneHeaderView: View {
             }
         }
         .onTapGesture { onSelect(.current) }
+        .overlay(alignment: .bottom) {
+            TrackLaneResizeHandle(onChanged: onResize, onEnded: onResizeEnded)
+                .frame(maxWidth: .infinity)
+                .frame(height: 6)
+                .offset(y: 2)
+        }
     }
 
     private func applyLiveMix() {
@@ -274,8 +284,8 @@ struct WaveformLaneView: View {
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
     let laneHeight: CGFloat
-    /// Row in the lane stack, MIDI lanes included, so a drag can cross tracks.
-    let rowIndex: Int
+    /// Top of this lane in the shared track-lane coordinate space.
+    let laneOriginY: CGFloat
     let onCueSection: (SongSection) -> Void
     let loopSectionIDs: Set<UUID>
     let onToggleLoopSection: (SongSection) -> Void
@@ -297,10 +307,6 @@ struct WaveformLaneView: View {
         /// Upper half, away from the trim handles. A click here places the insertion cursor.
         let movesPlayhead: Bool
         var isDragging = false
-    }
-
-    private var laneOriginY: CGFloat {
-        CGFloat(rowIndex) * (laneHeight + TimelineLayout.laneSpacing)
     }
 
     private var safeTimelineDuration: TimeInterval {
@@ -1144,3 +1150,88 @@ struct ClipGainPrompt: View {
         onApply(ClipGain.stored(value))
     }
 }
+
+/// Bottom edge of a track header. The drag distance is measured in screen space so the
+/// lane can grow under the pointer without the gesture feeding on its own movement.
+struct TrackLaneResizeHandle: View {
+    var onChanged: (CGFloat) -> Void
+    var onEnded: () -> Void
+
+    var body: some View {
+        #if os(macOS)
+        TrackLaneResizeHandleMac(onChanged: onChanged, onEnded: onEnded)
+        #else
+        Color.clear
+            .contentShape(Rectangle())
+            .highPriorityGesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { value in
+                        onChanged(value.translation.height)
+                    }
+                    .onEnded { _ in
+                        onEnded()
+                    }
+            )
+        #endif
+    }
+}
+
+#if os(macOS)
+private struct TrackLaneResizeHandleMac: NSViewRepresentable {
+    var onChanged: (CGFloat) -> Void
+    var onEnded: () -> Void
+
+    func makeNSView(context: Context) -> TrackLaneResizeHandleView {
+        let view = TrackLaneResizeHandleView()
+        view.onChanged = onChanged
+        view.onEnded = onEnded
+        return view
+    }
+
+    func updateNSView(_ view: TrackLaneResizeHandleView, context: Context) {
+        view.onChanged = onChanged
+        view.onEnded = onEnded
+    }
+}
+
+private final class TrackLaneResizeHandleView: NSView {
+    var onChanged: ((CGFloat) -> Void)?
+    var onEnded: (() -> Void)?
+    private var startY: CGFloat?
+    private var dragged = false
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.clear.cgColor
+    }
+
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .resizeUpDown)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        startY = NSEvent.mouseLocation.y
+        dragged = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard let startY else { return }
+        dragged = true
+        onChanged?(startY - NSEvent.mouseLocation.y)
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let didDrag = dragged
+        startY = nil
+        dragged = false
+        if didDrag {
+            onEnded?()
+        }
+    }
+}
+#endif

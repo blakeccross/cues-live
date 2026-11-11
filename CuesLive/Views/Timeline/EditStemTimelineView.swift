@@ -97,7 +97,7 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
     let timelineContentWidth: CGFloat
     let timelineDisplayWidth: CGFloat
     let sectionTimes: [TimeInterval]
-    let laneCount: Int
+    let laneHeights: [CGFloat]
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
     @ViewBuilder let ruler: () -> Ruler
@@ -111,10 +111,12 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
 
     private let timelineHorizontalScrollSpace = "editTimelineHorizontalScroll"
 
+    private var laneFrames: TrackLaneFrames {
+        TrackLaneFrames(heights: laneHeights)
+    }
+
     private var laneAreaHeight: CGFloat {
-        guard laneCount > 0 else { return 0 }
-        return CGFloat(laneCount) * TimelineLayout.laneHeight
-            + CGFloat(laneCount - 1) * TimelineLayout.laneSpacing
+        laneFrames.totalHeight
     }
 
     var body: some View {
@@ -227,9 +229,9 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
     /// One dark rule per track, spanning the name column and the visible waveform.
     private var trackLaneDividers: some View {
         VStack(spacing: 0) {
-            ForEach(0..<laneCount, id: \.self) { _ in
+            ForEach(Array(laneFrames.rows.enumerated()), id: \.offset) { _, row in
                 Color.clear
-                    .frame(height: TimelineLayout.laneHeight - TimelineLayout.laneDividerHeight)
+                    .frame(height: max(row.height - TimelineLayout.laneDividerHeight, 0))
                 Rectangle()
                     .fill(Color.dawTrackLaneDivider)
                     .frame(maxWidth: .infinity)

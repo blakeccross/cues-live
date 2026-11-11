@@ -310,16 +310,16 @@ struct SongDetailView: View {
             onDismiss: {
                 showingSongLibrary = false
             },
-            onFoldersSelected: { folderURLs in
-                importSongs(from: folderURLs)
+            onFoldersSelected: { requests in
+                importSongs(from: requests)
             },
             onAddToSetlist: { _ in },
             isImportInProgress: isImportingSongFolder
         )
     }
 
-    private func importSongs(from folderURLs: [URL]) {
-        guard !isImportingSongFolder, !folderURLs.isEmpty else { return }
+    private func importSongs(from requests: [SongFolderImporter.ImportRequest]) {
+        guard !isImportingSongFolder, !requests.isEmpty else { return }
 
         isImportingSongFolder = true
         Task { @MainActor in
@@ -328,18 +328,20 @@ struct SongDetailView: View {
             var summaries: [String] = []
             var failureMessages: [String] = []
 
-            for folderURL in folderURLs {
+            for request in requests {
                 do {
                     let importResult = try SongFolderImporter.importFromFolder(
-                        at: folderURL,
+                        at: request.folderURL,
+                        settings: request.settings,
                         context: modelContext
                     )
                     summaries.append(SongFolderImporter.summaryMessage(for: importResult))
                 } catch {
+                    let label = request.settings.name.trimmingCharacters(in: .whitespacesAndNewlines)
                     failureMessages.append(
-                        folderURLs.count == 1
+                        requests.count == 1
                             ? error.localizedDescription
-                            : "\(folderURL.lastPathComponent): \(error.localizedDescription)"
+                            : "\(label.isEmpty ? request.folderURL.lastPathComponent : label): \(error.localizedDescription)"
                     )
                 }
             }

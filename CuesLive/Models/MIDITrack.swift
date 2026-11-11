@@ -11,6 +11,8 @@ final class MIDITrack {
 
     var device: MIDIDevice?
     var song: Song?
+    /// Lane height in points. Missing or out-of-range values display at the default.
+    var laneHeight: Double = TrackLaneHeight.storedDefault
 
     init(displayName: String, sortOrder: Int) {
         id = UUID()

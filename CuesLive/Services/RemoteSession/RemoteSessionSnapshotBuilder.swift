@@ -122,7 +122,6 @@ enum RemoteSessionSnapshotBuilder {
         let playhead: TimeInterval = coordinator.isPlaying
             ? coordinator.livePlayheadTime()
             : coordinator.currentTime
-        let transport = transportTexts(for: coordinator, at: playhead)
 
         return RemoteSessionState(
             currentIndex: coordinator.currentIndex,
@@ -138,10 +137,6 @@ enum RemoteSessionSnapshotBuilder {
                     ?? coordinator.currentSong.map { TimecodePlaybackSupport.timelineDuration(for: $0) }
                     ?? 0
             ),
-            bpmText: transport.bpm,
-            meterText: transport.meter,
-            keyText: transport.key,
-            positionText: transport.position,
             cuedSectionID: cuedSectionID,
             cueFireTime: cueFireTime.map(finiteTime),
             isLooping: sectionLoop.isLooping,
@@ -249,51 +244,4 @@ enum RemoteSessionSnapshotBuilder {
         ))
     }
 
-    @MainActor
-    private static func transportTexts(
-        for coordinator: PlaybackCoordinator,
-        at time: TimeInterval
-    ) -> TransportStatusSnapshot {
-        guard let song = coordinator.currentSong else {
-            return TransportStatusSnapshot(position: "- - -", bpm: "-", meter: "-", key: "-")
-        }
-
-        let snapshot = coordinator.waveformSnapshot(for: song)
-        let tempoChanges: [TempoChange] = {
-            if let changes = snapshot?.tempoChanges, !changes.isEmpty { return changes }
-            return [TempoChange(startMeasure: 1, bpm: song.bpm ?? TempoChange.defaultBPM)]
-        }()
-        let timeSignatureChanges: [TimeSignatureChange] = {
-            if let changes = snapshot?.timeSignatureChanges, !changes.isEmpty { return changes }
-            return [
-                TimeSignatureChange(
-                    numerator: song.timeSignatureNumerator ?? TimeSignatureChange.defaultNumerator,
-                    denominator: song.timeSignatureDenominator ?? TimeSignatureChange.defaultDenominator,
-                    startMeasure: 1
-                )
-            ]
-        }()
-
-        let position = MeasureTiming.position(
-            at: time,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        )
-        let measure = position.bar
-        let signature = MeasureTiming.numeratorDenominatorForMeasure(
-            measure,
-            changes: timeSignatureChanges
-        )
-        let bpm = MeasureTiming.activeBPM(
-            at: time,
-            tempoChanges: tempoChanges,
-            timeSignatureChanges: timeSignatureChanges
-        )
-        return TransportStatusSnapshot(
-            position: MeasureTiming.formatTransportPosition(position),
-            bpm: String(format: "%.1f", bpm),
-            meter: "\(signature.numerator)/\(signature.denominator)",
-            key: song.transportKeyText
-        )
-    }
 }

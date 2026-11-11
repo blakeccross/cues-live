@@ -188,9 +188,7 @@ struct TimelineInsertionCursor: View {
     let time: TimeInterval
     let duration: TimeInterval
     let contentWidth: CGFloat
-    let rows: [Int]
-    let laneHeight: CGFloat
-    let rowStride: CGFloat
+    let rows: [TrackLaneFrames.Row]
     let areaHeight: CGFloat
 
     @State private var anchor = Date()
@@ -209,9 +207,8 @@ struct TimelineInsertionCursor: View {
                 let color = Color.soundcraftInsertion(colorScheme: colorScheme)
                 for row in rows {
                     var path = Path()
-                    let y = CGFloat(row) * rowStride
-                    path.move(to: CGPoint(x: x, y: y))
-                    path.addLine(to: CGPoint(x: x, y: y + laneHeight))
+                    path.move(to: CGPoint(x: x, y: row.originY))
+                    path.addLine(to: CGPoint(x: x, y: row.originY + row.height))
                     canvas.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 1))
                 }
             }

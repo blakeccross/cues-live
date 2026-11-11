@@ -73,7 +73,8 @@ enum SongProjectBridge {
                 mix: ProjectTrackMix(from: track),
                 groupName: track.group?.name,
                 sourceDurationSeconds: track.sourceDurationSeconds,
-                includeInKeyChange: track.includeInKeyChange
+                includeInKeyChange: track.includeInKeyChange,
+                laneHeight: track.laneHeight
             )
         }
 
@@ -82,7 +83,8 @@ enum SongProjectBridge {
                 id: midiTrack.id,
                 displayName: midiTrack.displayName,
                 sortOrder: midiTrack.sortOrder,
-                deviceName: midiTrack.device?.name
+                deviceName: midiTrack.device?.name,
+                laneHeight: midiTrack.laneHeight
             )
         }
 
@@ -301,6 +303,7 @@ enum SongProjectBridge {
             applyMediaReference(projectTrack.media, to: track)
             projectTrack.mix.apply(to: track)
             track.includeInKeyChange = projectTrack.includeInKeyChange
+            track.laneHeight = projectTrack.laneHeight
             track.sourceDurationSeconds = projectTrack.sourceDurationSeconds
             if let groupName = projectTrack.groupName {
                 track.group = TrackGroupStore.findOrCreateGroup(named: groupName, in: context)
@@ -322,6 +325,7 @@ enum SongProjectBridge {
                 sortOrder: projectMIDITrack.sortOrder
             )
             midiTrack.id = projectMIDITrack.id
+            midiTrack.laneHeight = projectMIDITrack.laneHeight
             if let deviceName = projectMIDITrack.deviceName {
                 midiTrack.device = MIDIDeviceStore.findDevice(named: deviceName, in: context)
             }

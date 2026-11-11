@@ -212,7 +212,6 @@
 		AA000001000000000000008B /* AppBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* AppBadge.swift */; };
 		AA000001000000000000008C /* AppSheetContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008C /* AppSheetContainer.swift */; };
 		AA000001000000000000008D /* AppEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008D /* AppEmptyState.swift */; };
-		AA000001000000000000008E /* TransportStatusReadout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008E /* TransportStatusReadout.swift */; };
 		AA00000100000000000000A0 /* TimelineRippleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000A0 /* TimelineRippleStore.swift */; };
 		AA00000100000000000000A1 /* TimelineRippleStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000A1 /* TimelineRippleStoreTests.swift */; };
 		AA00000100000000000000B1 /* OverlapTransitionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B1 /* OverlapTransitionConfig.swift */; };
@@ -362,7 +361,6 @@
 		CD7424E5843E22B12D171FC7 /* TimelineSignatureAndTempoRulers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */; };
 		CDB38AA9CF51A97EE61EE493 /* MIDIDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000066 /* MIDIDevice.swift */; };
 		CE890C8FE3E35DB47ED860FF /* SetlistEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000005 /* SetlistEntry.swift */; };
-		CEEAF6B294B11B2034843452 /* TransportStatusReadout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008E /* TransportStatusReadout.swift */; };
 		CF4AB6A28318E141013C18B9 /* SongSections in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000100 /* SongSections */; };
 		D09825BE9A7B7991E4D60748 /* MappableLiveAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000320 /* MappableLiveAction.swift */; };
 		D647644C01187801B0AD4DA8 /* StemAudioWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F0 /* StemAudioWriter.swift */; };
@@ -519,7 +517,6 @@
 		AA000002000000000000008B /* AppBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadge.swift; sourceTree = "<group>"; };
 		AA000002000000000000008C /* AppSheetContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSheetContainer.swift; sourceTree = "<group>"; };
 		AA000002000000000000008D /* AppEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEmptyState.swift; sourceTree = "<group>"; };
-		AA000002000000000000008E /* TransportStatusReadout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportStatusReadout.swift; sourceTree = "<group>"; };
 		AA00000200000000000000A0 /* TimelineRippleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRippleStore.swift; sourceTree = "<group>"; };
 		AA00000200000000000000A1 /* TimelineRippleStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRippleStoreTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000B1 /* OverlapTransitionConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTransitionConfig.swift; sourceTree = "<group>"; };
@@ -853,7 +850,6 @@
 				AA0000020000000000000310 /* LiveSetlistRows.swift */,
 				AA00000200000000000000E2 /* MissingMediaRelinkView.swift */,
 				AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */,
-				AA000002000000000000008E /* TransportStatusReadout.swift */,
 				AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */,
 				AA0000020000000000000028 /* LiveSongWaveformView.swift */,
 				AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */,
@@ -1362,7 +1358,6 @@
 				AA00000100000000000F0002 /* LivePlaybackSupportViews.swift in Sources */,
 				AA00000100000000000F0001 /* LiveSetlistToolbar.swift in Sources */,
 				AA0000010000000000000042 /* LiveSetlistNowPlayingInfoView.swift in Sources */,
-				AA000001000000000000008E /* TransportStatusReadout.swift in Sources */,
 				AA0000010000000000000015 /* WaveformLoader.swift in Sources */,
 				AA0000010000000000000C21 /* WaveformOverview.swift in Sources */,
 				AA0000010000000000000016 /* WaveformLaneView.swift in Sources */,
@@ -1588,7 +1583,6 @@
 				AA23A43494FFA381B9E728DC /* LivePlaybackSupportViews.swift in Sources */,
 				AEE3B433DC0DA4EAC3BCE6FC /* LiveSetlistToolbar.swift in Sources */,
 				1D9D6E848F5BEFF2F56CF0C1 /* LiveSetlistNowPlayingInfoView.swift in Sources */,
-				CEEAF6B294B11B2034843452 /* TransportStatusReadout.swift in Sources */,
 				8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */,
 				8AF480949E8482DC31933EC2 /* WaveformOverview.swift in Sources */,
 				F61F8D583DD0B65FE15C8F39 /* WaveformLaneView.swift in Sources */,

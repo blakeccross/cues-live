@@ -112,6 +112,12 @@ struct ClipEditorActions {
     var nudgeGainDown: () -> Void = {}
 }
 
+struct TrackHeightActions {
+    var canStep = false
+    var increase: () -> Void = {}
+    var decrease: () -> Void = {}
+}
+
 struct SongUndoActions {
     var canUndo = false
     var canRedo = false
@@ -131,6 +137,11 @@ private struct ClipEditorActionsKey: FocusedValueKey {
     static var defaultValue: Value? { nil }
 }
 
+private struct TrackHeightActionsKey: FocusedValueKey {
+    typealias Value = TrackHeightActions
+    static var defaultValue: Value? { nil }
+}
+
 private struct SongUndoActionsKey: FocusedValueKey {
     typealias Value = SongUndoActions
     static var defaultValue: Value? { nil }
@@ -145,6 +156,11 @@ extension FocusedValues {
     var clipEditorActions: ClipEditorActions? {
         get { self[ClipEditorActionsKey.self] }
         set { self[ClipEditorActionsKey.self] = newValue }
+    }
+
+    var trackHeightActions: TrackHeightActions? {
+        get { self[TrackHeightActionsKey.self] }
+        set { self[TrackHeightActionsKey.self] = newValue }
     }
 
     var songUndoActions: SongUndoActions? {
@@ -198,6 +214,7 @@ struct FileMenuCommands: Commands {
 
 struct SongMenuCommands: Commands {
     @FocusedValue(\.songEditorActions) private var actions
+    @FocusedValue(\.trackHeightActions) private var trackHeight
 
     var body: some Commands {
         CommandMenu("Song") {
@@ -212,6 +229,20 @@ struct SongMenuCommands: Commands {
             }
             .keyboardShortcut("i", modifiers: [.command, .shift])
             .disabled(actions == nil)
+
+            Divider()
+
+            Button("Increase Track Height") {
+                trackHeight?.increase()
+            }
+            .keyboardShortcut(.upArrow, modifiers: .control)
+            .disabled(trackHeight?.canStep != true)
+
+            Button("Decrease Track Height") {
+                trackHeight?.decrease()
+            }
+            .keyboardShortcut(.downArrow, modifiers: .control)
+            .disabled(trackHeight?.canStep != true)
         }
     }
 }

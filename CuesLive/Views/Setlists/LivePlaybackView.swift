@@ -66,7 +66,6 @@ struct LivePlaybackView: View {
     @State private var showFileDocument: ShowFileDocument?
     @State private var songImportFeedback: SongImportFeedback?
     @State private var isImportingSongFolder = false
-    @State private var infoPanelHeight: CGFloat = 0
     @State private var mixerDetent: LiveGroupMixerDetent = .hidden
     @State private var headerPendingEdit: SetlistEntry?
     @State private var isCreatingHeader = false
@@ -441,7 +440,6 @@ struct LivePlaybackView: View {
             groupMixFade: groupMixFade,
             isLoaded: coordinator.isLoaded && !coordinator.isLoadingSong,
             canLoop: !loopSections.isEmpty,
-            infoPanelHeight: $infoPanelHeight,
             onStop: stopPlayback,
             onPlay: coordinator.play,
             onPause: coordinator.pause,
@@ -466,8 +464,8 @@ struct LivePlaybackView: View {
             onDismiss: {
                 showingSongLibrary = false
             },
-            onFoldersSelected: { folderURLs in
-                importSongs(from: folderURLs)
+            onFoldersSelected: { requests in
+                importSongs(from: requests)
             },
             onAddToSetlist: { song in
                 addSong(song, at: workingSetlist.sortedEntries.count)
@@ -510,8 +508,8 @@ struct LivePlaybackView: View {
         )
     }
 
-    private func importSongs(from folderURLs: [URL]) {
-        guard !isImportingSongFolder, !folderURLs.isEmpty else { return }
+    private func importSongs(from requests: [SongFolderImporter.ImportRequest]) {
+        guard !isImportingSongFolder, !requests.isEmpty else { return }
 
         isImportingSongFolder = true
         Task { @MainActor in
@@ -521,19 +519,21 @@ struct LivePlaybackView: View {
             var summaries: [String] = []
             var failureMessages: [String] = []
 
-            for folderURL in folderURLs {
+            for request in requests {
                 do {
                     let importResult = try SongFolderImporter.importFromFolder(
-                        at: folderURL,
+                        at: request.folderURL,
+                        settings: request.settings,
                         context: modelContext
                     )
                     importedSongs.append(importResult.song)
                     summaries.append(SongFolderImporter.summaryMessage(for: importResult))
                 } catch {
+                    let label = request.settings.name.trimmingCharacters(in: .whitespacesAndNewlines)
                     failureMessages.append(
-                        folderURLs.count == 1
+                        requests.count == 1
                             ? error.localizedDescription
-                            : "\(folderURL.lastPathComponent): \(error.localizedDescription)"
+                            : "\(label.isEmpty ? request.folderURL.lastPathComponent : label): \(error.localizedDescription)"
                     )
                 }
             }

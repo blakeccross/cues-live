@@ -182,6 +182,22 @@ final class TrackPanPersistenceTests: XCTestCase {
         XCTAssertTrue(decoded.isSolo)
     }
 
+    func testProjectTrackWithoutLaneHeightDecodesAtTheDefault() throws {
+        let id = UUID()
+        let legacy = """
+        {"id":"\(id.uuidString)","displayName":"Kick","sortOrder":0,"media":{"path":"kick.wav","pathStyle":"relativeToProject"},"mix":{"volume":1,"isMuted":false,"isSolo":false,"trimStartSeconds":0},"includeInKeyChange":true}
+        """
+        let decoded = try JSONDecoder().decode(ProjectTrack.self, from: Data(legacy.utf8))
+        XCTAssertEqual(decoded.laneHeight, TrackLaneHeight.storedDefault)
+
+        let midi = """
+        {"id":"\(id.uuidString)","displayName":"Keys","sortOrder":1,"deviceName":"Piano"}
+        """
+        let decodedMIDI = try JSONDecoder().decode(ProjectMIDITrack.self, from: Data(midi.utf8))
+        XCTAssertEqual(decodedMIDI.laneHeight, TrackLaneHeight.storedDefault)
+        XCTAssertEqual(decodedMIDI.deviceName, "Piano")
+    }
+
     func testNewTrackIsCentredAndSettingsCarryPan() {
         let track = AudioTrack(displayName: "Kick", relativeFilePath: "kick.wav", sortOrder: 0)
         XCTAssertEqual(track.pan, 0)

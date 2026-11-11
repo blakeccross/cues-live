@@ -21,6 +21,8 @@ final class AudioTrack {
     var includeInKeyChange: Bool = true
     /// Length of the source file the last time it was readable, so layout survives missing media.
     var sourceDurationSeconds: Double?
+    /// Lane height in points. Missing or out-of-range values display at the default.
+    var laneHeight: Double = TrackLaneHeight.storedDefault
 
     var mediaPathStyle: MediaPathStyle? {
         get {

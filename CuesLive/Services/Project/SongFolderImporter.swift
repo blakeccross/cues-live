@@ -8,6 +8,29 @@ enum SongFolderImporter {
         let trackURLs: [URL]
     }
 
+    /// Musical details shown before a folder becomes a song. Tempo and meter are filled from an Ableton set when one is present.
+    struct Preview: Identifiable, Equatable, Sendable {
+        let id: UUID
+        let folderURL: URL
+        let suggestedName: String
+        let bpm: Double?
+        let timeSignatureNumerator: Int?
+        let timeSignatureDenominator: Int?
+    }
+
+    struct ImportSettings: Equatable, Sendable {
+        var name: String
+        var bpm: Double
+        var timeSignatureNumerator: Int
+        var timeSignatureDenominator: Int
+        var baseKeyRaw: String?
+    }
+
+    struct ImportRequest: Equatable, Sendable {
+        let folderURL: URL
+        let settings: ImportSettings
+    }
+
     struct ImportResult {
         let song: Song
         let trackCount: Int
@@ -19,7 +42,8 @@ enum SongFolderImporter {
         var lines = [
             "Created \"\(result.song.name)\" with \(result.trackCount) track\(result.trackCount == 1 ? "" : "s")."
         ]
-        if let bpm = result.bpm {
+        if result.bpm != nil {
+            let bpm = result.song.bpm ?? result.bpm ?? 0
             if result.sectionCount > 0 {
                 var line = "Imported \(result.sectionCount) sections from Ableton at \(String(format: "%.1f", bpm)) BPM."
                 if let timeSignature = result.song.timeSignatureDisplay {
@@ -67,9 +91,41 @@ enum SongFolderImporter {
         return try scanFolderContents(at: folderURL)
     }
 
+    /// Reads the folder name and, when an Ableton set is present, its opening tempo and meter.
+    static func previewFolder(at folderURL: URL) throws -> Preview {
+        let didAccess = folderURL.startAccessingSecurityScopedResource()
+        defer {
+            if didAccess {
+                folderURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        let scan = try scanFolderContents(at: folderURL)
+        var bpm: Double?
+        var numerator: Int?
+        var denominator: Int?
+        if let abletonURL = scan.abletonURL,
+           let imported = try? AbletonProjectImporter.importFrom(url: abletonURL) {
+            bpm = imported.bpm
+            if let initial = imported.timeSignatures.sortedByMeasure.first {
+                numerator = initial.numerator
+                denominator = initial.denominator
+            }
+        }
+
+        return Preview(
+            id: UUID(),
+            folderURL: folderURL,
+            suggestedName: scan.suggestedName,
+            bpm: bpm,
+            timeSignatureNumerator: numerator,
+            timeSignatureDenominator: denominator
+        )
+    }
+
     static func importFromFolder(
         at folderURL: URL,
-        name: String? = nil,
+        settings: ImportSettings,
         context: ModelContext
     ) throws -> ImportResult {
         let didAccess = folderURL.startAccessingSecurityScopedResource()
@@ -80,14 +136,12 @@ enum SongFolderImporter {
         }
 
         let scan = try scanFolderContents(at: folderURL)
+        let resolved = sanitized(settings, fallbackName: scan.suggestedName)
 
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let songName = trimmedName.isEmpty ? scan.suggestedName : trimmedName
-
-        let song = Song(name: songName)
+        let song = Song(name: resolved.name)
         context.insert(song)
 
-        let projectURL = ProjectFileStore.defaultProjectURL(for: songName)
+        let projectURL = ProjectFileStore.defaultProjectURL(for: resolved.name)
         song.projectFilePath = projectURL.path
 
         do {
@@ -97,7 +151,7 @@ enum SongFolderImporter {
                 context: context,
                 projectURL: projectURL
             )
-            try SongProjectBridge.syncProjectFile(for: song, context: context)
+            try applyImportSettings(resolved, to: song, context: context)
             try context.save()
             return ImportResult(
                 song: song,
@@ -137,6 +191,108 @@ enum SongFolderImporter {
         try SongProjectBridge.syncProjectFile(for: song, context: context)
         try context.save()
         return (result.trackCount, result.sectionCount, result.bpm)
+    }
+
+    private static func sanitized(_ settings: ImportSettings, fallbackName: String) -> ImportSettings {
+        let trimmed = settings.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = trimmed.isEmpty ? fallbackName : trimmed
+        let bpm: Double
+        if settings.bpm.isFinite {
+            bpm = min(
+                max(settings.bpm, TempoChange.validBPMRange.lowerBound),
+                TempoChange.validBPMRange.upperBound
+            )
+        } else {
+            bpm = TempoChange.defaultBPM
+        }
+        let numerator = min(max(settings.timeSignatureNumerator, 1), 32)
+        let denominator = TimeSignatureChange.validDenominators.contains(settings.timeSignatureDenominator)
+            ? settings.timeSignatureDenominator
+            : TimeSignatureChange.defaultDenominator
+        let key = settings.baseKeyRaw.flatMap { SongMusicalKey(rawValue: $0)?.rawValue }
+        return ImportSettings(
+            name: name,
+            bpm: bpm,
+            timeSignatureNumerator: numerator,
+            timeSignatureDenominator: denominator,
+            baseKeyRaw: key
+        )
+    }
+
+    /// Writes the confirmed name, tempo, meter, and key over anything read from the folder.
+    private static func applyImportSettings(
+        _ settings: ImportSettings,
+        to song: Song,
+        context: ModelContext
+    ) throws {
+        song.name = settings.name
+        song.bpm = settings.bpm
+        song.timeSignatureNumerator = settings.timeSignatureNumerator
+        song.timeSignatureDenominator = settings.timeSignatureDenominator
+        song.baseKeyRaw = settings.baseKeyRaw
+
+        let state = SongProjectBridge.projectStateOrDefaults(for: song)
+        try SongProjectBridge.syncProjectFile(
+            for: song,
+            context: context,
+            timeline: state.timeline,
+            tempoChanges: tempoChanges(applying: settings.bpm, to: state.tempoChanges),
+            timeSignatureChanges: timeSignatureChanges(
+                numerator: settings.timeSignatureNumerator,
+                denominator: settings.timeSignatureDenominator,
+                applyingTo: state.timeSignatureChanges
+            ),
+            midiEvents: state.midiEvents
+        )
+    }
+
+    private static func tempoChanges(applying bpm: Double, to changes: [TempoChange]) -> [TempoChange] {
+        var updated = changes
+        if let index = updated.firstIndex(where: \.isOrigin) {
+            let existing = updated[index]
+            updated[index] = TempoChange(
+                id: existing.id,
+                startMeasure: existing.startMeasure,
+                beatOffset: existing.beatOffset,
+                bpm: bpm,
+                sortOrder: existing.sortOrder
+            )
+        } else {
+            updated.insert(TempoChange(startMeasure: 1, bpm: bpm, sortOrder: 0), at: 0)
+        }
+        return updated.normalizedEnsuringInitialMarker(defaultBPM: bpm)
+    }
+
+    private static func timeSignatureChanges(
+        numerator: Int,
+        denominator: Int,
+        applyingTo changes: [TimeSignatureChange]
+    ) -> [TimeSignatureChange] {
+        var updated = changes
+        if let index = updated.firstIndex(where: { $0.startMeasure == 1 }) {
+            let existing = updated[index]
+            updated[index] = TimeSignatureChange(
+                id: existing.id,
+                numerator: numerator,
+                denominator: denominator,
+                startMeasure: 1,
+                sortOrder: existing.sortOrder
+            )
+        } else {
+            updated.insert(
+                TimeSignatureChange(
+                    numerator: numerator,
+                    denominator: denominator,
+                    startMeasure: 1,
+                    sortOrder: 0
+                ),
+                at: 0
+            )
+        }
+        return updated.normalizedEnsuringInitialMarker(
+            defaultNumerator: numerator,
+            defaultDenominator: denominator
+        )
     }
 
     private static func scanFolderContents(at folderURL: URL) throws -> ScanResult {

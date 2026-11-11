@@ -5,7 +5,6 @@ struct RemoteLivePlaybackView: View {
     @Environment(InputMappingController.self) private var mapping
 
     @State private var mixerVisible = false
-    @State private var infoPanelHeight: CGFloat = 44
     @State private var cueFlashPhase = false
     @State private var showingSettings = false
     @State private var showingSongLibrary = SongSidebarPreference.initialVisibility
@@ -40,15 +39,6 @@ struct RemoteLivePlaybackView: View {
     private var canLoop: Bool {
         let song = resolvedCurrentSong
         return !(song?.sections.isEmpty ?? true) || state.isLooping
-    }
-
-    private var transportStatus: TransportStatusSnapshot {
-        TransportStatusSnapshot(
-            position: state.positionText,
-            bpm: state.bpmText,
-            meter: state.meterText,
-            key: state.keyText
-        )
     }
 
     var body: some View {
@@ -303,8 +293,7 @@ struct RemoteLivePlaybackView: View {
 
     private var transportBar: some View {
         SharedTransportStrip(
-            snapshot: transportStatus,
-            buttonSize: max(infoPanelHeight, 44),
+            buttonSize: 44,
             isPlaying: state.isPlaying,
             isLoaded: true,
             isLooping: state.isLooping,
@@ -316,7 +305,6 @@ struct RemoteLivePlaybackView: View {
             isFadedOut: state.isFadedOut,
             isFading: state.isFading,
             onToggleFade: { client.send(.toggleFade) },
-            onReadoutHeightChange: { infoPanelHeight = $0 },
             enablesInputMapping: true
         )
     }

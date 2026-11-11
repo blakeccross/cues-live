@@ -104,6 +104,7 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
     /// Cached source length so sections keep their size when the audio file is missing.
     var sourceDurationSeconds: Double?
     var includeInKeyChange: Bool
+    var laneHeight: Double
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -114,6 +115,7 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
         case groupName
         case sourceDurationSeconds
         case includeInKeyChange
+        case laneHeight
     }
 
     init(
@@ -124,7 +126,8 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
         mix: ProjectTrackMix,
         groupName: String?,
         sourceDurationSeconds: Double?,
-        includeInKeyChange: Bool = true
+        includeInKeyChange: Bool = true,
+        laneHeight: Double = TrackLaneHeight.storedDefault
     ) {
         self.id = id
         self.displayName = displayName
@@ -134,6 +137,7 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
         self.groupName = groupName
         self.sourceDurationSeconds = sourceDurationSeconds
         self.includeInKeyChange = includeInKeyChange
+        self.laneHeight = laneHeight
     }
 
     init(from decoder: Decoder) throws {
@@ -146,6 +150,7 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
         groupName = try container.decodeIfPresent(String.self, forKey: .groupName)
         sourceDurationSeconds = try container.decodeIfPresent(Double.self, forKey: .sourceDurationSeconds)
         includeInKeyChange = try container.decodeIfPresent(Bool.self, forKey: .includeInKeyChange) ?? true
+        laneHeight = try container.decodeIfPresent(Double.self, forKey: .laneHeight) ?? TrackLaneHeight.storedDefault
     }
 
     func encode(to encoder: Encoder) throws {
@@ -158,6 +163,7 @@ struct ProjectTrack: Codable, Hashable, Identifiable {
         try container.encodeIfPresent(groupName, forKey: .groupName)
         try container.encodeIfPresent(sourceDurationSeconds, forKey: .sourceDurationSeconds)
         try container.encode(includeInKeyChange, forKey: .includeInKeyChange)
+        try container.encode(laneHeight, forKey: .laneHeight)
     }
 }
 
@@ -166,6 +172,47 @@ struct ProjectMIDITrack: Codable, Hashable, Identifiable {
     var displayName: String
     var sortOrder: Int
     var deviceName: String?
+    var laneHeight: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case displayName
+        case sortOrder
+        case deviceName
+        case laneHeight
+    }
+
+    init(
+        id: UUID,
+        displayName: String,
+        sortOrder: Int,
+        deviceName: String?,
+        laneHeight: Double = TrackLaneHeight.storedDefault
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.sortOrder = sortOrder
+        self.deviceName = deviceName
+        self.laneHeight = laneHeight
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        sortOrder = try container.decode(Int.self, forKey: .sortOrder)
+        deviceName = try container.decodeIfPresent(String.self, forKey: .deviceName)
+        laneHeight = try container.decodeIfPresent(Double.self, forKey: .laneHeight) ?? TrackLaneHeight.storedDefault
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(displayName, forKey: .displayName)
+        try container.encode(sortOrder, forKey: .sortOrder)
+        try container.encodeIfPresent(deviceName, forKey: .deviceName)
+        try container.encode(laneHeight, forKey: .laneHeight)
+    }
 }
 
 struct SongProjectArrangement: Codable {

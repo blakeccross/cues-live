@@ -26,7 +26,8 @@ final class SongUndoControllerTests: XCTestCase {
                 transposeSemitones: 0,
                 smartGuideEnabled: false
             ),
-            tracks: []
+            tracks: [],
+            midiLaneHeights: [:]
         )
     }
 

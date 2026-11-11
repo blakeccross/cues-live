@@ -17,6 +17,7 @@ struct TrackEditSnapshot: Equatable, Hashable {
     var trimEndSeconds: Double?
     var groupName: String?
     var includeInKeyChange: Bool
+    var laneHeight: Double
 }
 
 struct SongMetadataSnapshot: Equatable, Hashable {
@@ -35,6 +36,7 @@ struct SongEditSnapshot: Equatable {
     var midiEvents: [MIDIEvent]
     var songMetadata: SongMetadataSnapshot
     var tracks: [TrackEditSnapshot]
+    var midiLaneHeights: [UUID: Double]
 
     static func capture(
         song: Song,
@@ -72,9 +74,13 @@ struct SongEditSnapshot: Equatable {
                     trimStartSeconds: track.trimStartSeconds,
                     trimEndSeconds: track.trimEndSeconds,
                     groupName: track.group?.name,
-                    includeInKeyChange: track.includeInKeyChange
+                    includeInKeyChange: track.includeInKeyChange,
+                    laneHeight: track.laneHeight
                 )
-            }
+            },
+            midiLaneHeights: Dictionary(
+                uniqueKeysWithValues: song.sortedMIDITracks.map { ($0.id, $0.laneHeight) }
+            )
         )
     }
 
@@ -121,6 +127,7 @@ struct SongEditSnapshot: Equatable {
             track.trimStartSeconds = trackSnapshot.trimStartSeconds
             track.trimEndSeconds = trackSnapshot.trimEndSeconds
             track.includeInKeyChange = trackSnapshot.includeInKeyChange
+            track.laneHeight = trackSnapshot.laneHeight
             if let groupName = trackSnapshot.groupName {
                 track.group = groupsByName[groupName]
             } else {
@@ -131,6 +138,14 @@ struct SongEditSnapshot: Equatable {
         for track in song.sortedTracks where !snapshotIDs.contains(track.id) {
             song.tracks.removeAll { $0.id == track.id }
             context.delete(track)
+        }
+    }
+
+    func applyMIDILaneHeights(to song: Song) {
+        for track in song.midiTracks {
+            if let laneHeight = midiLaneHeights[track.id] {
+                track.laneHeight = laneHeight
+            }
         }
     }
 

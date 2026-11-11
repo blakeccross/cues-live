@@ -388,10 +388,6 @@ struct RemoteSessionState: Codable, Hashable, Sendable {
     var loadError: String?
     var currentTime: TimeInterval
     var duration: TimeInterval
-    var bpmText: String
-    var meterText: String
-    var keyText: String
-    var positionText: String
     var cuedSectionID: UUID?
     var cueFireTime: TimeInterval?
     var isLooping: Bool
@@ -414,10 +410,6 @@ struct RemoteSessionState: Codable, Hashable, Sendable {
         loadError: nil,
         currentTime: 0,
         duration: 0,
-        bpmText: "—",
-        meterText: "—",
-        keyText: "—",
-        positionText: "0:00",
         cuedSectionID: nil,
         cueFireTime: nil,
         isLooping: false,

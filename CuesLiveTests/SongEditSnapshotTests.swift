@@ -22,6 +22,7 @@ final class SongEditSnapshotTests: XCTestCase {
         track.isMuted = true
         track.trimStartSeconds = 1.5
         track.trimEndSeconds = 10.0
+        track.laneHeight = 132
         track.song = song
         song.tracks = [track]
         context.insert(song)
@@ -48,6 +49,7 @@ final class SongEditSnapshotTests: XCTestCase {
         song.baseKeyRaw = "G"
         track.volume = 1.0
         track.isMuted = false
+        track.laneHeight = 16
         timeline = SongTimeline()
         tempoChanges = [TempoChange(startMeasure: 1, bpm: 90)]
         timeSignatureChanges = [
@@ -60,6 +62,7 @@ final class SongEditSnapshotTests: XCTestCase {
         midiEvents = snapshot.midiEvents
         snapshot.applyMetadata(to: song)
         snapshot.applyTracks(to: song, context: context)
+        snapshot.applyMIDILaneHeights(to: song)
 
         XCTAssertEqual(song.baseKeyRaw, "Bb")
         XCTAssertEqual(song.displayedKeyText, "Bb")

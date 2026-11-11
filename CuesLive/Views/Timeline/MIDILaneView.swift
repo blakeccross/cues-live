@@ -9,6 +9,9 @@ struct MIDITrackHeaderView: View {
     let onSendTest: () -> Void
     let onEditDevice: () -> Void
     let onDelete: () -> Void
+    /// Drag distance downward from the press, in points.
+    let onResize: (CGFloat) -> Void
+    let onResizeEnded: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -64,6 +67,7 @@ struct MIDITrackHeaderView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
+        .clipped()
         .background {
             if isSelected {
                 Rectangle()
@@ -77,6 +81,12 @@ struct MIDITrackHeaderView: View {
             }
         }
         .onTapGesture { onSelect(.current) }
+        .overlay(alignment: .bottom) {
+            TrackLaneResizeHandle(onChanged: onResize, onEnded: onResizeEnded)
+                .frame(maxWidth: .infinity)
+                .frame(height: 6)
+                .offset(y: 2)
+        }
     }
 
     private var deviceLabel: String {
