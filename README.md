@@ -53,26 +53,29 @@ CuesLive/
 ├── Models/           SwiftData models and project-file documents
 ├── Resources/        Click samples, spoken section guides, document icons
 ├── Services/
-│   ├── Playback/     Audio engine, transport, coordinator, buffers, overlaps
+│   ├── Playback/     Audio engine, transport, coordinator, buffers, overlap preview
 │   ├── Output/       Device discovery and per-group output routing
 │   ├── GuideTracks/  Click track generation and scheduling, bundled section-name voice samples
 │   ├── Timecode/     LTC generation and timecode settings
 │   ├── MIDI/         MIDI input, output and cue scheduling
 │   ├── Input/        Key and MIDI mapping
 │   ├── Editing/      Arrangement, trims, regions, ripple edits, undo
-│   ├── Project/      Project/setlist files, imports, media resolution
+│   ├── Project/      Project/setlist files, imports, media resolution, waveform peaks and cache
 │   └── RemoteSession/ Host/client remote control over the network
 ├── ViewModels/
 └── Views/
-    ├── Songs/        Library, song detail, and the editor (Songs/Edit)
+    ├── Songs/        Library, song detail, and the editor (Songs/Edit, split into EditView+Topic files)
     ├── Timeline/     Timeline lanes, rulers, waveform and layout
-    ├── Setlists/     Live playback, mixer, overlap editor
+    ├── Setlists/     Live playback (LivePlaybackView+Topic files), waveform strip, mixer, overlap editor
     ├── Settings/
     ├── Shared/       Transport strip, mix controls, mapping UI
     └── Docs/         In-app help
 CuesLiveTests/        Unit tests
-Scripts/              DMG packaging
+Scripts/              DMG packaging and pbxproj-sources.py (registers new source files)
 ```
+
+Contribution rules, build commands and code conventions live in `AGENTS.md` (`CLAUDE.md` links to it).
+New Swift files must be registered with `Scripts/pbxproj-sources.py add <path>`; the project does not use synchronized folders.
 
 ## Architecture
 

@@ -50,14 +50,6 @@ final class SectionAnnouncer {
         startRenderingIfNeeded()
     }
 
-    func clearCache() {
-        preparedNames.removeAll()
-        pendingNames.removeAll()
-        pendingNameSet.removeAll()
-        playbackRequests.removeAll()
-        cache.removeAll()
-    }
-
     private func enqueue(_ name: String, prioritized: Bool = false) {
         guard cache[name] == nil, pendingNameSet.insert(name).inserted else { return }
         if prioritized {

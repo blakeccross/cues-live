@@ -13,7 +13,6 @@
 		AA0000F30000000000000001 /* SongTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000001 /* SongTimeline.swift */; };
 		AA0000F30000000000000002 /* ClipEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000F20000000000000002 /* ClipEditing.swift */; };
 		00E40C95FB92FD9F2EDC5AD3 /* ClickTrackGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000043 /* ClickTrackGenerator.swift */; };
-		027BFA4C1F9227309DCAE3FE /* AppBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* AppBadge.swift */; };
 		0491D0CB258BB532C4D262E8 /* TimecodeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000110 /* TimecodeSettings.swift */; };
 		055A7DD4FF49A64810EC90F1 /* InputMappingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000328 /* InputMappingSettingsView.swift */; };
 		060975E7911FF7D5A6DFA990 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
@@ -23,7 +22,6 @@
 		0D6EA2733B353775EEDD4EF7 /* SongProjectBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000077 /* SongProjectBridge.swift */; };
 		0ED0AD756C52C275816544DD /* TrackImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000010 /* TrackImportView.swift */; };
 		0F3EF9B5611E0354E1A203DC /* TimelineLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001D /* TimelineLayout.swift */; };
-		12943F0304EF5EAB7355CD98 /* ManageOutputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000033 /* ManageOutputsView.swift */; };
 		13D4374B5B93FA1763683C62 /* AppSheetContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008C /* AppSheetContainer.swift */; };
 		187CB1E89C8812E06A404CFB /* TrackGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002A /* TrackGroup.swift */; };
 		1B2C5D6E41F0EE9CA2CAE114 /* RemoteSessionSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000303 /* RemoteSessionSettingsStore.swift */; };
@@ -160,7 +158,6 @@
 		AA0000010000000000000030 /* OutputRoutingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000030 /* OutputRoutingStore.swift */; };
 		AA0000010000000000000031 /* AudioOutputDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000031 /* AudioOutputDeviceService.swift */; };
 		AA0000010000000000000032 /* OutputRoutingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000032 /* OutputRoutingManager.swift */; };
-		AA0000010000000000000033 /* ManageOutputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000033 /* ManageOutputsView.swift */; };
 		AA0000010000000000000034 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
 		AA000001000000000000003C /* TempoChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003E /* TempoChange.swift */; };
@@ -209,7 +206,6 @@
 		AA0000010000000000000086 /* AppChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000086 /* AppChip.swift */; };
 		AA0000010000000000000089 /* AppSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000089 /* AppSearchField.swift */; };
 		AA000001000000000000008A /* AppSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008A /* AppSectionHeader.swift */; };
-		AA000001000000000000008B /* AppBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* AppBadge.swift */; };
 		AA000001000000000000008C /* AppSheetContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008C /* AppSheetContainer.swift */; };
 		AA000001000000000000008D /* AppEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008D /* AppEmptyState.swift */; };
 		AA00000100000000000000A0 /* TimelineRippleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000A0 /* TimelineRippleStore.swift */; };
@@ -218,7 +214,6 @@
 		AA00000100000000000000B2 /* OverlapTransitionTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B2 /* OverlapTransitionTiming.swift */; };
 		AA00000100000000000000B3 /* SetlistOverlapEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */; };
 		AA00000100000000000000B4 /* OverlapPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B4 /* OverlapPreviewEngine.swift */; };
-		AA00000100000000000000B5 /* OverlapTrackGraphBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */; };
 		AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */; };
 		AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C7 /* AudioTimelineMathTests.swift */; };
 		AA0000010000000000000CA1 /* LiveSetlistZoomAnchorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */; };
@@ -389,7 +384,6 @@
 		F61FC1B209F0DA22A085A044 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000081 /* AppTypography.swift */; };
 		F6CA20BD88E6F35CD3BD5773 /* EditTransportBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED005 /* EditTransportBar.swift */; };
 		F7BCB858706383EA368E569F /* AppButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000085 /* AppButtons.swift */; };
-		F7BED7B50FB7FABF262C9B83 /* OverlapTrackGraphBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */; };
 		F8A0670D0FA3E9DD3D013F8D /* ClickTrackFileGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F1 /* ClickTrackFileGenerator.swift */; };
 		F9D4CA76FF6F90A58CEB2DED /* TimecodePlaybackSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000115 /* TimecodePlaybackSupport.swift */; };
 		FE240D938D9768F049D4540A /* InputMappingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000322 /* InputMappingStore.swift */; };
@@ -406,6 +400,80 @@
 		B10000010000000000000A13 /* PitchedStemStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A13 /* PitchedStemStore.swift */; };
 		B10000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */; };
 		B10000010000000000000A15 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A15 /* ChangeKeyDialog.swift */; };
+		D963485AFC43877F33AC58F5 /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1681DD8E36A9400E3228301 /* WaveformCache.swift */; };
+		73F66DAF73555D3455379EBA /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1681DD8E36A9400E3228301 /* WaveformCache.swift */; };
+		6AAEAAF787940F9ED3E70906 /* WaveformPeakDiskCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */; };
+		3604D431FA6CC98BAB876DA6 /* WaveformPeakDiskCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */; };
+		7860604DC23E5BD056C6C6D0 /* WaveformPeakResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */; };
+		6D035DD4741D88C49DD2440E /* WaveformPeakResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */; };
+		F4F33C7C8AE7EB8A55845E1C /* TempoPlaybackMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */; };
+		5D4FD536626B29C904EA7DA8 /* TempoPlaybackMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */; };
+		1A6EA30F6F315DF86F150A88 /* MeasureTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */; };
+		A9E1488C146FB52BB852149F /* MeasureTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */; };
+		E0ED18690489691FEBA895F0 /* RemoteHostSongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA243DBCA00C5F945185811B /* RemoteHostSongLibraryPanel.swift */; };
+		974067C5A3EA7FE640869DF2 /* RemoteHostSongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA243DBCA00C5F945185811B /* RemoteHostSongLibraryPanel.swift */; };
+		9ABEEBE874D884BE9347E0A4 /* RemoteGroupMixerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DF84774DA469FBD3AC88FB9 /* RemoteGroupMixerView.swift */; };
+		435BB0B455867E6935D58867 /* RemoteGroupMixerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DF84774DA469FBD3AC88FB9 /* RemoteGroupMixerView.swift */; };
+		BDA1AE482AD9E95AC72A07C0 /* AddClickSongSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BAC8159AE0AAA6CCE7FE53B /* AddClickSongSheet.swift */; };
+		ED184151B88725F8B8B6DB43 /* AddClickSongSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BAC8159AE0AAA6CCE7FE53B /* AddClickSongSheet.swift */; };
+		B32F317BB231A3C9C00B5597 /* SongFolderSetupSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05705790616AB49F21F60566 /* SongFolderSetupSheet.swift */; };
+		95BD4C3ED0E20711C6B4DA21 /* SongFolderSetupSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05705790616AB49F21F60566 /* SongFolderSetupSheet.swift */; };
+		FFD58CA3550ADA435C7FCDCF /* SongFolderDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = E572CA3777208384CB8B23B0 /* SongFolderDrop.swift */; };
+		2F7B408E8FF29AF716D2F020 /* SongFolderDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = E572CA3777208384CB8B23B0 /* SongFolderDrop.swift */; };
+		2309082CC8952AA0A9B42086 /* SetlistHeaderEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93429CDCD971433E95EA3C7B /* SetlistHeaderEditorSheet.swift */; };
+		2872848DDFE2076F4E58ADA9 /* SetlistHeaderEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93429CDCD971433E95EA3C7B /* SetlistHeaderEditorSheet.swift */; };
+		2AC827EE4A928C5A54B069FE /* SetlistHeaderDurationField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FCFEA75E9F4C70388E1A7F /* SetlistHeaderDurationField.swift */; };
+		F69AF57CB1207A18CEB26791 /* SetlistHeaderDurationField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FCFEA75E9F4C70388E1A7F /* SetlistHeaderDurationField.swift */; };
+		95C7D405EE9FE64A96E474D0 /* LiveSetlistDurationFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B379CA16A8EE1810545F314 /* LiveSetlistDurationFormat.swift */; };
+		D746CCE17C4A41C13836889B /* LiveSetlistDurationFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B379CA16A8EE1810545F314 /* LiveSetlistDurationFormat.swift */; };
+		B49435DE3D2B5AADC201A4DB /* LiveSetlistAddMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711DFC09216571A02471075E /* LiveSetlistAddMenu.swift */; };
+		89B06C9FBEB7D6F7CC83E8CE /* LiveSetlistAddMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 711DFC09216571A02471075E /* LiveSetlistAddMenu.swift */; };
+		FC7E22C31C8B3FCB74EE5B63 /* TrackLaneResizeHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */; };
+		95193887A4338DADB5E39096 /* TrackLaneResizeHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */; };
+		2D3808C892FD2750A914B57E /* ClipGainPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */; };
+		0B1B608158E04CFCE8DD4C8C /* ClipGainPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */; };
+		987637B97821456826474FC3 /* ClipSampleWaveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */; };
+		7293AAE4EE8F33C25801DA9A /* ClipSampleWaveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */; };
+		32D596381AEB15F8E2F610FD /* ClipLaneInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */; };
+		26BD9B8CD487EF1AA9EBD0A2 /* ClipLaneInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */; };
+		3F6C7BF651822BD8B72F79C3 /* TrackLaneHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */; };
+		D730A59BF703D6B746726BC1 /* TrackLaneHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */; };
+		C1777F1F689E64FE6B9538F3 /* LiveSetlistZoomScrollAdjuster.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */; };
+		7E7C24899932C0C9093DE511 /* LiveSetlistZoomScrollAdjuster.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */; };
+		A69EF5271668ECCD10CE29B6 /* LiveSetlistWaveformGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */; };
+		18DBE288657AA981367BC7BF /* LiveSetlistWaveformGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */; };
+		132D1879CFF16E8EC892F463 /* LiveSetlistWaveformScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */; };
+		C93C15E6732721C2CCBB6C1A /* LiveSetlistWaveformScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */; };
+		E99FF0CCD9536EC1F2364FA0 /* LiveSetlistWaveformResizablePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC26FD744D6194D0DFFF968E /* LiveSetlistWaveformResizablePane.swift */; };
+		2934F751F50FEA2411368DD0 /* LiveSetlistWaveformResizablePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC26FD744D6194D0DFFF968E /* LiveSetlistWaveformResizablePane.swift */; };
+		1520E30A48ECF1F6BFFEA714 /* LiveMIDIEventLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E956C687A39B8AA154B45789 /* LiveMIDIEventLaneView.swift */; };
+		BFCDCCF9A64F2AC16D4ABD3E /* LiveMIDIEventLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E956C687A39B8AA154B45789 /* LiveMIDIEventLaneView.swift */; };
+		8A7F023FE9D37A5FEE3EF1FE /* LiveSetlistWaveformMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C92F0470DCDE0C6B22BA26 /* LiveSetlistWaveformMetrics.swift */; };
+		3A983C22DECE138FA0036D03 /* LiveSetlistWaveformMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57C92F0470DCDE0C6B22BA26 /* LiveSetlistWaveformMetrics.swift */; };
+		095C93A56E79BD56383FF11A /* EditView+TempoAndMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEAE8B3A915674B028B83B7 /* EditView+TempoAndMeter.swift */; };
+		80A493BF9D3CC695205779F2 /* EditView+TempoAndMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEAE8B3A915674B028B83B7 /* EditView+TempoAndMeter.swift */; };
+		C34EFBD20240C42A705115C3 /* EditView+Undo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327ADCB5614D5C26F420B7B7 /* EditView+Undo.swift */; };
+		ED63BFED638CC96665C098EA /* EditView+Undo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327ADCB5614D5C26F420B7B7 /* EditView+Undo.swift */; };
+		87B2F6AB11BF09FDFDA98046 /* EditView+Tracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D39406B232D503EA2BB4B2 /* EditView+Tracks.swift */; };
+		A5C4AB48A8A41CFA830BAA1C /* EditView+Tracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D39406B232D503EA2BB4B2 /* EditView+Tracks.swift */; };
+		06B60E8B10E8E59135E4A79E /* EditView+Clips.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0A88308BB9DDBD6DFE4B18 /* EditView+Clips.swift */; };
+		A655D8955C0B7444BB778622 /* EditView+Clips.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0A88308BB9DDBD6DFE4B18 /* EditView+Clips.swift */; };
+		A00C903B40CAC2AB759368DE /* EditView+Sections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 463C329C1D84C0E84741578A /* EditView+Sections.swift */; };
+		0B80A512E859457DFA649BB7 /* EditView+Sections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 463C329C1D84C0E84741578A /* EditView+Sections.swift */; };
+		39F9856CB00BDC4F9617E99F /* EditView+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3AE6DCEE068E655E46C58AA /* EditView+Timeline.swift */; };
+		72866FB6B22EAAA1A28537E8 /* EditView+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3AE6DCEE068E655E46C58AA /* EditView+Timeline.swift */; };
+		3C0BC5A03EF562D190EAC081 /* EditView+LaneHeights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */; };
+		606A5D9632E6D5C6D14003B3 /* EditView+LaneHeights.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */; };
+		25C5453E5E51EBE369ADDD8E /* LivePlaybackView+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB0FA64E1CA8E40AD40F4A5 /* LivePlaybackView+Files.swift */; };
+		776B6E7A8D636B92AC3C80B4 /* LivePlaybackView+Files.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB0FA64E1CA8E40AD40F4A5 /* LivePlaybackView+Files.swift */; };
+		303427D9BE4654916CBE832A /* LivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800F5D30D4FEA51164E4EB8A /* LivePlaybackView+Setlist.swift */; };
+		ADF5E951D04173B25A0AF0E8 /* LivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800F5D30D4FEA51164E4EB8A /* LivePlaybackView+Setlist.swift */; };
+		20996B8316CD8E4AA046B183 /* LivePlaybackView+Sections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9EC5D80E5DBC4408EA3E9B /* LivePlaybackView+Sections.swift */; };
+		261F683E8DE8C1C9CA54C2EC /* LivePlaybackView+Sections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9EC5D80E5DBC4408EA3E9B /* LivePlaybackView+Sections.swift */; };
+		0618E4BC58070D8C819CEF1E /* LivePlaybackView+Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */; };
+		A1E4C0470AE6A9E1E84259E3 /* LivePlaybackView+Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */; };
+		F4C17E9CCF60268CE8175B7A /* SongImportFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */; };
+		A3F8ABE3AA51030095B7EC73 /* SongImportFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -467,7 +535,6 @@
 		AA0000020000000000000030 /* OutputRoutingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingStore.swift; sourceTree = "<group>"; };
 		AA0000020000000000000031 /* AudioOutputDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputDeviceService.swift; sourceTree = "<group>"; };
 		AA0000020000000000000032 /* OutputRoutingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingManager.swift; sourceTree = "<group>"; };
-		AA0000020000000000000033 /* ManageOutputsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageOutputsView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000034 /* SongFolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderImporter.swift; sourceTree = "<group>"; };
 		AA0000020000000000000035 /* TimeSignatureChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSignatureChange.swift; sourceTree = "<group>"; };
 		AA000002000000000000003E /* TempoChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoChange.swift; sourceTree = "<group>"; };
@@ -514,7 +581,6 @@
 		AA0000020000000000000086 /* AppChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppChip.swift; sourceTree = "<group>"; };
 		AA0000020000000000000089 /* AppSearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSearchField.swift; sourceTree = "<group>"; };
 		AA000002000000000000008A /* AppSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSectionHeader.swift; sourceTree = "<group>"; };
-		AA000002000000000000008B /* AppBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadge.swift; sourceTree = "<group>"; };
 		AA000002000000000000008C /* AppSheetContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSheetContainer.swift; sourceTree = "<group>"; };
 		AA000002000000000000008D /* AppEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEmptyState.swift; sourceTree = "<group>"; };
 		AA00000200000000000000A0 /* TimelineRippleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRippleStore.swift; sourceTree = "<group>"; };
@@ -523,7 +589,6 @@
 		AA00000200000000000000B2 /* OverlapTransitionTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTransitionTiming.swift; sourceTree = "<group>"; };
 		AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistOverlapEditorView.swift; sourceTree = "<group>"; };
 		AA00000200000000000000B4 /* OverlapPreviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapPreviewEngine.swift; sourceTree = "<group>"; };
-		AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTrackGraphBuilder.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTransitionConfigTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C7 /* AudioTimelineMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTimelineMathTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomAnchorTests.swift; sourceTree = "<group>"; };
@@ -645,6 +710,43 @@
 		AA0000020000000000000A17 /* KeyChangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeTests.swift; sourceTree = "<group>"; };
 		AA0000030000000000000001 /* cues.live.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cues.live.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000030000000000000002 /* CuesLiveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CuesLiveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F1681DD8E36A9400E3228301 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
+		3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakDiskCache.swift; sourceTree = "<group>"; };
+		C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakResampler.swift; sourceTree = "<group>"; };
+		22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoPlaybackMap.swift; sourceTree = "<group>"; };
+		827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureTiming.swift; sourceTree = "<group>"; };
+		BA243DBCA00C5F945185811B /* RemoteHostSongLibraryPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHostSongLibraryPanel.swift; sourceTree = "<group>"; };
+		4DF84774DA469FBD3AC88FB9 /* RemoteGroupMixerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteGroupMixerView.swift; sourceTree = "<group>"; };
+		3BAC8159AE0AAA6CCE7FE53B /* AddClickSongSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddClickSongSheet.swift; sourceTree = "<group>"; };
+		05705790616AB49F21F60566 /* SongFolderSetupSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderSetupSheet.swift; sourceTree = "<group>"; };
+		E572CA3777208384CB8B23B0 /* SongFolderDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderDrop.swift; sourceTree = "<group>"; };
+		93429CDCD971433E95EA3C7B /* SetlistHeaderEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistHeaderEditorSheet.swift; sourceTree = "<group>"; };
+		97FCFEA75E9F4C70388E1A7F /* SetlistHeaderDurationField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistHeaderDurationField.swift; sourceTree = "<group>"; };
+		2B379CA16A8EE1810545F314 /* LiveSetlistDurationFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistDurationFormat.swift; sourceTree = "<group>"; };
+		711DFC09216571A02471075E /* LiveSetlistAddMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistAddMenu.swift; sourceTree = "<group>"; };
+		27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLaneResizeHandle.swift; sourceTree = "<group>"; };
+		6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipGainPrompt.swift; sourceTree = "<group>"; };
+		5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipSampleWaveform.swift; sourceTree = "<group>"; };
+		BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipLaneInteraction.swift; sourceTree = "<group>"; };
+		2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLaneHeaderView.swift; sourceTree = "<group>"; };
+		A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomScrollAdjuster.swift; sourceTree = "<group>"; };
+		B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformGestures.swift; sourceTree = "<group>"; };
+		7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformScrollView.swift; sourceTree = "<group>"; };
+		CC26FD744D6194D0DFFF968E /* LiveSetlistWaveformResizablePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformResizablePane.swift; sourceTree = "<group>"; };
+		E956C687A39B8AA154B45789 /* LiveMIDIEventLaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMIDIEventLaneView.swift; sourceTree = "<group>"; };
+		57C92F0470DCDE0C6B22BA26 /* LiveSetlistWaveformMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformMetrics.swift; sourceTree = "<group>"; };
+		9FEAE8B3A915674B028B83B7 /* EditView+TempoAndMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+TempoAndMeter.swift"; sourceTree = "<group>"; };
+		327ADCB5614D5C26F420B7B7 /* EditView+Undo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Undo.swift"; sourceTree = "<group>"; };
+		B1D39406B232D503EA2BB4B2 /* EditView+Tracks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Tracks.swift"; sourceTree = "<group>"; };
+		EF0A88308BB9DDBD6DFE4B18 /* EditView+Clips.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Clips.swift"; sourceTree = "<group>"; };
+		463C329C1D84C0E84741578A /* EditView+Sections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Sections.swift"; sourceTree = "<group>"; };
+		F3AE6DCEE068E655E46C58AA /* EditView+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Timeline.swift"; sourceTree = "<group>"; };
+		2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+LaneHeights.swift"; sourceTree = "<group>"; };
+		9AB0FA64E1CA8E40AD40F4A5 /* LivePlaybackView+Files.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Files.swift"; sourceTree = "<group>"; };
+		800F5D30D4FEA51164E4EB8A /* LivePlaybackView+Setlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Setlist.swift"; sourceTree = "<group>"; };
+		8F9EC5D80E5DBC4408EA3E9B /* LivePlaybackView+Sections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Sections.swift"; sourceTree = "<group>"; };
+		F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Stage.swift"; sourceTree = "<group>"; };
+		10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongImportFeedback.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -828,11 +930,12 @@
 		AA0000050000000000000008 /* Songs */ = {
 			isa = PBXGroup;
 			children = (
+				05705790616AB49F21F60566 /* SongFolderSetupSheet.swift */,
+				3BAC8159AE0AAA6CCE7FE53B /* AddClickSongSheet.swift */,
 				AA000002000000000000000C /* SongLibraryView.swift */,
 				AA000002000000000000000D /* SongDetailView.swift */,
 				AA0000020000000000000020 /* ArrangementEditorMenu.swift */,
 				AA000002000000000000002C /* TrackGroupEditorView.swift */,
-				AA0000020000000000000033 /* ManageOutputsView.swift */,
 				AA0000020000000000000068 /* MIDIDeviceViews.swift */,
 				AA0000020000000000000010 /* TrackImportView.swift */,
 				AA00000500000000000EDI01 /* Edit */,
@@ -843,6 +946,23 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */,
+				8F9EC5D80E5DBC4408EA3E9B /* LivePlaybackView+Sections.swift */,
+				800F5D30D4FEA51164E4EB8A /* LivePlaybackView+Setlist.swift */,
+				9AB0FA64E1CA8E40AD40F4A5 /* LivePlaybackView+Files.swift */,
+				57C92F0470DCDE0C6B22BA26 /* LiveSetlistWaveformMetrics.swift */,
+				E956C687A39B8AA154B45789 /* LiveMIDIEventLaneView.swift */,
+				CC26FD744D6194D0DFFF968E /* LiveSetlistWaveformResizablePane.swift */,
+				7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */,
+				B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */,
+				A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */,
+				711DFC09216571A02471075E /* LiveSetlistAddMenu.swift */,
+				2B379CA16A8EE1810545F314 /* LiveSetlistDurationFormat.swift */,
+				97FCFEA75E9F4C70388E1A7F /* SetlistHeaderDurationField.swift */,
+				93429CDCD971433E95EA3C7B /* SetlistHeaderEditorSheet.swift */,
+				E572CA3777208384CB8B23B0 /* SongFolderDrop.swift */,
+				4DF84774DA469FBD3AC88FB9 /* RemoteGroupMixerView.swift */,
+				BA243DBCA00C5F945185811B /* RemoteHostSongLibraryPanel.swift */,
 				AA0000020000000000000013 /* LivePlaybackView.swift */,
 				AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */,
 				AA00000200000000000F0001 /* LiveSetlistToolbar.swift */,
@@ -861,6 +981,7 @@
 		AA000005000000000000000A /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */,
 				AA000002000000000000007A /* TrackMixControls.swift */,
 				AA00000200000000000000DA /* SharedTransportStrip.swift */,
 				AA00000200000000000004A4 /* AudioOutputLostBanner.swift */,
@@ -967,7 +1088,6 @@
 				AA0000020000000000000086 /* AppChip.swift */,
 				AA0000020000000000000089 /* AppSearchField.swift */,
 				AA000002000000000000008A /* AppSectionHeader.swift */,
-				AA000002000000000000008B /* AppBadge.swift */,
 				AA000002000000000000008C /* AppSheetContainer.swift */,
 				AA000002000000000000008D /* AppEmptyState.swift */,
 			);
@@ -1042,7 +1162,6 @@
 				AA0000020000000000000079 /* GroupMixStore.swift */,
 				AA000002000000000000007C /* PeakMeterHolder.swift */,
 				AA00000200000000000000B4 /* OverlapPreviewEngine.swift */,
-				AA00000200000000000000B5 /* OverlapTrackGraphBuilder.swift */,
 				AA000002000000000000004C /* SectionLoopController.swift */,
 				AA00000200000000000000F2 /* SectionAnnouncer.swift */,
 				AA00000200000000000005A1 /* SmartGuideCallPlanner.swift */,
@@ -1111,6 +1230,9 @@
 		AA00000500000000000BB008 /* Project */ = {
 			isa = PBXGroup;
 			children = (
+				C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */,
+				3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */,
+				F1681DD8E36A9400E3228301 /* WaveformCache.swift */,
 				AA000002000000000000001A /* AbletonProjectImporter.swift */,
 				AA0000020000000000000006 /* FileStore.swift */,
 				AA0000020000000000000078 /* MediaConsolidator.swift */,
@@ -1148,6 +1270,13 @@
 		AA00000500000000000BB00A /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
+				2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */,
+				BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */,
+				5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */,
+				6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */,
+				27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */,
+				827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */,
+				22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */,
 				AA000002000000000000001D /* TimelineLayout.swift */,
 				AA0000020000000000000017 /* WaveformLaneView.swift */,
 				AA0000020000000000000065 /* MIDILaneView.swift */,
@@ -1165,6 +1294,13 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */,
+				F3AE6DCEE068E655E46C58AA /* EditView+Timeline.swift */,
+				463C329C1D84C0E84741578A /* EditView+Sections.swift */,
+				EF0A88308BB9DDBD6DFE4B18 /* EditView+Clips.swift */,
+				B1D39406B232D503EA2BB4B2 /* EditView+Tracks.swift */,
+				327ADCB5614D5C26F420B7B7 /* EditView+Undo.swift */,
+				9FEAE8B3A915674B028B83B7 /* EditView+TempoAndMeter.swift */,
 				AA000002000000000000000F /* EditView.swift */,
 				AA00000200000000000ED001 /* AddTrackTypeSheet.swift */,
 				AA00000200000000000ED002 /* EditGuideTrackMenus.swift */,
@@ -1312,6 +1448,43 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F4C17E9CCF60268CE8175B7A /* SongImportFeedback.swift in Sources */,
+				0618E4BC58070D8C819CEF1E /* LivePlaybackView+Stage.swift in Sources */,
+				20996B8316CD8E4AA046B183 /* LivePlaybackView+Sections.swift in Sources */,
+				303427D9BE4654916CBE832A /* LivePlaybackView+Setlist.swift in Sources */,
+				25C5453E5E51EBE369ADDD8E /* LivePlaybackView+Files.swift in Sources */,
+				3C0BC5A03EF562D190EAC081 /* EditView+LaneHeights.swift in Sources */,
+				39F9856CB00BDC4F9617E99F /* EditView+Timeline.swift in Sources */,
+				A00C903B40CAC2AB759368DE /* EditView+Sections.swift in Sources */,
+				06B60E8B10E8E59135E4A79E /* EditView+Clips.swift in Sources */,
+				87B2F6AB11BF09FDFDA98046 /* EditView+Tracks.swift in Sources */,
+				C34EFBD20240C42A705115C3 /* EditView+Undo.swift in Sources */,
+				095C93A56E79BD56383FF11A /* EditView+TempoAndMeter.swift in Sources */,
+				8A7F023FE9D37A5FEE3EF1FE /* LiveSetlistWaveformMetrics.swift in Sources */,
+				1520E30A48ECF1F6BFFEA714 /* LiveMIDIEventLaneView.swift in Sources */,
+				E99FF0CCD9536EC1F2364FA0 /* LiveSetlistWaveformResizablePane.swift in Sources */,
+				132D1879CFF16E8EC892F463 /* LiveSetlistWaveformScrollView.swift in Sources */,
+				A69EF5271668ECCD10CE29B6 /* LiveSetlistWaveformGestures.swift in Sources */,
+				C1777F1F689E64FE6B9538F3 /* LiveSetlistZoomScrollAdjuster.swift in Sources */,
+				3F6C7BF651822BD8B72F79C3 /* TrackLaneHeaderView.swift in Sources */,
+				32D596381AEB15F8E2F610FD /* ClipLaneInteraction.swift in Sources */,
+				987637B97821456826474FC3 /* ClipSampleWaveform.swift in Sources */,
+				2D3808C892FD2750A914B57E /* ClipGainPrompt.swift in Sources */,
+				FC7E22C31C8B3FCB74EE5B63 /* TrackLaneResizeHandle.swift in Sources */,
+				B49435DE3D2B5AADC201A4DB /* LiveSetlistAddMenu.swift in Sources */,
+				95C7D405EE9FE64A96E474D0 /* LiveSetlistDurationFormat.swift in Sources */,
+				2AC827EE4A928C5A54B069FE /* SetlistHeaderDurationField.swift in Sources */,
+				2309082CC8952AA0A9B42086 /* SetlistHeaderEditorSheet.swift in Sources */,
+				FFD58CA3550ADA435C7FCDCF /* SongFolderDrop.swift in Sources */,
+				B32F317BB231A3C9C00B5597 /* SongFolderSetupSheet.swift in Sources */,
+				BDA1AE482AD9E95AC72A07C0 /* AddClickSongSheet.swift in Sources */,
+				9ABEEBE874D884BE9347E0A4 /* RemoteGroupMixerView.swift in Sources */,
+				E0ED18690489691FEBA895F0 /* RemoteHostSongLibraryPanel.swift in Sources */,
+				1A6EA30F6F315DF86F150A88 /* MeasureTiming.swift in Sources */,
+				F4F33C7C8AE7EB8A55845E1C /* TempoPlaybackMap.swift in Sources */,
+				7860604DC23E5BD056C6C6D0 /* WaveformPeakResampler.swift in Sources */,
+				6AAEAAF787940F9ED3E70906 /* WaveformPeakDiskCache.swift in Sources */,
+				D963485AFC43877F33AC58F5 /* WaveformCache.swift in Sources */,
 				AA0000010000000000000A11 /* PitchShiftBridge.mm in Sources */,
 				AA0000010000000000000A12 /* KeyChangeRenderer.swift in Sources */,
 				AA0000010000000000000A13 /* PitchedStemStore.swift in Sources */,
@@ -1439,7 +1612,6 @@
 				AA00000100000000000000B2 /* OverlapTransitionTiming.swift in Sources */,
 				AA00000100000000000000B3 /* SetlistOverlapEditorView.swift in Sources */,
 				AA00000100000000000000B4 /* OverlapPreviewEngine.swift in Sources */,
-				AA00000100000000000000B5 /* OverlapTrackGraphBuilder.swift in Sources */,
 				AA000001000000000000002A /* TrackGroup.swift in Sources */,
 				AA000001000000000000002B /* TrackGroupStore.swift in Sources */,
 				AA000001000000000000002C /* TrackGroupEditorView.swift in Sources */,
@@ -1451,7 +1623,6 @@
 				AA0000010000000000000032 /* OutputRoutingManager.swift in Sources */,
 				AA00000100000000000003B2 /* OutputChannelTestPlayer.swift in Sources */,
 				AA0000010000000000000034 /* SongFolderImporter.swift in Sources */,
-				AA0000010000000000000033 /* ManageOutputsView.swift in Sources */,
 				AA0000010000000000000210 /* OutputRoutingSettingsForm.swift in Sources */,
 				AA0000010000000000000211 /* AppSettingsView.swift in Sources */,
 				AA0000010000000000000071 /* MediaReference.swift in Sources */,
@@ -1482,7 +1653,6 @@
 				AA0000010000000000000086 /* AppChip.swift in Sources */,
 				AA0000010000000000000089 /* AppSearchField.swift in Sources */,
 				AA000001000000000000008A /* AppSectionHeader.swift in Sources */,
-				AA000001000000000000008B /* AppBadge.swift in Sources */,
 				AA000001000000000000008C /* AppSheetContainer.swift in Sources */,
 				AA000001000000000000008D /* AppEmptyState.swift in Sources */,
 			);
@@ -1537,6 +1707,43 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3F8ABE3AA51030095B7EC73 /* SongImportFeedback.swift in Sources */,
+				A1E4C0470AE6A9E1E84259E3 /* LivePlaybackView+Stage.swift in Sources */,
+				261F683E8DE8C1C9CA54C2EC /* LivePlaybackView+Sections.swift in Sources */,
+				ADF5E951D04173B25A0AF0E8 /* LivePlaybackView+Setlist.swift in Sources */,
+				776B6E7A8D636B92AC3C80B4 /* LivePlaybackView+Files.swift in Sources */,
+				606A5D9632E6D5C6D14003B3 /* EditView+LaneHeights.swift in Sources */,
+				72866FB6B22EAAA1A28537E8 /* EditView+Timeline.swift in Sources */,
+				0B80A512E859457DFA649BB7 /* EditView+Sections.swift in Sources */,
+				A655D8955C0B7444BB778622 /* EditView+Clips.swift in Sources */,
+				A5C4AB48A8A41CFA830BAA1C /* EditView+Tracks.swift in Sources */,
+				ED63BFED638CC96665C098EA /* EditView+Undo.swift in Sources */,
+				80A493BF9D3CC695205779F2 /* EditView+TempoAndMeter.swift in Sources */,
+				3A983C22DECE138FA0036D03 /* LiveSetlistWaveformMetrics.swift in Sources */,
+				BFCDCCF9A64F2AC16D4ABD3E /* LiveMIDIEventLaneView.swift in Sources */,
+				2934F751F50FEA2411368DD0 /* LiveSetlistWaveformResizablePane.swift in Sources */,
+				C93C15E6732721C2CCBB6C1A /* LiveSetlistWaveformScrollView.swift in Sources */,
+				18DBE288657AA981367BC7BF /* LiveSetlistWaveformGestures.swift in Sources */,
+				7E7C24899932C0C9093DE511 /* LiveSetlistZoomScrollAdjuster.swift in Sources */,
+				D730A59BF703D6B746726BC1 /* TrackLaneHeaderView.swift in Sources */,
+				26BD9B8CD487EF1AA9EBD0A2 /* ClipLaneInteraction.swift in Sources */,
+				7293AAE4EE8F33C25801DA9A /* ClipSampleWaveform.swift in Sources */,
+				0B1B608158E04CFCE8DD4C8C /* ClipGainPrompt.swift in Sources */,
+				95193887A4338DADB5E39096 /* TrackLaneResizeHandle.swift in Sources */,
+				89B06C9FBEB7D6F7CC83E8CE /* LiveSetlistAddMenu.swift in Sources */,
+				D746CCE17C4A41C13836889B /* LiveSetlistDurationFormat.swift in Sources */,
+				F69AF57CB1207A18CEB26791 /* SetlistHeaderDurationField.swift in Sources */,
+				2872848DDFE2076F4E58ADA9 /* SetlistHeaderEditorSheet.swift in Sources */,
+				2F7B408E8FF29AF716D2F020 /* SongFolderDrop.swift in Sources */,
+				95BD4C3ED0E20711C6B4DA21 /* SongFolderSetupSheet.swift in Sources */,
+				ED184151B88725F8B8B6DB43 /* AddClickSongSheet.swift in Sources */,
+				435BB0B455867E6935D58867 /* RemoteGroupMixerView.swift in Sources */,
+				974067C5A3EA7FE640869DF2 /* RemoteHostSongLibraryPanel.swift in Sources */,
+				A9E1488C146FB52BB852149F /* MeasureTiming.swift in Sources */,
+				5D4FD536626B29C904EA7DA8 /* TempoPlaybackMap.swift in Sources */,
+				6D035DD4741D88C49DD2440E /* WaveformPeakResampler.swift in Sources */,
+				3604D431FA6CC98BAB876DA6 /* WaveformPeakDiskCache.swift in Sources */,
+				73F66DAF73555D3455379EBA /* WaveformCache.swift in Sources */,
 				B10000010000000000000A11 /* PitchShiftBridge.mm in Sources */,
 				B10000010000000000000A12 /* KeyChangeRenderer.swift in Sources */,
 				B10000010000000000000A13 /* PitchedStemStore.swift in Sources */,
@@ -1664,7 +1871,6 @@
 				51F4FA0B555A2018050B4476 /* OverlapTransitionTiming.swift in Sources */,
 				A6231BC1653A96074D7380B4 /* SetlistOverlapEditorView.swift in Sources */,
 				ECA2184AEF722006934A4BB2 /* OverlapPreviewEngine.swift in Sources */,
-				F7BED7B50FB7FABF262C9B83 /* OverlapTrackGraphBuilder.swift in Sources */,
 				187CB1E89C8812E06A404CFB /* TrackGroup.swift in Sources */,
 				5A63923951976D12AE7931A8 /* TrackGroupStore.swift in Sources */,
 				532745A5BEDB024756242DEF /* TrackGroupEditorView.swift in Sources */,
@@ -1676,7 +1882,6 @@
 				87AA3E173DC3F3A03F5EB998 /* OutputRoutingManager.swift in Sources */,
 				3E2D3C9A0AAFA9A7030E4B84 /* OutputChannelTestPlayer.swift in Sources */,
 				060975E7911FF7D5A6DFA990 /* SongFolderImporter.swift in Sources */,
-				12943F0304EF5EAB7355CD98 /* ManageOutputsView.swift in Sources */,
 				BF3CA00EFDBA79C04ED897BB /* OutputRoutingSettingsForm.swift in Sources */,
 				957CBC2A828629EE5FEFBB86 /* AppSettingsView.swift in Sources */,
 				75BC88109658E5CE10908554 /* MediaReference.swift in Sources */,
@@ -1707,7 +1912,6 @@
 				52B769932B82F8AF0C46F701 /* AppChip.swift in Sources */,
 				53905EA9D3DCECA7995A114B /* AppSearchField.swift in Sources */,
 				EF67287DE02DFC7424325A54 /* AppSectionHeader.swift in Sources */,
-				027BFA4C1F9227309DCAE3FE /* AppBadge.swift in Sources */,
 				13D4374B5B93FA1763683C62 /* AppSheetContainer.swift in Sources */,
 				906E00ACDDE7F30BBCDFC166 /* AppEmptyState.swift in Sources */,
 			);

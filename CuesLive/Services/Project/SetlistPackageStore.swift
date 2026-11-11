@@ -8,31 +8,17 @@ enum SetlistPackageStore {
     static let songsFolderName = "Songs"
 
     enum PackageError: LocalizedError {
-        case missingShowFile
         case missingProjectFile(String)
         case copyFailed(String)
-        case invalidPackage
 
         var errorDescription: String? {
             switch self {
-            case .missingShowFile:
-                return "This setlist package is missing its show file."
             case .missingProjectFile(let name):
                 return "Could not find a project file for “\(name)”."
             case .copyFailed(let path):
                 return "Could not copy media file at \(path)."
-            case .invalidPackage:
-                return "This does not look like a cues.live setlist package."
             }
         }
-    }
-
-    static var packagesDirectory: URL {
-        let directory = FileStore.documentsDirectory
-            .appendingPathComponent("cues.live", isDirectory: true)
-            .appendingPathComponent("SetlistPackages", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory
     }
 
     /// Collects songs, stems, clicks, headers, and transitions into a plain folder:
@@ -103,101 +89,6 @@ enum SetlistPackageStore {
             withIntermediateDirectories: true
         )
         try fileManager.copyItem(at: stagingPackage, to: finalDestination)
-    }
-
-    /// Installs a package into the app documents tree and imports it into SwiftData.
-    @discardableResult
-    static func importPackage(
-        from url: URL,
-        into context: ModelContext
-    ) throws -> Setlist {
-        let didAccess = url.startAccessingSecurityScopedResource()
-        defer {
-            if didAccess {
-                url.stopAccessingSecurityScopedResource()
-            }
-        }
-
-        let packageURL = try resolvePackageRoot(from: url)
-        let installedURL = try installIntoDocuments(packageURL)
-        let showURL = installedURL.appendingPathComponent(showFileName)
-        guard FileManager.default.fileExists(atPath: showURL.path) else {
-            throw PackageError.missingShowFile
-        }
-
-        let document = try ShowFileStore.load(from: showURL)
-        if let existing = try findSetlist(id: document.id, in: context) {
-            for entry in existing.entries {
-                context.delete(entry)
-            }
-            existing.entries.removeAll()
-            context.delete(existing)
-            try context.save()
-        }
-
-        return try SongProjectBridge.importShow(from: showURL, into: context)
-    }
-
-    static func resolvePackageRoot(from url: URL) throws -> URL {
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
-
-        if exists, isDirectory.boolValue {
-            let showURL = url.appendingPathComponent(showFileName)
-            if FileManager.default.fileExists(atPath: showURL.path) {
-                return url
-            }
-            throw PackageError.invalidPackage
-        }
-
-        if url.lastPathComponent == showFileName
-            || url.pathExtension == ProjectUTType.showProjectExtension {
-            let parent = url.deletingLastPathComponent()
-            let siblingShow = parent.appendingPathComponent(showFileName)
-            if FileManager.default.fileExists(atPath: siblingShow.path)
-                || FileManager.default.fileExists(atPath: url.path) {
-                return parent
-            }
-        }
-
-        throw PackageError.invalidPackage
-    }
-
-    // MARK: - Private
-
-    private static func installIntoDocuments(_ packageURL: URL) throws -> URL {
-        let fileManager = FileManager.default
-        let destination = uniquePackageDestination(for: packageURL.lastPathComponent)
-
-        if destination.standardizedFileURL == packageURL.standardizedFileURL {
-            return destination
-        }
-
-        if FileStore.isInAppContainer(packageURL),
-           packageURL.path.hasPrefix(packagesDirectory.path) {
-            return packageURL
-        }
-
-        if fileManager.fileExists(atPath: destination.path) {
-            try fileManager.removeItem(at: destination)
-        }
-        try fileManager.copyItem(at: packageURL, to: destination)
-        return destination
-    }
-
-    private static func uniquePackageDestination(for fileName: String) -> URL {
-        let baseName = sanitizedExportFolderName(from: URL(fileURLWithPath: fileName))
-
-        var candidate = packagesDirectory.appendingPathComponent(baseName, isDirectory: true)
-        var index = 2
-        while FileManager.default.fileExists(atPath: candidate.path) {
-            candidate = packagesDirectory.appendingPathComponent(
-                "\(baseName) \(index)",
-                isDirectory: true
-            )
-            index += 1
-        }
-        return candidate
     }
 
     /// Layout per song:
@@ -331,14 +222,6 @@ enum SetlistPackageStore {
             lastOpenedAt: setlist.lastOpenedAt,
             entries: entries
         )
-    }
-
-    private static func findSetlist(id: UUID, in context: ModelContext) throws -> Setlist? {
-        var descriptor = FetchDescriptor<Setlist>(
-            predicate: #Predicate { $0.id == id }
-        )
-        descriptor.fetchLimit = 1
-        return try context.fetch(descriptor).first
     }
 
     private static func sanitizedExportFolderName(from destinationURL: URL) -> String {

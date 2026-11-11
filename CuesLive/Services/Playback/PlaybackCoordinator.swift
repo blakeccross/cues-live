@@ -457,14 +457,6 @@ final class PlaybackCoordinator {
         incomingAudioEngine = nil
     }
 
-    /// Reloads arrangement and waveform metadata for the already-loaded current song.
-    @MainActor
-    func refreshCurrentSongState() {
-        guard let song = currentSong, song.id == loadedSongID, isLoaded else { return }
-        refreshWaveformSnapshots()
-        applySongEngineState(for: song)
-    }
-
     func seek(to time: TimeInterval) {
         // Seeking during overlap would require timeline alignment between two
         // independent engines. For now, we cancel the overlap handoff and seek
@@ -538,7 +530,6 @@ final class PlaybackCoordinator {
 
     private func reloadAndMaybePlay(autoPlay: Bool, startTime: TimeInterval? = nil) {
         audioEngine.cancelScheduledOverlapStart()
-        audioEngine.cancelOverlapPlayback()
         clearIncomingPrefetch()
         activeOverlapConfig = nil
         audioEngine.cancelScheduledTransition()

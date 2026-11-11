@@ -10,8 +10,6 @@ struct ArrangementTimelineMapper: Sendable {
     private let sourceEnd: TimeInterval
     private let usesClips: Bool
 
-    var hasArrangementMapping: Bool { usesClips }
-
     init(clips: [TrackClip], fileDuration: TimeInterval) {
         self.clips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
         sourceStart = 0

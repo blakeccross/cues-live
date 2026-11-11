@@ -175,27 +175,6 @@ final class InputMappingController {
         }
     }
 
-    var promptText: String {
-        if let statusMessage {
-            return statusMessage
-        }
-
-        switch session {
-        case .keyMapping:
-            if let pendingAction {
-                return "Press a key for \(pendingAction.title)"
-            }
-            return "Select a control, then press a key"
-        case .midiMapping:
-            if let pendingAction {
-                return "Send a MIDI note for \(pendingAction.title)"
-            }
-            return "Select a control, then send a MIDI note"
-        case .idle:
-            return ""
-        }
-    }
-
     var sessionTitle: String {
         switch session {
         case .keyMapping: "Key Mapping"

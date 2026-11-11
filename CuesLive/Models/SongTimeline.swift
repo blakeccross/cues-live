@@ -258,10 +258,6 @@ struct ClipSelection: Equatable {
         clipIDs.formUnion(ids)
     }
 
-    mutating func deselect(_ clipID: UUID) {
-        clipIDs.remove(clipID)
-    }
-
     mutating func deselectAll() {
         clipIDs.removeAll()
     }

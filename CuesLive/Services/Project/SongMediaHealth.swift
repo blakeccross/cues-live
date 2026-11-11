@@ -17,8 +17,6 @@ enum SongMediaHealth {
         let linkedTrackIDs: [UUID]
         /// How many additional missing tracks were matched by name in the same folder.
         let autoLinkedCount: Int
-
-        var linkedCount: Int { linkedTrackIDs.count }
     }
 
     enum RelinkError: LocalizedError {

@@ -47,9 +47,6 @@ final class AudioEngineManager {
     private let transport = AudioPlaybackTransport()
     private let midiScheduler: MIDIScheduler
     private var tracks: [UUID: TrackState] = [:]
-    private var overlapTracks: [UUID: TrackState] = [:]
-    private(set) var isOverlapPlaybackActive = false
-    private var overlapStartMasterTime: TimeInterval = 0
     private var scheduledOverlapStartTime: TimeInterval?
     private var overlapStartHandler: (() -> Void)?
     private var didNotifyPlaybackFinished = false
@@ -188,7 +185,6 @@ final class AudioEngineManager {
         routing: OutputRoutingSnapshot? = nil
     ) throws {
         clearOutputLoss()
-        cancelOverlapPlayback()
         stop()
         stopEngineForGraphChanges()
         teardownTracks()
@@ -385,7 +381,6 @@ final class AudioEngineManager {
 
     func stop() {
         cancelScheduledOverlapStart()
-        cancelOverlapPlayback()
         didNotifyPlaybackFinished = false
         transport.stop()
         isPlaying = false
@@ -409,7 +404,6 @@ final class AudioEngineManager {
     func shutdown() {
         clearOutputLoss()
         cancelScheduledOverlapStart()
-        cancelOverlapPlayback()
         didNotifyPlaybackFinished = false
         transport.stop()
         isPlaying = false
@@ -436,9 +430,6 @@ final class AudioEngineManager {
 
     private func invalidateAllPlayers() {
         for track in tracks.values {
-            track.memoryPlayer.invalidateRendering()
-        }
-        for track in overlapTracks.values {
             track.memoryPlayer.invalidateRendering()
         }
     }
@@ -525,102 +516,6 @@ final class AudioEngineManager {
         overlapStartHandler = nil
     }
 
-    func beginOverlapPlayback(
-        payloads: [PreparedTrackPayload],
-        clipsByTrack: [UUID: [TrackClip]]?,
-        atMasterTime masterTime: TimeInterval
-    ) throws {
-        guard !isOverlapPlaybackActive, !payloads.isEmpty else { return }
-
-        let quantizedStart = quantizeTimelineTime(masterTime)
-        overlapStartMasterTime = quantizedStart
-        isOverlapPlaybackActive = true
-
-        for payload in payloads {
-            let trackState = try buildOverlapTrackState(
-                for: payload,
-                clips: clipsByTrack.map { $0[payload.id] ?? [] }
-            )
-            overlapTracks[payload.id] = trackState
-            trackState.memoryPlayer.setPlaybackWindow(offset: quantizedStart, endTimeline: nil)
-            connectOverlapTrackToMasterMixer(trackState)
-        }
-
-        applyOverlapMixSettings()
-        for track in overlapTracks.values {
-            track.memoryPlayer.sampleSource.setReaderActive(true)
-        }
-        prewarmOverlapTracks(atTimelineSeconds: quantizedStart)
-    }
-
-    /// Promotes overlap tracks to primary and returns the incoming song timeline position.
-    @discardableResult
-    func completeOverlapTransition(incomingDuration: TimeInterval) -> TimeInterval {
-        guard isOverlapPlaybackActive else { return 0 }
-
-        // This method runs at an "audible" boundary. We reset the finish-notification
-        // guard so the incoming song can finish later, and we re-anchor transport
-        // so the timeline stays continuous.
-        didNotifyPlaybackFinished = false
-
-        let incomingTimeline = max(0, currentTime - overlapStartMasterTime)
-        cancelScheduledOverlapStart()
-
-        // Prevent any pending timeline warps from the outgoing song from affecting the
-        // incoming song immediately after promotion.
-        transport.cancelScheduledTransition()
-
-        // Stop the engine and wait for the IO thread before detaching outgoing nodes.
-        let wasPlaying = isPlaying
-        stopEngineForGraphChanges()
-        teardownTracks(withIDs: Set(tracks.keys), stopEngine: false)
-
-        tracks = overlapTracks
-        overlapTracks = [:]
-        isOverlapPlaybackActive = false
-        overlapStartMasterTime = 0
-
-        for id in tracks.keys {
-            tracks[id]?.memoryPlayer.setPlaybackWindow(offset: 0, endTimeline: nil)
-        }
-
-        duration = incomingDuration
-        transport.setDuration(incomingDuration)
-
-        let clampedIncoming = quantizeTimelineTime(min(incomingTimeline, incomingDuration))
-        currentTime = clampedIncoming
-        if isPlaying {
-            // Re-anchor the shared transport at the new song's timeline position using
-            // the current render host time, so timeline mapping continues without waiting
-            // for the next render callback.
-            if let hostTime = currentHostTime() {
-                transport.resetAnchor(to: clampedIncoming, hostTime: hostTime)
-            } else {
-                transport.setPausedTimeline(clampedIncoming)
-                transport.beginPlayback(from: clampedIncoming)
-            }
-        } else {
-            transport.setPausedTimeline(clampedIncoming)
-        }
-
-        applyAllMixSettings()
-        if wasPlaying {
-            try? startEngineIfNeeded()
-        }
-        return clampedIncoming
-    }
-
-    func cancelOverlapPlayback() {
-        guard isOverlapPlaybackActive || !overlapTracks.isEmpty else {
-            isOverlapPlaybackActive = false
-            overlapStartMasterTime = 0
-            return
-        }
-
-        teardownOverlapTracks()
-        isOverlapPlaybackActive = false
-        overlapStartMasterTime = 0
-    }
 
     func seek(to time: TimeInterval) {
         let clamped = quantizeTimelineTime(clampedTimelineTime(time))
@@ -640,20 +535,6 @@ final class AudioEngineManager {
     /// Events are sent in sync with the shared transport during playback.
     func configureMIDI(events: [MIDIScheduler.ScheduledEvent]) {
         midiScheduler.configure(events: events)
-    }
-
-    /// Restarts the engine after graph edits that require a full stop and re-anchors transport.
-    private func restorePlaybackClock(at timeline: TimeInterval, afterGraphChange wasPlaying: Bool) {
-        let clamped = quantizeTimelineTime(clampedTimelineTime(timeline))
-        currentTime = clamped
-        transport.setPausedTimeline(clamped)
-
-        guard wasPlaying else { return }
-
-        try? startEngineIfNeeded()
-        let hostTime = currentHostTime() ?? mach_absolute_time()
-        transport.resetAnchor(to: clamped, hostTime: hostTime)
-        refreshCurrentTimeFromEngine()
     }
 
     private func prewarmTracks(atTimelineSeconds timeline: TimeInterval, trackIDs: Set<UUID>? = nil) {
@@ -683,27 +564,6 @@ final class AudioEngineManager {
         for track in tracks.values {
             track.memoryPlayer.sampleSource.setReaderActive(active)
         }
-        for track in overlapTracks.values {
-            track.memoryPlayer.sampleSource.setReaderActive(active)
-        }
-    }
-
-    private func prewarmOverlapTracks(atTimelineSeconds timeline: TimeInterval) {
-        let targets = Array(overlapTracks.values)
-        guard !targets.isEmpty else { return }
-
-        let group = DispatchGroup()
-        let gate = DispatchSemaphore(value: 8)
-        for track in targets {
-            group.enter()
-            gate.wait()
-            DispatchQueue.global(qos: .userInitiated).async {
-                track.memoryPlayer.prewarm(atTimelineSeconds: timeline)
-                gate.signal()
-                group.leave()
-            }
-        }
-        group.wait()
     }
 
     func scheduleTransition(to targetOffset: TimeInterval, at transitionTimelineTime: TimeInterval) {
@@ -785,9 +645,6 @@ final class AudioEngineManager {
     private func applyLoopPrefetch() {
         let pinned = pinnedPrefetchTimeline
         for track in tracks.values {
-            track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinned)
-        }
-        for track in overlapTracks.values {
             track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinned)
         }
     }
@@ -929,9 +786,6 @@ final class AudioEngineManager {
         for track in tracks.values {
             track.memoryPlayer.resetPeakMeter()
         }
-        for track in overlapTracks.values {
-            track.memoryPlayer.resetPeakMeter()
-        }
         guard !trackMeterLevels.isEmpty || !groupMeterLevels.isEmpty else { return }
         trackMeterLevels = [:]
         groupMeterLevels = [:]
@@ -1032,82 +886,6 @@ final class AudioEngineManager {
             let end = track.settings.trimEnd ?? track.fileDuration
             return max(0, end - track.settings.trimStart)
         }.max() ?? 0
-    }
-
-    private func buildOverlapTrackState(
-        for payload: PreparedTrackPayload,
-        clips: [TrackClip]?
-    ) throws -> TrackState {
-        let built = try OverlapTrackGraphBuilder.buildTrack(
-            payload: payload,
-            clips: clips,
-            transport: transport,
-            engine: engine
-        )
-        return TrackState(
-            trackID: built.trackID,
-            memoryPlayer: built.memoryPlayer,
-            timePitchNode: built.timePitchNode,
-            settings: built.settings,
-            fileDuration: built.fileDuration,
-            groupID: built.groupID,
-            sourceFormat: built.sourceFormat
-        )
-    }
-
-    private func connectOverlapTrackToMasterMixer(_ track: TrackState) {
-        OverlapTrackGraphBuilder.connectToMasterMixer(
-            playbackOutputNode: track.playbackOutputNode,
-            sourceFormat: track.sourceFormat,
-            mixer: masterMixer,
-            in: engine
-        )
-    }
-
-    private func applyOverlapMixSettings() {
-        for id in overlapTracks.keys {
-            guard let track = overlapTracks[id] else { continue }
-            var effectiveVolume = track.settings.volume
-            var isAudible = true
-
-            if track.settings.isMuted {
-                effectiveVolume = 0
-                isAudible = false
-            }
-
-            let groupVolume: Float
-            let groupMuted: Bool
-            if let groupID = track.groupID {
-                groupVolume = groupMixSnapshot.volumeByGroupID[groupID] ?? 1
-                groupMuted = groupMixSnapshot.mutedGroupIDs.contains(groupID)
-            } else {
-                groupVolume = groupMixSnapshot.ungroupedVolume
-                groupMuted = groupMixSnapshot.ungroupedIsMuted
-            }
-            effectiveVolume *= groupMuted ? 0 : groupVolume
-
-            track.memoryPlayer.updateMix(
-                volume: effectiveVolume,
-                pan: track.settings.pan,
-                isAudible: isAudible
-            )
-        }
-    }
-
-    private func teardownOverlapTracks() {
-        guard !overlapTracks.isEmpty else { return }
-        stopEngineForGraphChanges()
-        for track in overlapTracks.values {
-            track.memoryPlayer.invalidateRendering()
-        }
-        for track in overlapTracks.values {
-            OverlapTrackGraphBuilder.detachPlayerGraph(
-                memoryPlayer: track.memoryPlayer,
-                timePitchNode: track.timePitchNode,
-                from: engine
-            )
-        }
-        overlapTracks.removeAll()
     }
 
     private func teardownTracks(withIDs ids: Set<UUID>, stopEngine: Bool = true) {
@@ -1420,7 +1198,7 @@ final class AudioEngineManager {
                     return
                 }
                 self.didNotifyPlaybackFinished = true
-                if self.isOverlapPlaybackActive || self.suppressAutoStopOnPlaybackFinished {
+                if self.suppressAutoStopOnPlaybackFinished {
                     self.onPlaybackFinished?()
                 } else {
                     self.stop()
@@ -1430,7 +1208,6 @@ final class AudioEngineManager {
             }
 
             if let scheduledStart = self.scheduledOverlapStartTime,
-               !self.isOverlapPlaybackActive,
                self.currentTime >= scheduledStart {
                 self.scheduledOverlapStartTime = nil
                 let handler = self.overlapStartHandler

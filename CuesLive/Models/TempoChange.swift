@@ -32,17 +32,6 @@ struct TempoChange: Codable, Identifiable, Hashable {
     /// The opening tempo of the song. It is the one marker that cannot be removed.
     var isOrigin: Bool { startMeasure <= 1 && isDownbeat }
 
-    var positionLabel: String {
-        if isDownbeat {
-            return "Measure \(startMeasure)"
-        }
-        let beatNumber = beatOffset + 1
-        if abs(beatNumber.rounded() - beatNumber) < 0.001 {
-            return "Measure \(startMeasure), Beat \(Int(beatNumber.rounded()))"
-        }
-        return String(format: "Measure %d + %.2f beats", startMeasure, beatOffset)
-    }
-
     func occupiesSamePosition(as other: TempoChange) -> Bool {
         startMeasure == other.startMeasure && abs(beatOffset - other.beatOffset) <= 0.000_001
     }

@@ -74,16 +74,6 @@ final class MIDIScheduler {
         }
     }
 
-    /// Merges additional events into the schedule without resetting dispatch state.
-    func appendEvents(_ events: [ScheduledEvent]) {
-        guard !events.isEmpty else { return }
-        queue.async { [weak self] in
-            guard let self else { return }
-            self.events.append(contentsOf: events)
-            self.events.sort { $0.timeline < $1.timeline }
-        }
-    }
-
     // MARK: - Transport hooks
 
     func start() {

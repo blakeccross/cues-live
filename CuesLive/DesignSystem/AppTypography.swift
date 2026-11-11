@@ -16,10 +16,6 @@ enum AppTypography {
     static func caption() -> Font {
         .caption
     }
-
-    static func monoValue() -> Font {
-        .title2.monospaced().weight(.medium)
-    }
 }
 
 extension View {
@@ -33,20 +29,8 @@ extension View {
             .foregroundStyle(AppColors.textPrimary)
     }
 
-    func appBodyText() -> some View {
-        font(AppTypography.body())
-            .foregroundStyle(AppColors.textPrimary)
-    }
-
     func appCaptionText() -> some View {
         font(AppTypography.caption())
             .foregroundStyle(AppColors.textSecondary)
-    }
-
-    func appMonoValue() -> some View {
-        font(AppTypography.monoValue())
-            .foregroundStyle(AppColors.textPrimary)
-            .minimumScaleFactor(0.8)
-            .lineLimit(1)
     }
 }

@@ -18,20 +18,8 @@ extension View {
         background(backgroundColor(for: level).ignoresSafeArea())
     }
 
-    func appSeparator(alignment: Alignment = .bottom) -> some View {
-        overlay(alignment: alignment) {
-            Rectangle()
-                .fill(AppColors.separator)
-                .frame(height: 0.5)
-        }
-    }
-
     func appPressable(isEnabled: Bool = true) -> some View {
         modifier(AppPressableModifier(isEnabled: isEnabled))
-    }
-
-    func appToolbarStyle() -> some View {
-        toolbarBackground(AppColors.surfaceElevated, for: .automatic)
     }
 
     /// Lets a dialog use the system title bar. Sheets opened from the sidebar
@@ -39,14 +27,6 @@ extension View {
     /// inherit the main window's inline title.
     func standardDialogToolbar() -> some View {
         modifier(StandardDialogToolbarModifier())
-    }
-
-    func appEditorToolbarPill(isDisabled: Bool = false) -> some View {
-        buttonStyle(.plain)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, AppSpacing.xs)
-            .background(AppColors.surfaceElevated, in: Capsule())
-            .foregroundStyle(isDisabled ? AppColors.textTertiary : AppColors.textSecondary)
     }
 
     func appLinkPointer() -> some View {

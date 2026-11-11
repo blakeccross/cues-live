@@ -10,10 +10,6 @@ enum ProjectUTType {
     static let songProjectIdentifier = "live.cues.song"
     static let showProjectIdentifier = "live.cues.show"
 
-    static var songProjectType: UTType {
-        UTType(exportedAs: songProjectIdentifier, conformingTo: .json)
-    }
-
     static var showProjectType: UTType {
         UTType(exportedAs: showProjectIdentifier, conformingTo: .json)
     }

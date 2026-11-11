@@ -33,10 +33,6 @@ final class SetlistViewModel {
         persistSetlist(setlist, context: context)
     }
 
-    func renameHeader(_ entry: SetlistEntry, title: String, context: ModelContext) {
-        updateHeader(entry, title: title, timeSeconds: entry.headerTimeSeconds, context: context)
-    }
-
     func removeEntry(_ entry: SetlistEntry, from setlist: Setlist, context: ModelContext) {
         setlist.entries.removeAll { $0 === entry }
         normalizeSortOrder(for: setlist)

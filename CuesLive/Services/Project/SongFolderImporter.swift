@@ -81,16 +81,6 @@ enum SongFolderImporter {
 
     private static let supportedExtensions: Set<String> = ["wav", "aiff", "aif", "mp3", "m4a", "caf"]
 
-    static func scanFolder(at folderURL: URL) throws -> ScanResult {
-        let didAccess = folderURL.startAccessingSecurityScopedResource()
-        defer {
-            if didAccess {
-                folderURL.stopAccessingSecurityScopedResource()
-            }
-        }
-        return try scanFolderContents(at: folderURL)
-    }
-
     /// Reads the folder name and, when an Ableton set is present, its opening tempo and meter.
     static func previewFolder(at folderURL: URL) throws -> Preview {
         let didAccess = folderURL.startAccessingSecurityScopedResource()

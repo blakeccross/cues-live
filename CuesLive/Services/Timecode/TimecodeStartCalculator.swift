@@ -8,14 +8,6 @@ struct TimecodeValue: Equatable, Sendable {
 
     static let zero = TimecodeValue(hours: 0, minutes: 0, seconds: 0, frames: 0)
 
-    var displayString: String {
-        let hh = String(format: "%02d", hours)
-        let mm = String(format: "%02d", minutes)
-        let ss = String(format: "%02d", seconds)
-        let ff = String(format: "%02d", frames)
-        return "\(hh):\(mm):\(ss):\(ff)"
-    }
-
     static func atHour(_ hour: Int) -> TimecodeValue {
         TimecodeValue(
             hours: TimecodeSettings.clampedHour(hour),

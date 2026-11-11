@@ -68,11 +68,6 @@ enum ClickTrackGenerator {
         try normalSample()
     }
 
-    static func resetCachedSamples() {
-        cachedAccent = nil
-        cachedNormal = nil
-    }
-
     static func loadSample(named assetName: String) throws -> DecodedStemBuffer {
         guard let data = NSDataAsset(name: assetName)?.data, !data.isEmpty else {
             if assetName == accentAssetName {
