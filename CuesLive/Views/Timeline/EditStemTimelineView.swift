@@ -6,64 +6,6 @@ import AppKit
 import UIKit
 #endif
 
-/// Extra viewports of waveform kept painted around the scroll position.
-/// Scrolling inside that slice does not redraw the lanes.
-enum TimelineHorizontalPaint {
-    static let marginScreens: CGFloat = 2
-
-    static func range(
-        keeping painted: ClosedRange<CGFloat>,
-        offset: CGFloat,
-        viewportWidth: CGFloat
-    ) -> ClosedRange<CGFloat> {
-        guard viewportWidth > 0 else { return painted }
-        let origin = max(0, offset)
-        let visible = origin...(origin + viewportWidth)
-        // Repaint while a margin of already-drawn waveform is still on screen.
-        let lead = viewportWidth * 0.5
-        let comfortLower = painted.lowerBound + lead
-        let comfortUpper = painted.upperBound - lead
-        if comfortLower <= visible.lowerBound, comfortUpper >= visible.upperBound {
-            return painted
-        }
-        let margin = viewportWidth * marginScreens
-        return max(0, origin - margin)...(origin + viewportWidth + margin)
-    }
-}
-
-/// Scroll position for the rulers and the playhead.
-/// The lane tree does not read `offset`, so a horizontal tick does not rebuild it.
-@Observable
-final class TimelineHorizontalScrollModel {
-    var offset: CGFloat = 0
-    private(set) var paintedRange: ClosedRange<CGFloat> = 0...8_192
-    private var viewportWidth: CGFloat = 0
-
-    func setViewportWidth(_ width: CGFloat) {
-        let width = max(0, width)
-        guard abs(viewportWidth - width) > 0.5 else { return }
-        viewportWidth = width
-        guard width > 0 else { return }
-        let margin = width * TimelineHorizontalPaint.marginScreens
-        let origin = max(0, offset)
-        paintedRange = max(0, origin - margin)...(origin + width + margin)
-    }
-
-    func setOffset(_ newOffset: CGFloat) {
-        if offset != newOffset {
-            offset = newOffset
-        }
-        let updated = TimelineHorizontalPaint.range(
-            keeping: paintedRange,
-            offset: newOffset,
-            viewportWidth: viewportWidth
-        )
-        if updated != paintedRange {
-            paintedRange = updated
-        }
-    }
-}
-
 struct TimelineHorizontalFollower<Content: View>: View {
     var model: TimelineHorizontalScrollModel
     let contentWidth: CGFloat
@@ -92,7 +34,14 @@ struct TimelineHorizontalFollower<Content: View>: View {
     }
 }
 
-struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCorner: View, TimeRulerCorner: View, Headers: View>: View {
+struct EditStemTimelineView<
+    Ruler: View,
+    TimeRuler: View,
+    Lanes: View,
+    HeaderCorner: View,
+    TimeRulerCorner: View,
+    Headers: View
+>: View {
     let timelineDuration: TimeInterval
     let timelineContentWidth: CGFloat
     let timelineDisplayWidth: CGFloat
@@ -102,6 +51,9 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
     @FocusState.Binding var isTimelineFocused: Bool
     @ViewBuilder let ruler: () -> Ruler
     @ViewBuilder let timeRuler: () -> TimeRuler
+    /// Clip bodies and waveforms, drawn viewport-wide behind the lanes.
+    let laneCanvas: TimelineLaneCanvas
+    /// Clip chrome and gestures, laid out across the whole timeline and scrolled.
     @ViewBuilder let lanes: () -> Lanes
     @ViewBuilder let headerRulerCorner: () -> HeaderCorner
     @ViewBuilder let timeRulerCorner: () -> TimeRulerCorner
@@ -109,7 +61,9 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
 
     @State private var scrollModel = TimelineHorizontalScrollModel()
 
+    #if os(iOS)
     private let timelineHorizontalScrollSpace = "editTimelineHorizontalScroll"
+    #endif
 
     private var laneFrames: TrackLaneFrames {
         TrackLaneFrames(heights: laneHeights)
@@ -143,21 +97,7 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
                         headers()
                             .frame(width: TimelineLayout.trackHeaderWidth, height: laneAreaHeight, alignment: .top)
 
-                        ScrollView(.horizontal, showsIndicators: true) {
-                            VStack(spacing: 0) {
-                                horizontalScrollOffsetProbe
-                                lanes()
-                                    .environment(\.timelineScrollModel, scrollModel)
-                                    .frame(width: timelineDisplayWidth, height: laneAreaHeight, alignment: .topLeading)
-                            }
-                            .frame(width: timelineDisplayWidth, height: laneAreaHeight, alignment: .topLeading)
-                            .background(TimelineScrollEdgeClamp())
-                        }
-                        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-                        .contentMargins(0, for: .scrollContent)
-                        .coordinateSpace(name: timelineHorizontalScrollSpace)
-                        .applyTimelineHorizontalOffsetObserver { scrollModel.setOffset($0) }
-                        .frame(width: timelineColumnWidth, height: laneAreaHeight)
+                        laneScrollColumn(width: timelineColumnWidth)
                     }
                     .frame(height: laneAreaHeight, alignment: .top)
                     .background(TimelineScrollEdgeClamp())
@@ -171,11 +111,11 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
                 .contentMargins(0, for: .scrollContent)
                 .frame(height: tracksViewportHeight)
                 .overlay(alignment: .topLeading) {
-                    TimelineSectionMarkerLines(
+                    TimelineSectionMarkerFollower(
+                        model: scrollModel,
                         times: sectionTimes,
                         duration: timelineDuration,
                         contentWidth: timelineContentWidth,
-                        horizontalScrollOffset: scrollModel.offset,
                         viewportWidth: timelineColumnWidth
                     )
                     .frame(height: tracksViewportHeight)
@@ -242,12 +182,56 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
         .allowsHitTesting(false)
     }
 
+    private var laneContent: some View {
+        lanes()
+            .environment(\.timelineScrollModel, scrollModel)
+            .frame(width: timelineDisplayWidth, height: laneAreaHeight, alignment: .topLeading)
+    }
+
+    /// The horizontally scrolling lane chrome over the lane canvas. On macOS an AppKit scroll
+    /// view owns the axis and the canvas, so a trackpad tick moves a layer and redraws the
+    /// canvas in the same event instead of re-laying out SwiftUI content.
+    @ViewBuilder
+    private func laneScrollColumn(width: CGFloat) -> some View {
+        #if os(macOS)
+        TimelineHorizontalScrollHost(
+            contentWidth: timelineDisplayWidth,
+            contentHeight: laneAreaHeight,
+            canvas: laneCanvas,
+            onScroll: { scrollModel.setOffset($0) },
+            onPointerDown: { isTimelineFocused = true }
+        ) {
+            laneContent
+        }
+        .frame(width: width, height: laneAreaHeight)
+        #else
+        ZStack(alignment: .topLeading) {
+            TimelineLaneCanvasLayer(canvas: laneCanvas, scrollModel: scrollModel)
+                .frame(width: width, height: laneAreaHeight)
+            ScrollView(.horizontal, showsIndicators: true) {
+                VStack(spacing: 0) {
+                    horizontalScrollOffsetProbe
+                    laneContent
+                }
+                .frame(width: timelineDisplayWidth, height: laneAreaHeight, alignment: .topLeading)
+                .background(TimelineScrollEdgeClamp())
+            }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .contentMargins(0, for: .scrollContent)
+            .coordinateSpace(name: timelineHorizontalScrollSpace)
+            .applyTimelineHorizontalOffsetObserver { scrollModel.setOffset($0) }
+        }
+        .frame(width: width, height: laneAreaHeight, alignment: .topLeading)
+        #endif
+    }
+
+    #if os(iOS)
     /// Older systems report the horizontal offset with a preference.
-    /// macOS 15 and iOS 18 read it from scroll geometry, and a live preference
+    /// iOS 18 reads it from scroll geometry, and a live preference
     /// inside the lanes forces a layout pass on every tick.
     @ViewBuilder
     private var horizontalScrollOffsetProbe: some View {
-        if #available(macOS 15.0, iOS 18.0, *) {
+        if #available(iOS 18.0, *) {
             EmptyView()
         } else {
             TimelineHorizontalScrollOffsetReporter(
@@ -255,12 +239,14 @@ struct EditStemTimelineView<Ruler: View, TimeRuler: View, Lanes: View, HeaderCor
             )
         }
     }
+    #endif
 }
 
+#if os(iOS)
 extension View {
     @ViewBuilder
     func applyTimelineHorizontalOffsetObserver(_ onChange: @escaping (CGFloat) -> Void) -> some View {
-        if #available(macOS 15.0, iOS 18.0, *) {
+        if #available(iOS 18.0, *) {
             self.onScrollGeometryChange(for: CGFloat.self) { geometry in
                 geometry.contentOffset.x
             } action: { _, newValue in
@@ -273,16 +259,25 @@ extension View {
         }
     }
 }
+#endif
 
-private struct TimelineScrollModelKey: EnvironmentKey {
-    static let defaultValue: TimelineHorizontalScrollModel? = nil
-}
+/// Section-marker lines over the lane viewport. This view, not the container, reads the
+/// scroll offset, so a tick redraws these lines without rebuilding the lanes and headers.
+private struct TimelineSectionMarkerFollower: View {
+    var model: TimelineHorizontalScrollModel
+    let times: [TimeInterval]
+    let duration: TimeInterval
+    let contentWidth: CGFloat
+    let viewportWidth: CGFloat
 
-extension EnvironmentValues {
-    /// Horizontal scroll model for the editor. Waveforms read `paintedRange` only.
-    var timelineScrollModel: TimelineHorizontalScrollModel? {
-        get { self[TimelineScrollModelKey.self] }
-        set { self[TimelineScrollModelKey.self] = newValue }
+    var body: some View {
+        TimelineSectionMarkerLines(
+            times: times,
+            duration: duration,
+            contentWidth: contentWidth,
+            horizontalScrollOffset: model.offset,
+            viewportWidth: viewportWidth
+        )
     }
 }
 
@@ -314,6 +309,7 @@ private struct TimelineFollowingPlayhead: View {
     }
 }
 
+#if os(iOS)
 struct TimelineHorizontalScrollOffsetKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
@@ -321,6 +317,7 @@ struct TimelineHorizontalScrollOffsetKey: PreferenceKey {
         value = nextValue()
     }
 }
+#endif
 
 /// Stops the enclosing scroll view from moving past its content.
 private struct TimelineScrollEdgeClamp: View {
@@ -423,6 +420,7 @@ private final class TimelineScrollEdgeClampView: UIView {
 }
 #endif
 
+#if os(iOS)
 struct TimelineHorizontalScrollOffsetReporter: View {
     let coordinateSpaceName: String
 
@@ -436,3 +434,4 @@ struct TimelineHorizontalScrollOffsetReporter: View {
         .frame(width: 0, height: 0)
     }
 }
+#endif

@@ -432,8 +432,6 @@
 		95193887A4338DADB5E39096 /* TrackLaneResizeHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */; };
 		2D3808C892FD2750A914B57E /* ClipGainPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */; };
 		0B1B608158E04CFCE8DD4C8C /* ClipGainPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */; };
-		987637B97821456826474FC3 /* ClipSampleWaveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */; };
-		7293AAE4EE8F33C25801DA9A /* ClipSampleWaveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */; };
 		32D596381AEB15F8E2F610FD /* ClipLaneInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */; };
 		26BD9B8CD487EF1AA9EBD0A2 /* ClipLaneInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */; };
 		3F6C7BF651822BD8B72F79C3 /* TrackLaneHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */; };
@@ -474,6 +472,22 @@
 		A1E4C0470AE6A9E1E84259E3 /* LivePlaybackView+Stage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */; };
 		F4C17E9CCF60268CE8175B7A /* SongImportFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */; };
 		A3F8ABE3AA51030095B7EC73 /* SongImportFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */; };
+		DDDD27F941334B8720DF1ADE /* TimelineHorizontalScrollHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EE9ADD0FF58A67159693B48 /* TimelineHorizontalScrollHost.swift */; };
+		C6BAF2D92D701E6C298FEBB5 /* TimelineHorizontalScrollHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EE9ADD0FF58A67159693B48 /* TimelineHorizontalScrollHost.swift */; };
+		9FE23AD52F24DF89EB27D297 /* WaveformColumnCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7574999592D31A719CCA37E /* WaveformColumnCache.swift */; };
+		872B4C074AB4BF4FA3850F45 /* WaveformColumnCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7574999592D31A719CCA37E /* WaveformColumnCache.swift */; };
+		61622174FBADE7BF8B391749 /* ClipSampleWindowStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622742AD77FA75A45690659 /* ClipSampleWindowStore.swift */; };
+		AAB8AC0D308C27C97AA1C0AF /* ClipSampleWindowStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A622742AD77FA75A45690659 /* ClipSampleWindowStore.swift */; };
+		5FEF57B6F7AD59D824FDEA68 /* TimelineLanePainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E996BFDD7330F2BFA9222 /* TimelineLanePainter.swift */; };
+		AF4AEC8D1C9EDCEE037D6CE3 /* TimelineLanePainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E996BFDD7330F2BFA9222 /* TimelineLanePainter.swift */; };
+		860CA05C5AD4548A5AC7BD28 /* TimelineLaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E09CB9AB99F49C151E0A7D /* TimelineLaneCanvas.swift */; };
+		601CBBD69C30D2CEE6DD4F00 /* TimelineLaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E09CB9AB99F49C151E0A7D /* TimelineLaneCanvas.swift */; };
+		FC0B7ABBE2DD815BD6DBDBDD /* TimelineLaneCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9228AD0F58B2B6379CDEEB2 /* TimelineLaneCanvasView.swift */; };
+		4D6C834321DD5BF6AE217A0F /* TimelineLaneCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9228AD0F58B2B6379CDEEB2 /* TimelineLaneCanvasView.swift */; };
+		C656140F603EF913DE6E39FF /* EditView+LaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */; };
+		7C23E4C66F23489254D052D0 /* EditView+LaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */; };
+		DD453D9AB402AFB844B3842F /* TimelineHorizontalScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */; };
+		0B0F664CBE33F7EC20B6A881 /* TimelineHorizontalScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -726,7 +740,6 @@
 		711DFC09216571A02471075E /* LiveSetlistAddMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistAddMenu.swift; sourceTree = "<group>"; };
 		27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLaneResizeHandle.swift; sourceTree = "<group>"; };
 		6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipGainPrompt.swift; sourceTree = "<group>"; };
-		5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipSampleWaveform.swift; sourceTree = "<group>"; };
 		BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipLaneInteraction.swift; sourceTree = "<group>"; };
 		2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLaneHeaderView.swift; sourceTree = "<group>"; };
 		A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomScrollAdjuster.swift; sourceTree = "<group>"; };
@@ -747,6 +760,14 @@
 		8F9EC5D80E5DBC4408EA3E9B /* LivePlaybackView+Sections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Sections.swift"; sourceTree = "<group>"; };
 		F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Stage.swift"; sourceTree = "<group>"; };
 		10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongImportFeedback.swift; sourceTree = "<group>"; };
+		2EE9ADD0FF58A67159693B48 /* TimelineHorizontalScrollHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineHorizontalScrollHost.swift; sourceTree = "<group>"; };
+		A7574999592D31A719CCA37E /* WaveformColumnCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformColumnCache.swift; sourceTree = "<group>"; };
+		A622742AD77FA75A45690659 /* ClipSampleWindowStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipSampleWindowStore.swift; sourceTree = "<group>"; };
+		567E996BFDD7330F2BFA9222 /* TimelineLanePainter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineLanePainter.swift; sourceTree = "<group>"; };
+		43E09CB9AB99F49C151E0A7D /* TimelineLaneCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineLaneCanvas.swift; sourceTree = "<group>"; };
+		C9228AD0F58B2B6379CDEEB2 /* TimelineLaneCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineLaneCanvasView.swift; sourceTree = "<group>"; };
+		E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+LaneCanvas.swift"; sourceTree = "<group>"; };
+		546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineHorizontalScrollModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1270,9 +1291,15 @@
 		AA00000500000000000BB00A /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
+				546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */,
+				C9228AD0F58B2B6379CDEEB2 /* TimelineLaneCanvasView.swift */,
+				43E09CB9AB99F49C151E0A7D /* TimelineLaneCanvas.swift */,
+				567E996BFDD7330F2BFA9222 /* TimelineLanePainter.swift */,
+				A622742AD77FA75A45690659 /* ClipSampleWindowStore.swift */,
+				A7574999592D31A719CCA37E /* WaveformColumnCache.swift */,
+				2EE9ADD0FF58A67159693B48 /* TimelineHorizontalScrollHost.swift */,
 				2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */,
 				BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */,
-				5321AE34470D6C41C7B0FC6C /* ClipSampleWaveform.swift */,
 				6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */,
 				27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */,
 				827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */,
@@ -1294,6 +1321,7 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */,
 				2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */,
 				F3AE6DCEE068E655E46C58AA /* EditView+Timeline.swift */,
 				463C329C1D84C0E84741578A /* EditView+Sections.swift */,
@@ -1448,6 +1476,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD453D9AB402AFB844B3842F /* TimelineHorizontalScrollModel.swift in Sources */,
+				C656140F603EF913DE6E39FF /* EditView+LaneCanvas.swift in Sources */,
+				FC0B7ABBE2DD815BD6DBDBDD /* TimelineLaneCanvasView.swift in Sources */,
+				860CA05C5AD4548A5AC7BD28 /* TimelineLaneCanvas.swift in Sources */,
+				5FEF57B6F7AD59D824FDEA68 /* TimelineLanePainter.swift in Sources */,
+				61622174FBADE7BF8B391749 /* ClipSampleWindowStore.swift in Sources */,
+				9FE23AD52F24DF89EB27D297 /* WaveformColumnCache.swift in Sources */,
+				DDDD27F941334B8720DF1ADE /* TimelineHorizontalScrollHost.swift in Sources */,
 				F4C17E9CCF60268CE8175B7A /* SongImportFeedback.swift in Sources */,
 				0618E4BC58070D8C819CEF1E /* LivePlaybackView+Stage.swift in Sources */,
 				20996B8316CD8E4AA046B183 /* LivePlaybackView+Sections.swift in Sources */,
@@ -1468,7 +1504,6 @@
 				C1777F1F689E64FE6B9538F3 /* LiveSetlistZoomScrollAdjuster.swift in Sources */,
 				3F6C7BF651822BD8B72F79C3 /* TrackLaneHeaderView.swift in Sources */,
 				32D596381AEB15F8E2F610FD /* ClipLaneInteraction.swift in Sources */,
-				987637B97821456826474FC3 /* ClipSampleWaveform.swift in Sources */,
 				2D3808C892FD2750A914B57E /* ClipGainPrompt.swift in Sources */,
 				FC7E22C31C8B3FCB74EE5B63 /* TrackLaneResizeHandle.swift in Sources */,
 				B49435DE3D2B5AADC201A4DB /* LiveSetlistAddMenu.swift in Sources */,
@@ -1707,6 +1742,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B0F664CBE33F7EC20B6A881 /* TimelineHorizontalScrollModel.swift in Sources */,
+				7C23E4C66F23489254D052D0 /* EditView+LaneCanvas.swift in Sources */,
+				4D6C834321DD5BF6AE217A0F /* TimelineLaneCanvasView.swift in Sources */,
+				601CBBD69C30D2CEE6DD4F00 /* TimelineLaneCanvas.swift in Sources */,
+				AF4AEC8D1C9EDCEE037D6CE3 /* TimelineLanePainter.swift in Sources */,
+				AAB8AC0D308C27C97AA1C0AF /* ClipSampleWindowStore.swift in Sources */,
+				872B4C074AB4BF4FA3850F45 /* WaveformColumnCache.swift in Sources */,
+				C6BAF2D92D701E6C298FEBB5 /* TimelineHorizontalScrollHost.swift in Sources */,
 				A3F8ABE3AA51030095B7EC73 /* SongImportFeedback.swift in Sources */,
 				A1E4C0470AE6A9E1E84259E3 /* LivePlaybackView+Stage.swift in Sources */,
 				261F683E8DE8C1C9CA54C2EC /* LivePlaybackView+Sections.swift in Sources */,
@@ -1727,7 +1770,6 @@
 				7E7C24899932C0C9093DE511 /* LiveSetlistZoomScrollAdjuster.swift in Sources */,
 				D730A59BF703D6B746726BC1 /* TrackLaneHeaderView.swift in Sources */,
 				26BD9B8CD487EF1AA9EBD0A2 /* ClipLaneInteraction.swift in Sources */,
-				7293AAE4EE8F33C25801DA9A /* ClipSampleWaveform.swift in Sources */,
 				0B1B608158E04CFCE8DD4C8C /* ClipGainPrompt.swift in Sources */,
 				95193887A4338DADB5E39096 /* TrackLaneResizeHandle.swift in Sources */,
 				89B06C9FBEB7D6F7CC83E8CE /* LiveSetlistAddMenu.swift in Sources */,

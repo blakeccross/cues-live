@@ -205,6 +205,7 @@ extension EditView {
             isTimelineFocused: $isTimelineFocused,
             ruler: { timelineRulerStack },
             timeRuler: { timelineTimeRuler },
+            laneCanvas: trackLaneCanvas,
             lanes: { trackTimelineScrollContent },
             headerRulerCorner: { trackHeaderRulerCorner },
             timeRulerCorner: { trackHeaderTimeRulerCorner },
@@ -286,13 +287,9 @@ extension EditView {
     }
 
     private var trackTimelineScrollContent: some View {
+        // Transparent: the lane canvas behind it draws the background, clip bodies and waveforms.
         ZStack(alignment: .topLeading) {
-            Rectangle()
-                .fill(Color.dawTimelineBackground)
-                .frame(width: timelineDisplayWidth, height: trackAreaHeight)
-
             trackLanesContent
-                .compositingGroup()
                 .frame(width: timelineContentWidth, alignment: .topLeading)
 
             TimelineMeasureGridOverlay(
@@ -310,6 +307,9 @@ extension EditView {
             insertionCursorOverlay
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
+        // On macOS the lanes live in their own AppKit scroll view, which does not pass
+        // pinches up to the editor's gesture. Recognise them here as well.
+        .simultaneousGesture(timelinePinchGesture)
     }
 
     private var trackLanesContent: some View {
@@ -331,11 +331,10 @@ extension EditView {
             }
 
             ForEach(Array(song.sortedTracks.enumerated()), id: \.element.id) { index, track in
-                if let fileURL = FileStore.trackURL(for: song, track: track) {
+                if FileStore.trackURL(for: song, track: track) != nil {
                 let row = frames.rows[midiTracks.count + index]
                 WaveformLaneView(
                     track: track,
-                    fileURL: fileURL,
                     fileDuration: viewModel.fileDuration(for: track),
                     timelineDuration: timelineDuration,
                     timelineContentWidth: timelineContentWidth,
@@ -350,8 +349,7 @@ extension EditView {
                     laneOriginY: row.originY,
                     onCueSection: cueSection,
                     loopSectionIDs: loopSectionIDs,
-                    onToggleLoopSection: toggleLoopSection,
-                    shouldLoadWaveformPeaks: viewModel.isLoaded
+                    onToggleLoopSection: toggleLoopSection
                 )
                 .frame(width: timelineContentWidth, alignment: .leading)
                 }
@@ -425,7 +423,7 @@ extension EditView {
     }
 
     /// Clips as drawn, including an in-progress move or trim.
-    private var previewClips: [TrackClip] {
+    var previewClips: [TrackClip] {
         var preview = timeline.clips
         guard let clipDrag else { return preview }
         let ids = clipSelection.clipIDs

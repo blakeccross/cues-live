@@ -12,6 +12,9 @@ struct TimelineMeasureGridOverlay: View {
     /// Opaque clip headers. Lane lines stop at these rects so the name bar stays solid.
     var headerBands: [CGRect] = []
 
+    /// Set inside the editor lanes. The canvas then covers only the painted slice.
+    @Environment(\.timelineScrollModel) private var scrollModel
+
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
     }
@@ -24,22 +27,37 @@ struct TimelineMeasureGridOverlay: View {
         max(mappingWidth, displayWidth ?? mappingWidth)
     }
 
+    /// Content x range the canvas occupies: the painted slice in the lanes, else everything.
+    private var paintedSlice: ClosedRange<CGFloat> {
+        guard let painted = scrollModel?.paintedRange else { return 0...canvasWidth }
+        let lower = max(0, painted.lowerBound)
+        let upper = min(canvasWidth, painted.upperBound)
+        return upper > lower ? lower...upper : 0...0
+    }
+
     private var extendedMaximumTime: TimeInterval {
         guard mappingWidth > 0, canvasWidth > mappingWidth else { return safeDuration }
         return safeDuration * TimeInterval(canvasWidth / mappingWidth)
     }
 
+    private func time(atContentX x: CGFloat) -> TimeInterval {
+        guard mappingWidth > 0 else { return 0 }
+        return safeDuration * TimeInterval(x / mappingWidth)
+    }
+
     /// Beats, then eighths, once each level is far enough apart to read.
-    private var fineGridTimes: MeasureTiming.BeatGridTimes {
+    private func fineGridTimes(in slice: ClosedRange<CGFloat>) -> MeasureTiming.BeatGridTimes {
         let pixelsPerSecond = mappingWidth / CGFloat(safeDuration)
         let fastest = tempoChanges.map(\.bpm).filter { $0 > 0 }.max() ?? 0
         let detail = MeasureTiming.LaneGridDetail.detail(pixelsPerSecond: pixelsPerSecond, fastestBPM: fastest)
         guard detail.showsBeats else { return MeasureTiming.BeatGridTimes(beats: [], subdivisions: []) }
+        let lower = time(atContentX: slice.lowerBound)
+        let upper = min(extendedMaximumTime, time(atContentX: slice.upperBound))
         let grid = MeasureTiming.beatGridTimes(
             duration: safeDuration,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
-            visibleTimeRange: 0...extendedMaximumTime
+            visibleTimeRange: lower...max(lower, upper)
         )
         return MeasureTiming.BeatGridTimes(
             beats: grid.beats,
@@ -59,10 +77,20 @@ struct TimelineMeasureGridOverlay: View {
     }
 
     var body: some View {
+        let slice = paintedSlice
         let boundaries = measureBoundaries(for: mappingWidth)
-        let fine = fineGridTimes
+        let fine = fineGridTimes(in: slice)
         Canvas { context, size in
             guard size.width > 0, size.height > 0, mappingWidth > 0 else { return }
+            // Ticks are placed in content coordinates; the canvas starts at the slice. Only
+            // the part AppKit is showing is stroked, since a scroll tick re-runs this closure.
+            let visible = context.clipBoundingRect.offsetBy(dx: slice.lowerBound, dy: 0)
+            let lower = max(slice.lowerBound, visible.minX - 1)
+            let upper = min(slice.upperBound, visible.maxX + 1)
+            guard upper > lower else { return }
+            let stroked = lower...upper
+            context.translateBy(x: -slice.lowerBound, y: 0)
+            let size = CGSize(width: stroked.upperBound, height: size.height)
 
             let rulerLineColor = showsThroughContent ? Color.editorBarTick : Color.dawMeasureGridLine
             let barColor = showsThroughContent ? Color.editorBarTick : Color.dawMeasureGridLine.opacity(0.75)
@@ -71,16 +99,18 @@ struct TimelineMeasureGridOverlay: View {
             let rulerLineEnd = min(rulerHeight, size.height)
 
             for time in fine.subdivisions {
-                strokeTick(at: time, in: &context, size: size, rulerColor: subdivisionColor, trackColor: subdivisionColor, rulerLineEnd: rulerLineEnd)
+                strokeTick(at: time, in: &context, size: size, slice: stroked, rulerColor: subdivisionColor, trackColor: subdivisionColor, rulerLineEnd: rulerLineEnd)
             }
             for time in fine.beats {
-                strokeTick(at: time, in: &context, size: size, rulerColor: beatColor, trackColor: beatColor, rulerLineEnd: rulerLineEnd)
+                strokeTick(at: time, in: &context, size: size, slice: stroked, rulerColor: beatColor, trackColor: beatColor, rulerLineEnd: rulerLineEnd)
             }
             for time in boundaries {
-                strokeTick(at: time, in: &context, size: size, rulerColor: rulerLineColor, trackColor: barColor, rulerLineEnd: rulerLineEnd)
+                strokeTick(at: time, in: &context, size: size, slice: stroked, rulerColor: rulerLineColor, trackColor: barColor, rulerLineEnd: rulerLineEnd)
             }
         }
-        .frame(width: canvasWidth > 0 ? canvasWidth : nil)
+        .frame(width: canvasWidth > 0 ? slice.upperBound - slice.lowerBound : nil, alignment: .topLeading)
+        .offset(x: slice.lowerBound)
+        .frame(width: canvasWidth > 0 ? canvasWidth : nil, alignment: .topLeading)
         .allowsHitTesting(false)
     }
 
@@ -88,6 +118,7 @@ struct TimelineMeasureGridOverlay: View {
         at time: TimeInterval,
         in context: inout GraphicsContext,
         size: CGSize,
+        slice: ClosedRange<CGFloat>,
         rulerColor: Color,
         trackColor: Color,
         rulerLineEnd: CGFloat
@@ -97,7 +128,7 @@ struct TimelineMeasureGridOverlay: View {
             duration: safeDuration,
             contentWidth: mappingWidth
         )
-        guard x >= 0, x <= size.width else { return }
+        guard x >= max(0, slice.lowerBound - 1), x <= size.width else { return }
 
         var rulerPath = Path()
         rulerPath.move(to: CGPoint(x: x, y: 0))

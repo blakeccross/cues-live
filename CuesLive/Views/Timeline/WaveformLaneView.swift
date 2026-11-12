@@ -10,7 +10,6 @@ struct WaveformLaneView: View {
 
     @Bindable var track: AudioTrack
 
-    let fileURL: URL
     let fileDuration: TimeInterval
     let timelineDuration: TimeInterval
     let timelineContentWidth: CGFloat
@@ -28,12 +27,8 @@ struct WaveformLaneView: View {
     let onCueSection: (SongSection) -> Void
     let loopSectionIDs: Set<UUID>
     let onToggleLoopSection: (SongSection) -> Void
-    var shouldLoadWaveformPeaks = true
 
-    @State private var overview = WaveformFileOverview(sampleRate: 0, channels: [])
-    /// The file `overview` was built from.
-    @State private var overviewURL: URL?
-    @State private var isLoadingWaveformPeaks = false
+    @Environment(\.timelineScrollModel) private var scrollModel
     @State private var activeTrimEdge: (clipID: UUID, edge: ClipEditing.Edge)?
     @State private var clipPointer: ClipPointer?
     @State private var isMarqueeDragging = false
@@ -77,40 +72,9 @@ struct WaveformLaneView: View {
         return preview
     }
 
+    /// Clip headers, borders and gestures. The lane canvas behind this view draws the clip
+    /// bodies and waveforms.
     var body: some View {
-        waveformArea
-            .onAppear {
-                hydratePeaksFromCache()
-            }
-            .task(id: waveformLoadTaskID) {
-                guard shouldLoadWaveformPeaks else { return }
-                let url = fileURL
-                if overviewURL == url, overview.channels.isEmpty == false { return }
-
-                if let cached = WaveformCache.shared.cachedOverview(for: url) {
-                    overview = cached
-                    overviewURL = url
-                    return
-                }
-
-                // The file changed (relink, consolidation, reused view): drop the old waveform.
-                if overviewURL != url {
-                    overview = WaveformFileOverview(sampleRate: 0, channels: [])
-                }
-                isLoadingWaveformPeaks = true
-                defer { isLoadingWaveformPeaks = false }
-                let loaded = await WaveformCache.shared.overview(for: url)
-                guard !Task.isCancelled else { return }
-                overview = loaded
-                overviewURL = url
-            }
-    }
-
-    private var waveformLoadTaskID: String {
-        "\(fileURL.path)|\(shouldLoadWaveformPeaks)"
-    }
-
-    private var waveformArea: some View {
         ZStack(alignment: .topLeading) {
             blankSpace
             clipLayer
@@ -179,9 +143,29 @@ struct WaveformLaneView: View {
         )
     }
 
+    /// Clips that reach into the painted slice. Clips entirely outside it have no views
+    /// at all, so a long song does not keep every clip's chrome alive.
+    private var paintedClips: [TrackClip] {
+        let clips = displayClips
+        guard let painted = scrollModel?.paintedRange else { return clips }
+        return clips.filter { clip in
+            let startX = TimelineLayout.xPosition(
+                for: clip.timelineStartSeconds,
+                duration: safeTimelineDuration,
+                contentWidth: timelineContentWidth
+            )
+            let endX = TimelineLayout.xPosition(
+                for: clip.timelineEndSeconds,
+                duration: safeTimelineDuration,
+                contentWidth: timelineContentWidth
+            )
+            return endX >= painted.lowerBound && startX <= painted.upperBound
+        }
+    }
+
     private var clipLayer: some View {
         ZStack(alignment: .topLeading) {
-            ForEach(displayClips) { clip in
+            ForEach(paintedClips) { clip in
                 clipView(for: clip)
             }
         }
@@ -202,7 +186,7 @@ struct WaveformLaneView: View {
         )
         let section = sections.section(atTimeline: clip.timelineStartSeconds + ClipEditing.tolerance)
 
-        clipChrome(clip: clip, clipWidth: max(0, endX - startX), contentX: startX)
+        clipChrome(clip: clip, clipWidth: max(0, endX - startX))
             .gesture(clipPointerGesture(for: clip, clipWidth: max(0, endX - startX), contentX: startX))
             .contextMenu {
                 Button("Split") { actions.menu(.split, clip.id) }
@@ -223,7 +207,7 @@ struct WaveformLaneView: View {
             .offset(x: startX)
     }
 
-    private func clipChrome(clip: TrackClip, clipWidth: CGFloat, contentX: CGFloat) -> some View {
+    private func clipChrome(clip: TrackClip, clipWidth: CGFloat) -> some View {
         let paletteKey = track.group?.paletteKey
         let palette = TrackGroupPalette.colors(forPaletteKey: paletteKey)
         let selectedHeaderColor = TrackGroupPalette.selectedHeaderColor(forPaletteKey: paletteKey)
@@ -242,44 +226,24 @@ struct WaveformLaneView: View {
             )
             .frame(width: clipWidth, height: TimelineLayout.clipHeaderHeight)
 
-            ClipSampleWaveform(
-                fileURL: fileURL,
-                overview: overview,
-                sourceStart: clip.sourceStartSeconds,
-                sourceDuration: clip.duration,
-                contentX: contentX,
-                clipWidth: clipWidth,
-                linearGain: clip.linearGain,
-                showsBaseline: isLoadingWaveformPeaks || overview.channels.isEmpty
-            )
-            .frame(width: clipWidth, height: max(0, clipHeight - TimelineLayout.clipHeaderHeight))
-            .allowsHitTesting(false)
+            Color.clear
         }
-        .background(palette.body, in: RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous))
         .overlay {
             if isSelected {
                 // Left, right, and bottom edges in the header's light color; the header itself
                 // is the top edge, so the border and header read as one frame.
-                RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
-                    .strokeBorder(selectedHeaderColor, lineWidth: TimelineLayout.clipSelectionBorderWidth)
-                    .mask {
-                        VStack(spacing: 0) {
-                            Color.clear.frame(height: TimelineLayout.clipHeaderHeight)
-                            Color.black
-                        }
-                    }
-                    .allowsHitTesting(false)
+                ClipEdgeBorder(
+                    color: selectedHeaderColor,
+                    width: TimelineLayout.clipSelectionBorderWidth,
+                    top: TimelineLayout.clipHeaderHeight
+                )
             } else {
-                RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
-                    .strokeBorder(palette.header.opacity(0.6), lineWidth: TimelineLayout.clipBorderWidth)
-                    .mask {
-                        // Keep the fill flush with the top edge so it lines up with the track name.
-                        VStack(spacing: 0) {
-                            Color.clear.frame(height: TimelineLayout.clipBorderWidth)
-                            Color.black
-                        }
-                    }
-                    .allowsHitTesting(false)
+                // Open at the top so the header stays flush with the track name.
+                ClipEdgeBorder(
+                    color: palette.header.opacity(0.6),
+                    width: TimelineLayout.clipBorderWidth,
+                    top: TimelineLayout.clipBorderWidth
+                )
             }
         }
         .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
@@ -351,15 +315,6 @@ struct WaveformLaneView: View {
                 clipHeaderEdgeTrim(edge: .trailing, clip: clip, foregroundColor: foregroundColor, clipWidth: clipWidth)
             }
         }
-        .clipShape(
-            UnevenRoundedRectangle(
-                topLeadingRadius: TimelineLayout.clipCornerRadius,
-                bottomLeadingRadius: 0,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: TimelineLayout.clipCornerRadius,
-                style: .continuous
-            )
-        )
     }
 
     private func clipHeaderEdgeTrim(
@@ -449,13 +404,9 @@ struct WaveformLaneView: View {
                 let y = TimelineLayout.clipHeaderHeight + CGFloat(
                     ClipGain.lineY(decibels: clip.gainDB, bodyHeight: Double(bodyHeight))
                 )
-                Canvas { context, size in
-                    var path = Path()
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: size.width, y: y))
-                    context.stroke(path, with: .color(.white.opacity(170.0 / 255.0)), lineWidth: 1)
-                }
-                .frame(width: clipWidth, height: clipHeight)
+                Color.white.opacity(170.0 / 255.0)
+                    .frame(width: clipWidth, height: 1)
+                    .offset(y: y - 0.5)
             }
             if showMark && clipWidth >= 48 && bodyHeight >= 30 {
                 ClipGainIcon(decibels: clip.gainDB)
@@ -485,12 +436,29 @@ struct WaveformLaneView: View {
                 actions.endDrag()
             }
     }
+}
 
-    private func hydratePeaksFromCache() {
-        if let cached = WaveformCache.shared.cachedOverview(for: fileURL) {
-            overview = cached
-            overviewURL = fileURL
-        }
+/// Left, right and bottom edges of a clip, starting `top` points down.
+///
+/// Plain fills rather than a masked stroke: a mask renders offscreen at the clip's full width,
+/// and a zoomed-in clip is wider than the largest texture the GPU will allocate.
+private struct ClipEdgeBorder: View {
+    let color: Color
+    let width: CGFloat
+    let top: CGFloat
+
+    var body: some View {
+        Color.clear
+            .overlay(alignment: .leading) {
+                color.frame(width: width).padding(.top, top)
+            }
+            .overlay(alignment: .trailing) {
+                color.frame(width: width).padding(.top, top)
+            }
+            .overlay(alignment: .bottom) {
+                color.frame(height: width)
+            }
+            .allowsHitTesting(false)
     }
 }
 
