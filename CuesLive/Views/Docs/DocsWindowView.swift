@@ -245,6 +245,7 @@ private struct SongsAndEditingDocContent: View {
             DocBulletList(items: [
                 "Set non-destructive trim in/out points on each track",
                 "Arrange sections on the timeline and adjust tempo or time signature changes",
+                "When you change a tempo, lock the tracks that should speed up or slow down with it; unlocked tracks keep playing as recorded",
                 "Use **Auto Group** to organize tracks into mix groups",
                 "Add click, cue, and MIDI tracks for live cues",
             ])

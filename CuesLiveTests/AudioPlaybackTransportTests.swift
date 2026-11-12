@@ -303,33 +303,5 @@ final class AudioPlaybackTransportTests: XCTestCase {
         XCTAssertEqual(transport.pausedTimelineSeconds(), 5.5, accuracy: 0.0000001)
     }
 
-    func testTempoMapContinuesPastSongDurationForLooping() {
-        let extendingMap = TempoPlaybackMap.build(
-            tempoChanges: [TempoChange(startMeasure: 1, bpm: 120)],
-            referenceBPM: 120,
-            timeSignatureChanges: [
-                TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1)
-            ],
-            maxSourceTime: TempoPlaybackMap.defaultMaxSourceTime
-        )
-        let pastEnd = extendingMap.sourceTimeAfterWallElapsed(from: 15, wallElapsed: 2)
-        XCTAssertGreaterThan(
-            pastEnd,
-            16.5,
-            "Tempo map must advance past song duration so loops are not frozen on frame 0"
-        )
-
-        // Reproduce the previous bug: capping maxSourceTime at song duration.
-        let cappedMap = TempoPlaybackMap.build(
-            tempoChanges: [TempoChange(startMeasure: 1, bpm: 120)],
-            referenceBPM: 120,
-            timeSignatureChanges: [
-                TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1)
-            ],
-            maxSourceTime: 16
-        )
-        let stuck = cappedMap.sourceTimeAfterWallElapsed(from: 15, wallElapsed: 2)
-        XCTAssertEqual(stuck, 16, accuracy: 0.001)
-    }
 }
 

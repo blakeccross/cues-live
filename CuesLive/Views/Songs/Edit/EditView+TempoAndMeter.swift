@@ -180,10 +180,13 @@ extension EditView {
         }
     }
 
-    func applyTempoChange(prompt: TempoLanePrompt, bpm: Double) {
+    /// Sets the tempo at the prompt's bar. Locked tracks are re-timed to stay on the beat and
+    /// stretched live; every other track keeps playing as it did.
+    func applyTempoChange(prompt: TempoLanePrompt, bpm: Double, lockedTrackIDs: Set<UUID>) {
         guard TempoChange.validBPMRange.contains(bpm) else { return }
 
         performUndoableChange("Edit Tempo") {
+            let tempoBefore = currentTempoTimeline
             if let markerID = prompt.markerID,
                tempoChanges.contains(where: { $0.id == markerID }) {
                 tempoChanges = tempoChanges.map { change in
@@ -199,9 +202,36 @@ extension EditView {
             } else {
                 tempoChanges.append(TempoChange(startMeasure: prompt.measure, bpm: bpm))
             }
+            retimeLockedTracks(lockedTrackIDs, from: tempoBefore)
             persistTempoChanges()
             tempoLanePrompt = nil
         }
+    }
+
+    private var currentTempoTimeline: TempoTimeline {
+        TempoTimeline(
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges
+        )
+    }
+
+    /// Moves the locked tracks' audio, the sections and the MIDI cues from `tempoBefore` to the
+    /// current tempo map. Call before persisting, so one save writes the tempo and the clips.
+    private func retimeLockedTracks(_ lockedTrackIDs: Set<UUID>, from tempoBefore: TempoTimeline) {
+        let retimed = TempoTrackLock.retime(
+            timeline,
+            midiEvents: midiEvents,
+            lockedTrackIDs: lockedTrackIDs,
+            from: tempoBefore,
+            to: currentTempoTimeline
+        )
+        guard retimed.timeline != timeline || retimed.midiEvents != midiEvents else { return }
+        timeline = retimed.timeline
+        midiEvents = retimed.midiEvents
+        clipSelection.retain(existing: timeline.clips)
+        syncPlayback()
+        reconfigureMIDI()
+        prepareSectionAnnouncements()
     }
 
     func applyTimeSignatureChange(

@@ -28,7 +28,6 @@ final class AudioPlaybackTransport: @unchecked Sendable {
     struct RenderState: Sendable {
         let timelineSeconds: TimeInterval
         let isPlaying: Bool
-        let playbackRatio: Double
         /// Set when a scheduled transition has not fired yet as of the block start, so
         /// the renderer can switch to the target mid-block instead of at the next block.
         var transitionSplit: TransitionSplit?
@@ -50,8 +49,6 @@ final class AudioPlaybackTransport: @unchecked Sendable {
     private var hasAnchor = false
     private var pendingTransition: PendingTransition?
     private var loopRegion: LoopRegion?
-    private var tempoPlaybackMap = TempoPlaybackMap(segments: [])
-    private var usesTempoMap = false
 
     func setDuration(_ duration: TimeInterval) {
         os_unfair_lock_lock(&lock)
@@ -117,26 +114,6 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         os_unfair_lock_lock(&lock)
         defer { os_unfair_lock_unlock(&lock) }
         return pendingTransition != nil
-    }
-
-    func setTempoMap(
-        changes: [TempoChange],
-        referenceBPM: Double,
-        timeSignatureChanges: [TimeSignatureChange],
-        duration: TimeInterval
-    ) {
-        os_unfair_lock_lock(&lock)
-        // Extend well past song duration so unwrapped loop timelines can keep
-        // advancing. Using `duration` here previously froze the playhead at the
-        // song end, which modulo-mapped to frame 0 forever while looping.
-        tempoPlaybackMap = TempoPlaybackMap.build(
-            tempoChanges: changes.sortedByMeasure,
-            referenceBPM: referenceBPM,
-            timeSignatureChanges: timeSignatureChanges,
-            maxSourceTime: max(duration, TempoPlaybackMap.defaultMaxSourceTime)
-        )
-        usesTempoMap = referenceBPM > 0 && !changes.isEmpty
-        os_unfair_lock_unlock(&lock)
     }
 
     func clearScheduledTransition() {
@@ -248,27 +225,21 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         }
 
         guard isPlaying else {
-            return RenderState(timelineSeconds: pausedTimeline, isPlaying: false, playbackRatio: 1.0)
+            return RenderState(timelineSeconds: pausedTimeline, isPlaying: false)
         }
 
         guard hasAnchor else {
-            return RenderState(timelineSeconds: pausedTimeline, isPlaying: true, playbackRatio: 1.0)
+            return RenderState(timelineSeconds: pausedTimeline, isPlaying: true)
         }
 
         // UI may read `outputNode.lastRenderTime` behind a freshly captured audio
         // anchor; unsigned subtraction would underflow and flash the playhead ahead.
         guard hostTime >= anchorHostTime else {
-            let anchored = positionedTimeline(anchorTimeline)
-            let ratio = usesTempoMap ? tempoPlaybackMap.ratio(at: anchored) : 1.0
-            return RenderState(timelineSeconds: anchored, isPlaying: true, playbackRatio: ratio)
+            return RenderState(timelineSeconds: positionedTimeline(anchorTimeline), isPlaying: true)
         }
 
         func linearTimeline() -> TimeInterval {
-            let elapsed = Self.seconds(fromHostTimeDelta: hostTime &- anchorHostTime)
-            if usesTempoMap {
-                return tempoPlaybackMap.sourceTimeAfterWallElapsed(from: anchorTimeline, wallElapsed: elapsed)
-            }
-            return anchorTimeline + elapsed
+            anchorTimeline + Self.seconds(fromHostTimeDelta: hostTime &- anchorHostTime)
         }
 
         var timeline = linearTimeline()
@@ -278,9 +249,7 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         // moment and splices audible glitches into the stream).
         if captureAnchor, loopRegion?.isValid != true,
            let pendingTransition, timeline >= pendingTransition.transitionAt {
-            let wallToTransition = usesTempoMap
-                ? tempoPlaybackMap.wallElapsed(from: anchorTimeline, to: pendingTransition.transitionAt)
-                : max(0, pendingTransition.transitionAt - anchorTimeline)
+            let wallToTransition = max(0, pendingTransition.transitionAt - anchorTimeline)
             anchorHostTime = anchorHostTime &+ Self.hostTicks(forSeconds: wallToTransition)
             anchorTimeline = pendingTransition.targetOffset
             pausedTimeline = pendingTransition.targetOffset
@@ -288,19 +257,6 @@ final class AudioPlaybackTransport: @unchecked Sendable {
             timeline = linearTimeline()
         }
         let positioned = positionedTimeline(mappedTimeline(fromLinear: timeline))
-
-        let ratio: Double
-        if usesTempoMap {
-            let ratioTime: TimeInterval
-            if let loopRegion, loopRegion.isValid {
-                ratioTime = Self.wrappedTimeline(positioned, loop: loopRegion)
-            } else {
-                ratioTime = positioned
-            }
-            ratio = tempoPlaybackMap.ratio(at: ratioTime)
-        } else {
-            ratio = 1.0
-        }
         var split: TransitionSplit?
         if let pendingTransition, loopRegion?.isValid != true, timeline < pendingTransition.transitionAt {
             split = TransitionSplit(
@@ -308,7 +264,7 @@ final class AudioPlaybackTransport: @unchecked Sendable {
                 targetOffset: pendingTransition.targetOffset
             )
         }
-        return RenderState(timelineSeconds: positioned, isPlaying: true, playbackRatio: ratio, transitionSplit: split)
+        return RenderState(timelineSeconds: positioned, isPlaying: true, transitionSplit: split)
     }
 
     /// When a section loop is armed, keep continuous unwrapped time so the player
@@ -318,13 +274,6 @@ final class AudioPlaybackTransport: @unchecked Sendable {
             return max(0, mapped)
         }
         return max(0, min(mapped, duration))
-    }
-
-    func playbackRatio(at timeline: TimeInterval) -> Double {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        guard usesTempoMap else { return 1.0 }
-        return tempoPlaybackMap.ratio(at: timeline)
     }
 
     func mappedTimeline(fromLinear linear: TimeInterval) -> TimeInterval {

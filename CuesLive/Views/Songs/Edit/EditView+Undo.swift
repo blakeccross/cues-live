@@ -32,13 +32,11 @@ extension EditView {
         clipSelection.retain(existing: timeline.clips)
         midiEvents = snapshot.midiEvents
 
-        let pitchBeforeApply = pitchPlaybackSignature
         snapshot.applyMetadata(to: song)
         let trackIDsBeforeApply = Set(song.sortedTracks.map(\.id))
         snapshot.applyTracks(to: song, context: modelContext)
         snapshot.applyMIDILaneHeights(to: song)
         let trackIDsChanged = trackIDsBeforeApply != Set(song.sortedTracks.map(\.id))
-        let pitchChanged = pitchBeforeApply != pitchPlaybackSignature
 
         let defaultBPM = song.bpm ?? TempoChange.defaultBPM
         let defaultNumerator = song.timeSignatureNumerator ?? MeasureTiming.defaultNumerator
@@ -64,22 +62,16 @@ extension EditView {
         syncPlayback()
         viewModel.syncTempoMap(normalizedTempo, timeSignatureChanges: normalizedTimeSignature)
 
+        // Mix settings carry each stem's live key shift, so undoing a key change needs no reload.
         for track in song.sortedTracks {
             viewModel.updateMix(for: track, context: modelContext)
         }
 
         reconfigureMIDI()
 
-        if trackIDsChanged || pitchChanged {
+        if trackIDsChanged {
             viewModel.loadSong(context: modelContext)
         }
-    }
-
-    private var pitchPlaybackSignature: String {
-        let tracks = song.sortedTracks
-            .map { "\($0.id.uuidString):\($0.includeInKeyChange)" }
-            .joined(separator: ",")
-        return "\(song.transposeSemitones)|\(tracks)"
     }
 
     func performUndoableChange(_ actionName: String, _ change: () -> Void) {

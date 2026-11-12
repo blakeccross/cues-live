@@ -390,14 +390,10 @@
 		FF2FFB7A15E804182473C592 /* RemoteSessionHostService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000304 /* RemoteSessionHostService.swift */; };
 		FF5D2101985F288556C6A5CE /* SpeechSampleRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F7 /* SpeechSampleRenderer.swift */; };
 		AA0000010000000000000A11 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A11 /* PitchShiftBridge.mm */; settings = {COMPILER_FLAGS = "-O3 -DSIGNALSMITH_USE_ACCELERATE=1"; }; };
-		AA0000010000000000000A12 /* KeyChangeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A12 /* KeyChangeRenderer.swift */; };
-		AA0000010000000000000A13 /* PitchedStemStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A13 /* PitchedStemStore.swift */; };
 		AA0000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */; };
 		AA0000010000000000000A15 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A15 /* ChangeKeyDialog.swift */; };
 		AA0000010000000000000A17 /* KeyChangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A17 /* KeyChangeTests.swift */; };
 		B10000010000000000000A11 /* PitchShiftBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A11 /* PitchShiftBridge.mm */; settings = {COMPILER_FLAGS = "-O3 -DSIGNALSMITH_USE_ACCELERATE=1"; }; };
-		B10000010000000000000A12 /* KeyChangeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A12 /* KeyChangeRenderer.swift */; };
-		B10000010000000000000A13 /* PitchedStemStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A13 /* PitchedStemStore.swift */; };
 		B10000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */; };
 		B10000010000000000000A15 /* ChangeKeyDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000A15 /* ChangeKeyDialog.swift */; };
 		D963485AFC43877F33AC58F5 /* WaveformCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1681DD8E36A9400E3228301 /* WaveformCache.swift */; };
@@ -406,8 +402,6 @@
 		3604D431FA6CC98BAB876DA6 /* WaveformPeakDiskCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */; };
 		7860604DC23E5BD056C6C6D0 /* WaveformPeakResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */; };
 		6D035DD4741D88C49DD2440E /* WaveformPeakResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */; };
-		F4F33C7C8AE7EB8A55845E1C /* TempoPlaybackMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */; };
-		5D4FD536626B29C904EA7DA8 /* TempoPlaybackMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */; };
 		1A6EA30F6F315DF86F150A88 /* MeasureTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */; };
 		A9E1488C146FB52BB852149F /* MeasureTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */; };
 		E0ED18690489691FEBA895F0 /* RemoteHostSongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA243DBCA00C5F945185811B /* RemoteHostSongLibraryPanel.swift */; };
@@ -488,6 +482,17 @@
 		7C23E4C66F23489254D052D0 /* EditView+LaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */; };
 		DD453D9AB402AFB844B3842F /* TimelineHorizontalScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */; };
 		0B0F664CBE33F7EC20B6A881 /* TimelineHorizontalScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */; };
+		0B1BE220E0895D2E6829B619 /* TrackClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50BEFA6E2DC468DE5A65EF3 /* TrackClip.swift */; };
+		F3F065F7EBDC4B36162B9060 /* TrackClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = B50BEFA6E2DC468DE5A65EF3 /* TrackClip.swift */; };
+		BC752BA60D990A895645312E /* TempoTrackLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A689E2E3CD1BE86914752E /* TempoTrackLock.swift */; };
+		8F5818F03F4BBB3E80737AAD /* TempoTrackLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A689E2E3CD1BE86914752E /* TempoTrackLock.swift */; };
+		37D81FDCD140E9CFC150928E /* TempoChangePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */; };
+		7722C0E1C231AFCCCD6E17F1 /* TempoChangePrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */; };
+		009390130AA405EAC46FC592 /* TempoTrackLockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC20D375A74F91F6CD35446 /* TempoTrackLockTests.swift */; };
+		CDFAB1E5052B9397692C0CB5 /* TrackClipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 077108785CD6F811C00BC27A /* TrackClipTests.swift */; };
+		B9A9A3411448CB7D9D6B7AB0 /* LiveStretcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */; };
+		3E459F880BA5C5FB38B9D5CA /* LiveStretcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */; };
+		B62FCB804048FEFF5003FECD /* LiveStretcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -716,8 +721,6 @@
 		AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorError.swift; sourceTree = "<group>"; };
 		AA0000020000000000000A10 /* PitchShiftBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PitchShiftBridge.h; sourceTree = "<group>"; };
 		AA0000020000000000000A11 /* PitchShiftBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PitchShiftBridge.mm; sourceTree = "<group>"; };
-		AA0000020000000000000A12 /* KeyChangeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeRenderer.swift; sourceTree = "<group>"; };
-		AA0000020000000000000A13 /* PitchedStemStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchedStemStore.swift; sourceTree = "<group>"; };
 		AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeTrackSelection.swift; sourceTree = "<group>"; };
 		AA0000020000000000000A15 /* ChangeKeyDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeKeyDialog.swift; sourceTree = "<group>"; };
 		AA0000020000000000000A16 /* CuesLive-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "CuesLive-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -727,7 +730,6 @@
 		F1681DD8E36A9400E3228301 /* WaveformCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformCache.swift; sourceTree = "<group>"; };
 		3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakDiskCache.swift; sourceTree = "<group>"; };
 		C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakResampler.swift; sourceTree = "<group>"; };
-		22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoPlaybackMap.swift; sourceTree = "<group>"; };
 		827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasureTiming.swift; sourceTree = "<group>"; };
 		BA243DBCA00C5F945185811B /* RemoteHostSongLibraryPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteHostSongLibraryPanel.swift; sourceTree = "<group>"; };
 		4DF84774DA469FBD3AC88FB9 /* RemoteGroupMixerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteGroupMixerView.swift; sourceTree = "<group>"; };
@@ -768,6 +770,13 @@
 		C9228AD0F58B2B6379CDEEB2 /* TimelineLaneCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineLaneCanvasView.swift; sourceTree = "<group>"; };
 		E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+LaneCanvas.swift"; sourceTree = "<group>"; };
 		546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineHorizontalScrollModel.swift; sourceTree = "<group>"; };
+		B50BEFA6E2DC468DE5A65EF3 /* TrackClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackClip.swift; sourceTree = "<group>"; };
+		B7A689E2E3CD1BE86914752E /* TempoTrackLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoTrackLock.swift; sourceTree = "<group>"; };
+		DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoChangePrompt.swift; sourceTree = "<group>"; };
+		7BC20D375A74F91F6CD35446 /* TempoTrackLockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoTrackLockTests.swift; sourceTree = "<group>"; };
+		077108785CD6F811C00BC27A /* TrackClipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackClipTests.swift; sourceTree = "<group>"; };
+		E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStretcher.swift; sourceTree = "<group>"; };
+		AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStretcherTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -834,8 +843,6 @@
 		AA0000050000000000000A02 /* Pitch */ = {
 			isa = PBXGroup;
 			children = (
-				AA0000020000000000000A12 /* KeyChangeRenderer.swift */,
-				AA0000020000000000000A13 /* PitchedStemStore.swift */,
 				AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */,
 			);
 			path = Pitch;
@@ -874,6 +881,7 @@
 		AA0000050000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B50BEFA6E2DC468DE5A65EF3 /* TrackClip.swift */,
 				AA0000050000000000000012 /* Project */,
 				AA00000500000000000000D6 /* Editing */,
 				AA0000020000000000000002 /* Song.swift */,
@@ -1036,6 +1044,9 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */,
+				077108785CD6F811C00BC27A /* TrackClipTests.swift */,
+				7BC20D375A74F91F6CD35446 /* TempoTrackLockTests.swift */,
 				AA0000020000000000000046 /* ClickTrackGeneratorTests.swift */,
 				AA0000020000000000000116 /* TimecodeStartCalculatorTests.swift */,
 				AA0000020000000000000117 /* LTCFrameEncoderTests.swift */,
@@ -1171,6 +1182,7 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */,
 				AA0000020000000000000007 /* AudioEngineManager.swift */,
 				AA0000020000000000000022 /* AudioPlaybackTransport.swift */,
 				AA0000020000000000000008 /* PlaybackCoordinator.swift */,
@@ -1276,6 +1288,7 @@
 		AA00000500000000000BB009 /* Editing */ = {
 			isa = PBXGroup;
 			children = (
+				B7A689E2E3CD1BE86914752E /* TempoTrackLock.swift */,
 				AA0000020000000000000021 /* ArrangementTimelineMapper.swift */,
 				AA0000F20000000000000002 /* ClipEditing.swift */,
 				AA00000200000000000000F4 /* SongSectionNameNormalizer.swift */,
@@ -1303,7 +1316,6 @@
 				6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */,
 				27D8D06249F21EE3B11A19FE /* TrackLaneResizeHandle.swift */,
 				827E193B2E55EFE098E4CBAD /* MeasureTiming.swift */,
-				22CABE55F1DE65E0CA195F72 /* TempoPlaybackMap.swift */,
 				AA000002000000000000001D /* TimelineLayout.swift */,
 				AA0000020000000000000017 /* WaveformLaneView.swift */,
 				AA0000020000000000000065 /* MIDILaneView.swift */,
@@ -1321,6 +1333,7 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */,
 				E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */,
 				2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */,
 				F3AE6DCEE068E655E46C58AA /* EditView+Timeline.swift */,
@@ -1476,6 +1489,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9A9A3411448CB7D9D6B7AB0 /* LiveStretcher.swift in Sources */,
+				37D81FDCD140E9CFC150928E /* TempoChangePrompt.swift in Sources */,
+				BC752BA60D990A895645312E /* TempoTrackLock.swift in Sources */,
+				0B1BE220E0895D2E6829B619 /* TrackClip.swift in Sources */,
 				DD453D9AB402AFB844B3842F /* TimelineHorizontalScrollModel.swift in Sources */,
 				C656140F603EF913DE6E39FF /* EditView+LaneCanvas.swift in Sources */,
 				FC0B7ABBE2DD815BD6DBDBDD /* TimelineLaneCanvasView.swift in Sources */,
@@ -1516,13 +1533,10 @@
 				9ABEEBE874D884BE9347E0A4 /* RemoteGroupMixerView.swift in Sources */,
 				E0ED18690489691FEBA895F0 /* RemoteHostSongLibraryPanel.swift in Sources */,
 				1A6EA30F6F315DF86F150A88 /* MeasureTiming.swift in Sources */,
-				F4F33C7C8AE7EB8A55845E1C /* TempoPlaybackMap.swift in Sources */,
 				7860604DC23E5BD056C6C6D0 /* WaveformPeakResampler.swift in Sources */,
 				6AAEAAF787940F9ED3E70906 /* WaveformPeakDiskCache.swift in Sources */,
 				D963485AFC43877F33AC58F5 /* WaveformCache.swift in Sources */,
 				AA0000010000000000000A11 /* PitchShiftBridge.mm in Sources */,
-				AA0000010000000000000A12 /* KeyChangeRenderer.swift in Sources */,
-				AA0000010000000000000A13 /* PitchedStemStore.swift in Sources */,
 				AA0000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */,
 				AA0000010000000000000A15 /* ChangeKeyDialog.swift in Sources */,
 				AA0000010000000000000001 /* CuesLiveApp.swift in Sources */,
@@ -1697,6 +1711,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B62FCB804048FEFF5003FECD /* LiveStretcherTests.swift in Sources */,
+				CDFAB1E5052B9397692C0CB5 /* TrackClipTests.swift in Sources */,
+				009390130AA405EAC46FC592 /* TempoTrackLockTests.swift in Sources */,
 				AA0000010000000000000046 /* ClickTrackGeneratorTests.swift in Sources */,
 				AA0000010000000000000116 /* TimecodeStartCalculatorTests.swift in Sources */,
 				AA0000010000000000000117 /* LTCFrameEncoderTests.swift in Sources */,
@@ -1742,6 +1759,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3E459F880BA5C5FB38B9D5CA /* LiveStretcher.swift in Sources */,
+				7722C0E1C231AFCCCD6E17F1 /* TempoChangePrompt.swift in Sources */,
+				8F5818F03F4BBB3E80737AAD /* TempoTrackLock.swift in Sources */,
+				F3F065F7EBDC4B36162B9060 /* TrackClip.swift in Sources */,
 				0B0F664CBE33F7EC20B6A881 /* TimelineHorizontalScrollModel.swift in Sources */,
 				7C23E4C66F23489254D052D0 /* EditView+LaneCanvas.swift in Sources */,
 				4D6C834321DD5BF6AE217A0F /* TimelineLaneCanvasView.swift in Sources */,
@@ -1782,13 +1803,10 @@
 				435BB0B455867E6935D58867 /* RemoteGroupMixerView.swift in Sources */,
 				974067C5A3EA7FE640869DF2 /* RemoteHostSongLibraryPanel.swift in Sources */,
 				A9E1488C146FB52BB852149F /* MeasureTiming.swift in Sources */,
-				5D4FD536626B29C904EA7DA8 /* TempoPlaybackMap.swift in Sources */,
 				6D035DD4741D88C49DD2440E /* WaveformPeakResampler.swift in Sources */,
 				3604D431FA6CC98BAB876DA6 /* WaveformPeakDiskCache.swift in Sources */,
 				73F66DAF73555D3455379EBA /* WaveformCache.swift in Sources */,
 				B10000010000000000000A11 /* PitchShiftBridge.mm in Sources */,
-				B10000010000000000000A12 /* KeyChangeRenderer.swift in Sources */,
-				B10000010000000000000A13 /* PitchedStemStore.swift in Sources */,
 				B10000010000000000000A14 /* KeyChangeTrackSelection.swift in Sources */,
 				B10000010000000000000A15 /* ChangeKeyDialog.swift in Sources */,
 				4C41DD9AEDCFAE6113E7E89F /* CuesLiveApp.swift in Sources */,

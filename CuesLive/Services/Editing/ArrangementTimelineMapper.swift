@@ -4,17 +4,23 @@ import Foundation
 ///
 /// Arranged tracks play their clips; between clips they are silent. Linear tracks
 /// play the file from `trimStart` at master time zero.
+///
+/// Clips re-timed by a tempo change read their file faster or slower; the track's
+/// `LiveStretcher` keeps them at their original pitch.
 struct ArrangementTimelineMapper: Sendable {
     private let clips: [TrackClip]
     private let sourceStart: TimeInterval
     private let sourceEnd: TimeInterval
     private let usesClips: Bool
+    /// True when any clip plays away from its original speed, so the track needs a stretcher.
+    let hasRetimedClips: Bool
 
     init(clips: [TrackClip], fileDuration: TimeInterval) {
         self.clips = clips.sorted { $0.timelineStartSeconds < $1.timelineStartSeconds }
         sourceStart = 0
         sourceEnd = fileDuration
         usesClips = true
+        hasRetimedClips = clips.contains { !$0.playsAtOriginalSpeed }
     }
 
     private init(trimStart: TimeInterval, trimEnd: TimeInterval) {
@@ -22,20 +28,11 @@ struct ArrangementTimelineMapper: Sendable {
         sourceStart = trimStart
         sourceEnd = trimEnd
         usesClips = false
+        hasRetimedClips = false
     }
 
     static func linear(trimStart: TimeInterval = 0, trimEnd: TimeInterval) -> ArrangementTimelineMapper {
         ArrangementTimelineMapper(trimStart: max(0, trimStart), trimEnd: trimEnd)
-    }
-
-    /// Fast-path bounds for tempo resampling when the master timeline maps 1:1 to source trim.
-    func linearResampleBounds(
-        atMasterTimeline master: TimeInterval,
-        sampleRate: Double
-    ) -> (startSourceFrame: Double, endSourceFrame: Double)? {
-        guard !usesClips, sampleRate > 0 else { return nil }
-        guard let source = sourceSeconds(atMasterTimeline: master) else { return nil }
-        return (source * sampleRate, sourceEnd * sampleRate)
     }
 
     /// Returns source-file seconds for the given master-timeline position, or nil when silent.
@@ -66,7 +63,7 @@ struct ArrangementTimelineMapper: Sendable {
                 return 0
             }
             let clipRemaining = clip.timelineEndSeconds - master
-            let fileRemaining = sourceEnd - clip.sourceTime(atTimeline: master)
+            let fileRemaining = (sourceEnd - clip.sourceTime(atTimeline: master)) / clip.playbackRate
             return max(0, min(limit, clipRemaining, fileRemaining))
         }
 
@@ -100,6 +97,12 @@ struct ArrangementTimelineMapper: Sendable {
         }
 
         return nil
+    }
+
+    /// Source seconds read per timeline second at `master`. Unity outside clips.
+    func playbackRate(atMasterTimeline master: TimeInterval) -> Double {
+        guard usesClips, let clip = clip(containing: master) else { return 1 }
+        return clip.playbackRate
     }
 
     /// Clip gain at `master`, or unity where the track is not playing arranged clips.

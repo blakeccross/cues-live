@@ -268,7 +268,7 @@ enum WaveformPeakResampler {
 
             if usesArrangement {
                 guard let clip = Self.clip(containing: timelineTime, in: sortedClips) else { continue }
-                let sourceTime = clip.sourceStartSeconds + (timelineTime - clip.timelineStartSeconds)
+                let sourceTime = clip.sourceTime(atTimeline: timelineTime)
                 let sourceIndex = Int((sourceTime / fileDuration) * Double(source.count))
                 let clampedIndex = min(max(0, sourceIndex), source.count - 1)
                 result[barIndex] = source[clampedIndex]

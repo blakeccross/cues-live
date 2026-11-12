@@ -23,7 +23,7 @@ struct TimelineCanvasClip: Equatable {
         timelineStart = clip.timelineStartSeconds
         timelineEnd = clip.timelineEndSeconds
         sourceStart = clip.sourceStartSeconds
-        sourceDuration = clip.duration
+        sourceDuration = clip.sourceDuration
         linearGain = clip.linearGain
     }
 }

@@ -138,7 +138,6 @@ final class OverlapPreviewEngine {
         engine.setArrangement(SongPlaybackLayout(timeline: projectState.timeline))
         engine.setTempoMap(
             projectState.tempoChanges,
-            referenceBPM: projectState.tempoChanges.referenceBPM,
             timeSignatureChanges: projectState.timeSignatureChanges
         )
     }

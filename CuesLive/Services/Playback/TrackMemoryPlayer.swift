@@ -23,6 +23,9 @@ final class TrackMemoryPlayer {
         var playbackTimelineOffset: TimeInterval = 0
         var playbackEndTimeline: TimeInterval?
         let peakMeter = PeakMeterHolder()
+        /// Present while the track needs live stretching: a re-timed clip or a key change.
+        private var stretcher: LiveStretcher?
+        private var transposeSemitones: Float = 0
         private var isInvalidated = false
         private var gainRamp = GainRamp()
         private var panRamp = PanRamp()
@@ -39,6 +42,7 @@ final class TrackMemoryPlayer {
             self.mapper = mapper
             self.sampleRate = buffer.sampleRate
             self.gainRampFrames = max(1, Int(buffer.sampleRate * GainRamp.defaultRampSeconds))
+            refreshStretcher()
         }
 
         func invalidate() {
@@ -51,6 +55,37 @@ final class TrackMemoryPlayer {
             os_unfair_lock_lock(&stateLock)
             self.mapper = mapper
             os_unfair_lock_unlock(&stateLock)
+            refreshStretcher()
+        }
+
+        func setTransposeSemitones(_ semitones: Float) {
+            os_unfair_lock_lock(&stateLock)
+            transposeSemitones = semitones
+            os_unfair_lock_unlock(&stateLock)
+            refreshStretcher()
+        }
+
+        /// Creates or drops the stretcher on the calling thread, never the audio thread.
+        /// Tracks at their original speed and key skip it and cost nothing extra.
+        private func refreshStretcher() {
+            os_unfair_lock_lock(&stateLock)
+            let needsStretcher = mapper.hasRetimedClips || abs(transposeSemitones) > 0.001
+            let hasStretcher = stretcher != nil
+            os_unfair_lock_unlock(&stateLock)
+
+            if needsStretcher, !hasStretcher {
+                let made = LiveStretcher(channelCount: buffer.channelCount, sampleRate: sampleRate)
+                os_unfair_lock_lock(&stateLock)
+                stretcher = made
+                os_unfair_lock_unlock(&stateLock)
+            } else if !needsStretcher, hasStretcher {
+                os_unfair_lock_lock(&stateLock)
+                let released = stretcher
+                stretcher = nil
+                os_unfair_lock_unlock(&stateLock)
+                // Freed here, after the lock, so the audio thread never deallocates it.
+                withExtendedLifetime(released) {}
+            }
         }
 
         func updateMix(volume: Float, pan: Float, isAudible: Bool) {
@@ -92,7 +127,8 @@ final class TrackMemoryPlayer {
 
             guard renderPlayback(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputBuffer) else {
                 // Silent block: keep the gain current so the next audible block
-                // does not ramp from a stale value.
+                // does not ramp from a stale value, and restart the stretcher on resume.
+                stretcher?.invalidatePosition()
                 gainRamp.snap(to: targetGain)
                 panRamp.snap(to: mix.pan)
                 return
@@ -129,7 +165,6 @@ final class TrackMemoryPlayer {
             guard let split = transportState.transitionSplit else {
                 return renderSegment(
                     masterStart: transportState.timelineSeconds,
-                    ratio: transportState.playbackRatio,
                     outputStart: 0,
                     outputEnd: totalFrames,
                     outputBuffer: outputBuffer
@@ -139,25 +174,21 @@ final class TrackMemoryPlayer {
             // A scheduled jump lands inside this block: render up to the jump from the
             // current position and the rest from the target, so the target's first frame
             // is the first frame after the jump rather than the start of the next block.
-            let leadRatio = max(transportState.playbackRatio, 0.0001)
-            let leadFrames = Int(((split.secondsUntil / leadRatio) * sampleRate - 1e-6).rounded(.up))
+            let leadFrames = Int((split.secondsUntil * sampleRate - 1e-6).rounded(.up))
             let splitFrame = max(0, min(leadFrames, totalFrames))
 
             var didRender = false
             if splitFrame > 0 {
                 didRender = renderSegment(
                     masterStart: transportState.timelineSeconds,
-                    ratio: transportState.playbackRatio,
                     outputStart: 0,
                     outputEnd: splitFrame,
                     outputBuffer: outputBuffer
                 )
             }
             if splitFrame < totalFrames {
-                let targetRatio = transport.playbackRatio(at: split.targetOffset)
                 if renderSegment(
                     masterStart: split.targetOffset,
-                    ratio: targetRatio,
                     outputStart: splitFrame,
                     outputEnd: totalFrames,
                     outputBuffer: outputBuffer
@@ -172,7 +203,6 @@ final class TrackMemoryPlayer {
         /// on the first of them.
         private func renderSegment(
             masterStart: TimeInterval,
-            ratio: Double,
             outputStart: Int,
             outputEnd: Int,
             outputBuffer: UnsafeMutablePointer<AudioBufferList>
@@ -184,24 +214,13 @@ final class TrackMemoryPlayer {
             let effectiveStart = masterStart - playbackTimelineOffset
             guard effectiveStart >= 0 else { return false }
 
-            if abs(ratio - 1.0) < 0.0001 {
-                renderConstantTempo(
-                    masterStart: effectiveStart,
-                    outputStart: outputStart,
-                    outputEnd: outputEnd,
-                    outputBuffer: outputBuffer,
-                    transportMasterStart: masterStart
-                )
-            } else {
-                renderResampledTempo(
-                    masterStart: effectiveStart,
-                    ratio: ratio,
-                    outputStart: outputStart,
-                    outputEnd: outputEnd,
-                    outputBuffer: outputBuffer,
-                    transportMasterStart: masterStart
-                )
-            }
+            renderConstantTempo(
+                masterStart: effectiveStart,
+                outputStart: outputStart,
+                outputEnd: outputEnd,
+                outputBuffer: outputBuffer,
+                transportMasterStart: masterStart
+            )
             return true
         }
 
@@ -213,17 +232,6 @@ final class TrackMemoryPlayer {
                 AudioPlaybackTransport.frameSpan(forSeconds: regionSeconds, sampleRate: sampleRate),
                 remainingFrames
             )
-        }
-
-        /// Output frames that fit before the master timeline advances `masterFrames`,
-        /// given `step` master frames consumed per output frame, capped at `limit`.
-        /// Capping in `Double` keeps a very small `step` from overflowing `Int`.
-        private func outputFrameSpan(forMasterFrames masterFrames: Int, step: Double, limit: Int) -> Int {
-            guard masterFrames > 0, limit > 0 else { return 0 }
-            guard step > 0 else { return min(masterFrames, limit) }
-            let frames = (Double(masterFrames) / step).rounded(.up)
-            guard frames < Double(limit) else { return limit }
-            return max(1, Int(frames))
         }
 
         private func loopFrameBounds() -> (start: Int, end: Int)? {
@@ -307,209 +315,35 @@ final class TrackMemoryPlayer {
                 }
 
                 if let sourceStart = mapper.sourceSeconds(atMasterTimeline: playbackMasterTime) {
-                    mixFromMemory(
-                        startingFrame: AudioPlaybackTransport.frameIndex(
-                            for: sourceStart,
-                            sampleRate: sampleRate
-                        ),
-                        frameCount: runFrames,
-                        into: outputBuffer,
-                        outputFrameOffset: renderedFrames,
-                        gain: mapper.linearGain(atMasterTimeline: playbackMasterTime)
-                    )
-                }
-
-                renderedFrames += runFrames
-                absoluteMasterFrame += runFrames
-            }
-        }
-
-        private func renderResampledTempo(
-            masterStart: TimeInterval,
-            ratio: Double,
-            outputStart: Int,
-            outputEnd: Int,
-            outputBuffer: UnsafeMutablePointer<AudioBufferList>,
-            transportMasterStart: TimeInterval
-        ) {
-            let outputFrames = outputEnd
-            guard outputFrames > outputStart else { return }
-
-            let outputBuffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
-            let outputChannelCount = outputBuffers.count
-            guard outputChannelCount > 0 else { return }
-
-            // The linear fast path runs straight through to the trim end, so it can
-            // only be used when no loop is armed.
-            if loopFrameBounds() == nil,
-               let bounds = mapper.linearResampleBounds(atMasterTimeline: masterStart, sampleRate: sampleRate) {
-                renderResampledTempoLinear(
-                    startSourceFrame: bounds.startSourceFrame,
-                    endSourceFrame: bounds.endSourceFrame,
-                    sourceFrameStep: ratio,
-                    outputStart: outputStart,
-                    outputFrames: outputFrames,
-                    outputBuffers: outputBuffers,
-                    outputChannelCount: outputChannelCount
-                )
-                return
-            }
-
-            renderResampledTempoMapped(
-                masterStart: masterStart,
-                ratio: ratio,
-                outputStart: outputStart,
-                outputFrames: outputFrames,
-                outputBuffers: outputBuffers,
-                outputChannelCount: outputChannelCount,
-                transportMasterStart: transportMasterStart
-            )
-        }
-
-        private func renderResampledTempoLinear(
-            startSourceFrame: Double,
-            endSourceFrame: Double,
-            sourceFrameStep: Double,
-            outputStart: Int,
-            outputFrames: Int,
-            outputBuffers: UnsafeMutableAudioBufferListPointer,
-            outputChannelCount: Int
-        ) {
-            var sourceFrame = startSourceFrame
-
-            for outputFrame in outputStart..<outputFrames {
-                guard sourceFrame < endSourceFrame else { break }
-                writeResampledFrame(
-                    sourceFrame: sourceFrame,
-                    outputFrame: outputFrame,
-                    outputBuffers: outputBuffers,
-                    outputChannelCount: outputChannelCount,
-                    gain: 1
-                )
-                sourceFrame += sourceFrameStep
-            }
-        }
-
-        private func renderResampledTempoMapped(
-            masterStart: TimeInterval,
-            ratio: Double,
-            outputStart: Int,
-            outputFrames: Int,
-            outputBuffers: UnsafeMutableAudioBufferListPointer,
-            outputChannelCount: Int,
-            transportMasterStart: TimeInterval
-        ) {
-            var renderedFrames = outputStart
-            let loop = loopFrameBounds()
-            var absoluteMasterFrame = Double(
-                AudioPlaybackTransport.frameIndex(for: masterStart, sampleRate: sampleRate)
-            )
-            let absoluteTransportOrigin = Double(
-                AudioPlaybackTransport.frameIndex(for: transportMasterStart, sampleRate: sampleRate)
-            )
-            let transportOffsetFrames = absoluteTransportOrigin - absoluteMasterFrame
-            let masterStep = ratio
-            guard masterStep > 0 else { return }
-            let endFrame = playbackEndTimeline.map {
-                AudioPlaybackTransport.frameIndex(for: $0, sampleRate: sampleRate)
-            }
-
-            while renderedFrames < outputFrames {
-                let absoluteTransportFrame = Int(
-                    (absoluteMasterFrame + transportOffsetFrames).rounded(.down)
-                )
-                if let endFrame, absoluteTransportFrame >= endFrame { break }
-
-                let absoluteFrameInt = Int(absoluteMasterFrame.rounded(.down))
-                let playbackMasterFrame = loopedMasterFrame(absoluteFrameInt, loop: loop)
-                let playbackMasterTime = Double(playbackMasterFrame) / sampleRate
-
-                // Each output frame advances the master timeline by `masterStep`, so
-                // master-frame distances must be converted before capping the run.
-                var maxRun = outputFrames - renderedFrames
-                if let loop {
-                    maxRun = outputFrameSpan(
-                        forMasterFrames: loop.end - playbackMasterFrame,
-                        step: masterStep,
-                        limit: maxRun
-                    )
-                }
-                if let endFrame {
-                    maxRun = outputFrameSpan(
-                        forMasterFrames: endFrame - absoluteTransportFrame,
-                        step: masterStep,
-                        limit: maxRun
-                    )
-                }
-                guard maxRun > 0 else { break }
-
-                let regionSeconds = mapper.regionRemainingSeconds(
-                    fromMasterTimeline: playbackMasterTime,
-                    bufferLimit: Double(maxRun) * masterStep / sampleRate
-                )
-                let runFrames = regionRunFrames(
-                    regionSeconds: regionSeconds / masterStep,
-                    remainingFrames: maxRun
-                )
-
-                guard runFrames > 0 else {
-                    guard loop != nil else { break }
-                    renderedFrames += maxRun
-                    absoluteMasterFrame += Double(maxRun) * masterStep
-                    continue
-                }
-
-                if let sourceStart = mapper.sourceSeconds(atMasterTimeline: playbackMasterTime) {
                     let gain = mapper.linearGain(atMasterTimeline: playbackMasterTime)
-                    var sourceFrame = sourceStart * sampleRate
-                    for offset in 0..<runFrames {
-                        writeResampledFrame(
-                            sourceFrame: sourceFrame,
-                            outputFrame: renderedFrames + offset,
-                            outputBuffers: outputBuffers,
-                            outputChannelCount: outputChannelCount,
+                    if let stretcher {
+                        stretcher.render(
+                            source: buffer,
+                            timelineFrame: playbackMasterFrame,
+                            sourceSeconds: sourceStart,
+                            rate: mapper.playbackRate(atMasterTimeline: playbackMasterTime),
+                            semitones: transposeSemitones,
+                            frameCount: runFrames,
+                            into: UnsafeMutableAudioBufferListPointer(outputBuffer),
+                            outputOffset: renderedFrames,
                             gain: gain
                         )
-                        sourceFrame += masterStep
+                    } else {
+                        mixFromMemory(
+                            startingFrame: AudioPlaybackTransport.frameIndex(
+                                for: sourceStart,
+                                sampleRate: sampleRate
+                            ),
+                            frameCount: runFrames,
+                            into: outputBuffer,
+                            outputFrameOffset: renderedFrames,
+                            gain: gain
+                        )
                     }
                 }
 
                 renderedFrames += runFrames
-                absoluteMasterFrame += Double(runFrames) * masterStep
-            }
-        }
-
-        private func writeResampledFrame(
-            sourceFrame: Double,
-            outputFrame: Int,
-            outputBuffers: UnsafeMutableAudioBufferListPointer,
-            outputChannelCount: Int,
-            gain: Float
-        ) {
-            if buffer.channelCount == 1 {
-                guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
-                let sample = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * gain
-                outputData[outputFrame] = sample
-                for channel in 1..<outputChannelCount {
-                    guard let extra = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
-                    extra[outputFrame] = sample
-                }
-                return
-            }
-
-            if outputChannelCount >= 2, buffer.channelCount >= 2 {
-                if let leftOutput = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) {
-                    leftOutput[outputFrame] = buffer.interpolatedSample(channel: 0, frame: sourceFrame) * gain
-                }
-                if let rightOutput = outputBuffers[1].mData?.assumingMemoryBound(to: Float.self) {
-                    rightOutput[outputFrame] = buffer.interpolatedSample(channel: 1, frame: sourceFrame) * gain
-                }
-                return
-            }
-
-            for channel in 0..<min(buffer.channelCount, outputChannelCount) {
-                guard let outputData = outputBuffers[channel].mData?.assumingMemoryBound(to: Float.self) else { continue }
-                outputData[outputFrame] = buffer.interpolatedSample(channel: channel, frame: sourceFrame) * gain
+                absoluteMasterFrame += runFrames
             }
         }
 
@@ -715,6 +549,11 @@ final class TrackMemoryPlayer {
 
     func updateMapper(_ mapper: ArrangementTimelineMapper) {
         renderContext.updateMapper(mapper)
+    }
+
+    /// Shifts the track's pitch live. Zero plays it in its recorded key.
+    func setTransposeSemitones(_ semitones: Float) {
+        renderContext.setTransposeSemitones(semitones)
     }
 
     func updateMix(volume: Float, pan: Float, isAudible: Bool) {

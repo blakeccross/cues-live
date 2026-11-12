@@ -22,13 +22,9 @@ enum SongTrackLoader {
         }
     }
 
-    /// Original media, or the baked pitched file when this stem is included in the song's key change.
+    /// The track's own media. Key and tempo changes are applied live, so nothing is baked.
     static func playbackURL(for song: Song, track: AudioTrack) throws -> URL? {
-        guard let original = FileStore.trackURL(for: song, track: track) else { return nil }
-        guard let baked = try KeyChangeRenderer.ensureBakedFile(for: track, song: song) else {
-            return original
-        }
-        return baked
+        FileStore.trackURL(for: song, track: track)
     }
 
     /// Live and setlist playback payloads. Missing files are skipped. When none are

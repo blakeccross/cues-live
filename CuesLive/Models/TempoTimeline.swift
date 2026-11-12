@@ -62,12 +62,17 @@ struct TempoTimeline: Equatable {
     }
 
     func seconds(atTick tick: Int) -> TimeInterval {
-        guard !points.isEmpty else { return 0 }
+        seconds(atFractionalTick: Double(tick))
+    }
+
+    /// Timeline time at a position between ticks. The inverse of `tick(atSeconds:)`.
+    func seconds(atFractionalTick tick: Double) -> TimeInterval {
+        guard !points.isEmpty, tick.isFinite else { return 0 }
         let target = max(0, tick)
-        let index = segmentIndex(atOrBeforeTick: target)
+        let index = segmentIndex(atOrBeforeTick: Int(target.rounded(.down)))
         let point = points[index]
         guard point.bpm > 0 else { return elapsed[index] }
-        return elapsed[index] + Double(target - point.tick) / Double(TempoChange.ticksPerQuarter) * 60.0 / point.bpm
+        return elapsed[index] + (target - Double(point.tick)) / Double(TempoChange.ticksPerQuarter) * 60.0 / point.bpm
     }
 
     /// Fractional tick at a timeline time. The inverse of `seconds(atTick:)`.

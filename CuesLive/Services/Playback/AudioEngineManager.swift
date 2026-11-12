@@ -17,6 +17,8 @@ final class AudioEngineManager {
         var ignoresSolo: Bool = false
         /// Generated stems (e.g. click) that follow the master timeline 1:1.
         var bypassesArrangementMapping: Bool = false
+        /// Live pitch shift for a song key change. Zero plays the stem in its recorded key.
+        var transposeSemitones: Float = 0
     }
 
     struct PreparedTrackPayload: Sendable {
@@ -57,9 +59,7 @@ final class AudioEngineManager {
     private var routingSnapshot: OutputRoutingSnapshot?
     private var groupMixSnapshot = GroupMixSnapshot.default
     private var tempoChanges: [TempoChange] = []
-    private var referenceBPM: Double = 0
     private var timeSignatureChanges: [TimeSignatureChange] = []
-    private var lastAppliedPitchCompensationCents: Float?
 
     private static let outputLogger = Logger(subsystem: "live.cues", category: "AudioOutput")
     private static let outputProbeQueue = DispatchQueue(label: "live.cues.output-probe", qos: .utility)
@@ -110,7 +110,7 @@ final class AudioEngineManager {
     /// Duration of one measure ending at `timelineSeconds`, using the active tempo/meter.
     func measureLeadDuration(endingAt timelineSeconds: TimeInterval) -> TimeInterval {
         let tempos = tempoChanges.isEmpty
-            ? [TempoChange(startMeasure: 1, bpm: referenceBPM > 0 ? referenceBPM : TempoChange.defaultBPM)]
+            ? [TempoChange(startMeasure: 1, bpm: TempoChange.defaultBPM)]
             : tempoChanges
         return MeasureTiming.measureLeadDuration(
             endingAt: timelineSeconds,
@@ -274,6 +274,7 @@ final class AudioEngineManager {
             transport: transport,
             mapper: mapper
         )
+        memoryPlayer.setTransposeSemitones(settings.transposeSemitones)
 
         let timePitchNode = AVAudioUnitTimePitch()
         timePitchNode.pitch = 0
@@ -312,33 +313,17 @@ final class AudioEngineManager {
         playbackLayout = layout
         duration = calculateEffectiveDuration()
         transport.setDuration(duration)
-        syncTransportTempoMap()
         currentTime = min(preservedTime, duration)
         transport.setPausedTimeline(currentTime)
         transport.cancelScheduledTransition()
         refreshTrackMappers()
     }
 
-    func setTempoMap(
-        _ changes: [TempoChange],
-        referenceBPM: Double,
-        timeSignatureChanges: [TimeSignatureChange]
-    ) {
+    /// The song's tempo and meter. Playback runs on timeline seconds, so this only feeds
+    /// measure-length lookups; audio follows a tempo change through re-timed clips.
+    func setTempoMap(_ changes: [TempoChange], timeSignatureChanges: [TimeSignatureChange]) {
         tempoChanges = changes.sortedByMeasure
-        self.referenceBPM = referenceBPM
         self.timeSignatureChanges = timeSignatureChanges.sortedByMeasure
-        syncTransportTempoMap()
-        applyTrackPitch()
-    }
-
-    private func syncTransportTempoMap() {
-        guard referenceBPM > 0, !tempoChanges.isEmpty else { return }
-        transport.setTempoMap(
-            changes: tempoChanges,
-            referenceBPM: referenceBPM,
-            timeSignatureChanges: timeSignatureChanges,
-            duration: duration
-        )
     }
 
     func play() {
@@ -351,7 +336,6 @@ final class AudioEngineManager {
         }
 
         let startTime = quantizeTimelineTime(transport.pausedTimelineSeconds())
-        applyTrackPitch(at: startTime)
         setStreamingReadersActive(true)
         prewarmTracks(atTimelineSeconds: startTime)
         transport.beginPlayback(from: startTime)
@@ -522,7 +506,6 @@ final class AudioEngineManager {
         transport.cancelScheduledTransition()
         currentTime = clamped
         transport.setPausedTimeline(clamped)
-        applyTrackPitch(at: clamped)
         prewarmTracks(atTimelineSeconds: clamped)
         midiScheduler.reset(toTimeline: clamped)
 
@@ -623,7 +606,6 @@ final class AudioEngineManager {
         transport.clearLoopRegion(continuingFrom: continueFrom, hostTime: hostTime)
         currentTime = continueFrom
         transport.cancelScheduledTransition()
-        applyTrackPitch(at: continueFrom)
         prewarmTracks(atTimelineSeconds: continueFrom)
         midiScheduler.reset(toTimeline: continueFrom)
         applyLoopPrefetch()
@@ -670,7 +652,6 @@ final class AudioEngineManager {
         transitionPinTarget = nil
         let landed = livePlayheadTime()
         currentTime = landed
-        applyTrackPitch(at: landed)
         midiScheduler.reset(toTimeline: landed)
         applyLoopPrefetch()
         scheduledTransitionCompletions += 1
@@ -687,15 +668,14 @@ final class AudioEngineManager {
         guard var track = tracks[id] else { return }
         track.settings = settings
         tracks[id] = track
-        applyTrackPitch()
+        track.memoryPlayer.setTransposeSemitones(settings.transposeSemitones)
         applyAllMixSettings()
         duration = calculateEffectiveDuration()
         transport.setDuration(duration)
-        syncTransportTempoMap()
         refreshTrackMappers()
     }
 
-    /// Audible-only volume/pan update for dragging a fader: skips the pitch, duration and
+    /// Audible-only volume/pan update for dragging a fader: skips the duration and
     /// mapper refresh that `updateTrackSettings` does.
     func applyLiveTrackMix(id: UUID, volume: Float, pan: Float) {
         guard var track = tracks[id] else { return }
@@ -1187,7 +1167,6 @@ final class AudioEngineManager {
             self.advanceSilentClockIfNeeded()
             self.refreshCurrentTimeFromEngine()
             self.finishScheduledTransitionIfNeeded()
-            self.applyTrackPitch(at: self.currentTime)
 
             if !self.didNotifyPlaybackFinished,
                self.currentTime >= self.duration - (1.0 / self.referenceSampleRate) {
@@ -1228,34 +1207,6 @@ final class AudioEngineManager {
         currentTime = livePlayheadTime()
     }
 
-    private func applyTrackPitch(at timeline: TimeInterval? = nil) {
-        let compensationCents: Float
-        if let timeline, referenceBPM > 0, !tempoChanges.isEmpty {
-            let ratio = transport.playbackRatio(at: timeline)
-            compensationCents = Float(-1200 * log2(max(ratio, 0.01)))
-        } else {
-            compensationCents = 0
-        }
-
-        if timeline != nil,
-           let lastAppliedPitchCompensationCents,
-           abs(lastAppliedPitchCompensationCents - compensationCents) < 0.01 {
-            return
-        }
-        if timeline != nil {
-            lastAppliedPitchCompensationCents = compensationCents
-        } else {
-            lastAppliedPitchCompensationCents = nil
-        }
-
-        for id in tracks.keys {
-            guard let track = tracks[id] else { continue }
-            track.timePitchNode.rate = 1.0
-            track.timePitchNode.pitch = compensationCents
-            track.timePitchNode.auAudioUnit.shouldBypassEffect = abs(compensationCents) < 0.5
-        }
-    }
-
     /// Host-clock playhead position for UI rendering without publishing observable updates.
     func livePlayheadTime() -> TimeInterval {
         transport.audibleTimelineSeconds(atHostTime: currentHostTime())
@@ -1285,5 +1236,6 @@ extension AudioEngineManager.TrackSettings {
         isSolo = track.isSolo
         trimStart = track.trimStartSeconds
         trimEnd = track.trimEndSeconds
+        transposeSemitones = track.includeInKeyChange ? Float(track.song?.transposeSemitones ?? 0) : 0
     }
 }

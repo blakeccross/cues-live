@@ -263,7 +263,7 @@ final class SectionCueEngineTests: XCTestCase {
         if !bypassArrangement {
             engine.setArrangement(fixture.layout)
         }
-        engine.setTempoMap(fixture.tempo, referenceBPM: bpm, timeSignatureChanges: fixture.signatures)
+        engine.setTempoMap(fixture.tempo, timeSignatureChanges: fixture.signatures)
 
         let capture = Capture()
         engine.installCaptureTapForTesting(silenceSpeakers: true) { buffer, time in capture.append(buffer, time) }

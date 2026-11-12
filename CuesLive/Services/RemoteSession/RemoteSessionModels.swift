@@ -79,12 +79,14 @@ struct RemoteArrangementSectionDTO: Codable, Hashable, Identifiable, Sendable {
     }
 
     var asClip: TrackClip {
-        TrackClip(
+        let duration = max(0, timelineEndSeconds - timelineStartSeconds)
+        return TrackClip(
             id: id,
             trackID: id,
             timelineStartSeconds: timelineStartSeconds,
-            duration: max(0, timelineEndSeconds - timelineStartSeconds),
-            sourceStartSeconds: sourceStartSeconds
+            duration: duration,
+            sourceStartSeconds: sourceStartSeconds,
+            playbackRate: duration > 0 ? (sourceEndSeconds - sourceStartSeconds) / duration : 1
         )
     }
 }

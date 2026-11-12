@@ -27,42 +27,4 @@ final class KeyChangeTests: XCTestCase {
         XCTAssertEqual(metadata.transposeSemitones, 0)
         XCTAssertEqual(metadata.baseKeyRaw, "G")
     }
-
-    func testPitchShiftPreservesLengthAndRaisesAnOctave() throws {
-        let sampleRate = 48_000.0
-        let frameCount = 48_000
-        let source = try DecodedStemBuffer.silent(frameCount: frameCount, sampleRate: sampleRate)
-        source.withMutableSamples(channel: 0) { samples, count in
-            for index in 0..<count {
-                let phase = 2 * Double.pi * 440 * Double(index) / sampleRate
-                samples[index] = Float(sin(phase))
-            }
-        }
-
-        let shifted = try PitchShifter.shift(source, semitones: 12)
-        XCTAssertEqual(shifted.frameCount, frameCount)
-
-        var output = [Float](repeating: 0, count: frameCount)
-        shifted.withMutableSamples(channel: 0) { samples, count in
-            output.withUnsafeMutableBufferPointer { destination in
-                destination.baseAddress?.update(from: samples, count: count)
-            }
-        }
-
-        let fundamental = magnitude(of: output, sampleRate: sampleRate, frequency: 440)
-        let octave = magnitude(of: output, sampleRate: sampleRate, frequency: 880)
-        XCTAssertGreaterThan(octave, fundamental * 4)
-    }
-
-    private func magnitude(of samples: [Float], sampleRate: Double, frequency: Double) -> Double {
-        let omega = 2 * Double.pi * frequency / sampleRate
-        var real = 0.0
-        var imaginary = 0.0
-        for (index, sample) in samples.enumerated() {
-            let angle = omega * Double(index)
-            real += Double(sample) * cos(angle)
-            imaginary -= Double(sample) * sin(angle)
-        }
-        return (real * real + imaginary * imaginary).squareRoot()
-    }
 }

@@ -257,9 +257,10 @@ struct EditView: View {
             TempoChangePrompt(
                 measure: prompt.measure,
                 currentBPM: prompt.bpm,
+                tracks: song.sortedTracks,
                 onCancel: { tempoLanePrompt = nil },
-                onChange: { bpm in
-                    applyTempoChange(prompt: prompt, bpm: bpm)
+                onChange: { bpm, lockedTrackIDs in
+                    applyTempoChange(prompt: prompt, bpm: bpm, lockedTrackIDs: lockedTrackIDs)
                 }
             )
         }

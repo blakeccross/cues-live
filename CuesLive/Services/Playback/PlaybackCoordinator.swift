@@ -598,7 +598,6 @@ final class PlaybackCoordinator {
         clockEngine.setSuppressAutoStopOnPlaybackFinished(isClockMuted)
         clockEngine.setTempoMap(
             layout.tempoChanges,
-            referenceBPM: layout.tempoChanges.referenceBPM,
             timeSignatureChanges: layout.timeSignatureChanges
         )
         clockEngine.retargetTimeline(duration: targetDuration, at: targetTime)
@@ -752,7 +751,6 @@ final class PlaybackCoordinator {
 
         audioEngine.setTempoMap(
             layout.tempoChanges,
-            referenceBPM: layout.tempoChanges.referenceBPM,
             timeSignatureChanges: layout.timeSignatureChanges
         )
         audioEngine.configureMIDI(events: layout.midiEvents)
@@ -915,7 +913,6 @@ final class PlaybackCoordinator {
             engine.setArrangement(layout.playback)
             engine.setTempoMap(
                 layout.tempoChanges,
-                referenceBPM: layout.tempoChanges.referenceBPM,
                 timeSignatureChanges: layout.timeSignatureChanges
             )
             engine.configureMIDI(events: layout.midiEvents)
@@ -1002,7 +999,6 @@ final class PlaybackCoordinator {
             )
             clockEngine.setTempoMap(
                 layout.tempoChanges,
-                referenceBPM: layout.tempoChanges.referenceBPM,
                 timeSignatureChanges: layout.timeSignatureChanges
             )
             clockEngine.setMasterVolume(0)

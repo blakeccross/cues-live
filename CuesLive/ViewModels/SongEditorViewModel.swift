@@ -46,16 +46,13 @@ final class SongEditorViewModel {
         reloadSong()
     }
 
-    /// Bakes included stems at `song.transposeSemitones`, persists the project, and reloads playback.
-    @MainActor
-    func applyKeyChange(
-        context: ModelContext,
-        onProgress: @escaping @MainActor (KeyChangeRenderer.Progress) -> Void
-    ) async throws {
-        try await KeyChangeRenderer.bake(song: song, onProgress: onProgress)
+    /// Saves the song's key and shifts each included stem live; nothing is rendered.
+    func applyKeyChange(context: ModelContext) throws {
         try context.save()
         try SongProjectBridge.syncProjectFile(for: song, context: context)
-        reloadSongAfterMediaChange()
+        for track in song.sortedTracks {
+            audioEngine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
+        }
     }
 
     @MainActor
@@ -112,6 +109,11 @@ final class SongEditorViewModel {
                 try audioEngine.loadPreparedTracks(payloads, routing: editorRoutingSnapshot())
                 isLoaded = true
                 loadError = nil
+                // Loading clears the engine's arrangement. Restore it here rather than
+                // relying on the view to notice the reload: a reload that never suspends
+                // flips `isReloadingSong` within one update, so the view sees no change and
+                // every track would play its file straight through, ignoring clips and tempo.
+                syncArrangement(projectState.timeline)
                 syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
             } catch {
                 isLoaded = false
@@ -275,7 +277,6 @@ final class SongEditorViewModel {
         )
         audioEngine.setTempoMap(
             normalizedTempo,
-            referenceBPM: normalizedTempo.referenceBPM,
             timeSignatureChanges: normalizedSignatures
         )
     }

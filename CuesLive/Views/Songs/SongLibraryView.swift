@@ -527,7 +527,8 @@ struct SongLibraryPanel: View {
                     timelineStartSeconds: clip.timelineStartSeconds,
                     duration: clip.duration,
                     sourceStartSeconds: clip.sourceStartSeconds,
-                    gainDB: clip.gainDB
+                    gainDB: clip.gainDB,
+                    playbackRate: clip.playbackRate
                 )
             }
             let midiEvents = sourceState.midiEvents.map { event in

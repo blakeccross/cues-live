@@ -174,14 +174,13 @@ enum ClipEditing {
                 .filter { $0.timelineEndSeconds <= clip.timelineStartSeconds + tolerance }
                 .map(\.timelineEndSeconds)
                 .max() ?? 0
-            let fileStart = clip.timelineStartSeconds - clip.sourceStartSeconds
+            let fileStart = clip.timelineTime(atSource: 0)
             let minStart = max(previousEnd, fileStart, 0)
             let maxStart = clip.timelineEndSeconds - TrackClip.minimumDuration
             let newStart = min(max(time, minStart), maxStart)
-            let delta = newStart - clip.timelineStartSeconds
             result.timelineStartSeconds = newStart
-            result.sourceStartSeconds = clip.sourceStartSeconds + delta
-            result.duration = clip.duration - delta
+            result.sourceStartSeconds = clip.sourceTime(atTimeline: newStart)
+            result.duration = clip.timelineEndSeconds - newStart
         case .trailing:
             let nextStart = others
                 .filter { $0.timelineStartSeconds >= clip.timelineEndSeconds - tolerance }
@@ -189,7 +188,7 @@ enum ClipEditing {
                 .min() ?? .infinity
             // A track whose file length is unknown (missing audio) reports 0; don't clamp to it.
             let fileEnd = sourceDuration > 0
-                ? clip.timelineStartSeconds + (sourceDuration - clip.sourceStartSeconds)
+                ? clip.timelineTime(atSource: sourceDuration)
                 : .infinity
             let minEnd = clip.timelineStartSeconds + TrackClip.minimumDuration
             let maxEnd = max(min(nextStart, fileEnd), minEnd)
@@ -246,7 +245,7 @@ enum ClipEditing {
               let next = clips
                 .filter({ $0.trackID == clip.trackID && $0.timelineStartSeconds >= clip.timelineEndSeconds - tolerance })
                 .min(by: { $0.timelineStartSeconds < $1.timelineStartSeconds }),
-              abs(next.sourceOffset - clip.sourceOffset) <= tolerance,
+              clip.continues(into: next, tolerance: tolerance),
               let index = clips.firstIndex(where: { $0.id == clipID }) else {
             return nil
         }
@@ -291,7 +290,8 @@ enum ClipEditing {
                 timelineStartSeconds: clip.timelineStartSeconds + clampedDelta,
                 duration: clip.duration,
                 sourceStartSeconds: clip.sourceStartSeconds,
-                gainDB: clip.gainDB
+                gainDB: clip.gainDB,
+                playbackRate: clip.playbackRate
             )
         }
         place(copies, in: &clips)
@@ -673,7 +673,8 @@ enum ClipEditing {
             timelineStartSeconds: start,
             duration: end - start,
             sourceStartSeconds: clip.sourceTime(atTimeline: start),
-            gainDB: clip.gainDB
+            gainDB: clip.gainDB,
+            playbackRate: clip.playbackRate
         )
     }
 }

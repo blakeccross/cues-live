@@ -105,6 +105,36 @@ final class SectionTransitionRenderTests: XCTestCase {
         XCTAssertEqual(silenced[silenced.count / 2], 0, accuracy: 0.000_1)
     }
 
+    func testReTimedClipPlaysItsClicksTwiceAsOften() throws {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(10)
+        let player = try makeClickPlayer(transport: transport, seconds: 10)
+        let clip = TrackClip(
+            trackID: player.trackID,
+            timelineStartSeconds: 0,
+            duration: 5,
+            sourceStartSeconds: 0,
+            playbackRate: 2
+        )
+        player.updateMapper(ArrangementTimelineMapper(clips: [clip], fileDuration: 10))
+
+        let origin = hostTicks(seconds: 100)
+        transport.beginPlayback(from: 0)
+        var output: [Float] = []
+        for block in 0..<80 {
+            let elapsed = Double(block) * Double(blockFrames) / sampleRate
+            output += try renderBlock(player, hostTime: origin + hostTicks(seconds: elapsed))
+        }
+
+        // Source clicks every half second arrive every quarter second at 2x, on the timeline.
+        for beat in 1...3 {
+            let expected = beat * clickSpacingFrames / 2
+            let window = (expected - 960)..<(expected + 960)
+            let peak = window.max { abs(output[$0]) < abs(output[$1]) } ?? 0
+            XCTAssertEqual(peak, expected, accuracy: 240, "click \(beat)")
+        }
+    }
+
     func testScheduledJumpPlaysTargetClickOnItsFirstFrame() throws {
         let transport = AudioPlaybackTransport()
         transport.setDuration(20)
