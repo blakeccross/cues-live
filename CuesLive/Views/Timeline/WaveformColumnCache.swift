@@ -1,29 +1,20 @@
 import CoreGraphics
 import Foundation
 
-/// Envelope paths for the clips on screen, built a chunk of device-pixel columns at a time.
+/// Envelope paths for the waveforms on screen, built a chunk of device-pixel columns at a time.
 ///
-/// Columns sit on the timeline content's pixel grid, so a scroll reuses every chunk already
-/// built and computes only the ones it exposes. Columns are kept while a clip's geometry holds;
-/// the paths are rebuilt from them when only the gain or the lane height changes.
+/// Columns sit on a fixed pixel grid, so a scroll reuses every chunk already built and computes
+/// only the ones it exposes. Columns are kept while a waveform's `Geometry` holds; the paths are
+/// rebuilt from them when only the gain or the lane height changes.
+///
+/// `Key` names one waveform (a clip, a setlist song). `Geometry` is everything that decides its
+/// columns; a change drops them.
 @MainActor
-final class WaveformColumnCache {
-    static let chunkColumns = 256
+final class WaveformColumnCache<Key: Hashable, Geometry: Equatable> {
+    // Generic types cannot hold stored statics.
+    private static var chunkColumns: Int { 256 }
     /// Chunks kept on each side of the ones drawn, so scrolling back and forth reuses them.
-    private static let retainedChunks = 8
-
-    /// Everything that decides a clip's columns.
-    struct Geometry: Equatable {
-        let fileURL: URL
-        let startX: CGFloat
-        let clipWidth: CGFloat
-        let sourceStart: TimeInterval
-        let sourceDuration: TimeInterval
-        let scale: CGFloat
-        let channelCount: Int
-        /// Identity of the raw samples the columns were taken from, or 0 for the pyramid.
-        let sampleGeneration: Int
-    }
+    private static var retainedChunks: Int { 8 }
 
     /// Everything else a path depends on.
     private struct PathStyle: Equatable {
@@ -43,32 +34,34 @@ final class WaveformColumnCache {
         var chunks: [Int: Chunk] = [:]
     }
 
-    private var entries: [UUID: Entry] = [:]
-    private var drawnThisPass: Set<UUID> = []
+    private var entries: [Key: Entry] = [:]
+    private var drawnThisPass: Set<Key> = []
 
     func beginPass() {
         drawnThisPass.removeAll(keepingCapacity: true)
     }
 
-    /// Forgets clips that were not drawn in the pass just finished.
+    /// Forgets waveforms that were not drawn in the pass just finished.
     func endPass() {
         entries = entries.filter { drawnThisPass.contains($0.key) }
     }
 
-    /// One path per channel and chunk covering `columns`, in content x with y centered on 0.
-    /// `compute` returns the columns of a range, per channel.
+    /// One path per channel and chunk covering `columns`, in x of the pixel grid's origin with y
+    /// centered on 0. `compute` returns the columns of a range, per channel.
     func paths(
-        clipID: UUID,
+        key: Key,
         geometry: Geometry,
+        scale: CGFloat,
+        channelCount: Int,
         columns: Range<Int>,
         half: CGFloat,
         gain: Float,
         compute: (Range<Int>) -> [[(Float, Float)?]]
     ) -> [[CGPath]] {
-        drawnThisPass.insert(clipID)
-        var entry = entries[clipID].flatMap { $0.geometry == geometry ? $0 : nil } ?? Entry(geometry: geometry)
+        drawnThisPass.insert(key)
+        var entry = entries[key].flatMap { $0.geometry == geometry ? $0 : nil } ?? Entry(geometry: geometry)
         let style = PathStyle(half: half, gain: gain)
-        var result = Array(repeating: [CGPath](), count: geometry.channelCount)
+        var result = Array(repeating: [CGPath](), count: channelCount)
         guard !columns.isEmpty else { return result }
 
         let first = Self.chunkIndex(of: columns.lowerBound)
@@ -77,7 +70,7 @@ final class WaveformColumnCache {
             var chunk = entry.chunks[index] ?? Chunk(columns: compute(Self.columnRange(ofChunk: index)))
             if chunk.style != style {
                 chunk.paths = chunk.columns.map { channel in
-                    Self.envelope(channel, firstColumn: index * Self.chunkColumns, style: style, scale: geometry.scale)
+                    Self.envelope(channel, firstColumn: index * Self.chunkColumns, style: style, scale: scale)
                 }
                 chunk.style = style
             }
@@ -88,7 +81,7 @@ final class WaveformColumnCache {
         }
         let keep = (first - Self.retainedChunks)...(last + Self.retainedChunks)
         entry.chunks = entry.chunks.filter { keep.contains($0.key) }
-        entries[clipID] = entry
+        entries[key] = entry
         return result
     }
 
@@ -145,3 +138,4 @@ final class WaveformColumnCache {
         WaveformColumnGeometry.clampedAmplitude(gain == 1 ? value : value * gain)
     }
 }
+

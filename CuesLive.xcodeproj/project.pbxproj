@@ -216,7 +216,6 @@
 		AA00000100000000000000B4 /* OverlapPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B4 /* OverlapPreviewEngine.swift */; };
 		AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */; };
 		AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C7 /* AudioTimelineMathTests.swift */; };
-		AA0000010000000000000CA1 /* LiveSetlistZoomAnchorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */; };
 		AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */; };
 		AA00000100000000000000D6 /* SongEditSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D6 /* SongEditSnapshot.swift */; };
 		AA00000100000000000000D7 /* SongUndoController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000D7 /* SongUndoController.swift */; };
@@ -292,7 +291,6 @@
 		AA000001000000000000033D /* LiveSetlistMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033D /* LiveSetlistMenuController.swift */; };
 		AA000001000000000000033E /* CueshowDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033E /* CueshowDocument.icns */; };
 		AA000001000000000000033F /* CuesliveDocument.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033F /* CuesliveDocument.icns */; };
-		AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
 		AA00000100000000000003B2 /* OutputChannelTestPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */; };
 		AA0000010000000000000400 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000400 /* AppIcon.icon */; };
 		AA00000100000000000004A1 /* GainRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000004A1 /* GainRamp.swift */; };
@@ -350,7 +348,6 @@
 		C698E8F27C5F7057BB475B7E /* MIDIScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000064 /* MIDIScheduler.swift */; };
 		C768AFEEFAD4C2989E94B51D /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
 		C8B63C57E568FEA182FB13BF /* RemoteSessionSnapshotBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000306 /* RemoteSessionSnapshotBuilder.swift */; };
-		C9D77B8B9596E38D691C7008 /* LiveSongWaveformScrollBacking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */; };
 		CC88A06A554FDB3E8BD37995 /* SongEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000009 /* SongEditorViewModel.swift */; };
 		CD6906EEB45CF9DC7F072F34 /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000006 /* FileStore.swift */; };
 		CD7424E5843E22B12D171FC7 /* TimelineSignatureAndTempoRulers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED009 /* TimelineSignatureAndTempoRulers.swift */; };
@@ -430,8 +427,6 @@
 		26BD9B8CD487EF1AA9EBD0A2 /* ClipLaneInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */; };
 		3F6C7BF651822BD8B72F79C3 /* TrackLaneHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */; };
 		D730A59BF703D6B746726BC1 /* TrackLaneHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */; };
-		C1777F1F689E64FE6B9538F3 /* LiveSetlistZoomScrollAdjuster.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */; };
-		7E7C24899932C0C9093DE511 /* LiveSetlistZoomScrollAdjuster.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */; };
 		A69EF5271668ECCD10CE29B6 /* LiveSetlistWaveformGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */; };
 		18DBE288657AA981367BC7BF /* LiveSetlistWaveformGestures.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */; };
 		132D1879CFF16E8EC892F463 /* LiveSetlistWaveformScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */; };
@@ -493,6 +488,31 @@
 		B9A9A3411448CB7D9D6B7AB0 /* LiveStretcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */; };
 		3E459F880BA5C5FB38B9D5CA /* LiveStretcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */; };
 		B62FCB804048FEFF5003FECD /* LiveStretcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */; };
+		AFC23F04356CC6E1872DAA93 /* LiveSetlistWaveformPaneAdjustmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79ED84EAEFB9ECB201703C59 /* LiveSetlistWaveformPaneAdjustmentTests.swift */; };
+		1FCEFB6DE540FBE2E0E95A3E /* LiveSetlistScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */; };
+		BA0629F4D3F57EA06AA1DA65 /* LiveSetlistScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */; };
+		5019F5257629EA090A4A96E3 /* LiveSetlistScrollHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 389CC12448D559738BE2DE55 /* LiveSetlistScrollHost.swift */; };
+		AF76C7EA01F4CB8619822511 /* LiveSetlistScrollHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 389CC12448D559738BE2DE55 /* LiveSetlistScrollHost.swift */; };
+		51334AC6F272B1BDA44FA13C /* LiveSetlistNSScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51253E6B989526F778A86D0 /* LiveSetlistNSScrollView.swift */; };
+		CBFC02F004BED085301F6B35 /* LiveSetlistNSScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51253E6B989526F778A86D0 /* LiveSetlistNSScrollView.swift */; };
+		BECAAD0D1E9D0099599B6922 /* LiveSetlistUIScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EDA5A0B6D32EF99B70E570 /* LiveSetlistUIScrollView.swift */; };
+		99CA287E0079D2AE8AA44404 /* LiveSetlistUIScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32EDA5A0B6D32EF99B70E570 /* LiveSetlistUIScrollView.swift */; };
+		46F12E61C0E12A60447005C1 /* LiveSetlistScrollModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8FBE3C1E59992B7A1FC06CC /* LiveSetlistScrollModelTests.swift */; };
+		5B7E9DCDD7FE55C0A90F4EBF /* LiveSetlistLanePainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C456DCECD81D2E286D766298 /* LiveSetlistLanePainter.swift */; };
+		7264F8CD01FFD08EE0C948F2 /* LiveSetlistLanePainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C456DCECD81D2E286D766298 /* LiveSetlistLanePainter.swift */; };
+		BD0356BAA26D35BCFF761D82 /* LiveSetlistLanePainter+Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4104F36950FBB413F97F13D /* LiveSetlistLanePainter+Grid.swift */; };
+		2C848A94EF41998D4F1EB259 /* LiveSetlistLanePainter+Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4104F36950FBB413F97F13D /* LiveSetlistLanePainter+Grid.swift */; };
+		57ABBEE3A075069E05DC6586 /* LiveSetlistLaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277A9A24003A517F7215C6EB /* LiveSetlistLaneCanvas.swift */; };
+		8954737B2428E1EE14F9E32D /* LiveSetlistLaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 277A9A24003A517F7215C6EB /* LiveSetlistLaneCanvas.swift */; };
+		2AFAEACF952F02065FF9849F /* LiveSetlistLaneCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EED6EDB12D6A5003CB02AF /* LiveSetlistLaneCanvasView.swift */; };
+		FB4C4E6DF45EF7E7DDAAB71D /* LiveSetlistLaneCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EED6EDB12D6A5003CB02AF /* LiveSetlistLaneCanvasView.swift */; };
+		FEE11C252438A9C185FA3D75 /* LiveSetlistWaveformSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D191F5F9E3E59A45174F25E /* LiveSetlistWaveformSource.swift */; };
+		C0DEE6538B297FB16763743C /* LiveSetlistWaveformSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D191F5F9E3E59A45174F25E /* LiveSetlistWaveformSource.swift */; };
+		608A1F198FE4850ED53F35F5 /* WaveformMinMaxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88B3EB180523D5A20054F9B /* WaveformMinMaxTests.swift */; };
+		62710007C0983982ADD09CA4 /* LiveSetlistWaveformSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B707B6F9394671ACECA78CC3 /* LiveSetlistWaveformSourceTests.swift */; };
+		39135153DD4D38A5FCE0D0A6 /* WaveformPeakResampler+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */; };
+		2916D25059C6B918CF97BF90 /* WaveformPeakResampler+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */; };
+		EB0D5DA58F5B196BE1A1EED6 /* WaveformPeakResamplerTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -610,7 +630,6 @@
 		AA00000200000000000000B4 /* OverlapPreviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapPreviewEngine.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapTransitionConfigTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C7 /* AudioTimelineMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTimelineMathTests.swift; sourceTree = "<group>"; };
-		AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomAnchorTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackTransportTests.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D6 /* SongEditSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditSnapshot.swift; sourceTree = "<group>"; };
 		AA00000200000000000000D7 /* SongUndoController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongUndoController.swift; sourceTree = "<group>"; };
@@ -686,7 +705,6 @@
 		AA000002000000000000033D /* LiveSetlistMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistMenuController.swift; sourceTree = "<group>"; };
 		AA000002000000000000033E /* CueshowDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CueshowDocument.icns; sourceTree = "<group>"; };
 		AA000002000000000000033F /* CuesliveDocument.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = CuesliveDocument.icns; sourceTree = "<group>"; };
-		AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongWaveformScrollBacking.swift; sourceTree = "<group>"; };
 		AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputChannelTestPlayer.swift; sourceTree = "<group>"; };
 		AA0000020000000000000400 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		AA00000200000000000004A1 /* GainRamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GainRamp.swift; sourceTree = "<group>"; };
@@ -744,7 +762,6 @@
 		6C1C2E316530576E2D5E9040 /* ClipGainPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipGainPrompt.swift; sourceTree = "<group>"; };
 		BFC225B14507E1BA2BD3BDD1 /* ClipLaneInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipLaneInteraction.swift; sourceTree = "<group>"; };
 		2C163766DDC5181666F31E45 /* TrackLaneHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLaneHeaderView.swift; sourceTree = "<group>"; };
-		A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistZoomScrollAdjuster.swift; sourceTree = "<group>"; };
 		B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformGestures.swift; sourceTree = "<group>"; };
 		7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformScrollView.swift; sourceTree = "<group>"; };
 		CC26FD744D6194D0DFFF968E /* LiveSetlistWaveformResizablePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformResizablePane.swift; sourceTree = "<group>"; };
@@ -777,6 +794,21 @@
 		077108785CD6F811C00BC27A /* TrackClipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackClipTests.swift; sourceTree = "<group>"; };
 		E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStretcher.swift; sourceTree = "<group>"; };
 		AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStretcherTests.swift; sourceTree = "<group>"; };
+		79ED84EAEFB9ECB201703C59 /* LiveSetlistWaveformPaneAdjustmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformPaneAdjustmentTests.swift; sourceTree = "<group>"; };
+		F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistScrollModel.swift; sourceTree = "<group>"; };
+		389CC12448D559738BE2DE55 /* LiveSetlistScrollHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistScrollHost.swift; sourceTree = "<group>"; };
+		A51253E6B989526F778A86D0 /* LiveSetlistNSScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistNSScrollView.swift; sourceTree = "<group>"; };
+		32EDA5A0B6D32EF99B70E570 /* LiveSetlistUIScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistUIScrollView.swift; sourceTree = "<group>"; };
+		B8FBE3C1E59992B7A1FC06CC /* LiveSetlistScrollModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistScrollModelTests.swift; sourceTree = "<group>"; };
+		C456DCECD81D2E286D766298 /* LiveSetlistLanePainter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistLanePainter.swift; sourceTree = "<group>"; };
+		B4104F36950FBB413F97F13D /* LiveSetlistLanePainter+Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveSetlistLanePainter+Grid.swift"; sourceTree = "<group>"; };
+		277A9A24003A517F7215C6EB /* LiveSetlistLaneCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistLaneCanvas.swift; sourceTree = "<group>"; };
+		66EED6EDB12D6A5003CB02AF /* LiveSetlistLaneCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistLaneCanvasView.swift; sourceTree = "<group>"; };
+		1D191F5F9E3E59A45174F25E /* LiveSetlistWaveformSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformSource.swift; sourceTree = "<group>"; };
+		E88B3EB180523D5A20054F9B /* WaveformMinMaxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformMinMaxTests.swift; sourceTree = "<group>"; };
+		B707B6F9394671ACECA78CC3 /* LiveSetlistWaveformSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformSourceTests.swift; sourceTree = "<group>"; };
+		29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WaveformPeakResampler+Timeline.swift"; sourceTree = "<group>"; };
+		C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakResamplerTimelineTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -936,6 +968,7 @@
 		AA0000050000000000000006 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */,
 				AA0000020000000000000009 /* SongEditorViewModel.swift */,
 				AA000002000000000000000A /* SetlistViewModel.swift */,
 			);
@@ -975,6 +1008,13 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				66EED6EDB12D6A5003CB02AF /* LiveSetlistLaneCanvasView.swift */,
+				277A9A24003A517F7215C6EB /* LiveSetlistLaneCanvas.swift */,
+				B4104F36950FBB413F97F13D /* LiveSetlistLanePainter+Grid.swift */,
+				C456DCECD81D2E286D766298 /* LiveSetlistLanePainter.swift */,
+				32EDA5A0B6D32EF99B70E570 /* LiveSetlistUIScrollView.swift */,
+				A51253E6B989526F778A86D0 /* LiveSetlistNSScrollView.swift */,
+				389CC12448D559738BE2DE55 /* LiveSetlistScrollHost.swift */,
 				F1D052B00BCBD6B7E8D5E61F /* LivePlaybackView+Stage.swift */,
 				8F9EC5D80E5DBC4408EA3E9B /* LivePlaybackView+Sections.swift */,
 				800F5D30D4FEA51164E4EB8A /* LivePlaybackView+Setlist.swift */,
@@ -984,7 +1024,6 @@
 				CC26FD744D6194D0DFFF968E /* LiveSetlistWaveformResizablePane.swift */,
 				7DA73D34A86D128586E3AA34 /* LiveSetlistWaveformScrollView.swift */,
 				B12DE26239D514A27F219EF2 /* LiveSetlistWaveformGestures.swift */,
-				A49D04913C8CFC620596B8BE /* LiveSetlistZoomScrollAdjuster.swift */,
 				711DFC09216571A02471075E /* LiveSetlistAddMenu.swift */,
 				2B379CA16A8EE1810545F314 /* LiveSetlistDurationFormat.swift */,
 				97FCFEA75E9F4C70388E1A7F /* SetlistHeaderDurationField.swift */,
@@ -999,7 +1038,6 @@
 				AA0000020000000000000310 /* LiveSetlistRows.swift */,
 				AA00000200000000000000E2 /* MissingMediaRelinkView.swift */,
 				AA0000020000000000000042 /* LiveSetlistNowPlayingInfoView.swift */,
-				AA00000200000000000003A1 /* LiveSongWaveformScrollBacking.swift */,
 				AA0000020000000000000028 /* LiveSongWaveformView.swift */,
 				AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */,
 				AA000002000000000000007B /* LiveGroupMixerView.swift */,
@@ -1044,6 +1082,11 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */,
+				B707B6F9394671ACECA78CC3 /* LiveSetlistWaveformSourceTests.swift */,
+				E88B3EB180523D5A20054F9B /* WaveformMinMaxTests.swift */,
+				B8FBE3C1E59992B7A1FC06CC /* LiveSetlistScrollModelTests.swift */,
+				79ED84EAEFB9ECB201703C59 /* LiveSetlistWaveformPaneAdjustmentTests.swift */,
 				AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */,
 				077108785CD6F811C00BC27A /* TrackClipTests.swift */,
 				7BC20D375A74F91F6CD35446 /* TempoTrackLockTests.swift */,
@@ -1064,7 +1107,6 @@
 				AA00000200000000000000A1 /* TimelineRippleStoreTests.swift */,
 				AA00000200000000000000C6 /* OverlapTransitionConfigTests.swift */,
 				AA00000200000000000000C7 /* AudioTimelineMathTests.swift */,
-				AA0000020000000000000CA1 /* LiveSetlistZoomAnchorTests.swift */,
 				AA00000200000000000000C8 /* AudioPlaybackTransportTests.swift */,
 				AA00000200000000000004A2 /* GainRampTests.swift */,
 				AA00000200000000000009F1 /* TrackMixControlsTests.swift */,
@@ -1182,6 +1224,7 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				1D191F5F9E3E59A45174F25E /* LiveSetlistWaveformSource.swift */,
 				E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */,
 				AA0000020000000000000007 /* AudioEngineManager.swift */,
 				AA0000020000000000000022 /* AudioPlaybackTransport.swift */,
@@ -1263,6 +1306,7 @@
 		AA00000500000000000BB008 /* Project */ = {
 			isa = PBXGroup;
 			children = (
+				29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */,
 				C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */,
 				3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */,
 				F1681DD8E36A9400E3228301 /* WaveformCache.swift */,
@@ -1489,6 +1533,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				39135153DD4D38A5FCE0D0A6 /* WaveformPeakResampler+Timeline.swift in Sources */,
+				FEE11C252438A9C185FA3D75 /* LiveSetlistWaveformSource.swift in Sources */,
+				2AFAEACF952F02065FF9849F /* LiveSetlistLaneCanvasView.swift in Sources */,
+				57ABBEE3A075069E05DC6586 /* LiveSetlistLaneCanvas.swift in Sources */,
+				BD0356BAA26D35BCFF761D82 /* LiveSetlistLanePainter+Grid.swift in Sources */,
+				5B7E9DCDD7FE55C0A90F4EBF /* LiveSetlistLanePainter.swift in Sources */,
+				BECAAD0D1E9D0099599B6922 /* LiveSetlistUIScrollView.swift in Sources */,
+				51334AC6F272B1BDA44FA13C /* LiveSetlistNSScrollView.swift in Sources */,
+				5019F5257629EA090A4A96E3 /* LiveSetlistScrollHost.swift in Sources */,
+				1FCEFB6DE540FBE2E0E95A3E /* LiveSetlistScrollModel.swift in Sources */,
 				B9A9A3411448CB7D9D6B7AB0 /* LiveStretcher.swift in Sources */,
 				37D81FDCD140E9CFC150928E /* TempoChangePrompt.swift in Sources */,
 				BC752BA60D990A895645312E /* TempoTrackLock.swift in Sources */,
@@ -1518,7 +1572,6 @@
 				E99FF0CCD9536EC1F2364FA0 /* LiveSetlistWaveformResizablePane.swift in Sources */,
 				132D1879CFF16E8EC892F463 /* LiveSetlistWaveformScrollView.swift in Sources */,
 				A69EF5271668ECCD10CE29B6 /* LiveSetlistWaveformGestures.swift in Sources */,
-				C1777F1F689E64FE6B9538F3 /* LiveSetlistZoomScrollAdjuster.swift in Sources */,
 				3F6C7BF651822BD8B72F79C3 /* TrackLaneHeaderView.swift in Sources */,
 				32D596381AEB15F8E2F610FD /* ClipLaneInteraction.swift in Sources */,
 				2D3808C892FD2750A914B57E /* ClipGainPrompt.swift in Sources */,
@@ -1654,7 +1707,6 @@
 				AA00000100000000000004A1 /* GainRamp.swift in Sources */,
 				AA00000100000000000004A3 /* OutputRecoveryBackoff.swift in Sources */,
 				AA0000010000000000000023 /* TimelinePlayheadOverlay.swift in Sources */,
-				AA00000100000000000003A1 /* LiveSongWaveformScrollBacking.swift in Sources */,
 				AA0000010000000000000028 /* LiveSongWaveformView.swift in Sources */,
 				AA0000010000000000000029 /* SetlistTransition.swift in Sources */,
 				AA00000100000000000000B1 /* OverlapTransitionConfig.swift in Sources */,
@@ -1711,6 +1763,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EB0D5DA58F5B196BE1A1EED6 /* WaveformPeakResamplerTimelineTests.swift in Sources */,
+				62710007C0983982ADD09CA4 /* LiveSetlistWaveformSourceTests.swift in Sources */,
+				608A1F198FE4850ED53F35F5 /* WaveformMinMaxTests.swift in Sources */,
+				46F12E61C0E12A60447005C1 /* LiveSetlistScrollModelTests.swift in Sources */,
+				AFC23F04356CC6E1872DAA93 /* LiveSetlistWaveformPaneAdjustmentTests.swift in Sources */,
 				B62FCB804048FEFF5003FECD /* LiveStretcherTests.swift in Sources */,
 				CDFAB1E5052B9397692C0CB5 /* TrackClipTests.swift in Sources */,
 				009390130AA405EAC46FC592 /* TempoTrackLockTests.swift in Sources */,
@@ -1731,7 +1788,6 @@
 				AA0000F10000000000000004 /* ClipEditingTests.swift in Sources */,
 				AA00000100000000000000C6 /* OverlapTransitionConfigTests.swift in Sources */,
 				AA00000100000000000000C7 /* AudioTimelineMathTests.swift in Sources */,
-				AA0000010000000000000CA1 /* LiveSetlistZoomAnchorTests.swift in Sources */,
 				AA00000100000000000000C8 /* AudioPlaybackTransportTests.swift in Sources */,
 				AA00000100000000000004A2 /* GainRampTests.swift in Sources */,
 				AA00000100000000000009F1 /* TrackMixControlsTests.swift in Sources */,
@@ -1759,6 +1815,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2916D25059C6B918CF97BF90 /* WaveformPeakResampler+Timeline.swift in Sources */,
+				C0DEE6538B297FB16763743C /* LiveSetlistWaveformSource.swift in Sources */,
+				FB4C4E6DF45EF7E7DDAAB71D /* LiveSetlistLaneCanvasView.swift in Sources */,
+				8954737B2428E1EE14F9E32D /* LiveSetlistLaneCanvas.swift in Sources */,
+				2C848A94EF41998D4F1EB259 /* LiveSetlistLanePainter+Grid.swift in Sources */,
+				7264F8CD01FFD08EE0C948F2 /* LiveSetlistLanePainter.swift in Sources */,
+				99CA287E0079D2AE8AA44404 /* LiveSetlistUIScrollView.swift in Sources */,
+				CBFC02F004BED085301F6B35 /* LiveSetlistNSScrollView.swift in Sources */,
+				AF76C7EA01F4CB8619822511 /* LiveSetlistScrollHost.swift in Sources */,
+				BA0629F4D3F57EA06AA1DA65 /* LiveSetlistScrollModel.swift in Sources */,
 				3E459F880BA5C5FB38B9D5CA /* LiveStretcher.swift in Sources */,
 				7722C0E1C231AFCCCD6E17F1 /* TempoChangePrompt.swift in Sources */,
 				8F5818F03F4BBB3E80737AAD /* TempoTrackLock.swift in Sources */,
@@ -1788,7 +1854,6 @@
 				2934F751F50FEA2411368DD0 /* LiveSetlistWaveformResizablePane.swift in Sources */,
 				C93C15E6732721C2CCBB6C1A /* LiveSetlistWaveformScrollView.swift in Sources */,
 				18DBE288657AA981367BC7BF /* LiveSetlistWaveformGestures.swift in Sources */,
-				7E7C24899932C0C9093DE511 /* LiveSetlistZoomScrollAdjuster.swift in Sources */,
 				D730A59BF703D6B746726BC1 /* TrackLaneHeaderView.swift in Sources */,
 				26BD9B8CD487EF1AA9EBD0A2 /* ClipLaneInteraction.swift in Sources */,
 				0B1B608158E04CFCE8DD4C8C /* ClipGainPrompt.swift in Sources */,
@@ -1924,7 +1989,6 @@
 				BE02C6AAD2AD6A4437E1A41E /* GainRamp.swift in Sources */,
 				6DBFE7367ACB8F3E0C7CAA1D /* OutputRecoveryBackoff.swift in Sources */,
 				A63CDD28D6603B6DCAB980F5 /* TimelinePlayheadOverlay.swift in Sources */,
-				C9D77B8B9596E38D691C7008 /* LiveSongWaveformScrollBacking.swift in Sources */,
 				BCFAEF5960EE8F456AE248FA /* LiveSongWaveformView.swift in Sources */,
 				DD0883626704CF5E3E575EA5 /* SetlistTransition.swift in Sources */,
 				EA72A290E1CDEF653DCF596D /* OverlapTransitionConfig.swift in Sources */,

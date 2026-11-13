@@ -11,12 +11,6 @@ enum WaveformColumnGeometry {
     /// Fraction of the band height from the center to full scale.
     static let amplitudeFraction: CGFloat = 0.46
 
-    struct Prepared {
-        var originX: CGFloat
-        var columnWidth: CGFloat
-        var columns: [WaveformColumnSpan]
-    }
-
     /// Silence stays at least a pixel tall, matching the editor.
     static func thicken(min minValue: Float, max maxValue: Float, half: CGFloat, scale: CGFloat) -> WaveformColumnSpan {
         let pixel = Float((1 / max(scale, 1)) / max(half, 1) / 2)
@@ -25,55 +19,6 @@ enum WaveformColumnGeometry {
         }
         let mid = (minValue + maxValue) / 2
         return WaveformColumnSpan(min: mid - pixel, max: mid + pixel)
-    }
-
-    /// One column per device pixel. Each column covers one point of content and reaches
-    /// halfway into its neighbors, the same window the editor uses.
-    static func prepare(
-        mins: [Float],
-        maxes: [Float],
-        contentWidth: CGFloat,
-        rect: CGRect,
-        scale: CGFloat,
-        half: CGFloat
-    ) -> Prepared? {
-        let count = min(mins.count, maxes.count)
-        guard count > 0, contentWidth > 0, rect.width > 0 else { return nil }
-        let scale = max(scale, 1)
-        let pixelStart = Int(floor(rect.minX * scale))
-        let pixelEnd = Int(ceil(rect.maxX * scale))
-        let columnCount = pixelEnd - pixelStart
-        guard columnCount > 0 else { return nil }
-
-        let framesPerPoint = Double(count) / Double(contentWidth)
-        let step = framesPerPoint / Double(scale)
-        let overlap = max(0, framesPerPoint - step)
-        let windowStart = Double(pixelStart) / Double(scale) * framesPerPoint - overlap * 0.5
-
-        var columns: [WaveformColumnSpan] = []
-        columns.reserveCapacity(columnCount)
-        for column in 0..<columnCount {
-            let lower = windowStart + step * Double(column)
-            let upper = lower + step + overlap
-            var low = Float.infinity
-            var high = -Float.infinity
-            if upper >= 0, lower <= Double(count - 1) {
-                let from = max(0, Int(floor(lower)))
-                let end = min(count, max(from + 1, Int(ceil(upper))))
-                if from < end {
-                    for index in from..<end {
-                        low = min(low, mins[index])
-                        high = max(high, maxes[index])
-                    }
-                }
-            }
-            if low <= high {
-                columns.append(thicken(min: low, max: high, half: half, scale: scale))
-            } else {
-                columns.append(thicken(min: 0, max: 0, half: half, scale: scale))
-            }
-        }
-        return Prepared(originX: CGFloat(pixelStart) / scale, columnWidth: 1 / scale, columns: columns)
     }
 
     static func envelopePath(
@@ -125,15 +70,6 @@ struct WaveformBarsCanvas: View, Equatable {
     /// Metal offscreens help short static waveforms but thrash scroll for
     /// setlist-length lanes (tens of thousands of points wide).
     var usesDrawingGroup = true
-    /// Summed min/max series. When present, the filled envelope uses editor columns.
-    var columnMins: [Float] = []
-    var columnMaxes: [Float] = []
-    /// Lane width the series spans. `0` means the canvas is the whole lane.
-    var columnContentWidth: CGFloat = 0
-    /// Content-x of this canvas's left edge.
-    var columnOriginX: CGFloat = 0
-
-    @Environment(\.displayScale) private var displayScale
 
     static func == (lhs: WaveformBarsCanvas, rhs: WaveformBarsCanvas) -> Bool {
         lhs.bars == rhs.bars
@@ -146,19 +82,14 @@ struct WaveformBarsCanvas: View, Equatable {
             && lhs.playedColor == rhs.playedColor
             && lhs.unplayedColor == rhs.unplayedColor
             && lhs.usesDrawingGroup == rhs.usesDrawingGroup
-            && lhs.columnMins == rhs.columnMins
-            && lhs.columnMaxes == rhs.columnMaxes
-            && lhs.columnContentWidth == rhs.columnContentWidth
-            && lhs.columnOriginX == rhs.columnOriginX
     }
 
     private let minBarHeight: CGFloat = 1.0
     private let voiceMemosMinBarHeight: CGFloat = 2.0
 
     var body: some View {
-        let scale = max(displayScale, 1)
         let canvas = Canvas { context, size in
-            drawWaveform(in: &context, size: size, scale: scale)
+            drawWaveform(in: &context, size: size)
         }
         // `drawingGroup()` helps short static waveforms, but forces a huge Metal
         // offscreen while `playheadFraction` animates or when the lane is very wide.
@@ -169,21 +100,16 @@ struct WaveformBarsCanvas: View, Equatable {
         }
     }
 
-    private func drawWaveform(in context: inout GraphicsContext, size: CGSize, scale: CGFloat) {
+    private func drawWaveform(in context: inout GraphicsContext, size: CGSize) {
         switch style {
         case .filledEnvelope:
-            drawFilledEnvelopeWaveform(in: &context, size: size, scale: scale)
+            drawFilledEnvelopeWaveform(in: &context, size: size)
         case .voiceMemosBars:
             drawVoiceMemosBars(in: &context, size: size)
         }
     }
 
-    private func drawFilledEnvelopeWaveform(in context: inout GraphicsContext, size: CGSize, scale: CGFloat) {
-        if !columnMins.isEmpty, !columnMaxes.isEmpty {
-            drawMinMaxColumns(in: &context, size: size, scale: scale)
-            return
-        }
-
+    private func drawFilledEnvelopeWaveform(in context: inout GraphicsContext, size: CGSize) {
         let playheadX = playheadFraction.map { min(max(0, $0), 1) * size.width }
         guard let playheadX else {
             drawFilledEnvelopeBody(in: &context, size: size, fillColor: fillColor)
@@ -216,60 +142,6 @@ struct WaveformBarsCanvas: View, Equatable {
             to: Path(CGRect(x: 0, y: 0, width: max(0, playheadX), height: size.height))
         )
         drawFilledEnvelopeBody(in: &playedContext, size: size, fillColor: playedFill)
-    }
-
-    private func drawMinMaxColumns(in context: inout GraphicsContext, size: CGSize, scale: CGFloat) {
-        let bodyHeight = max(1, size.height - headerHeight)
-        let half = bodyHeight * WaveformColumnGeometry.amplitudeFraction
-        let centerY = headerHeight + bodyHeight / 2
-        let contentWidth = columnContentWidth > 0 ? columnContentWidth : size.width
-        guard let prepared = WaveformColumnGeometry.prepare(
-            mins: columnMins,
-            maxes: columnMaxes,
-            contentWidth: contentWidth,
-            rect: CGRect(x: columnOriginX, y: 0, width: size.width, height: size.height),
-            scale: scale,
-            half: half
-        ) else {
-            drawFilledEnvelopeBody(in: &context, size: size, fillColor: fillColor)
-            return
-        }
-
-        let path = Path(WaveformColumnGeometry.envelopePath(
-            columns: prepared.columns,
-            originX: prepared.originX - columnOriginX,
-            columnWidth: prepared.columnWidth,
-            centerY: centerY,
-            half: half
-        ))
-        var clipped = context
-        clipped.clip(to: Path(CGRect(origin: .zero, size: size)))
-
-        guard let playheadX = playheadFraction.map({ min(max(0, $0), 1) * size.width }) else {
-            clipped.fill(path, with: .color(fillColor))
-            return
-        }
-
-        let usesCustomFill = fillColor != Color.dawWaveformFill
-        let playedFill = usesCustomFill
-            ? fillColor.opacity(LiveSetlistWaveformMetrics.waveformPlayedOpacity)
-            : playedColor
-        let unplayedFill = usesCustomFill
-            ? fillColor.opacity(LiveSetlistWaveformMetrics.waveformUnplayedOpacity)
-            : unplayedColor
-
-        var unplayedContext = clipped
-        unplayedContext.clip(to: Path(CGRect(
-            x: playheadX,
-            y: 0,
-            width: max(0, size.width - playheadX),
-            height: size.height
-        )))
-        unplayedContext.fill(path, with: .color(unplayedFill))
-
-        var playedContext = clipped
-        playedContext.clip(to: Path(CGRect(x: 0, y: 0, width: max(0, playheadX), height: size.height)))
-        playedContext.fill(path, with: .color(playedFill))
     }
 
     private func drawFilledEnvelopeBody(

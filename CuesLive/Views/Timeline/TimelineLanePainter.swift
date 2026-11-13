@@ -27,6 +27,19 @@ final class TimelineLanePainter {
     }
 
     /// The part of one clip being drawn, in content points.
+    /// Everything that decides a clip's columns.
+    private struct ClipGeometry: Equatable {
+        let fileURL: URL
+        let startX: CGFloat
+        let clipWidth: CGFloat
+        let sourceStart: TimeInterval
+        let sourceDuration: TimeInterval
+        let scale: CGFloat
+        let channelCount: Int
+        /// Identity of the raw samples the columns were taken from, or 0 for the pyramid.
+        let sampleGeneration: Int
+    }
+
     private struct ClipSpan {
         let clip: TimelineCanvasClip
         let startX: CGFloat
@@ -46,7 +59,7 @@ final class TimelineLanePainter {
 
     private var overviews: [URL: WaveformFileOverview] = [:]
     private var loadingOverviews: Set<URL> = []
-    private let columnCache = WaveformColumnCache()
+    private let columnCache = WaveformColumnCache<UUID, ClipGeometry>()
     private let sampleWindows = ClipSampleWindowStore()
 
     init() {
@@ -161,7 +174,7 @@ final class TimelineLanePainter {
             return
         }
 
-        let geometry = WaveformColumnCache.Geometry(
+        let geometry = ClipGeometry(
             fileURL: fileURL,
             startX: span.startX,
             clipWidth: span.width,
@@ -173,8 +186,10 @@ final class TimelineLanePainter {
         )
         let columns = Int(floor(span.visibleX.lowerBound * scale))..<Int(ceil(span.visibleX.upperBound * scale))
         let paths = columnCache.paths(
-            clipID: span.clip.id,
+            key: span.clip.id,
             geometry: geometry,
+            scale: scale,
+            channelCount: channelCount,
             columns: columns,
             half: bandHeight * WaveformColumnGeometry.amplitudeFraction,
             gain: span.clip.linearGain

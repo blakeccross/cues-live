@@ -226,25 +226,6 @@ final class WaveformLoaderTests: XCTestCase {
         XCTAssertEqual(laid.maxes[1], 0.8, accuracy: 0.001)
     }
 
-    func testDisplayColumnsUseTheWindowExtrema() throws {
-        let mins: [Float] = [-0.2, -0.8, -0.1]
-        let maxes: [Float] = [0.2, 0.4, 0.9]
-        let prepared = try XCTUnwrap(
-            WaveformColumnGeometry.prepare(
-                mins: mins,
-                maxes: maxes,
-                contentWidth: 3,
-                rect: CGRect(x: 0, y: 0, width: 3, height: 10),
-                scale: 1,
-                half: 100
-            )
-        )
-
-        XCTAssertEqual(prepared.columns.count, 3)
-        XCTAssertEqual(prepared.columns[1].min, -0.8, accuracy: 0.001)
-        XCTAssertEqual(prepared.columns[1].max, 0.4, accuracy: 0.001)
-    }
-
     func testGroupedMaximaKeepsEachGroupsPeak() {
         let peaks: [Float] = [0.1, 0.5, 0.2, 0.9, 0.3, 0.4, 0.8]
         XCTAssertEqual(

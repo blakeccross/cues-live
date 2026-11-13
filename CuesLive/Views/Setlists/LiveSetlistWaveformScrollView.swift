@@ -43,25 +43,35 @@ struct LiveSetlistWaveformScrollView: View {
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
     #endif
 
-    @State private var isFollowing = true
-    @State private var isUserScrolling = false
-    @State private var playheadViewportX: CGFloat?
-    @State private var viewportWidth: CGFloat = 1
+    @State private var scrollModel = LiveSetlistScrollModel()
     @State private var horizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoom
     @State private var pinchStartZoom: CGFloat?
-    /// Summed playhead shift for the open zoom gesture. Cleared once the scroll
-    /// view has had a chance to apply it.
-    @State private var zoomBatch: ZoomBatch?
-    @State private var zoomGestureID = 0
-    @State private var isZoomGesturing = false
-
-    private struct ZoomBatch: Equatable {
-        var id: Int
-        var delta: CGFloat
-    }
 
     private let laneSpacing: CGFloat = 24
     private static let zoomAdjustmentStep: CGFloat = 0.25
+
+    private var laneIndices: Set<Int> {
+        Set(timelineItems.compactMap { item in
+            if case .song(_, let playbackIndex, _) = item { return playbackIndex }
+            return nil
+        })
+    }
+
+    private var laneCanvas: LiveSetlistLaneCanvas {
+        LiveSetlistLaneCanvas(
+            songs: timelineItems.compactMap { item in
+                guard case .song(let songID, let playbackIndex, _) = item,
+                      let snapshot = waveformSnapshotForSongID(songID) else { return nil }
+                return LiveSetlistLaneCanvas.Song(
+                    index: playbackIndex,
+                    snapshot: snapshot,
+                    isCurrent: playbackIndex == currentPlaybackIndex
+                )
+            },
+            cuedSectionID: cuedSectionID,
+            cueFlashPhase: cueFlashPhase
+        )
+    }
 
     private var midiLanesExtraHeight: CGFloat {
         LiveSetlistWaveformMetrics.midiLanesHeight(forRowCount: maxMIDILaneCount)
@@ -71,111 +81,19 @@ struct LiveSetlistWaveformScrollView: View {
         LiveSetlistWaveformMetrics.laneHeight(for: waveformHeight) + midiLanesExtraHeight
     }
 
-    private var currentSongScrollID: String {
-        "song-\(currentPlaybackIndex)"
-    }
-
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .center, spacing: laneSpacing) {
-                    ForEach(timelineItems) { item in
-                        timelineItemView(item)
-                    }
-                }
-                .padding(.leading, AppSpacing.md)
-                .padding(.vertical, 2)
-                .frame(minWidth: viewportWidth, alignment: .leading)
-                .background(alignment: .topLeading) {
-                    LiveSetlistZoomScrollAdjuster(
-                        batchID: zoomBatch?.id,
-                        delta: zoomBatch?.delta ?? 0
-                    )
-                    .frame(width: 1, height: 1)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                }
-            }
-            .defaultScrollAnchor(.leading)
-            // Keep a single scrollTargetBehavior instance so toggling follow does not
-            // recreate the ScrollView (which would jump to defaultScrollAnchor).
-            .scrollTargetBehavior(LiveSetlistFollowScrollTargetBehavior(isFollowing: isFollowing))
-            .coordinateSpace(name: LiveSetlistWaveformMetrics.scrollCoordinateSpaceName)
-            .modifier(LiveSetlistFollowUserScrollDetector(
-                isFollowing: $isFollowing,
-                isUserScrolling: $isUserScrolling,
-                suspendsUserScrollTracking: isZoomGesturing
-            ))
-            .onPreferenceChange(LiveSetlistPlayheadViewportXKey.self) { playheadX in
-                // Preference updates during a drag rebuild the scroll hierarchy
-                // and amplify hitching on very wide lanes.
-                guard !isUserScrolling else { return }
-                guard let playheadX else {
-                    playheadViewportX = nil
-                    return
-                }
-                // Avoid rebuilding scroll state on sub-pixel preference chatter.
-                if let playheadViewportX, abs(playheadViewportX - playheadX) < 1 {
-                    return
-                }
-                playheadViewportX = playheadX
-                attemptFollowRelatch()
-            }
-            .onChange(of: isUserScrolling) { _, scrolling in
-                if scrolling {
-                    // Playhead updates are ignored mid-scroll, so the last value goes stale.
-                    // Drop it; relatching on it when the scroll ends would snap back to follow.
-                    playheadViewportX = nil
-                } else {
-                    attemptFollowRelatch()
-                }
-            }
-            .onAppear {
-                if isFollowing {
-                    scrollToFollowPlayhead(proxy, requirePlaying: false, deferred: true)
-                } else {
-                    scrollToCurrent(proxy)
-                }
-            }
-            .onChange(of: currentPlaybackIndex) { _, _ in
-                if isFollowing {
-                    scrollToFollowPlayhead(proxy, requirePlaying: false, deferred: true)
-                } else {
-                    scrollToCurrent(proxy)
-                }
-            }
-            .onChange(of: isFollowing) { _, following in
-                if following {
-                    scrollToFollowPlayhead(proxy, requirePlaying: false, deferred: true)
-                }
-            }
-            .background {
-                if isFollowing {
-                    TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { context in
-                        LiveSetlistFollowScrollDriver(date: context.date) {
-                            guard isPlayingProvider() else { return }
-                            scrollToFollowPlayhead(proxy, requirePlaying: true)
-                        }
-                    }
-                }
-            }
-        }
-        #if os(macOS)
-        .simultaneousGesture(horizontalPinchGesture)
-        #else
-        .modifier(LiveSetlistTouchPinchModifier(
-            fallbackGesture: horizontalPinchGesture,
-            onChanged: pinchChanged,
-            onEnded: pinchEnded
-        ))
-        #endif
-        .background {
-            GeometryReader { geometry in
-                Color.clear
-                    .onChange(of: geometry.size.width, initial: true) { _, width in
-                        viewportWidth = max(width, 1)
-                    }
-            }
+        LiveSetlistScrollHost(
+            model: scrollModel,
+            currentIndex: currentPlaybackIndex,
+            playheadTime: playheadTimeProvider,
+            isPlaying: isPlayingProvider,
+            idlePlayheadTime: idlePlayheadTime,
+            laneIndices: laneIndices,
+            canvas: laneCanvas,
+            onPinchChanged: pinchChanged,
+            onPinchEnded: pinchEnded
+        ) {
+            stripContent
         }
         .frame(maxWidth: .infinity)
         #if os(macOS)
@@ -278,17 +196,37 @@ struct LiveSetlistWaveformScrollView: View {
     }
     #endif
 
+    /// The song lanes, laid out once across the whole setlist. The scroll host moves them.
+    private var stripContent: some View {
+        HStack(alignment: .center, spacing: laneSpacing) {
+            ForEach(timelineItems) { item in
+                timelineItemView(item)
+            }
+        }
+        .padding(.leading, AppSpacing.md)
+        .padding(.vertical, 2)
+        .fixedSize(horizontal: true, vertical: false)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            scrollModel.setContentWidth(width)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .coordinateSpace(name: LiveSetlistWaveformMetrics.scrollCoordinateSpaceName)
+        #if os(macOS)
+        .simultaneousGesture(horizontalPinchGesture)
+        #endif
+    }
+
     @ViewBuilder
     private func timelineItemView(_ item: LiveSetlistTimelineItem) -> some View {
         switch item {
         case .header(_, let title):
             SetlistWaveformHeaderMarker(title: title, extraHeight: midiLanesExtraHeight)
-                .id(item.id)
 
         case .song(let songID, let playbackIndex, let transitionAfter):
             HStack(alignment: .center, spacing: laneSpacing) {
                 songLane(songID: songID, playbackIndex: playbackIndex)
-                    .id(item.id)
 
                 if let transitionAfter {
                     transitionBadge(transitionAfter, playbackIndex: playbackIndex)
@@ -312,114 +250,38 @@ struct LiveSetlistWaveformScrollView: View {
         }
     }
 
+    #if os(macOS)
     private var horizontalPinchGesture: some Gesture {
         MagnificationGesture()
             .onChanged(pinchChanged)
             .onEnded { _ in pinchEnded() }
     }
+    #endif
 
     private func pinchChanged(_ scale: CGFloat) {
-        let starting = pinchStartZoom == nil
-        if starting {
+        if pinchStartZoom == nil {
             pinchStartZoom = horizontalZoom
-            // Follow recenters on a timer. Hold it off for the whole pinch, including
-            // the first events whose scale has not moved the playhead yet.
-            beginZoomGesture()
+            scrollModel.anchorPlayheadForZoom()
         }
         guard let pinchStartZoom else { return }
-        let oldZoom = horizontalZoom
-        let newZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            anchorZoom(from: oldZoom, to: newZoom)
-            horizontalZoom = newZoom
+            horizontalZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
         }
     }
 
     private func pinchEnded() {
         pinchStartZoom = nil
         persistHorizontalZoom()
-        endZoomGesture()
     }
 
     private func setHorizontalZoom(_ proposed: CGFloat) {
-        let oldZoom = horizontalZoom
         let newZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(proposed)
-        guard newZoom != oldZoom else { return }
-        let beganHere = !isZoomGesturing
-        anchorZoom(from: oldZoom, to: newZoom)
+        guard newZoom != horizontalZoom else { return }
+        scrollModel.anchorPlayheadForZoom()
         horizontalZoom = newZoom
         persistHorizontalZoom()
-        if beganHere {
-            endZoomGesture()
-        }
-    }
-
-    private func beginZoomGesture() {
-        zoomGestureID += 1
-        isZoomGesturing = true
-    }
-
-    /// Shifts the scroll offset by the same amount the playhead's content X moves.
-    /// Steps accumulate on the gesture's batch so one SwiftUI update still includes
-    /// every scale change.
-    private func anchorZoom(from oldZoom: CGFloat, to newZoom: CGFloat) {
-        guard oldZoom != newZoom else { return }
-        let time = resolvedPlayheadTime()
-        let step = scalablePlayheadX(zoom: newZoom, time: time)
-            - scalablePlayheadX(zoom: oldZoom, time: time)
-        guard step != 0 else { return }
-        if !isZoomGesturing {
-            beginZoomGesture()
-        }
-        if zoomBatch?.id != zoomGestureID {
-            zoomBatch = ZoomBatch(id: zoomGestureID, delta: step)
-        } else if var batch = zoomBatch {
-            batch.delta += step
-            zoomBatch = batch
-        }
-    }
-
-    private func endZoomGesture() {
-        guard isZoomGesturing else { return }
-        let gestureID = zoomGestureID
-        Task { @MainActor in
-            await Task.yield()
-            await Task.yield()
-            guard zoomGestureID == gestureID else { return }
-            zoomBatch = nil
-            isZoomGesturing = false
-        }
-    }
-
-    private func resolvedPlayheadTime() -> TimeInterval {
-        if isPlayingProvider() {
-            return playheadTimeProvider()
-        }
-        if let idlePlayheadTime {
-            return idlePlayheadTime
-        }
-        return playheadTimeProvider()
-    }
-
-    private func scalablePlayheadX(zoom: CGFloat, time: TimeInterval) -> CGFloat {
-        var preceding: [CGFloat] = []
-        for item in timelineItems {
-            guard case .song(let songID, let playbackIndex, _) = item else { continue }
-            let duration = waveformSnapshotForSongID(songID)?.timelineDuration
-            let width = LiveSetlistZoomAnchor.laneWidth(timelineDuration: duration, zoom: zoom)
-            if playbackIndex == currentPlaybackIndex {
-                return LiveSetlistZoomAnchor.scalablePlayheadX(
-                    precedingLaneWidths: preceding,
-                    currentLaneWidth: width,
-                    playheadTime: time,
-                    timelineDuration: duration ?? 0
-                )
-            }
-            preceding.append(width)
-        }
-        return 0
     }
 
     private func persistHorizontalZoom() {
@@ -428,55 +290,6 @@ struct LiveSetlistWaveformScrollView: View {
 
     private func laneContentWidth(for snapshot: LiveSongWaveformSnapshot) -> CGFloat {
         TimelineLayout.contentWidth(for: snapshot.timelineDuration, zoom: horizontalZoom)
-    }
-
-    private func scrollToCurrent(_ proxy: ScrollViewProxy) {
-        Task { @MainActor in
-            await Task.yield()
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                proxy.scrollTo(currentSongScrollID, anchor: .leading)
-            }
-        }
-    }
-
-    private func scrollToFollowPlayhead(
-        _ proxy: ScrollViewProxy,
-        requirePlaying: Bool,
-        deferred: Bool = false
-    ) {
-        let perform = {
-            guard self.isFollowing, !self.isZoomGesturing else { return }
-            if requirePlaying, !self.isPlayingProvider() { return }
-
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                proxy.scrollTo(
-                    LiveSetlistWaveformMetrics.followPlayheadScrollID,
-                    anchor: .center
-                )
-            }
-        }
-
-        if deferred {
-            Task { @MainActor in
-                await Task.yield()
-                perform()
-            }
-        } else {
-            perform()
-        }
-    }
-
-    private func attemptFollowRelatch() {
-        guard !isFollowing, !isUserScrolling, let playheadViewportX else { return }
-        let center = viewportWidth / 2
-        guard abs(playheadViewportX - center) <= LiveSetlistWaveformMetrics.followRelatchDistance else {
-            return
-        }
-        isFollowing = true
     }
 
     @ViewBuilder
@@ -515,31 +328,23 @@ struct LiveSetlistWaveformScrollView: View {
         VStack(alignment: .leading, spacing: LiveSetlistWaveformMetrics.midiLaneRowSpacing) {
             LiveSongWaveformView(
                 contentWidth: laneContentWidth,
-                trackSources: snapshot.trackSources,
-                fileDuration: snapshot.fileDuration,
                 timelineDuration: snapshot.timelineDuration,
                 sections: snapshot.sections,
-                peakClips: snapshot.peakClips,
                 loopSectionIDs: snapshot.loopSectionIDs,
-                tempoChanges: snapshot.tempoChanges,
-                timeSignatureChanges: snapshot.timeSignatureChanges,
-                cuedSectionID: isCurrent ? cuedSectionID : nil,
-                cueFlashPhase: isCurrent ? cueFlashPhase : false,
-                showsMeasureGrid: snapshot.showsMeasureGrid,
-                precomputedSourcePeaks: snapshot.precomputedSourcePeaks,
-                showsPlayhead: isCurrent,
                 isInteractive: isCurrent,
-                viewportWidth: viewportWidth,
-                isUserScrolling: isUserScrolling,
-                needsFollowScrollTarget: isCurrent && isFollowing,
                 showsMissingMediaWarning: songHasMissingMedia(snapshot.songID),
-                idlePlayheadTime: isCurrent ? idlePlayheadTime : nil,
-                playheadTimeProvider: isCurrent ? playheadTimeProvider : nil,
-                isPlayingProvider: isCurrent ? isPlayingProvider : nil,
                 onSeek: onSeek,
                 onCueSection: onCueSection,
                 playbackIndex: playbackIndex
             )
+            .onGeometryChange(for: LiveSetlistScrollModel.Lane.self) { proxy in
+                LiveSetlistScrollModel.Lane(
+                    frame: proxy.frame(in: .named(LiveSetlistWaveformMetrics.scrollCoordinateSpaceName)),
+                    duration: snapshot.timelineDuration
+                )
+            } action: { lane in
+                scrollModel.setLane(lane, at: playbackIndex)
+            }
 
             ForEach(snapshot.midiLanes) { lane in
                 LiveMIDIEventLaneView(
@@ -553,7 +358,7 @@ struct LiveSetlistWaveformScrollView: View {
         // Songs with fewer MIDI lanes still occupy the tallest lane's height,
         // so every waveform stays on the same vertical line.
         .frame(minHeight: waveformHeight + midiLanesExtraHeight, alignment: .top)
-        .opacity(isCurrent ? 1 : 0.72)
+        .opacity(isCurrent ? 1 : LiveSetlistWaveformMetrics.nonCurrentLaneOpacity)
     }
 }
 
@@ -583,19 +388,18 @@ private struct NonCurrentSongSelectTapModifier: ViewModifier {
     let sections: [SongSection]
     let onSelect: (TimeInterval?) -> Void
 
+    // One structure either way: branching would rebuild the lane every time the current
+    // song changes, dropping its loaded waveform and its reported position.
     func body(content: Content) -> some View {
-        if isEnabled {
-            content
-                .contentShape(Rectangle())
-                .simultaneousGesture(
-                    SpatialTapGesture()
-                        .onEnded { event in
-                            onSelect(sectionStart(atX: event.location.x))
-                        }
-                )
-        } else {
-            content
-        }
+        content
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                SpatialTapGesture()
+                    .onEnded { event in
+                        onSelect(sectionStart(atX: event.location.x))
+                    },
+                including: isEnabled ? .all : .subviews
+            )
     }
 
     private func sectionStart(atX x: CGFloat) -> TimeInterval? {

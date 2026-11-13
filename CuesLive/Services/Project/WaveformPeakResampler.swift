@@ -16,6 +16,14 @@ struct WaveformMinMax: Equatable, Sendable {
     static func mirrored(_ peaks: [Float]) -> WaveformMinMax {
         WaveformMinMax(mins: peaks.map { -$0 }, maxes: peaks)
     }
+
+    /// The series as an overview pyramid, so a zoomed-out lane reads coarse blocks instead of
+    /// every column. Each column becomes one level-0 block, so column `i` spans overview
+    /// positions `[i * WaveformOverview.block, (i + 1) * WaveformOverview.block)`.
+    func overview() -> WaveformOverview {
+        let level0 = (0..<count).map { WaveformOverview.Block(min: mins[$0], max: maxes[$0]) }
+        return WaveformOverview(sampleCount: count * WaveformOverview.block, level0: level0)
+    }
 }
 
 enum WaveformPeakResampler {

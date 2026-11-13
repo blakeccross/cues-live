@@ -12,6 +12,9 @@ struct LiveSongWaveformSnapshot: Identifiable {
     let songID: UUID
     let songName: String
     let trackSources: [(url: URL, duration: TimeInterval)]
+    /// Each track's clips, in `trackSources` order. Empty when unknown (remote sessions); the
+    /// combined waveform then maps every file through `peakClips` instead.
+    let trackClips: [[TrackClip]]
     let fileDuration: TimeInterval
     let timelineDuration: TimeInterval
     /// Sections used for labels, cueing, and loop badges.
@@ -27,6 +30,9 @@ struct LiveSongWaveformSnapshot: Identifiable {
     let precomputedSourcePeaks: [Float]?
     /// One lane per MIDI device on this song, for the setlist's read-only MIDI strip.
     let midiLanes: [LiveMIDILaneSnapshot]
+    /// Changes when any track file is rewritten in place, so a cached waveform is reloaded even
+    /// though the paths and durations stayed the same. 0 when unknown (remote sessions).
+    let audioRevision: Int
 
     var id: UUID { songID }
 
@@ -40,6 +46,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         songID: UUID,
         songName: String,
         trackSources: [(url: URL, duration: TimeInterval)],
+        trackClips: [[TrackClip]] = [],
         fileDuration: TimeInterval,
         timelineDuration: TimeInterval,
         sections: [SongSection],
@@ -48,11 +55,13 @@ struct LiveSongWaveformSnapshot: Identifiable {
         timeSignatureChanges: [TimeSignatureChange],
         showsMeasureGrid: Bool,
         precomputedSourcePeaks: [Float]? = nil,
-        midiLanes: [LiveMIDILaneSnapshot] = []
+        midiLanes: [LiveMIDILaneSnapshot] = [],
+        audioRevision: Int = 0
     ) {
         self.songID = songID
         self.songName = songName
         self.trackSources = trackSources
+        self.trackClips = trackClips
         self.fileDuration = fileDuration
         self.timelineDuration = timelineDuration
         self.sections = sections
@@ -62,6 +71,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         self.showsMeasureGrid = showsMeasureGrid
         self.precomputedSourcePeaks = precomputedSourcePeaks
         self.midiLanes = midiLanes
+        self.audioRevision = audioRevision
     }
 
     func withPrecomputedPeaks(_ peaks: [Float]?) -> LiveSongWaveformSnapshot {
@@ -69,6 +79,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
             songID: songID,
             songName: songName,
             trackSources: trackSources,
+            trackClips: trackClips,
             fileDuration: fileDuration,
             timelineDuration: timelineDuration,
             sections: sections,
@@ -77,7 +88,8 @@ struct LiveSongWaveformSnapshot: Identifiable {
             timeSignatureChanges: timeSignatureChanges,
             showsMeasureGrid: showsMeasureGrid,
             precomputedSourcePeaks: peaks,
-            midiLanes: midiLanes
+            midiLanes: midiLanes,
+            audioRevision: audioRevision
         )
     }
 }

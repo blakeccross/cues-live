@@ -759,12 +759,13 @@ final class PlaybackCoordinator {
     static func makeWaveformSnapshot(for song: Song) -> LiveSongWaveformSnapshot? {
         guard !song.sortedTracks.isEmpty else { return nil }
 
-        let trackSources: [(url: URL, duration: TimeInterval)] = song.sortedTracks.compactMap { track in
+        let playableTracks: [(track: AudioTrack, url: URL, duration: TimeInterval)] = song.sortedTracks.compactMap { track in
             guard let url = FileStore.trackURL(for: song, track: track),
                   let duration = FileStore.fileDuration(at: url) else { return nil }
             FileStore.cacheSourceDuration(duration, for: track)
-            return (url, duration)
+            return (track, url, duration)
         }
+        let trackSources = playableTracks.map { (url: $0.url, duration: $0.duration) }
 
         // Missing media keeps its cached length so sections still lay out, just without a waveform.
         let cachedDuration = song.sortedTracks.compactMap(\.sourceDurationSeconds).max() ?? 0
@@ -773,6 +774,7 @@ final class PlaybackCoordinator {
         let fileDuration = trackSources.map(\.duration).max() ?? cachedDuration
         let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
         let playbackLayout = SongPlaybackLayout(timeline: projectState.timeline)
+        let trackClips = playableTracks.map { playbackLayout.clipsByTrack[$0.track.id] ?? [] }
         let midiLanes = song.sortedMIDITracks.map { track in
             LiveMIDILaneSnapshot(
                 id: track.id,
@@ -787,6 +789,7 @@ final class PlaybackCoordinator {
             songID: song.id,
             songName: song.name,
             trackSources: trackSources,
+            trackClips: trackClips,
             fileDuration: fileDuration,
             timelineDuration: playbackLayout.duration,
             sections: playbackLayout.sections,
@@ -796,8 +799,19 @@ final class PlaybackCoordinator {
             // Synthetic 120 BPM markers are always injected for timing math; only
             // show measure ticks when the song actually has a set/imported tempo.
             showsMeasureGrid: song.bpm != nil,
-            midiLanes: midiLanes
+            midiLanes: midiLanes,
+            audioRevision: audioRevision(of: trackSources.map(\.url))
         )
+    }
+
+    /// Hash of the files' modification dates, so editing a stem in place reloads its waveform.
+    private static func audioRevision(of urls: [URL]) -> Int {
+        var hasher = Hasher()
+        for url in urls {
+            let date = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+            hasher.combine(date?.timeIntervalSinceReferenceDate)
+        }
+        return hasher.finalize()
     }
 
     private func configureOverlapSchedulingIfNeeded() {
