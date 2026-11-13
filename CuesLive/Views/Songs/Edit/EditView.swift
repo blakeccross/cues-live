@@ -43,12 +43,9 @@ struct EditView: View {
     @Binding var tempoChanges: [TempoChange]
     @Binding var timeSignatureChanges: [TimeSignatureChange]
     @Binding var midiEvents: [MIDIEvent]
-    @Binding var showingSongLibrary: Bool
     var onBack: () -> Void = {}
 
-    @State var showingMIDIDevicePicker = false
-    @State var deviceBeingEdited: MIDIDevice?
-    @State var showingAddTrackOptions = false
+    @State var activeSheet: EditSheet?
     @State var pendingAddTrackKind: AddTrackKind?
     @State var showingTrackImporter = false
     @State var showingAbletonImporter = false
@@ -69,22 +66,15 @@ struct EditView: View {
     @State var groupMixFade = GroupMixFadeController()
     @Bindable var audioEngine = AudioEngineManager.shared
     @State var showingArrangementEditor = false
-    @State var showingGroupEditor = false
-    @State var showingChangeKey = false
     @State private var showingClickEditor = false
     @State private var showingSmartGuideEditor = false
     @State var showingTempoOperations = false
-    @State var tempoLanePrompt: TempoLanePrompt?
-    @State var timeSignatureLanePrompt: TimeSignatureLanePrompt?
-    @State var sectionPendingRename: SongSection?
-    @State var sectionNamePromptTitle = "Rename Section"
     @State var trackPendingRename: AudioTrack?
     @State var renameTrackName = ""
     @State var clipSelection = ClipSelection()
     /// Shift-press on an already selected clip; removed on release unless the press became a drag.
     @State var pendingShiftDeselectID: UUID?
     @State var clipDrag: ClipDrag?
-    @State var gainPrompt: ClipGainPromptRequest?
     /// The edit selection. A selector drag writes it, and it stays after the pointer
     /// goes up. A click replaces it with an insertion, which has no range.
     @State var editSelection: ClipRangeDrag?
@@ -101,238 +91,168 @@ struct EditView: View {
     var trackGroups: [TrackGroup]
 
     var body: some View {
+        editorWithLifecycle
+            .sheet(item: $activeSheet, onDismiss: performPendingAddTrack) { sheet in
+                sheetContent(for: sheet)
+            }
+            .modifier(addTrackFlowModifier)
+            .modifier(detectSectionsModifier)
+            .alert("Rename Track", isPresented: isRenamingTrack) {
+                TextField("Track name", text: $renameTrackName)
+                Button("Rename", action: applyTrackRename)
+                Button("Cancel", role: .cancel) {
+                    trackPendingRename = nil
+                }
+            }
+            #if os(macOS)
+            .toolbar { editToolbar }
+            .appLockToolbarDisplayMode()
+            #endif
+    }
+
+    /// The timeline with focus, keyboard, and drop handling.
+    private var focusableEditor: some View {
         editorRoot
-        .background(Color.dawTimelineBackground)
-        .modifier(AudioFileDropModifier(
-            isTargeted: $isAudioDropTargeted,
-            onDrop: performAudioFileDrop
-        ))
-        .focusable()
-        .focused($isTimelineFocused)
-        .focusEffectDisabled()
-        // A setlist-following editor leaves mapped keys and MIDI with the setlist screen.
-        .liveInputMappingSession(isEnabled: !viewModel.followsSetlist, takesKeyFocus: false) { action in
-            handleMappedLiveAction(action)
-        }
-        .focusedValue(\.clipEditorActions, clipEditorActions)
-        .focusedValue(\.trackHeightActions, trackHeightActions)
-        .onKeyPress(phases: .down) { press in
-            guard isTimelineFocused else { return .ignored }
-            guard press.modifiers.contains(.control),
-                  press.modifiers.contains(.option),
-                  !press.modifiers.contains(.command),
-                  press.key == .upArrow || press.key == .downArrow
-            else { return .ignored }
-            stepTrackHeight(
-                taller: press.key == .upArrow,
-                option: true,
-                shift: press.modifiers.contains(.shift)
-            )
-            return .handled
-        }
-        .onAppear {
-            isTimelineFocused = true
-            tempoChanges = normalizedTempoChanges
-            timeSignatureChanges = normalizedTimeSignatureChanges
-            viewModel.syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
-            reconfigureMIDI()
-            prepareSectionAnnouncements()
-            Task { @MainActor in
-                await Task.yield()
-                isTimelineReady = true
+            .background(Color.dawTimelineBackground)
+            .modifier(AudioFileDropModifier(
+                isTargeted: $isAudioDropTargeted,
+                onDrop: performAudioFileDrop
+            ))
+            .focusable()
+            .focused($isTimelineFocused)
+            .focusEffectDisabled()
+            // A setlist-following editor leaves mapped keys and MIDI with the setlist screen.
+            .liveInputMappingSession(isEnabled: !viewModel.followsSetlist, takesKeyFocus: false) { action in
+                handleMappedLiveAction(action)
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
-            viewModel.applyOutputRoutingChange()
-        }
-        .onChange(of: clipSelection) { _, newValue in
-            if !newValue.isEmpty {
-                isTimelineFocused = true
+            .focusedValue(\.clipEditorActions, clipEditorActions)
+            .focusedValue(\.trackHeightActions, trackHeightActions)
+            .onKeyPress(phases: .down, action: handleTrackHeightKeyPress)
+            #if os(macOS)
+            .onDeleteCommand(perform: removeClipSelection)
+            .onCommand(#selector(NSResponder.selectAll(_:)), perform: selectAllClips)
+            .onExitCommand {
+                clipSelection.deselectAll()
             }
-        }
-        .onChange(of: timeline.markers) { _, _ in
-            prepareSectionAnnouncements()
-        }
-        .onChange(of: song.smartGuideEnabled) { _, _ in
-            prepareSectionAnnouncements()
-        }
-        .onChange(of: timelineDuration) { _, _ in
-            clampTimelineZoom()
-        }
-        .onChange(of: timelineViewportWidth) { _, _ in
-            clampTimelineZoom()
-        }
-        .background {
-            if !viewModel.followsSetlist {
-                sectionPlaybackMonitors
+            #endif
+    }
+
+    /// Setup on appear, and the work that follows timeline, selection, and cue changes.
+    private var editorWithLifecycle: some View {
+        focusableEditor
+            .onAppear(perform: handleAppear)
+            .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
+                viewModel.applyOutputRoutingChange()
             }
-        }
-        .task(id: cuedSectionID) {
-            guard cuedSectionID != nil else {
-                cueFlashPhase = false
-                return
-            }
-            cueFlashPhase = true
-            while !Task.isCancelled, cuedSectionID != nil {
-                try? await Task.sleep(for: .milliseconds(350))
-                cueFlashPhase.toggle()
-            }
-        }
-#if os(macOS)
-        .onDeleteCommand {
-            removeClipSelection()
-        }
-        .onCommand(#selector(NSResponder.selectAll(_:))) {
-            selectAllClips()
-        }
-        .onExitCommand {
-            clipSelection.deselectAll()
-        }
-#endif
-        .sheet(isPresented: $showingGroupEditor) {
-            TrackGroupEditorView()
-        }
-        .sheet(isPresented: $showingChangeKey) {
-            ChangeKeyDialog(
-                song: song,
-                viewModel: viewModel,
-                captureSnapshot: captureSnapshot,
-                registerUndo: { actionName, before, after in
-                    undoController.registerChange(
-                        actionName: actionName,
-                        before: before,
-                        after: after,
-                        apply: { snapshot in
-                            applySnapshot(snapshot)
-                        }
-                    )
-                }
-            )
-        }
-        .sheet(isPresented: $showingMIDIDevicePicker) {
-            MIDIDevicePickerView { device in
-                createMIDITrack(for: device)
-            }
-        }
-        .sheet(item: $deviceBeingEdited) { device in
-            NavigationStack {
-                MIDIDeviceEditorView(device: device) { _ in
-                    commitMIDIConfig()
+            .onChange(of: clipSelection) { _, newValue in
+                if !newValue.isEmpty {
+                    isTimelineFocused = true
                 }
             }
-            // `.sheet(item:)` alone can still let the NavigationStack-wrapped
-            // content reuse its previous `@State` (destination, channel,
-            // commands) instead of reinitializing from `device`, since the
-            // NavigationStack's own identity sits between the sheet and the
-            // editor. Keying explicitly by `device.id` forces a genuinely new
-            // view — and fresh `@State` — every time a different device (or
-            // the same one, after a prior edit) is opened.
-            .id(device.id)
-            .formSheetFrame(minWidth: 420, minHeight: 460)
-        }
-        .sheet(isPresented: $showingAddTrackOptions, onDismiss: performPendingAddTrack) {
-            AddTrackTypeSheet { kind in
-                pendingAddTrackKind = kind
-                showingAddTrackOptions = false
+            .onChange(of: timeline.markers) { _, _ in
+                prepareSectionAnnouncements()
             }
-        }
-        .modifier(addTrackFlowModifier)
-        .sheet(item: $sectionPendingRename) { section in
-            RenameSectionSheet(title: sectionNamePromptTitle, currentName: section.name) { newName in
-                applySectionRename(newName)
+            .onChange(of: song.smartGuideEnabled) { _, _ in
+                prepareSectionAnnouncements()
             }
-        }
-        .sheet(item: $tempoLanePrompt) { prompt in
-            TempoChangePrompt(
-                measure: prompt.measure,
-                currentBPM: prompt.bpm,
-                tracks: song.sortedTracks,
-                onCancel: { tempoLanePrompt = nil },
-                onChange: { bpm, lockedTrackIDs in
-                    applyTempoChange(prompt: prompt, bpm: bpm, lockedTrackIDs: lockedTrackIDs)
+            .onChange(of: timelineDuration) { _, _ in
+                clampTimelineZoom()
+            }
+            .onChange(of: timelineViewportWidth) { _, _ in
+                clampTimelineZoom()
+            }
+            .background {
+                if !viewModel.followsSetlist {
+                    sectionPlaybackMonitors
                 }
-            )
-        }
-        .sheet(item: $timeSignatureLanePrompt) { prompt in
-            TimeSignatureChangePrompt(
-                measure: prompt.measure,
-                numerator: prompt.numerator,
-                denominator: prompt.denominator,
-                onCancel: { timeSignatureLanePrompt = nil },
-                onChange: { numerator, denominator in
-                    applyTimeSignatureChange(
-                        prompt: prompt,
-                        numerator: numerator,
-                        denominator: denominator
-                    )
-                }
-            )
-        }
-        .modifier(detectSectionsModifier)
-        .alert("Rename Track", isPresented: Binding(
+            }
+            .task(id: cuedSectionID) {
+                await flashCuedSection()
+            }
+    }
+
+    private var isRenamingTrack: Binding<Bool> {
+        Binding(
             get: { trackPendingRename != nil },
             set: { if !$0 { trackPendingRename = nil } }
-        )) {
-            TextField("Track name", text: $renameTrackName)
-            Button("Rename") {
-                applyTrackRename()
-            }
-            Button("Cancel", role: .cancel) {
-                trackPendingRename = nil
-            }
-        }
-        .sheet(item: $gainPrompt) { prompt in
-            ClipGainPrompt(
-                initialDecibels: prompt.decibels,
-                clipCount: prompt.clipCount,
-                onCancel: { gainPrompt = nil },
-                onApply: applyClipGain
-            )
-        }
-#if os(macOS)
-        .toolbar {
-            EditSongToolbarContent(
-                viewModel: viewModel,
-                song: song,
-                showingArrangementEditor: $showingArrangementEditor,
-                showingChangeKey: $showingChangeKey,
-                arrangementActions: arrangementActions,
-                loopSectionIDs: loopSectionIDs,
-                showingSongLibrary: $showingSongLibrary,
-                showingGroupEditor: $showingGroupEditor,
-                isDetectingSections: isDetectingSections,
-                onDetectSections: requestDetectSections,
-                onImportAbleton: presentAbletonImporter,
-                onAddMIDILane: { showingMIDIDevicePicker = true },
-                onBack: viewModel.followsSetlist ? nil : onBack,
-                currentSectionAtTime: { time in
-                    displaySections.section(atTimeline: time)
-                },
-                onStopTransport: stopTransport,
-                onToggleLoopAtTime: toggleLoop(at:),
-                onToggleFade: toggleGroupMixFade,
-                groupMixFade: groupMixFade,
-                onPlay: playFromInsertion,
-                stoppedDisplayTime: playbackStart,
-                captureSnapshot: captureSnapshot,
-                registerUndo: { actionName, before, after in
-                    undoController.registerChange(
-                        actionName: actionName,
-                        before: before,
-                        after: after,
-                        apply: { snapshot in
-                            applySnapshot(snapshot)
-                        }
-                    )
-                },
-                onClickTrackGenerated: reloadTimelineFromProject,
-                showingClickEditor: $showingClickEditor,
-                showingSmartGuideEditor: $showingSmartGuideEditor
-            )
-        }
-        .appLockToolbarDisplayMode()
-#endif
+        )
     }
+
+    private func handleAppear() {
+        isTimelineFocused = true
+        tempoChanges = normalizedTempoChanges
+        timeSignatureChanges = normalizedTimeSignatureChanges
+        viewModel.syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
+        reconfigureMIDI()
+        prepareSectionAnnouncements()
+        Task { @MainActor in
+            await Task.yield()
+            isTimelineReady = true
+        }
+    }
+
+    /// Control-Option-Up/Down steps the selected lanes' height; Shift steps every lane.
+    private func handleTrackHeightKeyPress(_ press: KeyPress) -> KeyPress.Result {
+        guard isTimelineFocused else { return .ignored }
+        guard press.modifiers.contains(.control),
+              press.modifiers.contains(.option),
+              !press.modifiers.contains(.command),
+              press.key == .upArrow || press.key == .downArrow
+        else { return .ignored }
+        stepTrackHeight(
+            taller: press.key == .upArrow,
+            option: true,
+            shift: press.modifiers.contains(.shift)
+        )
+        return .handled
+    }
+
+    /// Blinks the cued section's marker until the cue fires or is cleared.
+    private func flashCuedSection() async {
+        guard cuedSectionID != nil else {
+            cueFlashPhase = false
+            return
+        }
+        cueFlashPhase = true
+        while !Task.isCancelled, cuedSectionID != nil {
+            try? await Task.sleep(for: .milliseconds(350))
+            cueFlashPhase.toggle()
+        }
+    }
+
+    #if os(macOS)
+    @ToolbarContentBuilder
+    private var editToolbar: some ToolbarContent {
+        EditSongToolbarContent(
+            viewModel: viewModel,
+            song: song,
+            showingArrangementEditor: $showingArrangementEditor,
+            arrangementActions: arrangementActions,
+            loopSectionIDs: loopSectionIDs,
+            isDetectingSections: isDetectingSections,
+            onChangeKey: { activeSheet = .changeKey },
+            onManageGroups: { activeSheet = .groupEditor },
+            onDetectSections: requestDetectSections,
+            onImportAbleton: presentAbletonImporter,
+            onAddMIDILane: { activeSheet = .midiDevicePicker },
+            onBack: viewModel.followsSetlist ? nil : onBack,
+            currentSectionAtTime: { time in
+                displaySections.section(atTimeline: time)
+            },
+            onStopTransport: stopTransport,
+            onToggleLoopAtTime: toggleLoop(at:),
+            onToggleFade: toggleGroupMixFade,
+            groupMixFade: groupMixFade,
+            onPlay: playFromInsertion,
+            stoppedDisplayTime: playbackStart,
+            captureSnapshot: captureSnapshot,
+            registerUndo: registerSnapshotChange(_:before:after:),
+            onClickTrackGenerated: reloadTimelineFromProject,
+            showingClickEditor: $showingClickEditor,
+            showingSmartGuideEditor: $showingSmartGuideEditor
+        )
+    }
+    #endif
 
     /// Cue, Smart Guide and loop playback for an editor that owns the transport.
     @ViewBuilder
@@ -376,7 +296,6 @@ struct EditView: View {
         timeSignatureChanges: .constant([
             TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1, sortOrder: 0)
         ]),
-        midiEvents: .constant([]),
-        showingSongLibrary: .constant(false)
+        midiEvents: .constant([])
     )
 }

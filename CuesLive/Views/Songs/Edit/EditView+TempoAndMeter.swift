@@ -65,11 +65,11 @@ extension EditView {
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
-        tempoLanePrompt = TempoLanePrompt(
+        activeSheet = .tempoChange(TempoLanePrompt(
             measure: boundary.measure,
             bpm: bpm,
             markerID: existing?.id
-        )
+        ))
     }
 
     func deleteTempoMarker(_ marker: TempoChange) {
@@ -91,12 +91,12 @@ extension EditView {
         let active = existing
             ?? normalizedTimeSignatureChanges.active(atMeasure: boundary.measure)
             ?? normalizedTimeSignatureChanges.first
-        timeSignatureLanePrompt = TimeSignatureLanePrompt(
+        activeSheet = .timeSignatureChange(TimeSignatureLanePrompt(
             measure: boundary.measure,
             numerator: active?.numerator ?? measureNumerator,
             denominator: active?.denominator ?? measureDenominator,
             markerID: existing?.id
-        )
+        ))
     }
 
     func moveTimeSignatureMarker(_ marker: TimeSignatureChange, to time: TimeInterval) {
@@ -204,7 +204,7 @@ extension EditView {
             }
             retimeLockedTracks(lockedTrackIDs, from: tempoBefore)
             persistTempoChanges()
-            tempoLanePrompt = nil
+            activeSheet = nil
         }
     }
 
@@ -265,7 +265,7 @@ extension EditView {
                 )
             }
             persistTimeSignatureChanges()
-            timeSignatureLanePrompt = nil
+            activeSheet = nil
         }
     }
 }

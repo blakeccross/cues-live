@@ -220,7 +220,7 @@ private struct GettingStartedDocContent: View {
 
             DocHeading(title: "Quick workflow")
             DocNumberedList(items: [
-                "Create a **song** in the Songs sidebar and import stem files.",
+                "Create a **song** in the Songs panel and import stem files.",
                 "Open the song to trim tracks, edit the arrangement, and set mix levels.",
                 "Create a **setlist** and add songs in performance order.",
                 "Open the setlist for live playback with next, previous, fade, and loop controls.",
@@ -232,7 +232,7 @@ private struct GettingStartedDocContent: View {
 private struct SongsAndEditingDocContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            DocParagraph("Each song holds multiple audio stems that play in sync. Open a song from the Songs sidebar to enter the editor.")
+            DocParagraph("Each song holds multiple audio stems that play in sync. Open a song from the Songs panel to enter the editor.")
 
             DocHeading(title: "Importing stems")
             DocBulletList(items: [
@@ -289,7 +289,7 @@ private struct LivePlaybackDocContent: View {
             DocParagraph("Open the **Group Mixer** to adjust group levels and mutes during performance. Track groups are configured in Settings → Groups.")
 
             DocHeading(title: "Song library")
-            DocParagraph("Toggle the **Songs** sidebar to browse your library without leaving the live screen. On macOS you can also open a song editor from here.")
+            DocParagraph("Toggle the **Songs** panel to browse your library without leaving the live screen. On macOS it opens beside the setlist, below the waveform, and you can open a song editor from it. It is not shown while editing a song.")
         }
     }
 }

@@ -74,12 +74,11 @@ struct EditSongToolbarContent: ToolbarContent {
     let viewModel: SongEditorViewModel
     @Bindable var song: Song
     @Binding var showingArrangementEditor: Bool
-    @Binding var showingChangeKey: Bool
     let arrangementActions: ArrangementSectionActions
     let loopSectionIDs: Set<UUID>
-    @Binding var showingSongLibrary: Bool
-    @Binding var showingGroupEditor: Bool
     let isDetectingSections: Bool
+    let onChangeKey: () -> Void
+    let onManageGroups: () -> Void
     let onDetectSections: () -> Void
     let onImportAbleton: () -> Void
     let onAddMIDILane: () -> Void
@@ -179,9 +178,7 @@ struct EditSongToolbarContent: ToolbarContent {
 
     private var moreMenu: some View {
         Menu {
-            Button {
-                showingChangeKey = true
-            } label: {
+            Button(action: onChangeKey) {
                 Label("Change Key", systemImage: "key")
             }
             .disabled(song.sortedTracks.isEmpty)
@@ -213,9 +210,7 @@ struct EditSongToolbarContent: ToolbarContent {
                 .disabled(isDetectingSections || SongSectionDetector.analysisTracks(in: song).isEmpty)
                 Divider()
             }
-            Button("Manage Groups…") {
-                showingGroupEditor = true
-            }
+            Button("Manage Groups…", action: onManageGroups)
         } label: {
             Label("More", systemImage: "ellipsis.circle")
                 .labelStyle(.iconOnly)

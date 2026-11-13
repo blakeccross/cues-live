@@ -120,12 +120,10 @@ extension LivePlaybackView {
                     currentSongSection
                         .background(AppColors.backgroundPrimary)
 
-                    setlistSection
-                        .background(AppColors.backgroundPrimary)
+                    librarySplitSection
                 }
             } else {
-                setlistSection
-                    .background(AppColors.backgroundPrimary)
+                librarySplitSection
             }
         }
         #else
@@ -140,6 +138,17 @@ extension LivePlaybackView {
         }
         #endif
     }
+
+    #if os(macOS)
+    private var librarySplitSection: some View {
+        LiveSongLibrarySplitLayout(isLibraryVisible: showingSongLibrary) {
+            songLibraryPanel()
+        } setlist: {
+            setlistSection
+                .background(AppColors.backgroundPrimary)
+        }
+    }
+    #endif
 
     private var currentSongSection: some View {
         VStack(alignment: .leading, spacing: 0) {

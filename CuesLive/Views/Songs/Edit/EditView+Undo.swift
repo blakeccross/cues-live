@@ -81,7 +81,11 @@ extension EditView {
         }
         let before = captureSnapshot()
         change()
-        let after = captureSnapshot()
+        registerSnapshotChange(actionName, before: before, after: captureSnapshot())
+    }
+
+    /// Records an edit made elsewhere as one undo step that restores the given snapshots.
+    func registerSnapshotChange(_ actionName: String, before: SongEditSnapshot, after: SongEditSnapshot) {
         undoController.registerChange(
             actionName: actionName,
             before: before,

@@ -20,7 +20,6 @@ struct SetlistSongEditorHost: View {
     @State private var timeSignatureChanges: [TimeSignatureChange] = []
     @State private var midiEvents: [MIDIEvent] = []
     @State private var undoController = SongUndoController()
-    @State private var showingSongLibrary = false
     /// The state last written to the project file, so loading it does not count as an edit.
     @State private var persistedState: EditedState?
 
@@ -37,8 +36,7 @@ struct SetlistSongEditorHost: View {
                     timeline: $timeline,
                     tempoChanges: $tempoChanges,
                     timeSignatureChanges: $timeSignatureChanges,
-                    midiEvents: $midiEvents,
-                    showingSongLibrary: $showingSongLibrary
+                    midiEvents: $midiEvents
                 )
             } else {
                 ProgressView("Loading song…")

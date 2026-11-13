@@ -127,8 +127,7 @@ extension EditView {
         }
 
         if let section = displaySections.first(where: { $0.id == newMarker.id }) {
-            sectionNamePromptTitle = "Name Section"
-            sectionPendingRename = section
+            activeSheet = .renameSection(section, title: "Name Section")
         }
     }
 
@@ -176,20 +175,17 @@ extension EditView {
     }
 
     func beginRenameSection(_ section: SongSection) {
-        sectionNamePromptTitle = "Rename Section"
-        sectionPendingRename = section
+        activeSheet = .renameSection(section, title: "Rename Section")
     }
 
-    func applySectionRename(_ newName: String) {
-        guard let section = sectionPendingRename else { return }
+    func applySectionRename(_ newName: String, to section: SongSection) {
+        activeSheet = nil
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let index = timeline.markers.firstIndex(where: { $0.id == section.id }) else {
-            sectionPendingRename = nil
             return
         }
 
-        sectionPendingRename = nil
         commitTimelineEdit("Rename Section") { timeline in
             timeline.markers[index].name = trimmed
         }

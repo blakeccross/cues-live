@@ -86,7 +86,7 @@ extension EditView {
         case .audio:
             presentTrackImporter()
         case .midi:
-            showingMIDIDevicePicker = true
+            activeSheet = .midiDevicePicker
         case .ableton:
             presentAbletonImporter()
         }
@@ -214,10 +214,10 @@ extension EditView {
 
     func editDevice(for track: MIDITrack) {
         guard let device = track.device else {
-            showingMIDIDevicePicker = true
+            activeSheet = .midiDevicePicker
             return
         }
-        deviceBeingEdited = device
+        activeSheet = .midiDeviceEditor(device)
     }
 
     func deleteMIDITrack(_ track: MIDITrack) {
@@ -248,7 +248,7 @@ extension EditView {
                 description: emptyTracksDescription
             )
             AppPrimaryButton(title: "Add Track") {
-                showingAddTrackOptions = true
+                activeSheet = .addTrackType
             }
         }
         .frame(maxHeight: .infinity)

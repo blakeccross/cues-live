@@ -169,18 +169,18 @@ extension EditView {
         let clips = selectedClips
         guard let first = clips.first else { return }
         let shared = clips.allSatisfy { abs($0.gainDB - first.gainDB) < 0.05 } ? first.gainDB : nil
-        gainPrompt = ClipGainPromptRequest(decibels: shared, clipCount: clips.count)
+        activeSheet = .clipGain(ClipGainPromptRequest(decibels: shared, clipCount: clips.count))
     }
 
     func applyClipGain(_ decibels: Double) {
         let ids = clipSelection.clipIDs
         guard !ids.isEmpty else {
-            gainPrompt = nil
+            activeSheet = nil
             return
         }
         var edited = timeline.clips
         ClipEditing.setGain(clipIDs: ids, decibels: decibels, in: &edited)
-        gainPrompt = nil
+        activeSheet = nil
         guard edited != timeline.clips else { return }
         commitTimelineEdit("Adjust Gain") { timeline in
             timeline.clips = edited

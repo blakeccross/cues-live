@@ -47,7 +47,7 @@ struct SetlistRowActions {
 
 // MARK: - Song drag payload
 
-/// Carries a library song across a drag from the sidebar into the setlist. A tagged string keeps
+/// Carries a library song across a drag from the song library into the setlist. A tagged string keeps
 /// it a plain `Transferable` without needing a custom exported UTType.
 enum SongDragPayload {
     private static let prefix = "cueslive-song:"

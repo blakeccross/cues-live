@@ -32,7 +32,7 @@ struct LivePlaybackView: View {
     @State var sectionLoop = SectionLoopController()
     @State var groupMixFade = GroupMixFadeController()
     @State var sectionAnnouncer = SectionAnnouncer()
-    @State var showingSongLibrary = SongSidebarPreference.initialVisibility
+    @State var showingSongLibrary = SongLibraryPanePreference.initialVisibility
     @State private var songToEditID: UUID?
     /// Song to open once the library sheet has dismissed, so the editor pushes as a screen.
     @State private var songPendingEditorID: UUID?
@@ -158,15 +158,12 @@ struct LivePlaybackView: View {
     private func playbackBodyChrome(for setlist: Setlist) -> some View {
         Group {
             #if os(macOS)
-            LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
-                songLibraryPanel()
+            LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
+                InputMappingPanel()
             } mainContent: {
-                LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
-                    InputMappingPanel()
-                } mainContent: {
-                    playbackMainLayout
-                }
+                playbackMainLayout
             }
+            .toolbarBackground(.hidden, for: .windowToolbar)
             #else
             playbackMainLayout
             #endif
@@ -403,6 +400,7 @@ struct LivePlaybackView: View {
             },
             coordinator: coordinator,
             showingManageOutputs: $showingManageOutputs,
+            showingSongLibrary: $showingSongLibrary,
             mixerDetent: $mixerDetent
         )
     }

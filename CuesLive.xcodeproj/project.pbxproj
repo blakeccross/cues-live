@@ -127,7 +127,7 @@
 		AA0000010000000000000009 /* SongEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000009 /* SongEditorViewModel.swift */; };
 		AA000001000000000000000A /* SetlistViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000A /* SetlistViewModel.swift */; };
 		AA000001000000000000000B /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000B /* RootView.swift */; };
-		AA000001000000000000000C /* SongLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000C /* SongLibraryView.swift */; };
+		AA000001000000000000000C /* SongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000C /* SongLibraryPanel.swift */; };
 		AA000001000000000000000D /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000D /* SongDetailView.swift */; };
 		AA000001000000000000000F /* EditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000F /* EditView.swift */; };
 		AA0000010000000000000010 /* TrackImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000010 /* TrackImportView.swift */; };
@@ -328,7 +328,7 @@
 		AEE3B433DC0DA4EAC3BCE6FC /* LiveSetlistToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F0001 /* LiveSetlistToolbar.swift */; };
 		AF9B8BC70EDE7352FC6BE3DC /* TimelineRulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED007 /* TimelineRulerView.swift */; };
 		B0F0F34B1FC430D4385FFE0A /* SetlistViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000A /* SetlistViewModel.swift */; };
-		B11A02399FAFE0392C601927 /* SongLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000C /* SongLibraryView.swift */; };
+		B11A02399FAFE0392C601927 /* SongLibraryPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000000C /* SongLibraryPanel.swift */; };
 		B74AE229801352765E6DEA8D /* AnnouncementSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000005A3 /* AnnouncementSource.swift */; };
 		B9DAF17410376F31808D0978 /* MIDIDeviceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000068 /* MIDIDeviceViews.swift */; };
 		BA83614E17A28FB2E4807049 /* AppAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000083 /* AppAnimation.swift */; };
@@ -526,6 +526,25 @@
 		35E8B4670D00D52163559BAE /* PlaybackCoordinator+LiveEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */; };
 		D03B24036E4D417182D03DA8 /* SetlistEditorLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC16CEF135F2F548CE0E61C9 /* SetlistEditorLinkTests.swift */; };
 		E724D849C8C3F9CB3E3374D4 /* SongEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */; };
+		03892E68BF88432492103251 /* LiveSongLibrarySplitLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EE9B65DFA5931587B1128A4 /* LiveSongLibrarySplitLayout.swift */; };
+		DA17DC4075FAD321ED3139BF /* LiveSongLibrarySplitLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EE9B65DFA5931587B1128A4 /* LiveSongLibrarySplitLayout.swift */; };
+		BD8748EF2861779027A7F0CE /* SongLibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B2FE89E9F50A1F9BDC721E /* SongLibraryRow.swift */; };
+		784F2410952E97FA31F86B3A /* SongLibraryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B2FE89E9F50A1F9BDC721E /* SongLibraryRow.swift */; };
+		73A271E51352D982300D1D5D /* SongLibrarySelectionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F8F3CCA933814CDC047C16 /* SongLibrarySelectionBar.swift */; };
+		02E2F4563C6E9A53A26D87E2 /* SongLibrarySelectionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F8F3CCA933814CDC047C16 /* SongLibrarySelectionBar.swift */; };
+		B87D82ABDF670FBE6322B8F7 /* SongLibraryPanel+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C09A0A47E2BF408F320B77 /* SongLibraryPanel+Actions.swift */; };
+		B153C6D06D037CBC90E432C6 /* SongLibraryPanel+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C09A0A47E2BF408F320B77 /* SongLibraryPanel+Actions.swift */; };
+		DDF0DD39836CAD1F99957C76 /* SongLibraryPanel+Import.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1600B317E1C9D8A575F41A5 /* SongLibraryPanel+Import.swift */; };
+		3576A937C50227CEF587BD5B /* SongLibraryPanel+Import.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1600B317E1C9D8A575F41A5 /* SongLibraryPanel+Import.swift */; };
+		C9814020ED1E75146B45E1EC /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F541E8045623589A88CC1F /* SongLibraryStore.swift */; };
+		214D3D4FAF1D8787EE991568 /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F541E8045623589A88CC1F /* SongLibraryStore.swift */; };
+		D3F237B845FDEE51D184B51B /* SongLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D6C223E8D6649A16DFC3D2 /* SongLibraryStoreTests.swift */; };
+		398EF994A03CCAB2C97190A8 /* SongLibraryPanel+Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */; };
+		4AC4F03390CF73D6A855BDF2 /* SongLibraryPanel+Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */; };
+		5CD386A60EB8D4493FD2E217 /* EditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AAB24A152D2941FE3A4AD /* EditSheet.swift */; };
+		D47274783F545EF057C938F3 /* EditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AAB24A152D2941FE3A4AD /* EditSheet.swift */; };
+		F692C14258FCF5FCA29D9CE2 /* EditView+Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */; };
+		CF9010796741DD279E791C63 /* EditView+Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -555,7 +574,7 @@
 		AA0000020000000000000009 /* SongEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditorViewModel.swift; sourceTree = "<group>"; };
 		AA000002000000000000000A /* SetlistViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistViewModel.swift; sourceTree = "<group>"; };
 		AA000002000000000000000B /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		AA000002000000000000000C /* SongLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryView.swift; sourceTree = "<group>"; };
+		AA000002000000000000000C /* SongLibraryPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryPanel.swift; sourceTree = "<group>"; };
 		AA000002000000000000000D /* SongDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailView.swift; sourceTree = "<group>"; };
 		AA000002000000000000000F /* EditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000010 /* TrackImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackImportView.swift; sourceTree = "<group>"; };
@@ -829,6 +848,16 @@
 		2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlaybackCoordinator+LiveEdits.swift"; sourceTree = "<group>"; };
 		DC16CEF135F2F548CE0E61C9 /* SetlistEditorLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistEditorLinkTests.swift; sourceTree = "<group>"; };
 		550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditorViewModelTests.swift; sourceTree = "<group>"; };
+		5EE9B65DFA5931587B1128A4 /* LiveSongLibrarySplitLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongLibrarySplitLayout.swift; sourceTree = "<group>"; };
+		34B2FE89E9F50A1F9BDC721E /* SongLibraryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryRow.swift; sourceTree = "<group>"; };
+		E8F8F3CCA933814CDC047C16 /* SongLibrarySelectionBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibrarySelectionBar.swift; sourceTree = "<group>"; };
+		C5C09A0A47E2BF408F320B77 /* SongLibraryPanel+Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongLibraryPanel+Actions.swift"; sourceTree = "<group>"; };
+		E1600B317E1C9D8A575F41A5 /* SongLibraryPanel+Import.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongLibraryPanel+Import.swift"; sourceTree = "<group>"; };
+		98F541E8045623589A88CC1F /* SongLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryStore.swift; sourceTree = "<group>"; };
+		A1D6C223E8D6649A16DFC3D2 /* SongLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryStoreTests.swift; sourceTree = "<group>"; };
+		E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongLibraryPanel+Table.swift"; sourceTree = "<group>"; };
+		136AAB24A152D2941FE3A4AD /* EditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSheet.swift; sourceTree = "<group>"; };
+		E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Sheets.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1012,11 +1041,16 @@
 		AA0000050000000000000008 /* Songs */ = {
 			isa = PBXGroup;
 			children = (
+				E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */,
+				E1600B317E1C9D8A575F41A5 /* SongLibraryPanel+Import.swift */,
+				C5C09A0A47E2BF408F320B77 /* SongLibraryPanel+Actions.swift */,
+				E8F8F3CCA933814CDC047C16 /* SongLibrarySelectionBar.swift */,
+				34B2FE89E9F50A1F9BDC721E /* SongLibraryRow.swift */,
 				67BD963C56F238A444ABB5BD /* SetlistSongEditorWindow.swift */,
 				6A34795BFCFF847978BF650D /* SetlistSongEditorHost.swift */,
 				05705790616AB49F21F60566 /* SongFolderSetupSheet.swift */,
 				3BAC8159AE0AAA6CCE7FE53B /* AddClickSongSheet.swift */,
-				AA000002000000000000000C /* SongLibraryView.swift */,
+				AA000002000000000000000C /* SongLibraryPanel.swift */,
 				AA000002000000000000000D /* SongDetailView.swift */,
 				AA0000020000000000000020 /* ArrangementEditorMenu.swift */,
 				AA000002000000000000002C /* TrackGroupEditorView.swift */,
@@ -1030,6 +1064,7 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				5EE9B65DFA5931587B1128A4 /* LiveSongLibrarySplitLayout.swift */,
 				66EED6EDB12D6A5003CB02AF /* LiveSetlistLaneCanvasView.swift */,
 				277A9A24003A517F7215C6EB /* LiveSetlistLaneCanvas.swift */,
 				B4104F36950FBB413F97F13D /* LiveSetlistLanePainter+Grid.swift */,
@@ -1104,6 +1139,7 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				A1D6C223E8D6649A16DFC3D2 /* SongLibraryStoreTests.swift */,
 				550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */,
 				DC16CEF135F2F548CE0E61C9 /* SetlistEditorLinkTests.swift */,
 				C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */,
@@ -1331,6 +1367,7 @@
 		AA00000500000000000BB008 /* Project */ = {
 			isa = PBXGroup;
 			children = (
+				98F541E8045623589A88CC1F /* SongLibraryStore.swift */,
 				29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */,
 				C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */,
 				3760C32A405D7D7C8D5477D4 /* WaveformPeakDiskCache.swift */,
@@ -1402,6 +1439,8 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */,
+				136AAB24A152D2941FE3A4AD /* EditSheet.swift */,
 				1CB86B14AC8BAD8E64E4CB0E /* EditFollowingSetlistStatus.swift */,
 				B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */,
 				DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */,
@@ -1560,6 +1599,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F692C14258FCF5FCA29D9CE2 /* EditView+Sheets.swift in Sources */,
+				5CD386A60EB8D4493FD2E217 /* EditSheet.swift in Sources */,
+				398EF994A03CCAB2C97190A8 /* SongLibraryPanel+Table.swift in Sources */,
+				C9814020ED1E75146B45E1EC /* SongLibraryStore.swift in Sources */,
+				DDF0DD39836CAD1F99957C76 /* SongLibraryPanel+Import.swift in Sources */,
+				B87D82ABDF670FBE6322B8F7 /* SongLibraryPanel+Actions.swift in Sources */,
+				73A271E51352D982300D1D5D /* SongLibrarySelectionBar.swift in Sources */,
+				BD8748EF2861779027A7F0CE /* SongLibraryRow.swift in Sources */,
+				03892E68BF88432492103251 /* LiveSongLibrarySplitLayout.swift in Sources */,
 				CB6AA7A9B8E4338906C554E3 /* PlaybackCoordinator+LiveEdits.swift in Sources */,
 				F99F54AD32D6E7C24073CD65 /* SetlistEditorLink.swift in Sources */,
 				7CAB7E1D3F517800D2152CFE /* SetlistSongEditorWindow.swift in Sources */,
@@ -1648,7 +1696,7 @@
 				AA0000010000000000000009 /* SongEditorViewModel.swift in Sources */,
 				AA000001000000000000000A /* SetlistViewModel.swift in Sources */,
 				AA000001000000000000000B /* RootView.swift in Sources */,
-				AA000001000000000000000C /* SongLibraryView.swift in Sources */,
+				AA000001000000000000000C /* SongLibraryPanel.swift in Sources */,
 				AA000001000000000000000D /* SongDetailView.swift in Sources */,
 				AA000001000000000000000F /* EditView.swift in Sources */,
 				AA00000100000000000ED00A /* EditStemTimelineView.swift in Sources */,
@@ -1796,6 +1844,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3F237B845FDEE51D184B51B /* SongLibraryStoreTests.swift in Sources */,
 				E724D849C8C3F9CB3E3374D4 /* SongEditorViewModelTests.swift in Sources */,
 				D03B24036E4D417182D03DA8 /* SetlistEditorLinkTests.swift in Sources */,
 				EB0D5DA58F5B196BE1A1EED6 /* WaveformPeakResamplerTimelineTests.swift in Sources */,
@@ -1849,6 +1898,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CF9010796741DD279E791C63 /* EditView+Sheets.swift in Sources */,
+				D47274783F545EF057C938F3 /* EditSheet.swift in Sources */,
+				4AC4F03390CF73D6A855BDF2 /* SongLibraryPanel+Table.swift in Sources */,
+				214D3D4FAF1D8787EE991568 /* SongLibraryStore.swift in Sources */,
+				3576A937C50227CEF587BD5B /* SongLibraryPanel+Import.swift in Sources */,
+				B153C6D06D037CBC90E432C6 /* SongLibraryPanel+Actions.swift in Sources */,
+				02E2F4563C6E9A53A26D87E2 /* SongLibrarySelectionBar.swift in Sources */,
+				784F2410952E97FA31F86B3A /* SongLibraryRow.swift in Sources */,
+				DA17DC4075FAD321ED3139BF /* LiveSongLibrarySplitLayout.swift in Sources */,
 				35E8B4670D00D52163559BAE /* PlaybackCoordinator+LiveEdits.swift in Sources */,
 				DCF86AB83301A463FF80A1D4 /* SetlistEditorLink.swift in Sources */,
 				74C3B9816217E812AEEBD931 /* SetlistSongEditorWindow.swift in Sources */,
@@ -1937,7 +1995,7 @@
 				CC88A06A554FDB3E8BD37995 /* SongEditorViewModel.swift in Sources */,
 				B0F0F34B1FC430D4385FFE0A /* SetlistViewModel.swift in Sources */,
 				8D25A49F3162B00063C8CFC8 /* RootView.swift in Sources */,
-				B11A02399FAFE0392C601927 /* SongLibraryView.swift in Sources */,
+				B11A02399FAFE0392C601927 /* SongLibraryPanel.swift in Sources */,
 				7F74D91A2A30D76DE139D15C /* SongDetailView.swift in Sources */,
 				7B0B0B631AF53DE1C5C98D2A /* EditView.swift in Sources */,
 				92BDD0AF0E22E9D425FC596C /* EditStemTimelineView.swift in Sources */,

@@ -4,6 +4,7 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ViewBuilder let setlistSwitcher: Switcher
     let coordinator: PlaybackCoordinator
     @Binding var showingManageOutputs: Bool
+    @Binding var showingSongLibrary: Bool
     @Binding var mixerDetent: LiveGroupMixerDetent
 
     #if os(macOS)
@@ -14,6 +15,11 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ToolbarContentBuilder
     var body: some ToolbarContent {
         #if os(macOS)
+        ToolbarItem(placement: .navigation) {
+            SongLibraryToggleButton(isVisible: $showingSongLibrary)
+        }
+        .cuesHideSharedBackground()
+
         ToolbarItem(placement: .principal) {
             LiveToolbarSongTitle(
                 title: coordinator.currentSong?.name ?? "",

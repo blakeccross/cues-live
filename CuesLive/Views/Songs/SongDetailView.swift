@@ -7,7 +7,6 @@ struct SongDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Bindable var song: Song
-    @Query(sort: \Song.name) private var songs: [Song]
 
     @State private var viewModel: SongEditorViewModel?
     @State private var showingAbletonImporter = false
@@ -18,32 +17,19 @@ struct SongDetailView: View {
     @State private var timeSignatureChanges: [TimeSignatureChange] = []
     @State private var midiEvents: [MIDIEvent] = []
     @State private var undoController = SongUndoController()
-    @State private var selectedSongID: UUID?
-    @State private var showingSongLibrary = SongSidebarPreference.initialVisibility
-    @State private var isImportingSongFolder = false
-    @State private var songImportFeedback: SongImportFeedback?
 
     var body: some View {
-        Group {
-            #if os(macOS)
-            LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
-                songLibraryPanel()
-            } mainContent: {
-                songDetailContent
-            }
-            #else
-            songDetailContent
-            #endif
-        }
+        songDetailContent
             .appBackground(.primary)
             #if os(iOS)
-            .navigationTitle(activeSong.name)
+            .navigationTitle(song.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(AppColors.backgroundPrimary, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .locksInterfaceOrientations(.landscape)
             #else
             .navigationTitle("")
+            .toolbarBackground(.hidden, for: .windowToolbar)
             #endif
             .fileImporter(
                 isPresented: $showingAbletonImporter,
@@ -70,23 +56,6 @@ struct SongDetailView: View {
             }
             .onAppear(perform: handleAppear)
             .navigationBarBackButtonHidden(true)
-            #if os(iOS)
-            .sheet(isPresented: $showingSongLibrary) {
-                AppSheetContainer {
-                    NavigationStack {
-                        songLibraryPanel()
-                    }
-                }
-                .presentationDetents([.large])
-            }
-            #endif
-            .alert(item: $songImportFeedback) { feedback in
-                Alert(
-                    title: Text(feedback.title),
-                    message: Text(feedback.message),
-                    dismissButton: .cancel(Text("OK"))
-                )
-            }
             #if os(macOS)
             .focusedValue(\.songEditorActions, songEditorActions)
             .focusedValue(\.songUndoActions, songUndoActions)
@@ -95,10 +64,6 @@ struct SongDetailView: View {
                 AudioEngineManager.shared.stop()
                 persistSongState()
             }
-    }
-
-    private var activeSong: Song {
-        songs.first(where: { $0.id == selectedSongID }) ?? song
     }
 
     private func attemptDismiss() {
@@ -111,14 +76,13 @@ struct SongDetailView: View {
             if let viewModel {
                 ZStack(alignment: .top) {
                     EditView(
-                        song: activeSong,
+                        song: song,
                         viewModel: viewModel,
                         undoController: undoController,
                         timeline: $timeline,
                         tempoChanges: $tempoChanges,
                         timeSignatureChanges: $timeSignatureChanges,
                         midiEvents: $midiEvents,
-                        showingSongLibrary: $showingSongLibrary,
                         onBack: attemptDismiss
                     )
 
@@ -189,10 +153,10 @@ struct SongDetailView: View {
     #if os(macOS)
     private var songEditorActions: SongEditorActions {
         SongEditorActions(
-            canAutoGroup: !activeSong.sortedTracks.isEmpty,
+            canAutoGroup: !song.sortedTracks.isEmpty,
             autoGroup: {
-                TrackGroupStore.autoAssignGroups(for: activeSong, in: modelContext)
-                if viewModel?.song.id == activeSong.id {
+                TrackGroupStore.autoAssignGroups(for: song, in: modelContext)
+                if viewModel?.song.id == song.id {
                     viewModel?.refreshTrackOutputGroups()
                 }
             },
@@ -218,11 +182,10 @@ struct SongDetailView: View {
         let audioEngine = AudioEngineManager.shared
         audioEngine.pause()
         audioEngine.onPlaybackFinished = nil
-        selectedSongID = selectedSongID ?? song.id
-        loadEditor(for: activeSong, forceReloadViewModel: viewModel?.song.id != activeSong.id)
+        loadEditor(forceReloadViewModel: viewModel?.song.id != song.id)
     }
 
-    private func loadEditor(for song: Song, forceReloadViewModel: Bool) {
+    private func loadEditor(forceReloadViewModel: Bool) {
         if viewModel == nil || forceReloadViewModel {
             let model = SongEditorViewModel(song: song)
             model.preloadTrackDurations()
@@ -245,7 +208,7 @@ struct SongDetailView: View {
 
     private func persistSongState() {
         try? SongProjectBridge.persist(
-            song: activeSong,
+            song: song,
             timeline: timeline,
             tempoChanges: tempoChanges,
             timeSignatureChanges: timeSignatureChanges,
@@ -264,73 +227,6 @@ struct SongDetailView: View {
         viewModel.syncTempoMap(tempoChanges, timeSignatureChanges: timeSignatureChanges)
     }
 
-    private func switchToSong(_ nextSong: Song) {
-        guard nextSong.id != activeSong.id else { return }
-        persistSongState()
-        AudioEngineManager.shared.stop()
-        selectedSongID = nextSong.id
-        undoController = SongUndoController()
-        loadEditor(for: nextSong, forceReloadViewModel: true)
-    }
-
-    private func selectSongFromLibrary(_ selectedSong: Song) {
-        switchToSong(selectedSong)
-    }
-
-    private func songLibraryPanel() -> some View {
-        SongLibraryPanel(
-            onEdit: { song in
-                selectSongFromLibrary(song)
-            },
-            onDismiss: {
-                showingSongLibrary = false
-            },
-            onFoldersSelected: { requests in
-                importSongs(from: requests)
-            },
-            onAddToSetlist: { _ in },
-            isImportInProgress: isImportingSongFolder
-        )
-    }
-
-    private func importSongs(from requests: [SongFolderImporter.ImportRequest]) {
-        guard !isImportingSongFolder, !requests.isEmpty else { return }
-
-        isImportingSongFolder = true
-        Task { @MainActor in
-            defer { isImportingSongFolder = false }
-
-            var summaries: [String] = []
-            var failureMessages: [String] = []
-
-            for request in requests {
-                do {
-                    let importResult = try SongFolderImporter.importFromFolder(
-                        at: request.folderURL,
-                        settings: request.settings,
-                        context: modelContext
-                    )
-                    summaries.append(SongFolderImporter.summaryMessage(for: importResult))
-                } catch {
-                    let label = request.settings.name.trimmingCharacters(in: .whitespacesAndNewlines)
-                    failureMessages.append(
-                        requests.count == 1
-                            ? error.localizedDescription
-                            : "\(label.isEmpty ? request.folderURL.lastPathComponent : label): \(error.localizedDescription)"
-                    )
-                }
-            }
-
-            if !failureMessages.isEmpty {
-                songImportFeedback = .failure(failureMessages.joined(separator: "\n"))
-            } else if summaries.count == 1 {
-                songImportFeedback = .success(summaries[0])
-            } else {
-                songImportFeedback = .success("Imported \(summaries.count) songs.")
-            }
-        }
-    }
-
     private func handleAbletonImport(_ result: Result<[URL], Error>) {
         switch result {
         case .failure(let error):
@@ -346,7 +242,7 @@ struct SongDetailView: View {
                 try AbletonProjectImporter.apply(
                     importResult,
                     markers: markers,
-                    to: activeSong,
+                    to: song,
                     context: modelContext
                 )
                 tempoChanges = [TempoChange(startMeasure: 1, bpm: importResult.bpm, sortOrder: 0)]

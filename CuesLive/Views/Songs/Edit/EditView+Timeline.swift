@@ -149,15 +149,14 @@ extension EditView {
             viewModel: viewModel,
             song: song,
             showingArrangementEditor: $showingArrangementEditor,
-            showingChangeKey: $showingChangeKey,
             arrangementActions: arrangementActions,
             loopSectionIDs: loopSectionIDs,
-            showingSongLibrary: $showingSongLibrary,
-            showingGroupEditor: $showingGroupEditor,
             isDetectingSections: isDetectingSections,
+            onChangeKey: { activeSheet = .changeKey },
+            onManageGroups: { activeSheet = .groupEditor },
             onDetectSections: requestDetectSections,
             onImportAbleton: presentAbletonImporter,
-            onAddMIDILane: { showingMIDIDevicePicker = true },
+            onAddMIDILane: { activeSheet = .midiDevicePicker },
             onClearMarkerCue: { clearMarkerCue() },
             captureSnapshot: captureSnapshot,
             currentSectionAtTime: { time in
@@ -169,16 +168,7 @@ extension EditView {
             groupMixFade: groupMixFade,
             onPlay: playFromInsertion,
             stoppedDisplayTime: playbackStart,
-            registerUndo: { actionName, before, after in
-                undoController.registerChange(
-                    actionName: actionName,
-                    before: before,
-                    after: after,
-                    apply: { snapshot in
-                        applySnapshot(snapshot)
-                    }
-                )
-            },
+            registerUndo: registerSnapshotChange(_:before:after:),
             onClickTrackGenerated: reloadTimelineFromProject,
             onBack: onBack,
             undoController: undoController,
@@ -250,22 +240,22 @@ extension EditView {
             onRemoveMarker: removeMarker,
             onTimeSignatureRulerTap: handleTimeSignatureRulerTap,
             onEditTimeSignatureMarker: { marker in
-                timeSignatureLanePrompt = TimeSignatureLanePrompt(
+                activeSheet = .timeSignatureChange(TimeSignatureLanePrompt(
                     measure: marker.startMeasure,
                     numerator: marker.numerator,
                     denominator: marker.denominator,
                     markerID: marker.id
-                )
+                ))
             },
             onDeleteTimeSignatureMarker: deleteTimeSignatureMarker,
             onMoveTimeSignatureMarker: moveTimeSignatureMarker,
             onTempoRulerTap: handleTempoRulerTap,
             onEditTempoMarker: { marker in
-                tempoLanePrompt = TempoLanePrompt(
+                activeSheet = .tempoChange(TempoLanePrompt(
                     measure: marker.startMeasure,
                     bpm: marker.bpm,
                     markerID: marker.id
-                )
+                ))
             },
             onDeleteTempoMarker: deleteTempoMarker,
             onMoveTempoMarker: moveTempoMarker,
@@ -523,7 +513,7 @@ extension EditView {
                         }
                     },
                     onManageGroups: {
-                        showingGroupEditor = true
+                        activeSheet = .groupEditor
                     },
                     onRename: {
                         beginRenameTrack(track)

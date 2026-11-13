@@ -10,13 +10,7 @@ enum LiveGroupMixerDetent: Equatable {
     static let minimumMainHeight: CGFloat = 200
 }
 
-enum LivePlaybackSidebarEdge {
-    case leading
-    case trailing
-}
-
 enum LivePlaybackSidebarMetrics {
-    static let appStorageKey = "livePlaybackSidebarWidth"
     static let trailingAppStorageKey = "livePlaybackTrailingSidebarWidth"
     static let defaultSidebarWidth: CGFloat = 300
     static let defaultSidebarWidthStorageValue = Double(defaultSidebarWidth)
@@ -54,10 +48,10 @@ enum LivePlaybackSidebarMetrics {
     }
 }
 
+/// Drag handle on the leading edge of a trailing sidebar; dragging left widens it.
 private struct LivePlaybackSidebarResizeHandle: View {
     @Binding var width: CGFloat
     let totalWidth: CGFloat
-    let edge: LivePlaybackSidebarEdge
     let accessibilityLabel: String
     let onResizeEnded: () -> Void
 
@@ -74,14 +68,7 @@ private struct LivePlaybackSidebarResizeHandle: View {
                     if dragStartWidth == nil {
                         dragStartWidth = width
                     }
-                    let translation = value.translation.width
-                    let proposed: CGFloat
-                    switch edge {
-                    case .leading:
-                        proposed = (dragStartWidth ?? width) + translation
-                    case .trailing:
-                        proposed = (dragStartWidth ?? width) - translation
-                    }
+                    let proposed = (dragStartWidth ?? width) - value.translation.width
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) {
@@ -112,64 +99,6 @@ private struct LivePlaybackSidebarResizeHandle: View {
         #endif
     }
 }
-
-/// Persists whether the song sidebar is open so it survives navigating between
-/// the live view and the song editor, and relaunches. On iOS the library is a sheet
-/// and always starts closed.
-enum SongSidebarPreference {
-    static let storageKey = "songSidebarVisible"
-
-    static var initialVisibility: Bool {
-        #if os(macOS)
-        UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true
-        #else
-        false
-        #endif
-    }
-}
-
-#if os(macOS)
-/// Native macOS sidebar (`NavigationSplitView`): the system supplies the toggle next
-/// to the traffic lights, the vibrant sidebar material, and drag-to-resize.
-struct LivePlaybackSidebarLayout<Sidebar: View, MainContent: View>: View {
-    @Binding var isVisible: Bool
-    @ViewBuilder let sidebar: () -> Sidebar
-    @ViewBuilder let mainContent: () -> MainContent
-
-    private var columnVisibility: Binding<NavigationSplitViewVisibility> {
-        Binding(
-            get: { isVisible ? .all : .detailOnly },
-            set: { isVisible = $0 != .detailOnly }
-        )
-    }
-
-    var body: some View {
-        NavigationSplitView(columnVisibility: columnVisibility) {
-            sidebar()
-                .toolbarBackground(.hidden, for: .windowToolbar)
-                .navigationSplitViewColumnWidth(
-                    min: LivePlaybackSidebarMetrics.minimumSidebarWidth,
-                    ideal: LivePlaybackSidebarMetrics.defaultSidebarWidth,
-                    max: LivePlaybackSidebarMetrics.maximumSidebarWidth
-                )
-        } detail: {
-            // The floating sidebar overlaps the detail column and the system answers
-            // with a leading safe area. Horizontal scroll views pick that up as a
-            // negative content inset, which stops the waveform's CATiledLayer from
-            // painting. Take the overlap as plain padding instead.
-            GeometryReader { proxy in
-                mainContent()
-                    .padding(.leading, proxy.safeAreaInsets.leading)
-                    .ignoresSafeArea(.container, edges: .leading)
-            }
-            .toolbarBackground(.hidden, for: .windowToolbar)
-        }
-        .onChange(of: isVisible) { _, newValue in
-            UserDefaults.standard.set(newValue, forKey: SongSidebarPreference.storageKey)
-        }
-    }
-}
-#endif
 
 struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View {
     var isVisible: Bool
@@ -210,7 +139,6 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
                     LivePlaybackSidebarResizeHandle(
                         width: $sidebarWidth,
                         totalWidth: geometry.size.width,
-                        edge: .trailing,
                         accessibilityLabel: "Mapping panel width",
                         onResizeEnded: {
                             persistSidebarWidth(totalWidth: geometry.size.width)

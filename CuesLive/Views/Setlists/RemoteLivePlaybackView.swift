@@ -7,7 +7,7 @@ struct RemoteLivePlaybackView: View {
     @State private var mixerVisible = false
     @State private var cueFlashPhase = false
     @State private var showingSettings = false
-    @State private var showingSongLibrary = SongSidebarPreference.initialVisibility
+    @State private var showingSongLibrary = SongLibraryPanePreference.initialVisibility
     @State private var showingAddHeaderSheet = false
     @State private var isEditingSetlist = false
     @State private var newHeaderTitle = "New Header"
@@ -44,15 +44,12 @@ struct RemoteLivePlaybackView: View {
     var body: some View {
         Group {
             #if os(macOS)
-            LivePlaybackSidebarLayout(isVisible: $showingSongLibrary) {
-                remoteSongLibraryPanel
+            LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
+                InputMappingPanel()
             } mainContent: {
-                LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
-                    InputMappingPanel()
-                } mainContent: {
-                    remotePlaybackMain
-                }
+                remotePlaybackMain
             }
+            .toolbarBackground(.hidden, for: .windowToolbar)
             #else
             remotePlaybackMain
             #endif
@@ -65,6 +62,11 @@ struct RemoteLivePlaybackView: View {
         #endif
         .toolbar {
             #if os(macOS)
+            ToolbarItem(placement: .navigation) {
+                SongLibraryToggleButton(isVisible: $showingSongLibrary)
+            }
+            .cuesHideSharedBackground()
+
             ToolbarItem(placement: .principal) {
                 LiveToolbarSongTitle(
                     title: resolvedCurrentSong?.name ?? "",
@@ -193,12 +195,12 @@ struct RemoteLivePlaybackView: View {
                 if snapshot != nil, !(snapshot?.entries.isEmpty ?? true) {
                     VSplitView {
                         waveformSection
-                        setlistSection
+                        librarySplitSection
                     }
                 } else {
                     VStack(spacing: 0) {
                         waveformSection
-                        setlistSection
+                        librarySplitSection
                     }
                 }
             }
@@ -232,6 +234,16 @@ struct RemoteLivePlaybackView: View {
         .animation(AppAnimation.fadeQuick, value: mixerVisible)
         #endif
     }
+
+    #if os(macOS)
+    private var librarySplitSection: some View {
+        LiveSongLibrarySplitLayout(isLibraryVisible: showingSongLibrary) {
+            remoteSongLibraryPanel
+        } setlist: {
+            setlistSection
+        }
+    }
+    #endif
 
     private var remoteSongLibraryPanel: some View {
         RemoteHostSongLibraryPanel(
