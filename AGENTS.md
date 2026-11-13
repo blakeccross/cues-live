@@ -20,12 +20,11 @@ xcodebuild -project CuesLive.xcodeproj -scheme CuesLive -destination 'platform=i
 
 - Build **both** platforms before declaring a change done. Most view files contain `#if os(macOS)` / `#if os(iOS)` branches.
 - Run the test target after touching anything under `Services/` or `Models/`.
-- Three tests drive the real audio engine through a capture tap and are timing-sensitive. They can fail
+- Two tests drive the real audio engine through a capture tap and are timing-sensitive. They can fail
   on a loaded machine or with certain output devices, independent of code changes:
-  `SectionCueEngineTests.testCuedSectionsKeepClickTrainIntactWithArrangementMapping`,
-  `SectionCueEngineTests.testCuedSectionsKeepClickTrainIntactForGeneratedClick` and
-  `UserProjectCueTests.testCueRefrainWhilePlayingPraiseKeepsClickIntact`. Re-run them in isolation, and
-  compare against an untouched checkout, before treating a failure as yours.
+  `SectionCueEngineTests.testCuedSectionsKeepClickTrainIntactWithArrangementMapping` and
+  `SectionCueEngineTests.testCuedSectionsKeepClickTrainIntactForGeneratedClick`. Re-run them in isolation,
+  and compare against an untouched checkout, before treating a failure as yours.
 - The build must stay at zero Swift warnings. The only accepted warnings come from `ThirdParty/`.
 
 ## Registering source files
