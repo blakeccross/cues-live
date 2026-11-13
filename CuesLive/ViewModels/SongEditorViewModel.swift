@@ -5,6 +5,8 @@ import SwiftData
 @Observable
 final class SongEditorViewModel {
     private let audioEngine = AudioEngineManager.shared
+    /// Set when the editor follows live setlist playback instead of owning the engine.
+    private let setlist: PlaybackCoordinator?
 
     let song: Song
     private(set) var loadError: String?
@@ -15,12 +17,48 @@ final class SongEditorViewModel {
     private var reloadGeneration = 0
     private var modelContext: ModelContext?
 
-    init(song: Song) {
+    /// - Parameter setlist: When set, playback stays with the setlist and edits apply to
+    ///   its engine while it has this song loaded. Transport calls are ignored.
+    init(song: Song, followingSetlist setlist: PlaybackCoordinator? = nil) {
         self.song = song
+        self.setlist = setlist
     }
 
+    var followsSetlist: Bool {
+        setlist != nil
+    }
+
+    /// Whether the shared engine's playhead belongs to this song. False when the editor
+    /// follows a setlist that is on another song, so the editor hides that playhead.
+    var isActiveSetlistSong: Bool {
+        guard let setlist else { return true }
+        return setlist.currentSong?.id == song.id
+    }
+
+    /// The engine edits apply to: the setlist's audible engine, or the shared one this editor owns.
+    private var engine: AudioEngineManager {
+        setlist?.playbackEngine ?? audioEngine
+    }
+
+    /// False while following a setlist that has another song (or nothing) loaded.
+    /// A standalone editor always targets its own engine.
+    private var ownsLoadedSong: Bool {
+        guard let setlist else { return true }
+        return setlist.hasLoadedSong(song.id)
+    }
+
+    /// Loads the song for playback. When following a setlist the engine already has it,
+    /// so only later calls (after tracks change) reload it there.
     func loadSong(context: ModelContext) {
         modelContext = context
+        if let setlist {
+            if isLoaded {
+                setlist.reloadEditedSong(song.id)
+            }
+            isLoaded = true
+            loadError = nil
+            return
+        }
         claimEngineForSongEditing()
         reloadSong()
     }
@@ -41,6 +79,10 @@ final class SongEditorViewModel {
 
     /// Reloads stems after media changes such as generating a click track.
     func reloadSongAfterMediaChange() {
+        if let setlist {
+            setlist.reloadEditedSong(song.id)
+            return
+        }
         reloadSong()
     }
 
@@ -48,8 +90,9 @@ final class SongEditorViewModel {
     func applyKeyChange(context: ModelContext) throws {
         try context.save()
         try SongProjectBridge.syncProjectFile(for: song, context: context)
+        guard ownsLoadedSong else { return }
         for track in song.sortedTracks {
-            audioEngine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
+            engine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
         }
     }
 
@@ -148,20 +191,22 @@ final class SongEditorViewModel {
     }
 
     func play() {
-        guard isLoaded else { return }
+        guard isLoaded, !followsSetlist else { return }
         audioEngine.play()
     }
 
     func pause() {
+        guard !followsSetlist else { return }
         audioEngine.pause()
     }
 
     func stop() {
+        guard !followsSetlist else { return }
         audioEngine.stop()
     }
 
     func seekAndPlay(to time: TimeInterval) {
-        guard isLoaded else { return }
+        guard isLoaded, !followsSetlist else { return }
         let wasPlaying = audioEngine.isPlaying
         audioEngine.seek(to: time)
         if !wasPlaying {
@@ -170,21 +215,25 @@ final class SongEditorViewModel {
     }
 
     func scheduleSectionTransition(to markerStart: TimeInterval, at transitionTime: TimeInterval) {
-        guard isLoaded else { return }
+        guard isLoaded, !followsSetlist else { return }
         audioEngine.scheduleTransition(to: markerStart, at: transitionTime)
     }
 
     func cancelScheduledSectionTransition() {
+        guard !followsSetlist else { return }
         audioEngine.cancelScheduledTransition()
     }
 
     func snapToScheduledSection(_ markerStart: TimeInterval) {
+        guard !followsSetlist else { return }
         audioEngine.snapToTransitionTarget(markerStart)
     }
 
     func updateMix(for track: AudioTrack, context: ModelContext) {
-        audioEngine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
-        audioEngine.applyAllMixSettings()
+        if ownsLoadedSong {
+            engine.updateTrackSettings(id: track.id, settings: AudioEngineManager.TrackSettings(track: track))
+            engine.applyAllMixSettings()
+        }
         try? context.save()
     }
 
@@ -194,21 +243,23 @@ final class SongEditorViewModel {
         try? context.save()
     }
 
+    /// The setlist screen applies routing to its own engine, so a following editor skips this.
     func applyOutputRoutingChange() {
-        guard isLoaded, let routing = currentRoutingSnapshot() else { return }
+        guard isLoaded, !followsSetlist, let routing = currentRoutingSnapshot() else { return }
         pushTrackGroupsToEngine()
         audioEngine.applyOutputRoutingKeepingTracks(routing)
     }
 
     /// Pushes group assignments into the loaded players and rewires when show routing is active.
     func refreshTrackOutputGroups() {
+        guard ownsLoadedSong else { return }
         pushTrackGroupsToEngine()
-        audioEngine.reapplyOutputRoutingIfNeeded()
+        engine.reapplyOutputRoutingIfNeeded()
     }
 
     private func pushTrackGroupsToEngine() {
         for track in song.sortedTracks {
-            audioEngine.updateTrackGroup(id: track.id, groupID: track.group?.id)
+            engine.updateTrackGroup(id: track.id, groupID: track.group?.id)
         }
     }
 
@@ -250,6 +301,10 @@ final class SongEditorViewModel {
 
     func syncArrangement(_ timeline: SongTimeline) {
         guard isLoaded else { return }
+        if let setlist {
+            setlist.applyEditedArrangement(timeline, songID: song.id)
+            return
+        }
         audioEngine.setArrangement(SongPlaybackLayout(timeline: timeline))
     }
 
@@ -265,9 +320,25 @@ final class SongEditorViewModel {
             defaultNumerator: song.timeSignatureNumerator ?? MeasureTiming.defaultNumerator,
             defaultDenominator: song.timeSignatureDenominator ?? MeasureTiming.defaultDenominator
         )
+        if let setlist {
+            setlist.applyEditedTempoMap(
+                normalizedTempo,
+                timeSignatureChanges: normalizedSignatures,
+                songID: song.id
+            )
+            return
+        }
         audioEngine.setTempoMap(
             normalizedTempo,
             timeSignatureChanges: normalizedSignatures
         )
+    }
+
+    func configureMIDI(events: [MIDIScheduler.ScheduledEvent]) {
+        if let setlist {
+            setlist.applyEditedMIDI(events, songID: song.id)
+            return
+        }
+        audioEngine.configureMIDI(events: events)
     }
 }

@@ -514,6 +514,18 @@
 		EB0D5DA58F5B196BE1A1EED6 /* WaveformPeakResamplerTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */; };
 		F2D4077077D037F0EAA5E5B0 /* EditView+Transport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */; };
 		4BBDBB0F396294E19B3E6C64 /* EditView+Transport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */; };
+		15ED970AFF61E800A9A7D7F3 /* EditFollowingSetlistStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CB86B14AC8BAD8E64E4CB0E /* EditFollowingSetlistStatus.swift */; };
+		5E7BE1FC3FA810AE58A246EC /* EditFollowingSetlistStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CB86B14AC8BAD8E64E4CB0E /* EditFollowingSetlistStatus.swift */; };
+		B52DE7A8EAD74C146C3994AB /* SetlistSongEditorHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A34795BFCFF847978BF650D /* SetlistSongEditorHost.swift */; };
+		7C372D4C9225226CEB3FBBE8 /* SetlistSongEditorHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A34795BFCFF847978BF650D /* SetlistSongEditorHost.swift */; };
+		7CAB7E1D3F517800D2152CFE /* SetlistSongEditorWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BD963C56F238A444ABB5BD /* SetlistSongEditorWindow.swift */; };
+		74C3B9816217E812AEEBD931 /* SetlistSongEditorWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67BD963C56F238A444ABB5BD /* SetlistSongEditorWindow.swift */; };
+		F99F54AD32D6E7C24073CD65 /* SetlistEditorLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053BFCF0850D3EBA91E18CB6 /* SetlistEditorLink.swift */; };
+		DCF86AB83301A463FF80A1D4 /* SetlistEditorLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 053BFCF0850D3EBA91E18CB6 /* SetlistEditorLink.swift */; };
+		CB6AA7A9B8E4338906C554E3 /* PlaybackCoordinator+LiveEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */; };
+		35E8B4670D00D52163559BAE /* PlaybackCoordinator+LiveEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */; };
+		D03B24036E4D417182D03DA8 /* SetlistEditorLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC16CEF135F2F548CE0E61C9 /* SetlistEditorLinkTests.swift */; };
+		E724D849C8C3F9CB3E3374D4 /* SongEditorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -810,6 +822,13 @@
 		29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WaveformPeakResampler+Timeline.swift"; sourceTree = "<group>"; };
 		C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakResamplerTimelineTests.swift; sourceTree = "<group>"; };
 		B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Transport.swift"; sourceTree = "<group>"; };
+		1CB86B14AC8BAD8E64E4CB0E /* EditFollowingSetlistStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFollowingSetlistStatus.swift; sourceTree = "<group>"; };
+		6A34795BFCFF847978BF650D /* SetlistSongEditorHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSongEditorHost.swift; sourceTree = "<group>"; };
+		67BD963C56F238A444ABB5BD /* SetlistSongEditorWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSongEditorWindow.swift; sourceTree = "<group>"; };
+		053BFCF0850D3EBA91E18CB6 /* SetlistEditorLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistEditorLink.swift; sourceTree = "<group>"; };
+		2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlaybackCoordinator+LiveEdits.swift"; sourceTree = "<group>"; };
+		DC16CEF135F2F548CE0E61C9 /* SetlistEditorLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistEditorLinkTests.swift; sourceTree = "<group>"; };
+		550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongEditorViewModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -993,6 +1012,8 @@
 		AA0000050000000000000008 /* Songs */ = {
 			isa = PBXGroup;
 			children = (
+				67BD963C56F238A444ABB5BD /* SetlistSongEditorWindow.swift */,
+				6A34795BFCFF847978BF650D /* SetlistSongEditorHost.swift */,
 				05705790616AB49F21F60566 /* SongFolderSetupSheet.swift */,
 				3BAC8159AE0AAA6CCE7FE53B /* AddClickSongSheet.swift */,
 				AA000002000000000000000C /* SongLibraryView.swift */,
@@ -1083,6 +1104,8 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */,
+				DC16CEF135F2F548CE0E61C9 /* SetlistEditorLinkTests.swift */,
 				C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */,
 				B707B6F9394671ACECA78CC3 /* LiveSetlistWaveformSourceTests.swift */,
 				E88B3EB180523D5A20054F9B /* WaveformMinMaxTests.swift */,
@@ -1224,6 +1247,8 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */,
+				053BFCF0850D3EBA91E18CB6 /* SetlistEditorLink.swift */,
 				1D191F5F9E3E59A45174F25E /* LiveSetlistWaveformSource.swift */,
 				E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */,
 				AA0000020000000000000007 /* AudioEngineManager.swift */,
@@ -1377,6 +1402,7 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				1CB86B14AC8BAD8E64E4CB0E /* EditFollowingSetlistStatus.swift */,
 				B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */,
 				DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */,
 				E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */,
@@ -1534,6 +1560,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CB6AA7A9B8E4338906C554E3 /* PlaybackCoordinator+LiveEdits.swift in Sources */,
+				F99F54AD32D6E7C24073CD65 /* SetlistEditorLink.swift in Sources */,
+				7CAB7E1D3F517800D2152CFE /* SetlistSongEditorWindow.swift in Sources */,
+				B52DE7A8EAD74C146C3994AB /* SetlistSongEditorHost.swift in Sources */,
+				15ED970AFF61E800A9A7D7F3 /* EditFollowingSetlistStatus.swift in Sources */,
 				F2D4077077D037F0EAA5E5B0 /* EditView+Transport.swift in Sources */,
 				39135153DD4D38A5FCE0D0A6 /* WaveformPeakResampler+Timeline.swift in Sources */,
 				FEE11C252438A9C185FA3D75 /* LiveSetlistWaveformSource.swift in Sources */,
@@ -1765,6 +1796,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E724D849C8C3F9CB3E3374D4 /* SongEditorViewModelTests.swift in Sources */,
+				D03B24036E4D417182D03DA8 /* SetlistEditorLinkTests.swift in Sources */,
 				EB0D5DA58F5B196BE1A1EED6 /* WaveformPeakResamplerTimelineTests.swift in Sources */,
 				62710007C0983982ADD09CA4 /* LiveSetlistWaveformSourceTests.swift in Sources */,
 				608A1F198FE4850ED53F35F5 /* WaveformMinMaxTests.swift in Sources */,
@@ -1816,6 +1849,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				35E8B4670D00D52163559BAE /* PlaybackCoordinator+LiveEdits.swift in Sources */,
+				DCF86AB83301A463FF80A1D4 /* SetlistEditorLink.swift in Sources */,
+				74C3B9816217E812AEEBD931 /* SetlistSongEditorWindow.swift in Sources */,
+				7C372D4C9225226CEB3FBBE8 /* SetlistSongEditorHost.swift in Sources */,
+				5E7BE1FC3FA810AE58A246EC /* EditFollowingSetlistStatus.swift in Sources */,
 				4BBDBB0F396294E19B3E6C64 /* EditView+Transport.swift in Sources */,
 				2916D25059C6B918CF97BF90 /* WaveformPeakResampler+Timeline.swift in Sources */,
 				C0DEE6538B297FB16763743C /* LiveSetlistWaveformSource.swift in Sources */,

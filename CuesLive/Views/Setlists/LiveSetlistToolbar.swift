@@ -8,6 +8,7 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
 
     #if os(macOS)
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     #endif
 
     @ToolbarContentBuilder
@@ -23,6 +24,11 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
 
         ToolbarItem(placement: .automatic) {
             InputMappingToolbarMenu()
+        }
+        .cuesHideSharedBackground()
+
+        ToolbarItem(placement: .automatic) {
+            songEditorWindowButton
         }
         .cuesHideSharedBackground()
 
@@ -55,6 +61,17 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     }
 
     #if os(macOS)
+    /// Opens the window that edits the playing song alongside the setlist.
+    private var songEditorWindowButton: some View {
+        Button {
+            openWindow(id: SetlistSongEditorWindowID.value)
+        } label: {
+            Label("Song Editor Window", systemImage: "macwindow.badge.plus")
+                .labelStyle(.iconOnly)
+        }
+        .help("Edit the playing song in a separate window")
+    }
+
     private var settingsButton: some View {
         Button {
             openSettings()

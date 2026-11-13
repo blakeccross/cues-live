@@ -12,7 +12,7 @@ extension EditView {
 
     func reconfigureMIDI() {
         let resolved = MIDIScheduler.scheduledEvents(events: midiEvents, tracks: midiTracks)
-        AudioEngineManager.shared.configureMIDI(events: resolved)
+        viewModel.configureMIDI(events: resolved)
     }
 
     func commitMIDIEvents() {

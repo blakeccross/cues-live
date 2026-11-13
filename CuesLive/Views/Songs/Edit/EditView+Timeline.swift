@@ -114,7 +114,11 @@ extension EditView {
         VStack(spacing: 0) {
             EditTransportStatusStrip(viewModel: viewModel)
             editorTimeline
-            if LiveTransportLayout.macOSPlacesControlsAtBottom {
+            if viewModel.followsSetlist {
+                LiveTransportBottomBar {
+                    EditFollowingSetlistStatus(isActiveSong: viewModel.isActiveSetlistSong)
+                }
+            } else if LiveTransportLayout.macOSPlacesControlsAtBottom {
                 LiveTransportBottomBar {
                     editorTransportCluster
                 }
@@ -193,6 +197,7 @@ extension EditView {
             timelineDisplayWidth: timelineDisplayWidth,
             sectionTimes: sectionMarkerTimes,
             laneHeights: laneFrames.rows.map(\.height),
+            showsPlayhead: viewModel.isActiveSetlistSong,
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
             ruler: { timelineRulerStack },

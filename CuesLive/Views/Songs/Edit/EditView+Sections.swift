@@ -46,6 +46,8 @@ extension EditView {
     }
 
     func cueSection(_ section: SongSection) {
+        // Section jumps belong to the setlist screen while this editor follows it.
+        guard !viewModel.followsSetlist else { return }
         sectionLoop.endLoopIfActive()
 
         if !audioEngine.isPlaying {

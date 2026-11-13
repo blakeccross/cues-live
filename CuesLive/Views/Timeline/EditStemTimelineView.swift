@@ -47,6 +47,8 @@ struct EditStemTimelineView<
     let timelineDisplayWidth: CGFloat
     let sectionTimes: [TimeInterval]
     let laneHeights: [CGFloat]
+    /// False hides the playing playhead, for a song the engine is not playing.
+    var showsPlayhead = true
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
     @ViewBuilder let ruler: () -> Ruler
@@ -143,15 +145,17 @@ struct EditStemTimelineView<
                 }
             }
             .overlay(alignment: .topLeading) {
-                TimelineFollowingPlayhead(
-                    model: scrollModel,
-                    duration: timelineDuration,
-                    contentWidth: timelineContentWidth,
-                    viewportWidth: timelineColumnWidth,
-                    height: TimelineLayout.rulerTotalHeight + tracksViewportHeight
-                )
-                .padding(.leading, TimelineLayout.trackHeaderWidth)
-                .allowsHitTesting(false)
+                if showsPlayhead {
+                    TimelineFollowingPlayhead(
+                        model: scrollModel,
+                        duration: timelineDuration,
+                        contentWidth: timelineContentWidth,
+                        viewportWidth: timelineColumnWidth,
+                        height: TimelineLayout.rulerTotalHeight + tracksViewportHeight
+                    )
+                    .padding(.leading, TimelineLayout.trackHeaderWidth)
+                    .allowsHitTesting(false)
+                }
             }
             .onGeometryChange(for: CGFloat.self) { proxy in
                 max(0, proxy.size.width - TimelineLayout.trackHeaderWidth)

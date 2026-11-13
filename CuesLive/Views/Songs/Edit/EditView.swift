@@ -110,7 +110,8 @@ struct EditView: View {
         .focusable()
         .focused($isTimelineFocused)
         .focusEffectDisabled()
-        .liveInputMappingSession(takesKeyFocus: false) { action in
+        // A setlist-following editor leaves mapped keys and MIDI with the setlist screen.
+        .liveInputMappingSession(isEnabled: !viewModel.followsSetlist, takesKeyFocus: false) { action in
             handleMappedLiveAction(action)
         }
         .focusedValue(\.clipEditorActions, clipEditorActions)
@@ -162,25 +163,9 @@ struct EditView: View {
             clampTimelineZoom()
         }
         .background {
-            SectionCueMonitor(
-                cuedSectionID: cuedSectionID,
-                cueFireTime: cueFireTime,
-                onFire: fireMarkerCue
-            )
-            SectionAnnounceMonitor(
-                enabled: song.smartGuideEnabled,
-                sections: displaySections,
-                cuedSectionID: cuedSectionID,
-                cueFireTime: cueFireTime,
-                loopSection: sectionLoop.activeSection(in: displaySections, loopSectionIDs: loopSectionIDs),
-                announcer: sectionAnnouncer
-            )
-            SectionLoopPlaybackSupport(
-                loopController: sectionLoop,
-                sections: displaySections,
-                loopSectionIDs: loopSectionIDs,
-                onLoopActivated: { clearMarkerCue() }
-            )
+            if !viewModel.followsSetlist {
+                sectionPlaybackMonitors
+            }
         }
         .task(id: cuedSectionID) {
             guard cuedSectionID != nil else {
@@ -319,7 +304,7 @@ struct EditView: View {
                 onDetectSections: requestDetectSections,
                 onImportAbleton: presentAbletonImporter,
                 onAddMIDILane: { showingMIDIDevicePicker = true },
-                onBack: onBack,
+                onBack: viewModel.followsSetlist ? nil : onBack,
                 currentSectionAtTime: { time in
                     displaySections.section(atTimeline: time)
                 },
@@ -347,6 +332,30 @@ struct EditView: View {
         }
         .appLockToolbarDisplayMode()
 #endif
+    }
+
+    /// Cue, Smart Guide and loop playback for an editor that owns the transport.
+    @ViewBuilder
+    private var sectionPlaybackMonitors: some View {
+        SectionCueMonitor(
+            cuedSectionID: cuedSectionID,
+            cueFireTime: cueFireTime,
+            onFire: fireMarkerCue
+        )
+        SectionAnnounceMonitor(
+            enabled: song.smartGuideEnabled,
+            sections: displaySections,
+            cuedSectionID: cuedSectionID,
+            cueFireTime: cueFireTime,
+            loopSection: sectionLoop.activeSection(in: displaySections, loopSectionIDs: loopSectionIDs),
+            announcer: sectionAnnouncer
+        )
+        SectionLoopPlaybackSupport(
+            loopController: sectionLoop,
+            sections: displaySections,
+            loopSectionIDs: loopSectionIDs,
+            onLoopActivated: { clearMarkerCue() }
+        )
     }
 
     /// A selector drag: a snapped time range across every row from the press to the pointer.

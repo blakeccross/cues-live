@@ -42,6 +42,8 @@ struct InputMappingToolbarMenu: View {
 
 struct LiveInputMappingSessionModifier: ViewModifier {
     let handler: (MappableLiveAction) -> Void
+    /// When false the view opens no session, so mapped input keeps going to the one below.
+    var isEnabled: Bool = true
     var arePlaybackActionsEnabled: Bool = true
     /// iOS only. When false, the content already focuses a descendant and this modifier
     /// handles the key presses that bubble up from it instead of taking focus.
@@ -67,6 +69,10 @@ struct LiveInputMappingSessionModifier: ViewModifier {
             .onAppear {
                 if let sessionToken {
                     mapping.deactivateLiveSession(token: sessionToken)
+                }
+                guard isEnabled else {
+                    sessionToken = nil
+                    return
                 }
                 sessionToken = mapping.activateLiveSession(
                     playbackActionsEnabled: arePlaybackActionsEnabled,
@@ -98,6 +104,7 @@ struct LiveInputMappingSessionModifier: ViewModifier {
 
 extension View {
     func liveInputMappingSession(
+        isEnabled: Bool = true,
         arePlaybackActionsEnabled: Bool = true,
         takesKeyFocus: Bool = true,
         handler: @escaping (MappableLiveAction) -> Void
@@ -105,6 +112,7 @@ extension View {
         modifier(
             LiveInputMappingSessionModifier(
                 handler: handler,
+                isEnabled: isEnabled,
                 arePlaybackActionsEnabled: arePlaybackActionsEnabled,
                 takesKeyFocus: takesKeyFocus
             )

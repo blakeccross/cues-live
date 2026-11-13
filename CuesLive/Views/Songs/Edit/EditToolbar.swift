@@ -83,7 +83,8 @@ struct EditSongToolbarContent: ToolbarContent {
     let onDetectSections: () -> Void
     let onImportAbleton: () -> Void
     let onAddMIDILane: () -> Void
-    let onBack: () -> Void
+    /// Nil hides the back button, as in the separate editor window.
+    let onBack: (() -> Void)?
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
@@ -99,10 +100,12 @@ struct EditSongToolbarContent: ToolbarContent {
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            backButton
+        if let onBack {
+            ToolbarItem(placement: .navigation) {
+                backButton(action: onBack)
+            }
+            .cuesHideSharedBackground()
         }
-        .cuesHideSharedBackground()
 
         ToolbarItem(placement: .principal) {
             if LiveTransportLayout.macOSPlacesControlsAtBottom {
@@ -145,8 +148,8 @@ struct EditSongToolbarContent: ToolbarContent {
         )
     }
 
-    private var backButton: some View {
-        Button(action: onBack) {
+    private func backButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Label("Back", systemImage: "chevron.backward")
                 .labelStyle(.iconOnly)
         }

@@ -17,6 +17,7 @@ Requires macOS 14+ or iOS/iPadOS 17+.
 **Setlists & live playback**
 - Ordered setlists with overlap transitions between songs
 - Live waveform view, group mixer, mute/solo, and section jumping with gain ramping
+- Song Editor window (macOS, Window → Song Editor, ⌥⌘E) that follows the playing song, so you can edit it live while the setlist runs; while it is open, Edit sends songs to it
 - Per-group output routing across multi-channel audio interfaces, with recovery when a device drops out
 - SMPTE LTC timecode output
 - Key and MIDI mapping for any live control

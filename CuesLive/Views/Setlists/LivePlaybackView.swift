@@ -15,6 +15,9 @@ struct MissingMediaSheetContext: Identifiable {
 struct LivePlaybackView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(InputMappingController.self) private var mapping
+    #if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+    #endif
     @Query(sort: \Song.name) var allSongs: [Song]
     @Query(sort: \Setlist.lastOpenedAt, order: .reverse) private var allSetlists: [Setlist]
 
@@ -286,7 +289,8 @@ struct LivePlaybackView: View {
                     cueFlashPhase.toggle()
                 }
             }
-            .onChange(of: coordinator.currentSong?.id) { _, _ in
+            .onChange(of: coordinator.currentSong?.id) { _, songID in
+                SetlistEditorLink.shared.activeSongDidChange(to: songID)
                 clearMarkerCue()
                 sectionLoop.reset()
                 groupMixFade.cancel()
@@ -318,6 +322,7 @@ struct LivePlaybackView: View {
                     TimecodePlaybackSupport.resolveGroupID(in: modelContext)
                 }
                 coordinator.configure(setlist: setlist)
+                SetlistEditorLink.shared.attach(coordinator)
                 markSetlistOpened(setlist)
                 promptForMissingMediaIfNeeded(in: setlist)
             }
@@ -337,8 +342,10 @@ struct LivePlaybackView: View {
             }
             .onDisappear {
                 stopPlayback()
+                SetlistEditorLink.shared.detach(coordinator)
             }
             .onChange(of: songToEditID) { oldValue, newValue in
+                SetlistEditorLink.shared.setInlineEditorOpen(newValue != nil)
                 if newValue != nil {
                     clearMarkerCue()
                     sectionLoop.reset()
@@ -359,6 +366,14 @@ struct LivePlaybackView: View {
     }
 
     func presentSongEditor(for song: Song) {
+        #if os(macOS)
+        // An open editor window takes the song, so the setlist keeps playing here.
+        if SetlistEditorLink.shared.isWindowOpen {
+            SetlistEditorLink.shared.edit(song.id)
+            openWindow(id: SetlistSongEditorWindowID.value)
+            return
+        }
+        #endif
         #if os(iOS)
         if showingSongLibrary {
             songPendingEditorID = song.id

@@ -7,7 +7,7 @@ import SwiftData
 final class PlaybackCoordinator {
     private var audioEngine = AudioEngineManager.shared
     private let clockEngine = AudioEngineManager.shared
-    private var incomingAudioEngine: AudioEngineManager?
+    private(set) var incomingAudioEngine: AudioEngineManager?
 
     /// Audible engine for the current song. After an overlap handoff this may be a
     /// separate instance from `AudioEngineManager.shared` (the UI clock engine).
@@ -23,7 +23,7 @@ final class PlaybackCoordinator {
     private(set) var currentWaveformSnapshot: LiveSongWaveformSnapshot?
     private(set) var timelineItems: [LiveSetlistTimelineItem] = []
 
-    private var loadedSongID: UUID?
+    private(set) var loadedSongID: UUID?
     private var loadTask: Task<Void, Never>?
     private var loadGeneration = 0
     private var waveformSnapshotPrefetchTask: Task<Void, Never>?
@@ -814,7 +814,7 @@ final class PlaybackCoordinator {
         return hasher.finalize()
     }
 
-    private func configureOverlapSchedulingIfNeeded() {
+    func configureOverlapSchedulingIfNeeded() {
         audioEngine.cancelScheduledOverlapStart()
         clearIncomingPrefetch()
         activeOverlapConfig = nil

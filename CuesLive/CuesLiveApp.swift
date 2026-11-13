@@ -70,6 +70,7 @@ struct CuesLiveApp: App {
             SongUndoCommands()
             ClipEditorCommands()
             LiveMappingCommands()
+            WindowMenuCommands()
             HelpMenuCommands()
         }
         #endif
@@ -86,6 +87,23 @@ struct CuesLiveApp: App {
                 .frame(minWidth: 640, minHeight: 480)
         }
         .defaultSize(width: 780, height: 560)
+
+        Window("Song Editor", id: SetlistSongEditorWindowID.value) {
+            SetlistSongEditorWindow()
+                .frame(
+                    minWidth: AppWindowMetrics.minimumWidth,
+                    minHeight: AppWindowMetrics.minimumHeight
+                )
+                .preferredColorScheme(.dark)
+                .environment(InputMappingController.shared)
+        }
+        .modelContainer(modelContainer)
+        .defaultSize(
+            width: AppWindowMetrics.defaultWidth,
+            height: AppWindowMetrics.defaultHeight
+        )
+        .windowResizability(.contentMinSize)
+        .windowToolbarStyle(.unified)
         #endif
     }
 }
@@ -329,6 +347,21 @@ struct LiveMappingCommands: Commands {
             Button(mapping.session == .midiMapping ? "Done MIDI Mapping" : "MIDI Mapping") {
                 mapping.toggleMIDIMapping()
             }
+        }
+    }
+}
+
+struct WindowMenuCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(before: .windowList) {
+            Button("Song Editor") {
+                openWindow(id: SetlistSongEditorWindowID.value)
+            }
+            .keyboardShortcut("e", modifiers: [.command, .option])
+
+            Divider()
         }
     }
 }
