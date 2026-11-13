@@ -48,7 +48,8 @@ extension LivePlaybackView {
                         actions: setlistRowActions(for:),
                         onMove: moveSetlistRows,
                         onAddHeader: addHeader,
-                        onInsertSongs: insertDroppedSongs
+                        onInsertSongs: insertDroppedSongs,
+                        sectionPlayback: setlistSectionPlayback
                     )
                     .frame(maxWidth: 720, maxHeight: .infinity)
                     .frame(maxWidth: .infinity)
@@ -93,10 +94,23 @@ extension LivePlaybackView {
                     playbackIndex: setlist.playbackIndex(for: entry) ?? 0,
                     hasMissingMedia: songHasMissingMedia(song),
                     hasSmartGuide: song.smartGuideEnabled,
-                    transition: setlist.hasNextSong(after: entry) ? entry.transition : nil
+                    transition: setlist.hasNextSong(after: entry) ? entry.transition : nil,
+                    sections: coordinator.waveformSnapshot(for: song)?.sections ?? []
                 ))
             )
         }
+    }
+
+    private var setlistSectionPlayback: SetlistSectionPlayback {
+        SetlistSectionPlayback(
+            playheadTime: { coordinator.livePlayheadTime() },
+            isPlaying: coordinator.isPlaying,
+            // Only observe clock time while idle, so playback doesn't rebuild the list every tick.
+            idlePlayheadTime: playbackClock.isPlaying ? nil : playbackClock.currentTime,
+            cuedSectionID: cuedSectionID,
+            cueFlashPhase: cueFlashPhase,
+            selectSection: selectSection(songIndex:section:)
+        )
     }
 
     private func setlistRowActions(for model: SetlistRowModel) -> SetlistRowActions {

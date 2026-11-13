@@ -23,6 +23,8 @@ struct SetlistRowModel: Identifiable {
         var hasSmartGuide: Bool = false
         /// Transition to the next song; nil for the last song.
         var transition: SetlistTransition? = nil
+        /// Arrangement sections, listed when the row is expanded.
+        var sections: [SongSection] = []
     }
 
     enum Kind {
@@ -43,6 +45,18 @@ struct SetlistRowActions {
     var transitions: [SetlistTransition] = []
     var setTransition: ((SetlistTransition) -> Void)?
     var remove: () -> Void
+}
+
+/// Playhead and cue state for the expanded section lists, plus how to act on a tapped section.
+struct SetlistSectionPlayback {
+    var playheadTime: () -> TimeInterval
+    var isPlaying: Bool
+    /// The clock time while stopped, so seeks redraw the progress without a running timeline.
+    var idlePlayheadTime: TimeInterval?
+    var cuedSectionID: UUID?
+    var cueFlashPhase: Bool
+    /// Cues the section in the current song, or jumps to it in another song.
+    var selectSection: (_ playbackIndex: Int, _ section: SongSection) -> Void
 }
 
 // MARK: - Song drag payload
@@ -91,6 +105,11 @@ struct SetlistListView: View {
     var onAddHeader: (() -> Void)? = nil
     /// Called with the row index to insert at when a library song is dropped on the list.
     var onInsertSongs: ((Int, [UUID]) -> Void)? = nil
+    /// Enables expandable section lists under song rows.
+    var sectionPlayback: SetlistSectionPlayback? = nil
+
+    /// Rows the user expanded or collapsed by hand; others follow the current song.
+    @State private var expansionOverrides: [AnyHashable: Bool] = [:]
 
     #if os(iOS)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -112,6 +131,10 @@ struct SetlistListView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .animation(AppAnimation.springSmooth, value: currentIndex)
+        .onChange(of: currentIndex) { _, _ in
+            expansionOverrides.removeAll()
+        }
         .contentShape(Rectangle())
         .contextMenu {
             if let onAddHeader {
@@ -155,14 +178,25 @@ struct SetlistListView: View {
             .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions) }
 
         case .song(let song):
-            let isCurrent = song.playbackIndex == currentIndex
+            songRow(row, song: song, actions: rowActions)
+        }
+    }
+
+    private func songRow(
+        _ row: SetlistRowModel,
+        song: SetlistRowModel.Song,
+        actions rowActions: SetlistRowActions
+    ) -> some View {
+        let isCurrent = song.playbackIndex == currentIndex
+        let expansion = expansionBinding(for: row, song: song)
+        return VStack(spacing: 0) {
             SetlistSongRowView(
                 song: song,
                 isCurrent: isCurrent,
                 isFinished: song.playbackIndex < currentIndex,
                 isPlaying: isPlaying,
                 showsMenu: !isEditing,
-                menu: { SetlistRowMenuContent(model: row, actions: rowActions) }
+                menu: { SetlistRowMenuContent(model: row, actions: rowActions, sectionsExpanded: expansion) }
             )
             .contentShape(Rectangle())
             .onTapGesture {
@@ -173,10 +207,33 @@ struct SetlistListView: View {
             .accessibilityAction(named: "Play") { rowActions.play?() }
             .appLinkPointer()
             .mappableLiveControl(.goToSong(song.playbackIndex), cornerRadius: AppRadius.sm)
-            .listRowBackground(isCurrent ? AppColors.accent.opacity(0.18) : Color.clear)
-            .setlistSwipeActions(actions: rowActions)
-            .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions) }
+
+            if let sectionPlayback, expansion?.wrappedValue == true {
+                SetlistSectionListView(
+                    sections: song.sections,
+                    playbackIndex: song.playbackIndex,
+                    isCurrent: isCurrent,
+                    isEnabled: !isEditing,
+                    playback: sectionPlayback
+                )
+                .padding(.bottom, AppSpacing.xs)
+                .transition(.opacity)
+            }
         }
+        .listRowBackground(Color.clear)
+        .setlistSwipeActions(actions: rowActions)
+        .contextMenu { SetlistRowMenuContent(model: row, actions: rowActions, sectionsExpanded: expansion) }
+    }
+
+    /// Nil when the row can't expand. Otherwise a manual override wins, and the current song
+    /// opens by default.
+    private func expansionBinding(for row: SetlistRowModel, song: SetlistRowModel.Song) -> Binding<Bool>? {
+        guard sectionPlayback != nil, !isEditing, !song.sections.isEmpty else { return nil }
+        let isCurrent = song.playbackIndex == currentIndex
+        return Binding(
+            get: { expansionOverrides[row.id] ?? isCurrent },
+            set: { expansionOverrides[row.id] = $0 }
+        )
     }
 }
 
@@ -217,11 +274,27 @@ private extension View {
 private struct SetlistRowMenuContent: View {
     let model: SetlistRowModel
     let actions: SetlistRowActions
+    /// Nil when the song has no sections to show.
+    var sectionsExpanded: Binding<Bool>? = nil
 
     var body: some View {
         if let play = actions.play {
             Button(action: play) {
                 Label("Play", systemImage: "play.fill")
+            }
+        }
+
+        if let sectionsExpanded {
+            let isExpanded = sectionsExpanded.wrappedValue
+            Button {
+                withAnimation(AppAnimation.springSnappy) {
+                    sectionsExpanded.wrappedValue.toggle()
+                }
+            } label: {
+                Label(
+                    isExpanded ? "Hide Sections" : "Show Sections",
+                    systemImage: isExpanded ? "list.bullet.indent" : "list.bullet"
+                )
             }
         }
 
@@ -260,7 +333,7 @@ private struct SetlistRowMenuContent: View {
     }
 }
 
-private struct SetlistRowMenuButton<MenuContent: View>: View {
+struct SetlistRowMenuButton<MenuContent: View>: View {
     @ViewBuilder let menu: () -> MenuContent
 
     var body: some View {
@@ -312,89 +385,6 @@ private struct SetlistHeaderRowView<MenuContent: View>: View {
             }
         }
         .frame(minHeight: 40)
-    }
-}
-
-private struct SetlistSongRowView<MenuContent: View>: View {
-    let song: SetlistRowModel.Song
-    let isCurrent: Bool
-    let isFinished: Bool
-    let isPlaying: Bool
-    let showsMenu: Bool
-    @ViewBuilder let menu: () -> MenuContent
-
-    private var detailText: String? {
-        let parts = [song.keyText, song.bpmText].compactMap { $0 }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-    }
-
-    var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            leadingIndicator
-                .frame(width: 28)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(song.title)
-                    .font(.body.weight(isCurrent ? .semibold : .medium))
-                    .foregroundStyle(isFinished ? AppColors.textTertiary : AppColors.textPrimary)
-                    .lineLimit(2)
-
-                if let detailText {
-                    Text(detailText)
-                        .font(.caption)
-                        .foregroundStyle(AppColors.textTertiary)
-                        .lineLimit(1)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            if song.hasMissingMedia {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                    .font(.caption)
-                    .accessibilityLabel("Missing audio files")
-                    .help("Missing audio files — use Relink Missing Files in the menu")
-            }
-
-            if song.hasSmartGuide {
-                SmartGuideBadge()
-            }
-
-            if let transition = song.transition {
-                Image(systemName: transition.systemImage)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(transition.badgeColor)
-                    .accessibilityLabel("Transition to next: \(transition.label)")
-                    .help("Transition to next: \(transition.label)")
-            }
-
-            Text(song.durationText)
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(isCurrent ? AppColors.textSecondary : AppColors.textTertiary)
-                .accessibilityLabel("Duration \(song.durationText)")
-
-            if showsMenu {
-                SetlistRowMenuButton(menu: menu)
-            }
-        }
-        .frame(minHeight: AppSpacing.rowMinHeight)
-        .opacity(isFinished ? 0.55 : 1)
-    }
-
-    @ViewBuilder
-    private var leadingIndicator: some View {
-        if isCurrent {
-            Image(systemName: "speaker.wave.2.fill")
-                .font(.subheadline)
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.variableColor.iterative, isActive: isPlaying)
-                .accessibilityLabel("Now playing")
-        } else {
-            Text("\(song.playbackIndex + 1)")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(AppColors.textTertiary)
-                .accessibilityHidden(true)
-        }
     }
 }
 

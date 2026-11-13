@@ -291,7 +291,10 @@ struct RemoteLivePlaybackView: View {
     private func performMappedSection(songIndex: Int, sectionIndex: Int) {
         guard let song = song(atPlaybackIndex: songIndex),
               song.sections.indices.contains(sectionIndex) else { return }
-        let section = song.sections[sectionIndex]
+        selectSection(songIndex: songIndex, section: song.sections[sectionIndex].asSection(loopSectionIDs: []))
+    }
+
+    private func selectSection(songIndex: Int, section: SongSection) {
         if songIndex == state.currentIndex {
             client.send(.cueSection(sectionID: section.id))
             return
@@ -402,7 +405,8 @@ struct RemoteLivePlaybackView: View {
                         isEditing: $isEditingSetlist,
                         actions: remoteRowActions(for:),
                         onMove: moveWorkingEntries,
-                        onAddHeader: beginAddingHeader
+                        onAddHeader: beginAddingHeader,
+                        sectionPlayback: sectionPlayback
                     )
                     .frame(maxWidth: 720, maxHeight: .infinity)
                     .frame(maxWidth: .infinity)
@@ -421,6 +425,17 @@ struct RemoteLivePlaybackView: View {
         .onChange(of: workingEntries.isEmpty) { _, isEmpty in
             if isEmpty { isEditingSetlist = false }
         }
+    }
+
+    private var sectionPlayback: SetlistSectionPlayback {
+        SetlistSectionPlayback(
+            playheadTime: { client.state.currentTime },
+            isPlaying: state.isPlaying,
+            idlePlayheadTime: state.isPlaying ? nil : state.currentTime,
+            cuedSectionID: state.cuedSectionID,
+            cueFlashPhase: cueFlashPhase,
+            selectSection: selectSection(songIndex:section:)
+        )
     }
 
     private func remoteRowModels(snapshot: RemoteSessionSnapshot) -> [SetlistRowModel] {
@@ -449,7 +464,8 @@ struct RemoteLivePlaybackView: View {
                     bpmText: remoteSongBPMText(song),
                     playbackIndex: playbackIndex,
                     hasSmartGuide: song.smartGuideEnabled,
-                    transition: remoteTransition(for: entry, in: workingEntries)
+                    transition: remoteTransition(for: entry, in: workingEntries),
+                    sections: song.sections.map { $0.asSection(loopSectionIDs: Set(song.loopSectionIDs)) }
                 ))
             )
         }

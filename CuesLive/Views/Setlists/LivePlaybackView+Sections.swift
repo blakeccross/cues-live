@@ -47,7 +47,11 @@ extension LivePlaybackView {
         let song = coordinator.songs[songIndex]
         guard let snapshot = coordinator.resolveWaveformSnapshot(for: song),
               snapshot.sections.indices.contains(sectionIndex) else { return }
-        let section = snapshot.sections[sectionIndex]
+        selectSection(songIndex: songIndex, section: snapshot.sections[sectionIndex])
+    }
+
+    /// Cues a section of the current song, or switches to another song starting at the section.
+    func selectSection(songIndex: Int, section: SongSection) {
         if songIndex == coordinator.currentIndex {
             cueSection(section)
             return
