@@ -25,7 +25,7 @@ struct LiveSetlistWaveformScrollView: View {
     @Environment(InputMappingController.self) private var mapping
 
     @AppStorage(LiveSetlistWaveformMetrics.horizontalZoomAppStorageKey)
-    private var storedHorizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoomStorageValue
+    var storedHorizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoomStorageValue
 
     #if os(macOS)
     // Self-measured (see the trailing `background` in `body`) rather than read
@@ -43,12 +43,11 @@ struct LiveSetlistWaveformScrollView: View {
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
     #endif
 
-    @State private var scrollModel = LiveSetlistScrollModel()
-    @State private var horizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoom
-    @State private var pinchStartZoom: CGFloat?
+    @State var scrollModel = LiveSetlistScrollModel()
+    @State var horizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoom
+    @State var pinchStartZoom: CGFloat?
 
     private let laneSpacing: CGFloat = 24
-    private static let zoomAdjustmentStep: CGFloat = 0.25
 
     private var laneIndices: Set<Int> {
         Set(timelineItems.compactMap { item in
@@ -91,7 +90,8 @@ struct LiveSetlistWaveformScrollView: View {
             laneIndices: laneIndices,
             canvas: laneCanvas,
             onPinchChanged: pinchChanged,
-            onPinchEnded: pinchEnded
+            onPinchEnded: pinchEnded,
+            onWheelZoom: zoomHorizontally(by:)
         ) {
             stripContent
         }
@@ -126,16 +126,8 @@ struct LiveSetlistWaveformScrollView: View {
             scheduleMIDILaneReveal()
             #endif
         }
-        .accessibilityAdjustableAction { direction in
-            switch direction {
-            case .increment:
-                setHorizontalZoom(horizontalZoom + Self.zoomAdjustmentStep)
-            case .decrement:
-                setHorizontalZoom(horizontalZoom - Self.zoomAdjustmentStep)
-            @unknown default:
-                break
-            }
-        }
+        .accessibilityAdjustableAction(adjustHorizontalZoom)
+        .focusedSceneValue(\.timelineZoomActions, horizontalZoomActions)
     }
 
     #if os(macOS)
@@ -248,44 +240,6 @@ struct LiveSetlistWaveformScrollView: View {
                 Color.clear.frame(height: midiLanesExtraHeight)
             }
         }
-    }
-
-    #if os(macOS)
-    private var horizontalPinchGesture: some Gesture {
-        MagnificationGesture()
-            .onChanged(pinchChanged)
-            .onEnded { _ in pinchEnded() }
-    }
-    #endif
-
-    private func pinchChanged(_ scale: CGFloat) {
-        if pinchStartZoom == nil {
-            pinchStartZoom = horizontalZoom
-            scrollModel.anchorPlayheadForZoom()
-        }
-        guard let pinchStartZoom else { return }
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            horizontalZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(pinchStartZoom * scale)
-        }
-    }
-
-    private func pinchEnded() {
-        pinchStartZoom = nil
-        persistHorizontalZoom()
-    }
-
-    private func setHorizontalZoom(_ proposed: CGFloat) {
-        let newZoom = LiveSetlistWaveformMetrics.clampedHorizontalZoom(proposed)
-        guard newZoom != horizontalZoom else { return }
-        scrollModel.anchorPlayheadForZoom()
-        horizontalZoom = newZoom
-        persistHorizontalZoom()
-    }
-
-    private func persistHorizontalZoom() {
-        storedHorizontalZoom = LiveSetlistWaveformMetrics.storageValue(forZoom: horizontalZoom)
     }
 
     private func laneContentWidth(for snapshot: LiveSongWaveformSnapshot) -> CGFloat {

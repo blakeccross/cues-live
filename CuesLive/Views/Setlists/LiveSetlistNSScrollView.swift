@@ -15,6 +15,7 @@ final class LiveSetlistNSScrollView: NSScrollView {
     private var observers: [NSObjectProtocol] = []
     /// Set while the clip view moves for a reason other than the user scrolling it.
     private var isAdjusting = false
+    var onWheelZoom: ((CGFloat) -> Void)?
 
     init(model: LiveSetlistScrollModel) {
         self.model = model
@@ -78,6 +79,18 @@ final class LiveSetlistNSScrollView: NSScrollView {
         }
         isAdjusting = wasAdjusting
         model.setViewportWidth(viewport.width)
+    }
+
+    /// Command- and Option-scroll zoom instead of scrolling. The model keeps the playhead's
+    /// content in place, as it does for a pinch.
+    override func scrollWheel(with event: NSEvent) {
+        guard let onWheelZoom, let scale = ScrollWheelZoom.scale(for: event) else {
+            super.scrollWheel(with: event)
+            return
+        }
+        if scale != 1 {
+            onWheelZoom(scale)
+        }
     }
 
     override func viewDidMoveToWindow() {

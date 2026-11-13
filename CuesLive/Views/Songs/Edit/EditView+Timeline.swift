@@ -24,10 +24,6 @@ extension EditView {
         return max(sourceDuration, finiteEngineDuration, 1)
     }
 
-    private var timelineMinZoom: CGFloat {
-        TimelineLayout.minZoom(duration: timelineDuration, viewportWidth: timelineViewportWidth)
-    }
-
     /// Before geometry is measured, `timelineZoom` is still 1 and would lay out the full
     /// natural width (~duration × 6 px). Use a fit-to-viewport estimate until then.
     private var resolvedTimelineZoom: CGFloat {
@@ -77,17 +73,6 @@ extension EditView {
 
     func playFromInsertion() {
         viewModel.seekAndPlay(to: playbackStart)
-    }
-
-    func clampTimelineZoom() {
-        guard timelineViewportWidth > 0 else { return }
-        let minZoom = timelineMinZoom
-        if !hasSetInitialTimelineZoom {
-            timelineZoom = minZoom
-            hasSetInitialTimelineZoom = true
-        } else {
-            timelineZoom = min(TimelineLayout.maxZoom, max(minZoom, timelineZoom))
-        }
     }
 
     #if os(macOS)
@@ -190,6 +175,7 @@ extension EditView {
             showsPlayhead: viewModel.isActiveSetlistSong,
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
+            onWheelZoom: zoomTimeline(by:),
             ruler: { timelineRulerStack },
             timeRuler: { timelineTimeRuler },
             laneCanvas: trackLaneCanvas,
@@ -576,20 +562,5 @@ extension EditView {
             .fill(Color.dawStickyRulerBackground)
             .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerHeight)
             .allowsHitTesting(false)
-    }
-
-    private var timelinePinchGesture: some Gesture {
-        MagnificationGesture()
-            .onChanged { scale in
-                if pinchStartZoom == nil {
-                    pinchStartZoom = timelineZoom
-                }
-                guard let pinchStartZoom else { return }
-                let next = pinchStartZoom * scale
-                timelineZoom = min(TimelineLayout.maxZoom, max(timelineMinZoom, next))
-            }
-            .onEnded { _ in
-                pinchStartZoom = nil
-            }
     }
 }

@@ -127,6 +127,7 @@ struct EditView: View {
             }
             .focusedValue(\.clipEditorActions, clipEditorActions)
             .focusedValue(\.trackHeightActions, trackHeightActions)
+            .focusedValue(\.timelineZoomActions, timelineZoomActions)
             .onKeyPress(phases: .down, action: handleTrackHeightKeyPress)
             #if os(macOS)
             .onDeleteCommand(perform: removeClipSelection)

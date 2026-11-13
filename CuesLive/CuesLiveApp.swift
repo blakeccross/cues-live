@@ -69,6 +69,7 @@ struct CuesLiveApp: App {
             SongMenuCommands()
             SongUndoCommands()
             ClipEditorCommands()
+            TimelineZoomCommands()
             LiveMappingCommands()
             WindowMenuCommands()
             HelpMenuCommands()

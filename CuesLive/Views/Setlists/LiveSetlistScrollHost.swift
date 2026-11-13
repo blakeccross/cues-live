@@ -23,6 +23,8 @@ struct LiveSetlistScrollHost<Content: View> {
     /// macOS pinches with a SwiftUI gesture inside the content instead.
     var onPinchChanged: (CGFloat) -> Void = { _ in }
     var onPinchEnded: () -> Void = {}
+    /// Command- or Option-scroll on macOS, with the factor to multiply the zoom by.
+    var onWheelZoom: (CGFloat) -> Void = { _ in }
     @ViewBuilder let content: () -> Content
 
     private func syncModel() {
@@ -47,6 +49,7 @@ extension LiveSetlistScrollHost: NSViewRepresentable {
 
     func updateNSView(_ view: LiveSetlistNSScrollView, context: Context) {
         syncModel()
+        view.onWheelZoom = onWheelZoom
         view.update(rootView: rootView(in: context.environment), scene: canvas.scene(in: context.environment))
     }
 }

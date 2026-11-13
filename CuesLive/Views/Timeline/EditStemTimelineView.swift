@@ -51,6 +51,8 @@ struct EditStemTimelineView<
     var showsPlayhead = true
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
+    /// Command- or Option-scroll over the lanes, with the factor to multiply the zoom by.
+    let onWheelZoom: (CGFloat) -> Void
     @ViewBuilder let ruler: () -> Ruler
     @ViewBuilder let timeRuler: () -> TimeRuler
     /// Clip bodies and waveforms, drawn viewport-wide behind the lanes.
@@ -203,6 +205,7 @@ struct EditStemTimelineView<
             contentHeight: laneAreaHeight,
             canvas: laneCanvas,
             onScroll: { scrollModel.setOffset($0) },
+            onWheelZoom: onWheelZoom,
             onPointerDown: { isTimelineFocused = true }
         ) {
             laneContent
