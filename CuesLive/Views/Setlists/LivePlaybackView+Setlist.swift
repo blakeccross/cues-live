@@ -43,32 +43,16 @@ extension LivePlaybackView {
                     onAddHeader: addHeader,
                     onInsertSongs: insertDroppedSongs,
                     sectionPlayback: setlistSectionPlayback,
-                    rowHorizontalPadding: AppSpacing.xl,
-                    bottomSpacing: setlistBottomSpacing
+                    rowHorizontalPadding: AppSpacing.xl
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, AppSpacing.sm)
-                #if os(macOS)
-                // Rows scroll under the now-playing bar. macOS doesn't turn the bar's safe
-                // area into scroll space, so `setlistBottomSpacing` adds it instead.
-                .ignoresSafeArea(.container, edges: .bottom)
-                #endif
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: workingSetlist.sortedEntries.isEmpty) { _, isEmpty in
             if isEmpty { isEditingSetlist = false }
         }
-    }
-
-    /// Room for the last row above the now-playing bar, when the bar sits over the list.
-    /// iOS gets this from the bar's safe area.
-    private var setlistBottomSpacing: CGFloat {
-        #if os(macOS)
-        mixerDetent == .hidden ? nowPlayingBarHeight : 0
-        #else
-        0
-        #endif
     }
 
     /// Entries that can be shown. A song deleted from the library leaves an entry with neither

@@ -13,9 +13,6 @@ extension LivePlaybackView {
             }
         } setlist: {
             playbackSplitLayout
-                .appFloatingBottomBar {
-                    nowPlayingBar
-                }
         }
         #else
         playbackMainSection
@@ -28,9 +25,6 @@ extension LivePlaybackView {
                         coordinator.updateGroupMix(context: modelContext)
                     }
                 )
-            }
-            .appFloatingBottomBar {
-                nowPlayingBar
             }
         #endif
     }
@@ -62,31 +56,7 @@ extension LivePlaybackView {
     }
     #endif
 
-    private var nowPlayingBar: some View {
-        LiveSetlistNowPlayingInfoView(
-            coordinator: coordinator,
-            sectionLoop: sectionLoop,
-            groupMixFade: groupMixFade,
-            isLoaded: coordinator.isLoaded && !coordinator.isLoadingSong,
-            canLoop: !loopSections.isEmpty,
-            isMixerVisible: mixerDetent == .visible,
-            isEditorOpen: isSongEditorOpen,
-            onStop: stopPlayback,
-            onPlay: coordinator.play,
-            onPause: coordinator.pause,
-            onToggleLoop: toggleSectionLoop,
-            onToggleFade: toggleGroupMixFade,
-            onToggleMixer: toggleMixer,
-            onToggleEditor: toggleSongEditor
-        )
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.height
-        } action: { height in
-            nowPlayingBarHeight = height
-        }
-    }
-
-    private func toggleMixer() {
+    func toggleMixer() {
         mixerDetent = mixerDetent == .hidden ? .visible : .hidden
     }
 

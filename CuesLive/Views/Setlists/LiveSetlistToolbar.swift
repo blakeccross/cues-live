@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Window toolbar for the live setlist. The playing song, transport, mixer, and editor
-/// live in the floating now-playing bar instead.
+/// Trailing setlist actions in the live window toolbar. Transport, the playing song, and
+/// the mixer and editor toggles come from `LiveSetlistTransportToolbarContent`.
 struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ViewBuilder let setlistSwitcher: Switcher
     @Binding var showingManageOutputs: Bool
@@ -20,17 +20,14 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         ToolbarItem(placement: .automatic) {
             addMenu
         }
-        .cuesHideSharedBackground()
 
         ToolbarItem(placement: .automatic) {
             InputMappingToolbarMenu()
         }
-        .cuesHideSharedBackground()
 
         ToolbarItem(placement: .automatic) {
             settingsButton
         }
-        .cuesHideSharedBackground()
         #else
         ToolbarItem(placement: .topBarLeading) {
             setlistSwitcher

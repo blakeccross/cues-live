@@ -53,7 +53,6 @@ struct LivePlaybackView: View {
     @State var songImportFeedback: SongImportFeedback?
     @State var isImportingSongFolder = false
     @State var mixerDetent: LiveGroupMixerDetent = .hidden
-    @State var nowPlayingBarHeight: CGFloat = 0
     @State var headerPendingEdit: SetlistEntry?
     @State var isCreatingHeader = false
     @State var isEditingSetlist = false
@@ -459,6 +458,20 @@ struct LivePlaybackView: View {
                 showingSongLibrary = true
                 #endif
             }
+        )
+
+        LiveSetlistTransportToolbarContent(
+            coordinator: coordinator,
+            sectionLoop: sectionLoop,
+            groupMixFade: groupMixFade,
+            canLoop: !loopSections.isEmpty,
+            isMixerVisible: mixerDetent == .visible,
+            isEditorOpen: isSongEditorOpen,
+            onStop: stopPlayback,
+            onToggleLoop: toggleSectionLoop,
+            onToggleFade: toggleGroupMixFade,
+            onToggleMixer: toggleMixer,
+            onToggleEditor: toggleSongEditor
         )
     }
 

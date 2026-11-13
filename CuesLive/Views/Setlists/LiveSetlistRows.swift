@@ -110,8 +110,6 @@ struct SetlistListView: View {
     /// Inset of row content from the list's edges. Rows are padded rather than the list,
     /// so the scroller stays at the edge.
     var rowHorizontalPadding: CGFloat = 0
-    /// Blank space after the last row, so it can rest above a floating bar.
-    var bottomSpacing: CGFloat = 0
 
     /// Rows the user expanded or collapsed by hand; others follow the current song.
     @State private var expansionOverrides: [AnyHashable: Bool] = [:]
@@ -133,20 +131,9 @@ struct SetlistListView: View {
                     if !ids.isEmpty { onInsertSongs(index, ids) }
                 }
             }
-
-            // A row rather than a content margin: macOS `List` ignores content margins.
-            if bottomSpacing > 0 {
-                Color.clear
-                    .frame(height: bottomSpacing)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .accessibilityHidden(true)
-            }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .appClearBottomScrollEdge()
         .animation(AppAnimation.springSmooth, value: currentIndex)
         .onChange(of: currentIndex) { _, _ in
             expansionOverrides.removeAll()
