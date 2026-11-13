@@ -44,7 +44,6 @@ struct LiveSetlistAddMenu: View {
             .accessibilityLabel("Add to setlist")
             .help("Add to Setlist")
         }
-        .frame(maxWidth: 720)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, AppSpacing.md)
         .padding(.top, AppSpacing.sm)

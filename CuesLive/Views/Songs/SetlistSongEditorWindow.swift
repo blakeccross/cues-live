@@ -37,7 +37,7 @@ struct SetlistSongEditorWindow: View {
         if link.isInlineEditorOpen {
             AppEmptyState(
                 title: "Song Editor Open in Main Window",
-                systemImage: "square.and.pencil",
+                systemImage: "rectangle.badge.plus",
                 description: "Close the song editor in the main window to edit the setlist’s song here."
             )
         } else if let coordinator = link.followableCoordinator {

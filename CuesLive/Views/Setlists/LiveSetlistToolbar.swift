@@ -1,45 +1,29 @@
 import SwiftUI
 
+/// Window toolbar for the live setlist. The playing song, transport, mixer, and editor
+/// live in the floating now-playing bar instead.
 struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ViewBuilder let setlistSwitcher: Switcher
-    let coordinator: PlaybackCoordinator
     @Binding var showingManageOutputs: Bool
-    @Binding var showingSongLibrary: Bool
-    @Binding var mixerDetent: LiveGroupMixerDetent
+    /// iOS only: toggles drag-to-reorder. `nil` when there is nothing to edit.
+    var isEditingSetlist: Binding<Bool>?
+    let onAddHeader: () -> Void
+    let onAddSong: () -> Void
 
     #if os(macOS)
     @Environment(\.openSettings) private var openSettings
-    @Environment(\.openWindow) private var openWindow
     #endif
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
         #if os(macOS)
-        ToolbarItem(placement: .navigation) {
-            SongLibraryToggleButton(isVisible: $showingSongLibrary)
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .principal) {
-            LiveToolbarSongTitle(
-                title: coordinator.currentSong?.name ?? "",
-                upNext: coordinator.nextSong?.name
-            )
+        ToolbarItem(placement: .automatic) {
+            addMenu
         }
         .cuesHideSharedBackground()
 
         ToolbarItem(placement: .automatic) {
             InputMappingToolbarMenu()
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .automatic) {
-            songEditorWindowButton
-        }
-        .cuesHideSharedBackground()
-
-        ToolbarItem(placement: .automatic) {
-            mixerButton
         }
         .cuesHideSharedBackground()
 
@@ -52,12 +36,21 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
             setlistSwitcher
         }
 
-        ToolbarItem(placement: .topBarTrailing) {
-            InputMappingToolbarMenu()
+        if let isEditingSetlist {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isEditingSetlist.wrappedValue ? "Done" : "Edit") {
+                    withAnimation { isEditingSetlist.wrappedValue.toggle() }
+                }
+                .accessibilityLabel(isEditingSetlist.wrappedValue ? "Done reordering" : "Edit setlist order")
+            }
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            mixerButton
+            addMenu
+        }
+
+        ToolbarItem(placement: .topBarTrailing) {
+            InputMappingToolbarMenu()
         }
 
         ToolbarItem(placement: .topBarTrailing) {
@@ -66,18 +59,24 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         #endif
     }
 
-    #if os(macOS)
-    /// Opens the window that edits the playing song alongside the setlist.
-    private var songEditorWindowButton: some View {
-        Button {
-            openWindow(id: SetlistSongEditorWindowID.value)
+    private var addMenu: some View {
+        Menu {
+            Button(action: onAddHeader) {
+                Label("Header", systemImage: "text.line.first.and.arrowtriangle.forward")
+            }
+
+            Button(action: onAddSong) {
+                Label("Song", systemImage: "music.note")
+            }
         } label: {
-            Label("Song Editor Window", systemImage: "macwindow.badge.plus")
+            Label("Add to Setlist", systemImage: "plus")
                 .labelStyle(.iconOnly)
         }
-        .help("Edit the playing song in a separate window")
+        .menuIndicator(.hidden)
+        .help("Add to Setlist")
     }
 
+    #if os(macOS)
     private var settingsButton: some View {
         Button {
             openSettings()
@@ -99,21 +98,4 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         .help("Settings")
     }
     #endif
-
-    private var mixerButton: some View {
-        Button {
-            #if os(macOS)
-            mixerDetent = mixerDetent == .hidden ? .visible : .hidden
-            #else
-            mixerDetent = .visible
-            #endif
-        } label: {
-            Label("Group Mixer", systemImage: "slider.vertical.3")
-                .labelStyle(.iconOnly)
-        }
-        #if os(macOS)
-        .tint(mixerDetent == .visible ? AppColors.accent : nil)
-        #endif
-        .help("Group Mixer")
-    }
 }

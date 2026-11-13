@@ -22,7 +22,7 @@ enum ArrangementSectionPalette {
 enum LiveSetlistWaveformMetrics {
     static let appStorageKey = "liveSetlistWaveformHeight"
     #if os(iOS)
-    /// iOS has no resizable split above the setlist, so the height is fixed: a little taller on
+    /// iOS has no resize handle above the setlist, so the height is fixed: a little taller on
     /// iPad, where there's room for it.
     static let defaultWaveformHeight: CGFloat = UIDevice.current.userInterfaceIdiom == .pad ? 132 : 96
     #else
@@ -111,72 +111,5 @@ extension EnvironmentValues {
     var liveSetlistWaveformHeight: CGFloat {
         get { self[LiveSetlistWaveformHeightKey.self] }
         set { self[LiveSetlistWaveformHeightKey.self] = newValue }
-    }
-}
-
-/// How the setlist split pane should react when MIDI lanes appear after the
-/// divider has already been placed. `VSplitView` keeps that first height, so a
-/// later lane row is clipped until the measured waveform height shrinks to
-/// make room or the pane's minimum is raised long enough for the divider to move.
-enum LiveSetlistWaveformPaneAdjustment {
-    struct Measurement: Equatable {
-        var assignedHeight: CGFloat
-        var midiOverhead: CGFloat
-        var storedWaveformHeight: CGFloat
-        var previousAssignedHeight: CGFloat?
-        var previousMIDIOverhead: CGFloat?
-        /// The pane did not grow for the new lanes. Fit them into the height it has.
-        var forceFit: Bool = false
-    }
-
-    struct Decision: Equatable {
-        /// `nil` leaves the current waveform height alone so a pending pane
-        /// resize can keep the saved waveform size.
-        var waveformHeight: CGFloat?
-        var persistWaveformHeight: Bool
-    }
-
-    static func decision(for measurement: Measurement) -> Decision {
-        let fitted = LiveSetlistWaveformMetrics.clampedWaveformHeight(
-            measurement.assignedHeight - measurement.midiOverhead
-        )
-        let isInitial = measurement.previousMIDIOverhead == nil
-        let overheadStable: Bool
-        let paneChanged: Bool
-        // A divider move only counts as a user resize once the pane has already
-        // held the saved waveform. The first layouts often settle from the
-        // minimum height up to the real one.
-        let previousFitsSavedWaveform: Bool
-        if let previousMIDIOverhead = measurement.previousMIDIOverhead {
-            overheadStable = abs(measurement.midiOverhead - previousMIDIOverhead) < 0.5
-            let previousAssigned = measurement.previousAssignedHeight ?? measurement.assignedHeight
-            paneChanged = abs(measurement.assignedHeight - previousAssigned) > 0.5
-            previousFitsSavedWaveform = previousAssigned + 0.5
-                >= measurement.storedWaveformHeight + previousMIDIOverhead
-        } else {
-            overheadStable = false
-            paneChanged = false
-            previousFitsSavedWaveform = false
-        }
-        let userAdjusted = paneChanged && overheadStable && previousFitsSavedWaveform
-        let paneFitsSavedWaveform = measurement.assignedHeight + 0.5
-            >= measurement.storedWaveformHeight + measurement.midiOverhead
-        let apply = userAdjusted || paneFitsSavedWaveform || measurement.forceFit
-        guard apply else {
-            return Decision(waveformHeight: nil, persistWaveformHeight: false)
-        }
-        let persist = userAdjusted || (isInitial && paneFitsSavedWaveform)
-        return Decision(waveformHeight: fitted, persistWaveformHeight: persist)
-    }
-
-    /// Minimum content height that forces the split divider down when lanes
-    /// appear. `nil` uses the normal drag floor.
-    static func reservedPaneHeight(
-        storedWaveformHeight: CGFloat,
-        midiOverhead: CGFloat,
-        isReserving: Bool
-    ) -> CGFloat? {
-        guard isReserving, midiOverhead > 0.5 else { return nil }
-        return storedWaveformHeight + midiOverhead
     }
 }

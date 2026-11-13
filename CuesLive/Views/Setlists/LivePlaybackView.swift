@@ -17,12 +17,16 @@ struct LivePlaybackView: View {
     @Environment(InputMappingController.self) private var mapping
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     #endif
     @Query(sort: \Song.name) var allSongs: [Song]
-    @Query(sort: \Setlist.lastOpenedAt, order: .reverse) private var allSetlists: [Setlist]
+    @Query(sort: \Setlist.lastOpenedAt, order: .reverse) var allSetlists: [Setlist]
+    @Query var songFolders: [SongFolder]
 
     @State var activeSetlistID: UUID?
     @State private var didBootstrap = false
+    /// Overlapping copies of the playback screen share this view's coordinator.
+    @State private var playbackScreenPresence = ScreenPresence()
     @State var coordinator = PlaybackCoordinator()
     @State var viewModel = SetlistViewModel()
     @Bindable var playbackClock = AudioEngineManager.shared
@@ -32,7 +36,11 @@ struct LivePlaybackView: View {
     @State var sectionLoop = SectionLoopController()
     @State var groupMixFade = GroupMixFadeController()
     @State var sectionAnnouncer = SectionAnnouncer()
-    @State var showingSongLibrary = SongLibraryPanePreference.initialVisibility
+    /// iOS only: the song library sheet. macOS shows the library as a split-view column.
+    @State var showingSongLibrary = false
+    #if os(macOS)
+    @State var sidebarSelection: LiveLibrarySidebar.Item? = .allSongs
+    #endif
     @State private var songToEditID: UUID?
     /// Song to open once the library sheet has dismissed, so the editor pushes as a screen.
     @State private var songPendingEditorID: UUID?
@@ -45,6 +53,7 @@ struct LivePlaybackView: View {
     @State var songImportFeedback: SongImportFeedback?
     @State var isImportingSongFolder = false
     @State var mixerDetent: LiveGroupMixerDetent = .hidden
+    @State var nowPlayingBarHeight: CGFloat = 0
     @State var headerPendingEdit: SetlistEntry?
     @State var isCreatingHeader = false
     @State var isEditingSetlist = false
@@ -73,6 +82,32 @@ struct LivePlaybackView: View {
     }
 
     var body: some View {
+        #if os(macOS)
+        NavigationSplitView {
+            librarySidebar
+        } detail: {
+            NavigationStack {
+                playbackRoot
+            }
+        }
+        // Outside the detail column, which SwiftUI can show twice at once; a stale copy's
+        // onDisappear would otherwise reset the File menu after the new copy enabled it.
+        .onAppear {
+            syncLiveSetlistMenuController()
+        }
+        .onDisappear {
+            LiveSetlistMenuController.shared.reset()
+        }
+        .onChange(of: activeSetlistID) { _, newID in
+            syncSidebarSelection(toActiveSetlist: newID)
+            syncLiveSetlistMenuController()
+        }
+        #else
+        playbackRoot
+        #endif
+    }
+
+    private var playbackRoot: some View {
         Group {
             if let activeSetlist {
                 playbackBody(for: activeSetlist)
@@ -83,19 +118,6 @@ struct LivePlaybackView: View {
         }
         .onAppear {
             bootstrapSetlistIfNeeded()
-            #if os(macOS)
-            syncLiveSetlistMenuController()
-            #endif
-        }
-        .onDisappear {
-            #if os(macOS)
-            LiveSetlistMenuController.shared.reset()
-            #endif
-        }
-        .onChange(of: activeSetlistID) { _, _ in
-            #if os(macOS)
-            syncLiveSetlistMenuController()
-            #endif
         }
         .alert("Missing Audio Files", isPresented: $showingMissingMediaAlert) {
             Button("Relink…") {
@@ -300,6 +322,7 @@ struct LivePlaybackView: View {
                 prepareSectionAnnouncements()
             }
             .onAppear {
+                guard playbackScreenPresence.appear() else { return }
                 if activeSetlistID == nil {
                     activeSetlistID = setlist.id
                 }
@@ -338,6 +361,8 @@ struct LivePlaybackView: View {
                 }
             }
             .onDisappear {
+                // A newer copy may already be showing; stopping would cancel the load it started.
+                guard playbackScreenPresence.disappear() else { return }
                 stopPlayback()
                 SetlistEditorLink.shared.detach(coordinator)
             }
@@ -381,6 +406,32 @@ struct LivePlaybackView: View {
         songToEditID = song.id
     }
 
+    /// On macOS the editor is its own window; on iOS it is pushed over the setlist.
+    var isSongEditorOpen: Bool {
+        #if os(macOS)
+        SetlistEditorLink.shared.isWindowOpen
+        #else
+        songToEditID != nil
+        #endif
+    }
+
+    /// Opens the editor on the playing song, or closes it when it is already showing.
+    func toggleSongEditor() {
+        #if os(macOS)
+        if SetlistEditorLink.shared.isWindowOpen {
+            dismissWindow(id: SetlistSongEditorWindowID.value)
+        } else {
+            openWindow(id: SetlistSongEditorWindowID.value)
+        }
+        #else
+        if songToEditID != nil {
+            songToEditID = nil
+        } else if let song = coordinator.currentSong {
+            presentSongEditor(for: song)
+        }
+        #endif
+    }
+
     private var songEditorDestination: Binding<Bool> {
         Binding(
             get: { songToEditID != nil },
@@ -398,10 +449,16 @@ struct LivePlaybackView: View {
                 setlistSwitcherMenu(for: setlist)
                 #endif
             },
-            coordinator: coordinator,
             showingManageOutputs: $showingManageOutputs,
-            showingSongLibrary: $showingSongLibrary,
-            mixerDetent: $mixerDetent
+            isEditingSetlist: workingSetlist.sortedEntries.isEmpty ? nil : $isEditingSetlist,
+            onAddHeader: addHeader,
+            onAddSong: {
+                #if os(macOS)
+                revealSongLibrary()
+                #else
+                showingSongLibrary = true
+                #endif
+            }
         )
     }
 
@@ -454,73 +511,6 @@ struct LivePlaybackView: View {
         guard songToEditID == nil else { return }
         coordinator.applyOutputRouting()
     }
-
-    private func setlistDisplayName(for setlist: Setlist) -> String {
-        let trimmed = setlist.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Setlist" : trimmed
-    }
-
-    @ViewBuilder
-    private func setlistSwitcherMenuContent() -> some View {
-        ForEach(allSetlists) { candidate in
-            Button {
-                switchToSetlist(candidate)
-            } label: {
-                if candidate.id == activeSetlistID {
-                    Label {
-                        Text("\(candidate.name) · \(candidate.entries.count) songs")
-                    } icon: {
-                        Image(systemName: "checkmark")
-                    }
-                } else {
-                    Text("\(candidate.name) · \(candidate.entries.count) songs")
-                }
-            }
-        }
-
-        Divider()
-
-        Button {
-            createUntitledSetlist()
-        } label: {
-            Label("New Setlist", systemImage: "plus")
-        }
-
-        Button {
-            presentOpen()
-        } label: {
-            Label("Open…", systemImage: "folder")
-        }
-
-        Button {
-            presentSave()
-        } label: {
-            Label("Save", systemImage: "tray.and.arrow.down")
-        }
-
-        Button {
-            presentSaveAs()
-        } label: {
-            Label("Save As…", systemImage: "square.and.arrow.down.on.square")
-        }
-
-        Button {
-            presentExportSetlistPackage()
-        } label: {
-            Label("Export Setlist Folder…", systemImage: "square.and.arrow.up")
-        }
-    }
-
-    #if !os(macOS)
-    private func setlistSwitcherMenu(for setlist: Setlist) -> some View {
-        Menu {
-            setlistSwitcherMenuContent()
-        } label: {
-            Text(setlistDisplayName(for: setlist))
-                .fontWeight(.semibold)
-        }
-    }
-    #endif
 
     private func bootstrapSetlistIfNeeded() {
         guard !didBootstrap else { return }
@@ -600,37 +590,15 @@ struct LivePlaybackView: View {
         }
         coordinator.stop()
     }
-
-    struct LiveSetlistWaveformLoadingPlaceholder: View {
-        var message: String?
-
-        @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
-
-        private var panelHeight: CGFloat {
-            LiveSetlistWaveformMetrics.laneHeight(for: waveformHeight)
-        }
-
-        var body: some View {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(AppColors.backgroundPrimary)
-                .overlay {
-                    if let message {
-                        ProgressView(message)
-                            .tint(AppColors.accent)
-                    } else {
-                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                            .stroke(AppColors.separator, lineWidth: 0.5)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: panelHeight)
-                .redacted(reason: message == nil ? .placeholder : [])
-        }
-    }
 }
 #Preview {
+    #if os(macOS)
+    LivePlaybackView()
+        .modelContainer(for: [Setlist.self, SetlistEntry.self, Song.self], inMemory: true)
+    #else
     NavigationStack {
         LivePlaybackView()
     }
     .modelContainer(for: [Setlist.self, SetlistEntry.self, Song.self], inMemory: true)
+    #endif
 }

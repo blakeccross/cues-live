@@ -53,52 +53,28 @@ struct AppIconButton: View {
     var size: CGFloat = 44
     var isActive: Bool = false
     var isEnabled: Bool = true
-    var cornerRadius: CGFloat? = nil
-    var activeBackgroundColor: Color? = nil
+    /// Glyph color while active. `nil` brightens the glyph to the primary text color.
+    var tint: Color? = nil
     var iconColor: Color? = nil
+    /// Glyph point size as a fraction of `size`.
+    var iconScale: CGFloat = 0.38
     var flipsImageHorizontally: Bool = false
     var accessibilityLabel: String? = nil
     let action: () -> Void
 
-    private var resolvedCornerRadius: CGFloat {
-        cornerRadius ?? max(4, size * 0.14)
-    }
-
-    private var buttonShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: resolvedCornerRadius, style: .continuous)
-    }
-
-    private static let defaultActiveBackground = Color(red: 0.24, green: 0.25, blue: 0.27)
-    private static let defaultIconColor = Color(red: 0.78, green: 0.80, blue: 0.82)
-
-    private var backgroundColor: Color {
-        if isActive {
-            return activeBackgroundColor ?? Self.defaultActiveBackground
-        }
-        return .clear
-    }
-
-    private var foregroundColor: Color {
-        if isActive, let activeBackgroundColor {
-            return activeBackgroundColor.darkened(sRGBBy: 0.42)
-        }
-        return iconColor ?? Self.defaultIconColor
-    }
-
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: size * 0.38, weight: .semibold))
-                .foregroundStyle(foregroundColor)
-                .scaleEffect(x: flipsImageHorizontally ? -1 : 1, y: 1)
-                .frame(width: size, height: size)
-                .background(backgroundColor, in: buttonShape)
-                .contentShape(buttonShape)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AppIconButtonStyle(
+            size: size,
+            isOn: isActive,
+            tint: tint,
+            iconColor: iconColor,
+            iconScale: iconScale,
+            flipsImageHorizontally: flipsImageHorizontally
+        ))
         .disabled(!isEnabled)
-        .opacity(isEnabled ? 1 : 0.4)
-        .appPressable(isEnabled: isEnabled)
         .accessibilityLabel(accessibilityLabel ?? systemImage)
     }
 }

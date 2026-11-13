@@ -487,7 +487,6 @@
 		B9A9A3411448CB7D9D6B7AB0 /* LiveStretcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */; };
 		3E459F880BA5C5FB38B9D5CA /* LiveStretcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */; };
 		B62FCB804048FEFF5003FECD /* LiveStretcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */; };
-		AFC23F04356CC6E1872DAA93 /* LiveSetlistWaveformPaneAdjustmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79ED84EAEFB9ECB201703C59 /* LiveSetlistWaveformPaneAdjustmentTests.swift */; };
 		1FCEFB6DE540FBE2E0E95A3E /* LiveSetlistScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */; };
 		BA0629F4D3F57EA06AA1DA65 /* LiveSetlistScrollModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */; };
 		5019F5257629EA090A4A96E3 /* LiveSetlistScrollHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 389CC12448D559738BE2DE55 /* LiveSetlistScrollHost.swift */; };
@@ -539,8 +538,6 @@
 		C9814020ED1E75146B45E1EC /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F541E8045623589A88CC1F /* SongLibraryStore.swift */; };
 		214D3D4FAF1D8787EE991568 /* SongLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F541E8045623589A88CC1F /* SongLibraryStore.swift */; };
 		D3F237B845FDEE51D184B51B /* SongLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D6C223E8D6649A16DFC3D2 /* SongLibraryStoreTests.swift */; };
-		398EF994A03CCAB2C97190A8 /* SongLibraryPanel+Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */; };
-		4AC4F03390CF73D6A855BDF2 /* SongLibraryPanel+Table.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */; };
 		5CD386A60EB8D4493FD2E217 /* EditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AAB24A152D2941FE3A4AD /* EditSheet.swift */; };
 		D47274783F545EF057C938F3 /* EditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136AAB24A152D2941FE3A4AD /* EditSheet.swift */; };
 		F692C14258FCF5FCA29D9CE2 /* EditView+Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */; };
@@ -558,6 +555,41 @@
 		6148A2CFDE310E2EAFE544F3 /* SetlistSongRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17B0BF4C31FF46C40BCF10F /* SetlistSongRowView.swift */; };
 		62A4939E1CF35A26A1D91AF0 /* SetlistSectionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D567BB9D106D66A85BF7B7 /* SetlistSectionListView.swift */; };
 		4EF1F5ADC4D332921905C338 /* SetlistSectionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D567BB9D106D66A85BF7B7 /* SetlistSectionListView.swift */; };
+		304C74EB8B49A0886C0F8C4D /* AppGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F7A5F0F316C527E4C6F162 /* AppGlass.swift */; };
+		E2491A9FECDB7E3C43615DFD /* AppGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F7A5F0F316C527E4C6F162 /* AppGlass.swift */; };
+		4284F1D59F8D0A8E7155B94C /* AppResizableDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */; };
+		53CE2F1AEDBA5966DA4823A9 /* AppResizableDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */; };
+		B5EC1EACDA038D9B405726C6 /* LiveLibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */; };
+		FB5A7EE29B68770939FE8E18 /* LiveLibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */; };
+		BCF2D1DEF6E920B220357803 /* LivePlaybackView+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */; };
+		A334C4A6932A68F6EE41487C /* LivePlaybackView+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */; };
+		D4015C81B9E5B887CEE21102 /* SongFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */; };
+		56B666073C024775AB16C365 /* SongFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */; };
+		1F4C135D9C8BFCF09E990CB9 /* SongFolderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D86991441CF2FD749424866 /* SongFolderStore.swift */; };
+		FBDE448420AE8D27ADD6090B /* SongFolderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D86991441CF2FD749424866 /* SongFolderStore.swift */; };
+		E408F2BAA745CCD2CE0F1FEE /* SongFolderStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0464C4851DE00254630722E2 /* SongFolderStoreTests.swift */; };
+		6DEDF7393F75B3D289925F34 /* SongLibraryScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B249536120A634E3D9D5CF /* SongLibraryScope.swift */; };
+		8E98F049CAA869D33386BC92 /* SongLibraryScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20B249536120A634E3D9D5CF /* SongLibraryScope.swift */; };
+		F72CF9AF25EA070EB0AFD64E /* SongLibraryPanel+EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C762E0B034AE61A3FAA536AE /* SongLibraryPanel+EmptyState.swift */; };
+		9D961FF5ACC398A297C9B9D1 /* SongLibraryPanel+EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C762E0B034AE61A3FAA536AE /* SongLibraryPanel+EmptyState.swift */; };
+		DB598A6E20CCD40CC3918AB0 /* SongLibraryListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F577A5573101FE058A5B9300 /* SongLibraryListRow.swift */; };
+		276B4E574925764F7BF9D4C2 /* SongLibraryListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F577A5573101FE058A5B9300 /* SongLibraryListRow.swift */; };
+		E6152CB5351DA5B9D53EE36E /* SetlistLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */; };
+		C8451C1A648BDD395774369D /* SetlistLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */; };
+		C2168D62A6C3F6654D4516C2 /* SetlistLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5240158AA03DFF00891BE0 /* SetlistLibraryStoreTests.swift */; };
+		4F01C8AF7A76CBC8BD715264 /* LiveLibrarySidebar+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */; };
+		A4A5162C7C0BF45DF919B46D /* LiveLibrarySidebar+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */; };
+		146EDF39F4DBC23191CC93C7 /* AppIconButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */; };
+		C6D0FD7FFA0EFD4E88B03738 /* AppIconButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */; };
+		41F4C96874FD18E82A50C7F7 /* AppIconToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */; };
+		50F21A4963D344F2B9560AA9 /* AppIconToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */; };
+		39348FDBC606FE01A6EA2832 /* ScreenPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1621402BAEE5B87FCA231B0F /* ScreenPresence.swift */; };
+		45C44A12A67FA79A175AA7E6 /* ScreenPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1621402BAEE5B87FCA231B0F /* ScreenPresence.swift */; };
+		DB989B1DC6C02991C1F3053A /* ScreenPresenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B482B39F990ECB74D8E2AD /* ScreenPresenceTests.swift */; };
+		AFC490C19F01B779F70D949A /* LivePlaybackView+SetlistSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD5F935B1189DAC36279C9D /* LivePlaybackView+SetlistSwitcher.swift */; };
+		AB6E2496B3DD269112B34A83 /* LivePlaybackView+SetlistSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD5F935B1189DAC36279C9D /* LivePlaybackView+SetlistSwitcher.swift */; };
+		3F76A6C82B73329326854D52 /* LiveSetlistWaveformLoadingPlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */; };
+		69B0B2415891199E56521737 /* LiveSetlistWaveformLoadingPlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -838,7 +870,6 @@
 		077108785CD6F811C00BC27A /* TrackClipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackClipTests.swift; sourceTree = "<group>"; };
 		E97947A53B488CFB5D9FA9D5 /* LiveStretcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStretcher.swift; sourceTree = "<group>"; };
 		AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveStretcherTests.swift; sourceTree = "<group>"; };
-		79ED84EAEFB9ECB201703C59 /* LiveSetlistWaveformPaneAdjustmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformPaneAdjustmentTests.swift; sourceTree = "<group>"; };
 		F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistScrollModel.swift; sourceTree = "<group>"; };
 		389CC12448D559738BE2DE55 /* LiveSetlistScrollHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistScrollHost.swift; sourceTree = "<group>"; };
 		A51253E6B989526F778A86D0 /* LiveSetlistNSScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistNSScrollView.swift; sourceTree = "<group>"; };
@@ -868,7 +899,6 @@
 		E1600B317E1C9D8A575F41A5 /* SongLibraryPanel+Import.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongLibraryPanel+Import.swift"; sourceTree = "<group>"; };
 		98F541E8045623589A88CC1F /* SongLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryStore.swift; sourceTree = "<group>"; };
 		A1D6C223E8D6649A16DFC3D2 /* SongLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryStoreTests.swift; sourceTree = "<group>"; };
-		E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongLibraryPanel+Table.swift"; sourceTree = "<group>"; };
 		136AAB24A152D2941FE3A4AD /* EditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSheet.swift; sourceTree = "<group>"; };
 		E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Sheets.swift"; sourceTree = "<group>"; };
 		C78DD6807E906DC7D3E1D288 /* ScrollWheelZoom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollWheelZoom.swift; sourceTree = "<group>"; };
@@ -878,6 +908,25 @@
 		0EFCF3E3F560C66724E83AEA /* ScrollWheelZoomTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollWheelZoomTests.swift; sourceTree = "<group>"; };
 		E17B0BF4C31FF46C40BCF10F /* SetlistSongRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSongRowView.swift; sourceTree = "<group>"; };
 		70D567BB9D106D66A85BF7B7 /* SetlistSectionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSectionListView.swift; sourceTree = "<group>"; };
+		98F7A5F0F316C527E4C6F162 /* AppGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGlass.swift; sourceTree = "<group>"; };
+		4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppResizableDivider.swift; sourceTree = "<group>"; };
+		01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveLibrarySidebar.swift; sourceTree = "<group>"; };
+		E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Sidebar.swift"; sourceTree = "<group>"; };
+		0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolder.swift; sourceTree = "<group>"; };
+		7D86991441CF2FD749424866 /* SongFolderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderStore.swift; sourceTree = "<group>"; };
+		0464C4851DE00254630722E2 /* SongFolderStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderStoreTests.swift; sourceTree = "<group>"; };
+		20B249536120A634E3D9D5CF /* SongLibraryScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryScope.swift; sourceTree = "<group>"; };
+		C762E0B034AE61A3FAA536AE /* SongLibraryPanel+EmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongLibraryPanel+EmptyState.swift"; sourceTree = "<group>"; };
+		F577A5573101FE058A5B9300 /* SongLibraryListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryListRow.swift; sourceTree = "<group>"; };
+		30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistLibraryStore.swift; sourceTree = "<group>"; };
+		4F5240158AA03DFF00891BE0 /* SetlistLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistLibraryStoreTests.swift; sourceTree = "<group>"; };
+		140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveLibrarySidebar+Actions.swift"; sourceTree = "<group>"; };
+		9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconButtonStyle.swift; sourceTree = "<group>"; };
+		C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconToggle.swift; sourceTree = "<group>"; };
+		1621402BAEE5B87FCA231B0F /* ScreenPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenPresence.swift; sourceTree = "<group>"; };
+		C7B482B39F990ECB74D8E2AD /* ScreenPresenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenPresenceTests.swift; sourceTree = "<group>"; };
+		2FD5F935B1189DAC36279C9D /* LivePlaybackView+SetlistSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+SetlistSwitcher.swift"; sourceTree = "<group>"; };
+		A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformLoadingPlaceholder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -983,6 +1032,7 @@
 		AA0000050000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */,
 				B50BEFA6E2DC468DE5A65EF3 /* TrackClip.swift */,
 				AA0000050000000000000012 /* Project */,
 				AA00000500000000000000D6 /* Editing */,
@@ -1038,6 +1088,7 @@
 		AA0000050000000000000006 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				1621402BAEE5B87FCA231B0F /* ScreenPresence.swift */,
 				F1A0EE2B575D84B17695CE74 /* LiveSetlistScrollModel.swift */,
 				AA0000020000000000000009 /* SongEditorViewModel.swift */,
 				AA000002000000000000000A /* SetlistViewModel.swift */,
@@ -1062,7 +1113,9 @@
 		AA0000050000000000000008 /* Songs */ = {
 			isa = PBXGroup;
 			children = (
-				E6E07D8FEF0597914E0C261B /* SongLibraryPanel+Table.swift */,
+				F577A5573101FE058A5B9300 /* SongLibraryListRow.swift */,
+				C762E0B034AE61A3FAA536AE /* SongLibraryPanel+EmptyState.swift */,
+				20B249536120A634E3D9D5CF /* SongLibraryScope.swift */,
 				E1600B317E1C9D8A575F41A5 /* SongLibraryPanel+Import.swift */,
 				C5C09A0A47E2BF408F320B77 /* SongLibraryPanel+Actions.swift */,
 				E8F8F3CCA933814CDC047C16 /* SongLibrarySelectionBar.swift */,
@@ -1085,6 +1138,11 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */,
+				2FD5F935B1189DAC36279C9D /* LivePlaybackView+SetlistSwitcher.swift */,
+				140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */,
+				E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */,
+				01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */,
 				70D567BB9D106D66A85BF7B7 /* SetlistSectionListView.swift */,
 				E17B0BF4C31FF46C40BCF10F /* SetlistSongRowView.swift */,
 				FC26A08F49F4BA2E51FBBC47 /* LiveSetlistWaveformScrollView+Zoom.swift */,
@@ -1163,6 +1221,9 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				C7B482B39F990ECB74D8E2AD /* ScreenPresenceTests.swift */,
+				4F5240158AA03DFF00891BE0 /* SetlistLibraryStoreTests.swift */,
+				0464C4851DE00254630722E2 /* SongFolderStoreTests.swift */,
 				0EFCF3E3F560C66724E83AEA /* ScrollWheelZoomTests.swift */,
 				A1D6C223E8D6649A16DFC3D2 /* SongLibraryStoreTests.swift */,
 				550AF5511DDE9F7CF23C1ED4 /* SongEditorViewModelTests.swift */,
@@ -1171,7 +1232,6 @@
 				B707B6F9394671ACECA78CC3 /* LiveSetlistWaveformSourceTests.swift */,
 				E88B3EB180523D5A20054F9B /* WaveformMinMaxTests.swift */,
 				B8FBE3C1E59992B7A1FC06CC /* LiveSetlistScrollModelTests.swift */,
-				79ED84EAEFB9ECB201703C59 /* LiveSetlistWaveformPaneAdjustmentTests.swift */,
 				AA7C8EBFD83E755AD91F893B /* LiveStretcherTests.swift */,
 				077108785CD6F811C00BC27A /* TrackClipTests.swift */,
 				7BC20D375A74F91F6CD35446 /* TempoTrackLockTests.swift */,
@@ -1228,6 +1288,7 @@
 		AA00000500000000000000A2 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				98F7A5F0F316C527E4C6F162 /* AppGlass.swift */,
 				AA0000020000000000000080 /* AppColors.swift */,
 				AA0000020000000000000081 /* AppTypography.swift */,
 				AA0000020000000000000082 /* AppSpacing.swift */,
@@ -1242,6 +1303,9 @@
 		AA00000500000000000000A3 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */,
+				9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */,
+				4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */,
 				AA0000020000000000000085 /* AppButtons.swift */,
 				AA0000020000000000000086 /* AppChip.swift */,
 				AA0000020000000000000089 /* AppSearchField.swift */,
@@ -1392,6 +1456,8 @@
 		AA00000500000000000BB008 /* Project */ = {
 			isa = PBXGroup;
 			children = (
+				30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */,
+				7D86991441CF2FD749424866 /* SongFolderStore.swift */,
 				98F541E8045623589A88CC1F /* SongLibraryStore.swift */,
 				29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */,
 				C4FF6CB7F9D40326B8E05536 /* WaveformPeakResampler.swift */,
@@ -1626,6 +1692,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3F76A6C82B73329326854D52 /* LiveSetlistWaveformLoadingPlaceholder.swift in Sources */,
+				AFC490C19F01B779F70D949A /* LivePlaybackView+SetlistSwitcher.swift in Sources */,
+				39348FDBC606FE01A6EA2832 /* ScreenPresence.swift in Sources */,
+				41F4C96874FD18E82A50C7F7 /* AppIconToggle.swift in Sources */,
+				146EDF39F4DBC23191CC93C7 /* AppIconButtonStyle.swift in Sources */,
+				4F01C8AF7A76CBC8BD715264 /* LiveLibrarySidebar+Actions.swift in Sources */,
+				E6152CB5351DA5B9D53EE36E /* SetlistLibraryStore.swift in Sources */,
+				DB598A6E20CCD40CC3918AB0 /* SongLibraryListRow.swift in Sources */,
+				F72CF9AF25EA070EB0AFD64E /* SongLibraryPanel+EmptyState.swift in Sources */,
+				6DEDF7393F75B3D289925F34 /* SongLibraryScope.swift in Sources */,
+				1F4C135D9C8BFCF09E990CB9 /* SongFolderStore.swift in Sources */,
+				D4015C81B9E5B887CEE21102 /* SongFolder.swift in Sources */,
+				BCF2D1DEF6E920B220357803 /* LivePlaybackView+Sidebar.swift in Sources */,
+				B5EC1EACDA038D9B405726C6 /* LiveLibrarySidebar.swift in Sources */,
+				4284F1D59F8D0A8E7155B94C /* AppResizableDivider.swift in Sources */,
+				304C74EB8B49A0886C0F8C4D /* AppGlass.swift in Sources */,
 				62A4939E1CF35A26A1D91AF0 /* SetlistSectionListView.swift in Sources */,
 				182C06EED0DED27132DF7F85 /* SetlistSongRowView.swift in Sources */,
 				3691F00863684B04955D22F2 /* LiveSetlistWaveformScrollView+Zoom.swift in Sources */,
@@ -1634,7 +1716,6 @@
 				79E3A721EF804BD2B310AE99 /* ScrollWheelZoom.swift in Sources */,
 				F692C14258FCF5FCA29D9CE2 /* EditView+Sheets.swift in Sources */,
 				5CD386A60EB8D4493FD2E217 /* EditSheet.swift in Sources */,
-				398EF994A03CCAB2C97190A8 /* SongLibraryPanel+Table.swift in Sources */,
 				C9814020ED1E75146B45E1EC /* SongLibraryStore.swift in Sources */,
 				DDF0DD39836CAD1F99957C76 /* SongLibraryPanel+Import.swift in Sources */,
 				B87D82ABDF670FBE6322B8F7 /* SongLibraryPanel+Actions.swift in Sources */,
@@ -1877,6 +1958,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB989B1DC6C02991C1F3053A /* ScreenPresenceTests.swift in Sources */,
+				C2168D62A6C3F6654D4516C2 /* SetlistLibraryStoreTests.swift in Sources */,
+				E408F2BAA745CCD2CE0F1FEE /* SongFolderStoreTests.swift in Sources */,
 				76F5B68676E801BBF79E67BF /* ScrollWheelZoomTests.swift in Sources */,
 				D3F237B845FDEE51D184B51B /* SongLibraryStoreTests.swift in Sources */,
 				E724D849C8C3F9CB3E3374D4 /* SongEditorViewModelTests.swift in Sources */,
@@ -1885,7 +1969,6 @@
 				62710007C0983982ADD09CA4 /* LiveSetlistWaveformSourceTests.swift in Sources */,
 				608A1F198FE4850ED53F35F5 /* WaveformMinMaxTests.swift in Sources */,
 				46F12E61C0E12A60447005C1 /* LiveSetlistScrollModelTests.swift in Sources */,
-				AFC23F04356CC6E1872DAA93 /* LiveSetlistWaveformPaneAdjustmentTests.swift in Sources */,
 				B62FCB804048FEFF5003FECD /* LiveStretcherTests.swift in Sources */,
 				CDFAB1E5052B9397692C0CB5 /* TrackClipTests.swift in Sources */,
 				009390130AA405EAC46FC592 /* TempoTrackLockTests.swift in Sources */,
@@ -1932,6 +2015,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				69B0B2415891199E56521737 /* LiveSetlistWaveformLoadingPlaceholder.swift in Sources */,
+				AB6E2496B3DD269112B34A83 /* LivePlaybackView+SetlistSwitcher.swift in Sources */,
+				45C44A12A67FA79A175AA7E6 /* ScreenPresence.swift in Sources */,
+				50F21A4963D344F2B9560AA9 /* AppIconToggle.swift in Sources */,
+				C6D0FD7FFA0EFD4E88B03738 /* AppIconButtonStyle.swift in Sources */,
+				A4A5162C7C0BF45DF919B46D /* LiveLibrarySidebar+Actions.swift in Sources */,
+				C8451C1A648BDD395774369D /* SetlistLibraryStore.swift in Sources */,
+				276B4E574925764F7BF9D4C2 /* SongLibraryListRow.swift in Sources */,
+				9D961FF5ACC398A297C9B9D1 /* SongLibraryPanel+EmptyState.swift in Sources */,
+				8E98F049CAA869D33386BC92 /* SongLibraryScope.swift in Sources */,
+				FBDE448420AE8D27ADD6090B /* SongFolderStore.swift in Sources */,
+				56B666073C024775AB16C365 /* SongFolder.swift in Sources */,
+				A334C4A6932A68F6EE41487C /* LivePlaybackView+Sidebar.swift in Sources */,
+				FB5A7EE29B68770939FE8E18 /* LiveLibrarySidebar.swift in Sources */,
+				53CE2F1AEDBA5966DA4823A9 /* AppResizableDivider.swift in Sources */,
+				E2491A9FECDB7E3C43615DFD /* AppGlass.swift in Sources */,
 				4EF1F5ADC4D332921905C338 /* SetlistSectionListView.swift in Sources */,
 				6148A2CFDE310E2EAFE544F3 /* SetlistSongRowView.swift in Sources */,
 				FBA425C3852EE6CE932CFBFB /* LiveSetlistWaveformScrollView+Zoom.swift in Sources */,
@@ -1940,7 +2039,6 @@
 				50DEF765D0B828C2FC5CDA8F /* ScrollWheelZoom.swift in Sources */,
 				CF9010796741DD279E791C63 /* EditView+Sheets.swift in Sources */,
 				D47274783F545EF057C938F3 /* EditSheet.swift in Sources */,
-				4AC4F03390CF73D6A855BDF2 /* SongLibraryPanel+Table.swift in Sources */,
 				214D3D4FAF1D8787EE991568 /* SongLibraryStore.swift in Sources */,
 				3576A937C50227CEF587BD5B /* SongLibraryPanel+Import.swift in Sources */,
 				B153C6D06D037CBC90E432C6 /* SongLibraryPanel+Actions.swift in Sources */,

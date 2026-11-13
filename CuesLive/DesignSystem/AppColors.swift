@@ -31,6 +31,14 @@ enum AppColors {
     static let accent = Color.accentColor
     static let separator = Color("AppSeparator")
 
+    /// Resting glyph color for bare icon buttons.
+    static let iconNeutral = Color(red: 0.78, green: 0.80, blue: 0.82)
+
+    /// Transport glyph tints while play, loop, or fade is on.
+    static let transportPlay = Color.green
+    static let transportLoop = Color.purple
+    static let transportFade = Color.red
+
     static let soloActive = Color("SoloActive")
     static let muteActive = Color("MuteActive")
 

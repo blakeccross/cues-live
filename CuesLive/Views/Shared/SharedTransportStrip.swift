@@ -15,10 +15,9 @@ struct SharedTransportControlButtons: View {
     let onToggleLoop: () -> Void
     var onToggleFade: (() -> Void)? = nil
     var enablesInputMapping: Bool = false
-
-    private var transportActiveGreen: Color { Color(red: 0.49, green: 0.75, blue: 0.48) }
-    private var transportFadeRed: Color { Color(red: 0.86, green: 0.28, blue: 0.28) }
-    private var transportLoopPurple: Color { Color(red: 0.72, green: 0.48, blue: 1.00) }
+    /// Draws the dark backing pill. Turn off when the cluster already sits on glass.
+    var showsBackground: Bool = true
+    var iconScale: CGFloat = 0.38
 
     var body: some View {
         HStack(spacing: 0) {
@@ -26,6 +25,7 @@ struct SharedTransportControlButtons: View {
                 systemImage: "stop.fill",
                 size: buttonSize,
                 isEnabled: isLoaded,
+                iconScale: iconScale,
                 accessibilityLabel: "Stop"
             ) {
                 onStop()
@@ -37,8 +37,8 @@ struct SharedTransportControlButtons: View {
                 size: buttonSize,
                 isActive: isPlaying,
                 isEnabled: isLoaded,
-                cornerRadius: buttonSize * 0.14,
-                activeBackgroundColor: transportActiveGreen,
+                tint: AppColors.transportPlay,
+                iconScale: iconScale,
                 accessibilityLabel: isPlaying ? "Pause" : "Play"
             ) {
                 if isPlaying {
@@ -51,27 +51,28 @@ struct SharedTransportControlButtons: View {
 
             fadeButton
 
-            AppIconButton(
+            AppIconToggle(
+                title: "Loop Section",
                 systemImage: "repeat",
+                isOn: isLooping,
                 size: buttonSize,
-                isActive: isLooping,
                 isEnabled: isLoaded && canLoop,
-                cornerRadius: buttonSize * 0.14,
-                activeBackgroundColor: transportLoopPurple,
-                accessibilityLabel: isLooping ? "End Loop" : "Loop Section"
-            ) {
-                onToggleLoop()
-            }
+                tint: AppColors.transportLoop,
+                iconScale: iconScale,
+                action: onToggleLoop
+            )
             .mappingControl(.loop, enabled: enablesInputMapping, cornerRadius: mappingCornerRadius)
         }
         .frame(height: buttonSize)
         .background {
-            RoundedRectangle(cornerRadius: buttonSize * 0.14, style: .continuous)
-                .fill(Color.black.opacity(0.30))
-                .overlay {
-                    RoundedRectangle(cornerRadius: buttonSize * 0.14, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.055), lineWidth: 0.5)
-                }
+            if showsBackground {
+                RoundedRectangle(cornerRadius: buttonSize * 0.14, style: .continuous)
+                    .fill(Color.black.opacity(0.30))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: buttonSize * 0.14, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.055), lineWidth: 0.5)
+                    }
+            }
         }
     }
 
@@ -93,16 +94,16 @@ struct SharedTransportControlButtons: View {
     }
 
     private func fadeButtonContent(opacity: Double) -> some View {
-        AppIconButton(
+        AppIconToggle(
+            title: "Fade Out",
             systemImage: "righttriangle.fill",
+            isOn: isFadedOut || isFading,
             size: buttonSize,
-            isActive: isFadedOut || isFading,
             isEnabled: isLoaded,
-            cornerRadius: buttonSize * 0.14,
-            activeBackgroundColor: transportFadeRed,
+            tint: AppColors.transportFade,
+            iconScale: iconScale,
             // SF Symbol has the right angle on the bottom-left; mirror for idle (bottom-right).
-            flipsImageHorizontally: !isFadedOut,
-            accessibilityLabel: isFadedOut ? "Fade In" : "Fade Out"
+            flipsImageHorizontally: !isFadedOut
         ) {
             onToggleFade?()
         }

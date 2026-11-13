@@ -14,6 +14,9 @@ private enum SongLibrarySortOrder: String, CaseIterable, Identifiable {
 struct SongLibraryPanel: View {
     @Environment(\.modelContext) var modelContext
     @Query(sort: \Song.createdAt, order: .reverse) var songs: [Song]
+    @Query var folders: [SongFolder]
+
+    var scope: SongLibraryScope = .allSongs
 
     var onEdit: (Song) -> Void
     var onDismiss: () -> Void
@@ -24,12 +27,7 @@ struct SongLibraryPanel: View {
     @State private var searchText = ""
     @State private var sortOrder: SongLibrarySortOrder = .newest
     @State var selection: Set<UUID> = []
-    #if os(macOS)
-    /// Set by clicking a column header; empty keeps the newest-first order.
-    @State var tableSortOrder: [KeyPathComparator<Song>] = []
-    /// Hides the BPM and Key columns when the pane is too narrow for them.
-    @State var tableColumnCustomization = TableColumnCustomization<Song>()
-    #else
+    #if os(iOS)
     @State var editMode: EditMode = .inactive
     #endif
     @State var showingAddClickSheet = false
@@ -49,8 +47,17 @@ struct SongLibraryPanel: View {
     /// Bumps when a newer import should cancel an in-flight scroll-into-view.
     @State private var revealGeneration = 0
 
+    /// The songs in the current scope, before search and sorting.
+    var scopedSongs: [Song] {
+        scope.songs(from: songs)
+    }
+
+    var sortedFolders: [SongFolder] {
+        folders.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
     var filteredSongs: [Song] {
-        var result = songs
+        var result = scopedSongs
 
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !query.isEmpty {
@@ -63,12 +70,6 @@ struct SongLibraryPanel: View {
         case .name:
             result.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         }
-        #if os(macOS)
-        if !tableSortOrder.isEmpty {
-            result.sort(using: tableSortOrder)
-        }
-        #endif
-
         return result
     }
 
@@ -110,6 +111,9 @@ struct SongLibraryPanel: View {
                 // Never act on songs the search has hidden.
                 selection.formIntersection(filteredSongs.map(\.id))
             }
+            .onChange(of: scope.id) { _, _ in
+                selection.removeAll()
+            }
     }
 
     private var panelContent: some View {
@@ -136,10 +140,11 @@ struct SongLibraryPanel: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             #if os(macOS)
             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                Text("Songs")
+                Text(scope.title)
                     .font(.headline)
                     .foregroundStyle(AppColors.textPrimary)
-                Text("\(songs.count)")
+                    .lineLimit(1)
+                Text("\(scopedSongs.count)")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(AppColors.textTertiary)
                 Spacer(minLength: 0)
@@ -149,9 +154,7 @@ struct SongLibraryPanel: View {
 
             HStack(spacing: AppSpacing.xs) {
                 AppSearchField(text: $searchText, placeholder: "Search songs")
-                #if os(iOS)
                 sortMenu
-                #endif
             }
         }
         .padding(.horizontal, AppSpacing.sm)
@@ -159,7 +162,6 @@ struct SongLibraryPanel: View {
         .padding(.bottom, AppSpacing.xs)
     }
 
-    #if os(iOS)
     private var sortMenu: some View {
         Menu {
             Picker("Sort By", selection: $sortOrder) {
@@ -177,7 +179,6 @@ struct SongLibraryPanel: View {
         .help("Sort songs")
         .accessibilityLabel("Sort songs")
     }
-    #endif
 
     private var addSongMenu: some View {
         Menu {
@@ -209,7 +210,7 @@ struct SongLibraryPanel: View {
                 editMode = editMode.isEditing ? .inactive : .active
                 selection.removeAll()
             }
-            .disabled(songs.isEmpty)
+            .disabled(scopedSongs.isEmpty)
         }
         ToolbarItem(placement: .topBarTrailing) {
             if #available(iOS 26.0, *) {
@@ -227,12 +228,8 @@ struct SongLibraryPanel: View {
 
     @ViewBuilder
     private var songList: some View {
-        if songs.isEmpty {
-            emptyState(
-                title: "No Songs Yet",
-                systemImage: "music.note.list",
-                description: "Import a folder of stems, drop one here, or add a click track."
-            )
+        if scopedSongs.isEmpty {
+            scopeEmptyState
         } else if filteredSongs.isEmpty {
             emptyState(
                 title: "No Results",
@@ -271,7 +268,16 @@ struct SongLibraryPanel: View {
     @ViewBuilder
     private var songCollection: some View {
         #if os(macOS)
-        songTable
+        List(selection: $selection) {
+            ForEach(filteredSongs) { song in
+                SongLibraryListRow(song: song)
+                    .tag(song.id)
+                    .draggable(SongDragPayload.string(for: song.id))
+            }
+        }
+        .listStyle(.inset)
+        .onDeleteCommand(perform: requestDeleteSelection)
+        .onExitCommand { selection.removeAll() }
         #else
         List(selection: $selection) {
             Section {
@@ -303,14 +309,6 @@ struct SongLibraryPanel: View {
         }
     }
     #endif
-
-    private func emptyState(title: String, systemImage: String, description: String) -> some View {
-        VStack(spacing: 0) {
-            AppEmptyState(title: title, systemImage: systemImage, description: description)
-                .padding(.top, AppSpacing.sm)
-            Spacer(minLength: 0)
-        }
-    }
 
     private var selectionBar: some View {
         let selected = songs(for: selection)
@@ -401,8 +399,6 @@ private struct SongLibraryColumnHeader: View {
 #endif
 
 /// On iOS, stops list rows from drawing through the soft top edge into the search bar.
-/// The macOS table keeps the soft edge: its pinned header already holds rows back, and
-/// the hard style would draw a divider under the column titles.
 private struct SongListTopEdgeClipModifier: ViewModifier {
     func body(content: Content) -> some View {
         #if os(iOS)

@@ -20,6 +20,7 @@ extension SongLibraryPanel {
             Button("Duplicate", systemImage: "plus.square.on.square") {
                 duplicateSong(song)
             }
+            moveToFolderMenu(for: targets)
             if SongProjectBridge.projectURL(for: song) != nil {
                 Button("Consolidate Media…", systemImage: "shippingbox") {
                     consolidateMedia(for: song)
@@ -33,10 +34,40 @@ extension SongLibraryPanel {
             Button("Add \(targets.count) Songs to Setlist", systemImage: "text.badge.plus") {
                 addToSetlist(targets)
             }
+            moveToFolderMenu(for: targets)
             Divider()
             Button("Delete \(targets.count) Songs…", systemImage: "trash", role: .destructive) {
                 songsPendingDelete = targets
             }
+        }
+    }
+
+    @ViewBuilder
+    private func moveToFolderMenu(for targets: [Song]) -> some View {
+        Menu("Move to Folder", systemImage: "folder") {
+            ForEach(sortedFolders) { folder in
+                Button(folder.name) {
+                    moveSongs(targets, to: folder)
+                }
+                .disabled(targets.allSatisfy { $0.folder?.id == folder.id })
+            }
+            if sortedFolders.isEmpty {
+                Text("No Folders")
+            }
+            if targets.contains(where: { $0.folder != nil }) {
+                Divider()
+                Button("Remove from Folder") {
+                    moveSongs(targets, to: nil)
+                }
+            }
+        }
+    }
+
+    private func moveSongs(_ targets: [Song], to folder: SongFolder?) {
+        do {
+            try SongFolderStore.move(targets, to: folder, context: modelContext)
+        } catch {
+            songActionError = error.localizedDescription
         }
     }
 
@@ -159,6 +190,9 @@ extension SongLibraryPanel {
                 denominator: denominator,
                 context: modelContext
             )
+            if let folder = scope.folder {
+                try SongFolderStore.move([song], to: folder, context: modelContext)
+            }
             showingAddClickSheet = false
             onEdit(song)
         } catch {

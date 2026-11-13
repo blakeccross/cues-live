@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Persists whether the song library pane is open so it survives navigating to the
-/// song editor and relaunches. On iOS the library is a sheet and always starts closed.
+/// Persists whether the remote session's song library pane is open so it survives navigating
+/// to the song editor and relaunches. The local live view opens the library from its sidebar
+/// instead. On iOS the library is a sheet and always starts closed.
 enum SongLibraryPanePreference {
     static let storageKey = "songSidebarVisible"
 
@@ -15,29 +16,42 @@ enum SongLibraryPanePreference {
 }
 
 #if os(macOS)
-/// Places the song library in a resizable pane beside the setlist, below the waveform.
+/// Places the song library in a resizable pane beside the setlist. A plain stack rather than
+/// a split view, so the window's bottom safe area reaches both panes. When the pane touches
+/// the top of the window, its background and divider run up under the toolbar like a column.
 struct LiveSongLibrarySplitLayout<Library: View, SetlistContent: View>: View {
     let isLibraryVisible: Bool
     @ViewBuilder let library: () -> Library
     @ViewBuilder let setlist: () -> SetlistContent
 
+    @State private var libraryWidth = LivePlaybackSidebarMetrics.defaultSidebarWidth
+    @State private var totalWidth: CGFloat = .greatestFiniteMagnitude
+
     var body: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             if isLibraryVisible {
                 library()
-                    .background(AppColors.backgroundSecondary)
-                    .frame(
-                        minWidth: LivePlaybackSidebarMetrics.minimumSidebarWidth,
-                        idealWidth: LivePlaybackSidebarMetrics.defaultSidebarWidth,
-                        maxWidth: LivePlaybackSidebarMetrics.maximumSidebarWidth
-                    )
+                    .background(AppColors.backgroundSecondary.ignoresSafeArea(edges: .top))
+                    .frame(width: LivePlaybackSidebarMetrics.clampedSidebarWidth(libraryWidth, totalWidth: totalWidth))
+
+                AppResizableDivider(
+                    length: $libraryWidth,
+                    edge: .trailing,
+                    clamp: { LivePlaybackSidebarMetrics.clampedSidebarWidth($0, totalWidth: totalWidth) },
+                    accessibilityLabel: "Song library width"
+                )
+                .ignoresSafeArea(edges: .top)
+                .zIndex(1)
             }
 
             setlist()
-                .frame(minWidth: LivePlaybackSidebarMetrics.minimumMainWidth)
+                .frame(minWidth: LivePlaybackSidebarMetrics.minimumMainWidth, maxWidth: .infinity, maxHeight: .infinity)
         }
-        .onChange(of: isLibraryVisible) { _, newValue in
-            UserDefaults.standard.set(newValue, forKey: SongLibraryPanePreference.storageKey)
+        .animation(.none, value: libraryWidth)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            totalWidth = width
         }
     }
 }

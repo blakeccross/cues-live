@@ -11,9 +11,7 @@ struct RootView: View {
                 remoteConnectedStatusBanner
             }
 
-            NavigationStack {
-                rootContent
-            }
+            rootContent
         }
         .appBackground(.primary)
         .appLockToolbarDisplayMode()
@@ -67,15 +65,26 @@ struct RootView: View {
     @ViewBuilder
     private var rootContent: some View {
         if remoteClient.isConnected {
-            if remoteClient.snapshot != nil {
-                RemoteLivePlaybackView()
-            } else {
-                remoteSessionLoadingView
+            NavigationStack {
+                if remoteClient.snapshot != nil {
+                    RemoteLivePlaybackView()
+                } else {
+                    remoteSessionLoadingView
+                }
             }
         } else if case .failed(let message) = remoteClient.phase {
-            remoteSessionErrorView(message: message)
+            NavigationStack {
+                remoteSessionErrorView(message: message)
+            }
         } else {
+            #if os(macOS)
+            // Brings its own split view, which cannot sit inside a navigation stack.
             LivePlaybackView()
+            #else
+            NavigationStack {
+                LivePlaybackView()
+            }
+            #endif
         }
     }
 

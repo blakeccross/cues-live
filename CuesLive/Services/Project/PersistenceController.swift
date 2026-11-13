@@ -12,6 +12,7 @@ enum PersistenceController {
 
     static let modelTypes: [any PersistentModel.Type] = [
         Song.self,
+        SongFolder.self,
         AudioTrack.self,
         MIDITrack.self,
         MIDIDevice.self,

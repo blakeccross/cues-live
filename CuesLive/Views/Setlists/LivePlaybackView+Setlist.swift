@@ -10,58 +10,65 @@ extension LivePlaybackView {
     }
 
     var setlistSection: some View {
-        VStack(spacing: 0) {
-            LiveSetlistAddMenu(
-                isEditing: workingSetlist.sortedEntries.isEmpty ? nil : $isEditingSetlist,
-                onAddHeader: addHeader,
-                onAddSong: { showingSongLibrary = true }
-            )
-
-            Group {
-                if workingSetlist.sortedEntries.isEmpty {
-                    AppEmptyState(
-                        title: "No Songs in Setlist",
-                        systemImage: "music.note.list",
-                        description: "Use the add button or Songs library to build the setlist."
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(AppSpacing.md)
-                    .contentShape(Rectangle())
-                    .dropDestination(for: String.self) { items, _ in
-                        let ids = items.compactMap(SongDragPayload.songID(from:))
-                        insertDroppedSongs(at: 0, songIDs: ids)
-                        return !ids.isEmpty
-                    }
-                    .contextMenu {
-                        Button {
-                            addHeader()
-                        } label: {
-                            Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
-                        }
-                    }
-                } else {
-                    SetlistListView(
-                        rows: setlistRowModels,
-                        currentIndex: coordinator.currentIndex,
-                        isPlaying: coordinator.isAudiblePlaying,
-                        isEditing: $isEditingSetlist,
-                        actions: setlistRowActions(for:),
-                        onMove: moveSetlistRows,
-                        onAddHeader: addHeader,
-                        onInsertSongs: insertDroppedSongs,
-                        sectionPlayback: setlistSectionPlayback
-                    )
-                    .frame(maxWidth: 720, maxHeight: .infinity)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.sm)
+        Group {
+            if workingSetlist.sortedEntries.isEmpty {
+                AppEmptyState(
+                    title: "No Songs in Setlist",
+                    systemImage: "music.note.list",
+                    description: "Use the add button or Songs library to build the setlist."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(AppSpacing.md)
+                .contentShape(Rectangle())
+                .dropDestination(for: String.self) { items, _ in
+                    let ids = items.compactMap(SongDragPayload.songID(from:))
+                    insertDroppedSongs(at: 0, songIDs: ids)
+                    return !ids.isEmpty
                 }
+                .contextMenu {
+                    Button {
+                        addHeader()
+                    } label: {
+                        Label("Add Header", systemImage: "text.line.first.and.arrowtriangle.forward")
+                    }
+                }
+            } else {
+                SetlistListView(
+                    rows: setlistRowModels,
+                    currentIndex: coordinator.currentIndex,
+                    isPlaying: coordinator.isAudiblePlaying,
+                    isEditing: $isEditingSetlist,
+                    actions: setlistRowActions(for:),
+                    onMove: moveSetlistRows,
+                    onAddHeader: addHeader,
+                    onInsertSongs: insertDroppedSongs,
+                    sectionPlayback: setlistSectionPlayback,
+                    rowHorizontalPadding: AppSpacing.xl,
+                    bottomSpacing: setlistBottomSpacing
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, AppSpacing.sm)
+                #if os(macOS)
+                // Rows scroll under the now-playing bar. macOS doesn't turn the bar's safe
+                // area into scroll space, so `setlistBottomSpacing` adds it instead.
+                .ignoresSafeArea(.container, edges: .bottom)
+                #endif
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: workingSetlist.sortedEntries.isEmpty) { _, isEmpty in
             if isEmpty { isEditingSetlist = false }
         }
+    }
+
+    /// Room for the last row above the now-playing bar, when the bar sits over the list.
+    /// iOS gets this from the bar's safe area.
+    private var setlistBottomSpacing: CGFloat {
+        #if os(macOS)
+        mixerDetent == .hidden ? nowPlayingBarHeight : 0
+        #else
+        0
+        #endif
     }
 
     /// Entries that can be shown. A song deleted from the library leaves an entry with neither
@@ -247,7 +254,7 @@ extension LivePlaybackView {
         coordinator.syncSetlist(workingSetlist)
     }
 
-    private func addHeader() {
+    func addHeader() {
         let index = workingSetlist.sortedEntries.count
         viewModel.insertHeader(title: "New Header", at: index, to: workingSetlist, context: modelContext)
         if let entry = workingSetlist.sortedEntries.last(where: { $0.isHeader }) {

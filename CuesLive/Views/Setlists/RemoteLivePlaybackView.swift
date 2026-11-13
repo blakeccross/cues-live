@@ -191,18 +191,9 @@ struct RemoteLivePlaybackView: View {
             }
 
             #if os(macOS)
-            Group {
-                if snapshot != nil, !(snapshot?.entries.isEmpty ?? true) {
-                    VSplitView {
-                        waveformSection
-                        librarySplitSection
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        waveformSection
-                        librarySplitSection
-                    }
-                }
+            VStack(spacing: 0) {
+                waveformSection
+                librarySplitSection
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -241,6 +232,9 @@ struct RemoteLivePlaybackView: View {
             remoteSongLibraryPanel
         } setlist: {
             setlistSection
+        }
+        .onChange(of: showingSongLibrary) { _, isVisible in
+            UserDefaults.standard.set(isVisible, forKey: SongLibraryPanePreference.storageKey)
         }
     }
     #endif
@@ -408,13 +402,13 @@ struct RemoteLivePlaybackView: View {
                         onAddHeader: beginAddingHeader,
                         sectionPlayback: sectionPlayback
                     )
-                    .frame(maxWidth: 720, maxHeight: .infinity)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.vertical, AppSpacing.sm)
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, AppSpacing.lg)
         .background(AppColors.backgroundPrimary)
         .onAppear {
             syncWorkingEntries(from: snapshot?.entries ?? [])

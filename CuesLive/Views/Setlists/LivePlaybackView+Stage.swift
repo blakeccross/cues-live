@@ -7,24 +7,15 @@ import AppKit
 extension LivePlaybackView {
     var playbackMainLayout: some View {
         #if os(macOS)
-        VStack(spacing: 0) {
-            LivePlaybackMixerSplitLayout(
-                mixerDetent: $mixerDetent,
-                onLiveVolumeChange: { groupID, volume in
-                    coordinator.applyProvisionalGroupVolume(groupID: groupID, volume: volume)
-                },
-                onMixChange: {
-                    coordinator.updateGroupMix(context: modelContext)
-                },
-                mainContent: {
-                    playbackMainSection
-                }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            LiveTransportBottomBar {
-                transportStrip
+        LiveSongLibrarySplitLayout(isLibraryVisible: libraryScope != nil) {
+            if let libraryScope {
+                songLibraryPanel(scope: libraryScope)
             }
+        } setlist: {
+            playbackSplitLayout
+                .appFloatingBottomBar {
+                    nowPlayingBar
+                }
         }
         #else
         playbackMainSection
@@ -38,13 +29,29 @@ extension LivePlaybackView {
                     }
                 )
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                LiveTransportBottomBar {
-                    transportStrip
-                }
+            .appFloatingBottomBar {
+                nowPlayingBar
             }
         #endif
     }
+
+    #if os(macOS)
+    private var playbackSplitLayout: some View {
+        LivePlaybackMixerSplitLayout(
+            mixerDetent: $mixerDetent,
+            onLiveVolumeChange: { groupID, volume in
+                coordinator.applyProvisionalGroupVolume(groupID: groupID, volume: volume)
+            },
+            onMixChange: {
+                coordinator.updateGroupMix(context: modelContext)
+            },
+            mainContent: {
+                playbackMainSection
+            }
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    #endif
 
     #if os(iOS)
     private var mixerScreenPresented: Binding<Bool> {
@@ -55,19 +62,32 @@ extension LivePlaybackView {
     }
     #endif
 
-    private var transportStrip: some View {
+    private var nowPlayingBar: some View {
         LiveSetlistNowPlayingInfoView(
             coordinator: coordinator,
             sectionLoop: sectionLoop,
             groupMixFade: groupMixFade,
             isLoaded: coordinator.isLoaded && !coordinator.isLoadingSong,
             canLoop: !loopSections.isEmpty,
+            isMixerVisible: mixerDetent == .visible,
+            isEditorOpen: isSongEditorOpen,
             onStop: stopPlayback,
             onPlay: coordinator.play,
             onPause: coordinator.pause,
             onToggleLoop: toggleSectionLoop,
-            onToggleFade: toggleGroupMixFade
+            onToggleFade: toggleGroupMixFade,
+            onToggleMixer: toggleMixer,
+            onToggleEditor: toggleSongEditor
         )
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            nowPlayingBarHeight = height
+        }
+    }
+
+    private func toggleMixer() {
+        mixerDetent = mixerDetent == .hidden ? .visible : .hidden
     }
 
     func toggleGroupMixFade() {
@@ -78,8 +98,9 @@ extension LivePlaybackView {
         }
     }
 
-    func songLibraryPanel() -> some View {
+    func songLibraryPanel(scope: SongLibraryScope = .allSongs) -> some View {
         SongLibraryPanel(
+            scope: scope,
             onEdit: { song in
                 presentSongEditor(for: song)
             },
@@ -87,7 +108,7 @@ extension LivePlaybackView {
                 showingSongLibrary = false
             },
             onFoldersSelected: { requests in
-                importSongs(from: requests)
+                importSongs(from: requests, into: scope.folder)
             },
             onAddToSetlist: { song in
                 addSong(song, at: workingSetlist.sortedEntries.count)
@@ -113,20 +134,6 @@ extension LivePlaybackView {
     }
 
     private var playbackMainSection: some View {
-        #if os(macOS)
-        Group {
-            if setlistHasSongs {
-                VSplitView {
-                    currentSongSection
-                        .background(AppColors.backgroundPrimary)
-
-                    librarySplitSection
-                }
-            } else {
-                librarySplitSection
-            }
-        }
-        #else
         VStack(spacing: 0) {
             if setlistHasSongs {
                 currentSongSection
@@ -136,24 +143,12 @@ extension LivePlaybackView {
             setlistSection
                 .background(AppColors.backgroundPrimary)
         }
-        #endif
     }
-
-    #if os(macOS)
-    private var librarySplitSection: some View {
-        LiveSongLibrarySplitLayout(isLibraryVisible: showingSongLibrary) {
-            songLibraryPanel()
-        } setlist: {
-            setlistSection
-                .background(AppColors.backgroundPrimary)
-        }
-    }
-    #endif
 
     private var currentSongSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             #if os(macOS)
-            LiveSetlistWaveformResizablePane(maxMIDILaneCount: coordinator.maxMIDILaneCount) {
+            LiveSetlistWaveformResizablePane {
                 waveformContent
                     .padding(.top, AppSpacing.xs)
                     .overlay(alignment: .topLeading) { loadErrorBanner }

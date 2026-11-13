@@ -5,7 +5,8 @@ import AppKit
 #endif
 
 extension LivePlaybackView {
-    func importSongs(from requests: [SongFolderImporter.ImportRequest]) {
+    /// Imports each folder as a song, filing the new songs into `folder` when one is given.
+    func importSongs(from requests: [SongFolderImporter.ImportRequest], into folder: SongFolder? = nil) {
         guard !isImportingSongFolder, !requests.isEmpty else { return }
 
         isImportingSongFolder = true
@@ -32,6 +33,14 @@ extension LivePlaybackView {
                             ? error.localizedDescription
                             : "\(label.isEmpty ? request.folderURL.lastPathComponent : label): \(error.localizedDescription)"
                     )
+                }
+            }
+
+            if let folder {
+                do {
+                    try SongFolderStore.move(importedSongs, to: folder, context: modelContext)
+                } catch {
+                    failureMessages.append(error.localizedDescription)
                 }
             }
 

@@ -15,6 +15,8 @@ final class Song {
     var transposeSemitones: Int = 0
     var smartGuideEnabled: Bool = false
     var projectFilePath: String?
+    /// Library folder; nil keeps the song only in All Songs.
+    var folder: SongFolder?
 
     @Relationship(deleteRule: .cascade, inverse: \AudioTrack.song)
     var tracks: [AudioTrack]
@@ -33,6 +35,7 @@ final class Song {
         transposeSemitones = 0
         smartGuideEnabled = false
         projectFilePath = nil
+        folder = nil
         tracks = []
         midiTracks = []
     }

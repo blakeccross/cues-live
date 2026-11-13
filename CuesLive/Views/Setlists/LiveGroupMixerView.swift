@@ -8,6 +8,12 @@ enum LiveGroupMixerDetent: Equatable {
     static let heightFraction: CGFloat = 0.48
     static let minimumMixerHeight: CGFloat = 140
     static let minimumMainHeight: CGFloat = 200
+
+    /// Keeps the mixer at least its minimum height and leaves the setlist at least its own.
+    static func clampedMixerHeight(_ height: CGFloat, totalHeight: CGFloat) -> CGFloat {
+        let maximum = max(minimumMixerHeight, totalHeight - minimumMainHeight)
+        return min(maximum, max(minimumMixerHeight, height))
+    }
 }
 
 enum LivePlaybackSidebarMetrics {
@@ -17,8 +23,6 @@ enum LivePlaybackSidebarMetrics {
     static let minimumSidebarWidth: CGFloat = 240
     static let maximumSidebarWidth: CGFloat = 520
     static let minimumMainWidth: CGFloat = 280
-    static let resizeHitAreaWidth: CGFloat = 10
-    private static let resizeAdjustmentStep: CGFloat = 16
 
     static func clampedSidebarWidth(_ width: CGFloat, totalWidth: CGFloat) -> CGFloat {
         let availableMaximum = max(minimumSidebarWidth, totalWidth - minimumMainWidth)
@@ -33,71 +37,6 @@ enum LivePlaybackSidebarMetrics {
     static func storageValue(forWidth width: CGFloat, totalWidth: CGFloat = .greatestFiniteMagnitude) -> Double {
         Double(clampedSidebarWidth(width, totalWidth: totalWidth))
     }
-
-    static func adjustedSidebarWidth(_ width: CGFloat, direction: AccessibilityAdjustmentDirection, totalWidth: CGFloat) -> CGFloat {
-        let delta: CGFloat
-        switch direction {
-        case .increment:
-            delta = resizeAdjustmentStep
-        case .decrement:
-            delta = -resizeAdjustmentStep
-        @unknown default:
-            delta = 0
-        }
-        return clampedSidebarWidth(width + delta, totalWidth: totalWidth)
-    }
-}
-
-/// Drag handle on the leading edge of a trailing sidebar; dragging left widens it.
-private struct LivePlaybackSidebarResizeHandle: View {
-    @Binding var width: CGFloat
-    let totalWidth: CGFloat
-    let accessibilityLabel: String
-    let onResizeEnded: () -> Void
-
-    @State private var dragStartWidth: CGFloat?
-
-    var body: some View {
-        Color.clear
-            .frame(width: LivePlaybackSidebarMetrics.resizeHitAreaWidth)
-            .frame(maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .highPriorityGesture(
-            DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                .onChanged { value in
-                    if dragStartWidth == nil {
-                        dragStartWidth = width
-                    }
-                    let proposed = (dragStartWidth ?? width) - value.translation.width
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        width = LivePlaybackSidebarMetrics.clampedSidebarWidth(proposed, totalWidth: totalWidth)
-                    }
-                }
-                .onEnded { _ in
-                    dragStartWidth = nil
-                    onResizeEnded()
-                }
-        )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue("\(Int(LivePlaybackSidebarMetrics.clampedSidebarWidth(width, totalWidth: totalWidth))) points")
-        .accessibilityAdjustableAction { direction in
-            width = LivePlaybackSidebarMetrics.adjustedSidebarWidth(width, direction: direction, totalWidth: totalWidth)
-            onResizeEnded()
-        }
-        #if os(macOS)
-        .onContinuousHover { phase in
-            switch phase {
-            case .active:
-                NSCursor.resizeLeftRight.push()
-            case .ended:
-                NSCursor.pop()
-            }
-        }
-        #endif
-    }
 }
 
 struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View {
@@ -109,53 +48,36 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
     private var storedSidebarWidth = LivePlaybackSidebarMetrics.defaultSidebarWidthStorageValue
 
     @State private var sidebarWidth = LivePlaybackSidebarMetrics.defaultSidebarWidth
+    @State private var totalWidth: CGFloat = .greatestFiniteMagnitude
 
     var body: some View {
-        GeometryReader { geometry in
-            let clampedWidth = LivePlaybackSidebarMetrics.clampedSidebarWidth(
-                sidebarWidth,
-                totalWidth: geometry.size.width
-            )
+        HStack(spacing: 0) {
+            mainContent()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            HStack(spacing: 0) {
-                mainContent()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if isVisible {
+                AppResizableDivider(
+                    length: $sidebarWidth,
+                    edge: .leading,
+                    clamp: { LivePlaybackSidebarMetrics.clampedSidebarWidth($0, totalWidth: totalWidth) },
+                    accessibilityLabel: "Mapping panel width",
+                    onResizeEnded: persistSidebarWidth
+                )
+                .zIndex(1)
 
-                if isVisible {
-                    Rectangle()
-                        .fill(AppColors.separator)
-                        .frame(width: 0.5)
-
-                    sidebar()
-                        .frame(width: clampedWidth)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-                }
+                sidebar()
+                    .frame(width: LivePlaybackSidebarMetrics.clampedSidebarWidth(sidebarWidth, totalWidth: totalWidth))
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
-            .overlay(alignment: .topTrailing) {
-                if isVisible {
-                    LivePlaybackSidebarResizeHandle(
-                        width: $sidebarWidth,
-                        totalWidth: geometry.size.width,
-                        accessibilityLabel: "Mapping panel width",
-                        onResizeEnded: {
-                            persistSidebarWidth(totalWidth: geometry.size.width)
-                        }
-                    )
-                    .offset(
-                        x: -(clampedWidth + 0.25 - (LivePlaybackSidebarMetrics.resizeHitAreaWidth / 2))
-                    )
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-            .onChange(of: geometry.size.width) { _, newWidth in
-                let clamped = LivePlaybackSidebarMetrics.clampedSidebarWidth(sidebarWidth, totalWidth: newWidth)
-                guard clamped != sidebarWidth else { return }
-                sidebarWidth = clamped
-                persistSidebarWidth(totalWidth: newWidth)
-            }
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { newWidth in
+            totalWidth = newWidth
+            let clamped = LivePlaybackSidebarMetrics.clampedSidebarWidth(sidebarWidth, totalWidth: newWidth)
+            guard clamped != sidebarWidth else { return }
+            sidebarWidth = clamped
+            persistSidebarWidth()
         }
         .animation(AppAnimation.springSmooth, value: isVisible)
         .animation(.none, value: sidebarWidth)
@@ -164,7 +86,7 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
         }
     }
 
-    private func persistSidebarWidth(totalWidth: CGFloat) {
+    private func persistSidebarWidth() {
         storedSidebarWidth = LivePlaybackSidebarMetrics.storageValue(
             forWidth: sidebarWidth,
             totalWidth: totalWidth
@@ -173,31 +95,51 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
 }
 
 #if os(macOS)
+/// Setlist above a resizable group mixer. A plain stack rather than a split view, so the
+/// window's bottom safe area reaches whichever pane sits at the bottom.
 struct LivePlaybackMixerSplitLayout<MainContent: View>: View {
     @Binding var mixerDetent: LiveGroupMixerDetent
     let onLiveVolumeChange: (UUID?, Double) -> Void
     let onMixChange: () -> Void
     @ViewBuilder let mainContent: () -> MainContent
 
-    var body: some View {
-        GeometryReader { geometry in
-            if mixerDetent == .visible {
-                VSplitView {
-                    mainContent()
-                        .frame(minHeight: LiveGroupMixerDetent.minimumMainHeight)
+    /// `nil` until the user resizes; the mixer then opens at a fraction of the height.
+    @State private var mixerHeight: CGFloat?
+    @State private var totalHeight: CGFloat = 0
 
-                    LiveGroupMixerPanel(
-                        onLiveVolumeChange: onLiveVolumeChange,
-                        onMixChange: onMixChange
-                    )
-                        .frame(
-                            minHeight: LiveGroupMixerDetent.minimumMixerHeight,
-                            idealHeight: geometry.size.height * LiveGroupMixerDetent.heightFraction
-                        )
-                }
-            } else {
-                mainContent()
+    private var resolvedMixerHeight: CGFloat {
+        LiveGroupMixerDetent.clampedMixerHeight(
+            mixerHeight ?? totalHeight * LiveGroupMixerDetent.heightFraction,
+            totalHeight: totalHeight
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            mainContent()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            if mixerDetent == .visible {
+                AppResizableDivider(
+                    length: Binding(get: { resolvedMixerHeight }, set: { mixerHeight = $0 }),
+                    edge: .top,
+                    clamp: { LiveGroupMixerDetent.clampedMixerHeight($0, totalHeight: totalHeight) },
+                    accessibilityLabel: "Group mixer height"
+                )
+                .zIndex(1)
+
+                LiveGroupMixerPanel(
+                    onLiveVolumeChange: onLiveVolumeChange,
+                    onMixChange: onMixChange
+                )
+                .frame(height: resolvedMixerHeight)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height
+        } action: { height in
+            totalHeight = height
         }
         .animation(AppAnimation.fadeQuick, value: mixerDetent)
     }
@@ -214,11 +156,6 @@ struct LiveGroupMixerPanel: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.backgroundSecondary)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(AppColors.separator)
-                .frame(height: 0.5)
-        }
     }
 }
 #endif
@@ -381,7 +318,8 @@ struct LiveGroupChannelStrip: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 18, alignment: .center)
-                .background(titleColor)
+                // Stays inside the label rather than running under the now-playing bar.
+                .background(titleColor, ignoresSafeAreaEdges: [])
         }
         .frame(width: stripWidth, height: stripHeight, alignment: .bottom)
     }
