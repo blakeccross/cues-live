@@ -24,10 +24,14 @@ enum LivePlaybackSidebarMetrics {
     static let maximumSidebarWidth: CGFloat = 520
     static let minimumMainWidth: CGFloat = 280
 
-    static func clampedSidebarWidth(_ width: CGFloat, totalWidth: CGFloat) -> CGFloat {
-        let availableMaximum = max(minimumSidebarWidth, totalWidth - minimumMainWidth)
+    static func clampedSidebarWidth(
+        _ width: CGFloat,
+        totalWidth: CGFloat,
+        minimumWidth: CGFloat = minimumSidebarWidth
+    ) -> CGFloat {
+        let availableMaximum = max(minimumWidth, totalWidth - minimumMainWidth)
         let cappedMaximum = min(maximumSidebarWidth, availableMaximum)
-        return min(cappedMaximum, max(minimumSidebarWidth, width))
+        return min(cappedMaximum, max(minimumWidth, width))
     }
 
     static func sidebarWidth(fromStorage value: Double, totalWidth: CGFloat = .greatestFiniteMagnitude) -> CGFloat {
@@ -41,6 +45,8 @@ enum LivePlaybackSidebarMetrics {
 
 struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View {
     var isVisible: Bool
+    /// Narrowest the pane may be dragged. Wider panes, like the song browser, raise it.
+    var minimumWidth: CGFloat = LivePlaybackSidebarMetrics.minimumSidebarWidth
     @ViewBuilder let sidebar: () -> Sidebar
     @ViewBuilder let mainContent: () -> MainContent
 
@@ -59,14 +65,14 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
                 AppResizableDivider(
                     length: $sidebarWidth,
                     edge: .leading,
-                    clamp: { LivePlaybackSidebarMetrics.clampedSidebarWidth($0, totalWidth: totalWidth) },
-                    accessibilityLabel: "Mapping panel width",
+                    clamp: { clampedWidth($0, totalWidth: totalWidth) },
+                    accessibilityLabel: "Side panel width",
                     onResizeEnded: persistSidebarWidth
                 )
                 .zIndex(1)
 
                 sidebar()
-                    .frame(width: LivePlaybackSidebarMetrics.clampedSidebarWidth(sidebarWidth, totalWidth: totalWidth))
+                    .frame(width: clampedWidth(sidebarWidth, totalWidth: totalWidth))
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
@@ -74,7 +80,7 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
             proxy.size.width
         } action: { newWidth in
             totalWidth = newWidth
-            let clamped = LivePlaybackSidebarMetrics.clampedSidebarWidth(sidebarWidth, totalWidth: newWidth)
+            let clamped = clampedWidth(sidebarWidth, totalWidth: newWidth)
             guard clamped != sidebarWidth else { return }
             sidebarWidth = clamped
             persistSidebarWidth()
@@ -84,6 +90,10 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
         .onAppear {
             sidebarWidth = LivePlaybackSidebarMetrics.sidebarWidth(fromStorage: storedSidebarWidth)
         }
+    }
+
+    private func clampedWidth(_ width: CGFloat, totalWidth: CGFloat) -> CGFloat {
+        LivePlaybackSidebarMetrics.clampedSidebarWidth(width, totalWidth: totalWidth, minimumWidth: minimumWidth)
     }
 
     private func persistSidebarWidth() {

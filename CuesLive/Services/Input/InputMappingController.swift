@@ -14,6 +14,8 @@ final class InputMappingController {
     private(set) var session: InputMappingSession = .idle
     private(set) var pendingAction: MappableLiveAction?
     private(set) var statusMessage: String?
+    /// The mode the mapping inspector opens in, so it reopens on the tab last used.
+    private(set) var preferredSession: InputMappingSession = .keyMapping
 
     /// True while any view has an input mapping session open.
     var isLiveSessionActive: Bool { !liveSessions.isEmpty }
@@ -84,6 +86,7 @@ final class InputMappingController {
 
     func beginKeyMapping(endsAfterAssign: Bool = false) {
         session = .keyMapping
+        preferredSession = .keyMapping
         endsSessionAfterAssign = endsAfterAssign
         if !endsAfterAssign {
             pendingAction = nil
@@ -93,10 +96,36 @@ final class InputMappingController {
 
     func beginMIDIMapping(endsAfterAssign: Bool = false) {
         session = .midiMapping
+        preferredSession = .midiMapping
         endsSessionAfterAssign = endsAfterAssign
         if !endsAfterAssign {
             pendingAction = nil
         }
+        clearStatus()
+    }
+
+    /// Opens mapping in the last-used mode, or ends it when already mapping.
+    func toggleMapping() {
+        if isMapping {
+            endMapping()
+        } else {
+            switchSession(to: preferredSession)
+        }
+    }
+
+    /// Changes between key and MIDI mapping without dropping the selected control,
+    /// so a control picked on one tab can be learned on the other.
+    func switchSession(to newSession: InputMappingSession) {
+        guard newSession != .idle else {
+            endMapping()
+            return
+        }
+        guard newSession != session else { return }
+        if session == .idle {
+            endsSessionAfterAssign = false
+        }
+        session = newSession
+        preferredSession = newSession
         clearStatus()
     }
 
@@ -180,14 +209,6 @@ final class InputMappingController {
                 return
             }
             session.handler(action)
-        }
-    }
-
-    var sessionTitle: String {
-        switch session {
-        case .keyMapping: "Key Mapping"
-        case .midiMapping: "MIDI Mapping"
-        case .idle: "Mapping"
         }
     }
 

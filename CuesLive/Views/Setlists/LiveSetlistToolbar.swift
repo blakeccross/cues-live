@@ -9,6 +9,9 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     var isEditingSetlist: Binding<Bool>?
     let onAddHeader: () -> Void
     let onAddSong: () -> Void
+    /// macOS only: whether the song browser pane is showing, and how to toggle it.
+    var isSongBrowserShowing = false
+    var onToggleSongBrowser: () -> Void = {}
 
     #if os(macOS)
     @Environment(\.openSettings) private var openSettings
@@ -22,7 +25,11 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         }
 
         ToolbarItem(placement: .automatic) {
-            InputMappingToolbarMenu()
+            songBrowserToggle
+        }
+
+        ToolbarItem(placement: .automatic) {
+            InputMappingToolbarButton()
         }
 
         ToolbarItem(placement: .automatic) {
@@ -47,7 +54,7 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            InputMappingToolbarMenu()
+            InputMappingToolbarButton()
         }
 
         ToolbarItem(placement: .topBarTrailing) {
@@ -74,6 +81,15 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     }
 
     #if os(macOS)
+    private var songBrowserToggle: some View {
+        Toggle(isOn: Binding(get: { isSongBrowserShowing }, set: { _ in onToggleSongBrowser() })) {
+            Label("Song Browser", systemImage: "music.note.square.stack")
+        }
+        .toggleStyle(.button)
+        .labelStyle(.iconOnly)
+        .help(isSongBrowserShowing ? "Hide Song Browser" : "Show Song Browser")
+    }
+
     private var settingsButton: some View {
         Button {
             openSettings()

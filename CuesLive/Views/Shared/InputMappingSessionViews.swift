@@ -1,45 +1,5 @@
 import SwiftUI
 
-struct InputMappingToolbarMenu: View {
-    @Environment(InputMappingController.self) private var mapping
-
-    var body: some View {
-        Menu {
-            Button {
-                mapping.toggleKeyMapping()
-            } label: {
-                Label(
-                    mapping.session == .keyMapping ? "Done Key Mapping" : "Key Mapping",
-                    systemImage: "keyboard"
-                )
-            }
-
-            Button {
-                mapping.toggleMIDIMapping()
-            } label: {
-                Label(
-                    mapping.session == .midiMapping ? "Done MIDI Mapping" : "MIDI Mapping",
-                    systemImage: "pianokeys"
-                )
-            }
-        } label: {
-            Label("Mapping", systemImage: mappingIcon)
-                .labelStyle(.iconOnly)
-        }
-        .tint(mapping.isMapping ? AppColors.accent : nil)
-        .help("MIDI and Key Mapping")
-        .accessibilityLabel("MIDI and Key Mapping")
-    }
-
-    private var mappingIcon: String {
-        switch mapping.session {
-        case .keyMapping: "keyboard.fill"
-        case .midiMapping: "pianokeys"
-        case .idle: "keyboard"
-        }
-    }
-}
-
 struct LiveInputMappingSessionModifier: ViewModifier {
     let handler: (MappableLiveAction) -> Void
     /// When false the view opens no session, so mapped input keeps going to the one below.

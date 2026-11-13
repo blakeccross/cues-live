@@ -39,6 +39,30 @@ final class InputMappingControllerTests: XCTestCase {
         XCTAssertEqual(controller.liveAssignmentBadge(for: .fade), "F")
     }
 
+    func testToggleMappingReopensInLastUsedMode() {
+        controller.toggleMapping()
+        XCTAssertEqual(controller.session, .keyMapping)
+
+        controller.switchSession(to: .midiMapping)
+        controller.toggleMapping()
+        XCTAssertEqual(controller.session, .idle)
+
+        controller.toggleMapping()
+        XCTAssertEqual(controller.session, .midiMapping)
+    }
+
+    func testSwitchingSessionKeepsSelectedControl() {
+        controller.beginKeyMapping()
+        controller.selectAction(.loop)
+
+        controller.switchSession(to: .midiMapping)
+        XCTAssertEqual(controller.pendingAction, .loop)
+
+        controller.handleMIDI(MIDINoteBinding(note: 36, channel: 1, sourceName: nil))
+        XCTAssertEqual(store.mapping(for: .loop)?.midi?.note, 36)
+        XCTAssertEqual(controller.session, .midiMapping)
+    }
+
     func testKeyLearnDoesNothingUntilAControlIsSelected() {
         controller.beginKeyMapping()
         XCTAssertFalse(controller.handleKey(Self.key("A", code: 0)))

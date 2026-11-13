@@ -7,13 +7,7 @@ import AppKit
 extension LivePlaybackView {
     var playbackMainLayout: some View {
         #if os(macOS)
-        LiveSongLibrarySplitLayout(isLibraryVisible: libraryScope != nil) {
-            if let libraryScope {
-                songLibraryPanel(scope: libraryScope)
-            }
-        } setlist: {
-            playbackSplitLayout
-        }
+        playbackSplitLayout
         #else
         playbackMainSection
             .navigationDestination(isPresented: mixerScreenPresented) {
@@ -53,6 +47,15 @@ extension LivePlaybackView {
             get: { mixerDetent == .visible },
             set: { mixerDetent = $0 ? .visible : .hidden }
         )
+    }
+    #endif
+
+    #if os(iOS)
+    /// iOS shows the library as a sheet; the toolbar's add menu opens it.
+    var isSongBrowserShowing: Bool { showingSongLibrary }
+
+    func toggleSongBrowser() {
+        showingSongLibrary.toggle()
     }
     #endif
 

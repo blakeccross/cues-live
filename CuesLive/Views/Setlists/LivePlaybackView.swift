@@ -14,7 +14,7 @@ struct MissingMediaSheetContext: Identifiable {
 
 struct LivePlaybackView: View {
     @Environment(\.modelContext) var modelContext
-    @Environment(InputMappingController.self) private var mapping
+    @Environment(InputMappingController.self) var mapping
     #if os(macOS)
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
@@ -36,10 +36,11 @@ struct LivePlaybackView: View {
     @State var sectionLoop = SectionLoopController()
     @State var groupMixFade = GroupMixFadeController()
     @State var sectionAnnouncer = SectionAnnouncer()
-    /// iOS only: the song library sheet. macOS shows the library as a split-view column.
+    /// iOS only: the song library sheet. macOS shows the library in the song browser pane.
     @State var showingSongLibrary = false
     #if os(macOS)
-    @State var sidebarSelection: LiveLibrarySidebar.Item? = .allSongs
+    @AppStorage("liveSongBrowserVisible") var isSongBrowserVisible = true
+    @State var songBrowserFolder: LiveSongFolderList.Item? = .allSongs
     #endif
     @State private var songToEditID: UUID?
     /// Song to open once the library sheet has dismissed, so the editor pushes as a screen.
@@ -97,8 +98,7 @@ struct LivePlaybackView: View {
         .onDisappear {
             LiveSetlistMenuController.shared.reset()
         }
-        .onChange(of: activeSetlistID) { _, newID in
-            syncSidebarSelection(toActiveSetlist: newID)
+        .onChange(of: activeSetlistID) { _, _ in
             syncLiveSetlistMenuController()
         }
         #else
@@ -179,14 +179,18 @@ struct LivePlaybackView: View {
     private func playbackBodyChrome(for setlist: Setlist) -> some View {
         Group {
             #if os(macOS)
-            LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
-                InputMappingPanel()
+            LivePlaybackTrailingSidebarLayout(
+                isVisible: mapping.isMapping || isSongBrowserVisible,
+                minimumWidth: trailingPaneMinimumWidth
+            ) {
+                trailingPane
             } mainContent: {
                 playbackMainLayout
             }
             .toolbarBackground(.hidden, for: .windowToolbar)
             #else
             playbackMainLayout
+                .inputMappingInspector()
             #endif
         }
         #if os(macOS)
@@ -457,7 +461,9 @@ struct LivePlaybackView: View {
                 #else
                 showingSongLibrary = true
                 #endif
-            }
+            },
+            isSongBrowserShowing: isSongBrowserShowing,
+            onToggleSongBrowser: toggleSongBrowser
         )
 
         LiveSetlistTransportToolbarContent(

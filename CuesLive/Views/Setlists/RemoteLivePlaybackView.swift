@@ -52,6 +52,7 @@ struct RemoteLivePlaybackView: View {
             .toolbarBackground(.hidden, for: .windowToolbar)
             #else
             remotePlaybackMain
+                .inputMappingInspector()
             #endif
         }
         .navigationTitle("")
@@ -76,7 +77,7 @@ struct RemoteLivePlaybackView: View {
             .cuesHideSharedBackground()
             #endif
             ToolbarItem(placement: trailingToolbarPlacement) {
-                InputMappingToolbarMenu()
+                InputMappingToolbarButton()
             }
             #if os(macOS)
             .cuesHideSharedBackground()

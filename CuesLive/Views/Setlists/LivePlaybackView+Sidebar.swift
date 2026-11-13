@@ -30,44 +30,62 @@ extension LivePlaybackView {
         }
     }
 
-    /// The songs to list beside the sidebar, or nil when a setlist is selected and the list is closed.
-    var libraryScope: SongLibraryScope? {
-        switch sidebarSelection {
-        case .allSongs:
-            return .allSongs
-        case .folder(let id):
-            return songFolders.first(where: { $0.id == id }).map(SongLibraryScope.folder) ?? .allSongs
-        case .setlist, nil:
-            return nil
-        }
-    }
-
-    /// Selecting a setlist closes the song list and makes that setlist the one playing.
-    private var sidebarSelectionBinding: Binding<LiveLibrarySidebar.Item?> {
+    /// Follows the active setlist, so switching from the title menu or File ▸ Open moves the
+    /// selection too. Selecting a row makes that setlist the one playing.
+    private var sidebarSelectionBinding: Binding<UUID?> {
         Binding(
-            get: { sidebarSelection },
-            set: { item in
-                sidebarSelection = item
-                if case .setlist(let id) = item,
-                   let setlist = allSetlists.first(where: { $0.id == id }) {
-                    switchToSetlist(setlist)
-                }
+            get: { activeSetlist?.id },
+            set: { id in
+                guard let setlist = allSetlists.first(where: { $0.id == id }) else { return }
+                switchToSetlist(setlist)
             }
         )
     }
 
-    /// Keeps a selected setlist row on the active setlist when it changes elsewhere,
-    /// such as from the title menu or File ▸ Open.
-    func syncSidebarSelection(toActiveSetlist id: UUID?) {
-        guard case .setlist = sidebarSelection, let id else { return }
-        sidebarSelection = .setlist(id)
+    /// The mapping inspector takes the trailing pane while mapping; otherwise the song browser does.
+    @ViewBuilder
+    var trailingPane: some View {
+        if mapping.isMapping {
+            InputMappingPanel()
+        } else {
+            LiveSongBrowser(folderSelection: $songBrowserFolder) {
+                songLibraryPanel(scope: songBrowserScope)
+            }
+        }
     }
 
-    /// Opens All Songs when the user asks to add a song while the list is closed.
-    func revealSongLibrary() {
-        if libraryScope == nil {
-            sidebarSelection = .allSongs
+    var trailingPaneMinimumWidth: CGFloat {
+        mapping.isMapping ? LivePlaybackSidebarMetrics.minimumSidebarWidth : LiveSongBrowser<EmptyView>.minimumWidth
+    }
+
+    private var songBrowserScope: SongLibraryScope {
+        guard case .folder(let id) = songBrowserFolder,
+              let folder = songFolders.first(where: { $0.id == id }) else {
+            return .allSongs
         }
+        return .folder(folder)
+    }
+
+    /// Whether the song browser is the pane showing, rather than hidden or covered by mapping.
+    var isSongBrowserShowing: Bool {
+        isSongBrowserVisible && !mapping.isMapping
+    }
+
+    /// Shows or hides the song browser. Showing it ends any mapping session, which shares the pane.
+    func toggleSongBrowser() {
+        if isSongBrowserShowing {
+            isSongBrowserVisible = false
+        } else {
+            revealSongLibrary()
+        }
+    }
+
+    /// Opens the song browser when the user asks to add a song.
+    func revealSongLibrary() {
+        if mapping.isMapping {
+            mapping.endMapping()
+        }
+        isSongBrowserVisible = true
     }
 }
 #endif

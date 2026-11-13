@@ -590,6 +590,16 @@
 		56EAD2DAF5834C9162600524 /* LiveToolbarSongTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD35A240E0BBF7348C7341E9 /* LiveToolbarSongTitle.swift */; };
 		C2F7244FB6AFCCA152832E79 /* LiveSetlistTransportToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C822DA901433E6DC8F2383 /* LiveSetlistTransportToolbar.swift */; };
 		7FF0A9F3F1119ECF8032DE03 /* LiveSetlistTransportToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C822DA901433E6DC8F2383 /* LiveSetlistTransportToolbar.swift */; };
+		8294D06E99A01E94658427A3 /* InputMappingToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3429ABA541B95100BEB31B /* InputMappingToolbarButton.swift */; };
+		C6CFAD68ADF1D93B9A51BCF2 /* InputMappingToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3429ABA541B95100BEB31B /* InputMappingToolbarButton.swift */; };
+		4FE59F9AFF4E4848840D342E /* InputMappingInspectorModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3898B25385B5F60DD7015E64 /* InputMappingInspectorModifier.swift */; };
+		7C0B3113DF8B2766A4211B2C /* InputMappingInspectorModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3898B25385B5F60DD7015E64 /* InputMappingInspectorModifier.swift */; };
+		1D7672AD7B36C2F0DB194CD4 /* AppSegmentedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */; };
+		17DF05C9181EF73D264521FE /* AppSegmentedPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */; };
+		4ECE26CD392668D1A2F65BD5 /* LiveSongFolderList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */; };
+		1A8922C612BBE0C78BE1D3F9 /* LiveSongFolderList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */; };
+		E86395016C528AC91CE38A1F /* LiveSongBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */; };
+		8B17E0070A8AE682AA9E9B14 /* LiveSongBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -927,6 +937,11 @@
 		A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformLoadingPlaceholder.swift; sourceTree = "<group>"; };
 		AD35A240E0BBF7348C7341E9 /* LiveToolbarSongTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveToolbarSongTitle.swift; sourceTree = "<group>"; };
 		D6C822DA901433E6DC8F2383 /* LiveSetlistTransportToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistTransportToolbar.swift; sourceTree = "<group>"; };
+		3F3429ABA541B95100BEB31B /* InputMappingToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingToolbarButton.swift; sourceTree = "<group>"; };
+		3898B25385B5F60DD7015E64 /* InputMappingInspectorModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingInspectorModifier.swift; sourceTree = "<group>"; };
+		61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSegmentedPicker.swift; sourceTree = "<group>"; };
+		78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongFolderList.swift; sourceTree = "<group>"; };
+		87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongBrowser.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1138,6 +1153,8 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */,
+				78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */,
 				D6C822DA901433E6DC8F2383 /* LiveSetlistTransportToolbar.swift */,
 				AD35A240E0BBF7348C7341E9 /* LiveToolbarSongTitle.swift */,
 				A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */,
@@ -1188,6 +1205,8 @@
 		AA000005000000000000000A /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				3898B25385B5F60DD7015E64 /* InputMappingInspectorModifier.swift */,
+				3F3429ABA541B95100BEB31B /* InputMappingToolbarButton.swift */,
 				10A09DF6523F279A0C211CCF /* SongImportFeedback.swift */,
 				AA000002000000000000007A /* TrackMixControls.swift */,
 				AA00000200000000000000DA /* SharedTransportStrip.swift */,
@@ -1303,6 +1322,7 @@
 		AA00000500000000000000A3 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */,
 				C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */,
 				9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */,
 				4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */,
@@ -1692,6 +1712,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E86395016C528AC91CE38A1F /* LiveSongBrowser.swift in Sources */,
+				4ECE26CD392668D1A2F65BD5 /* LiveSongFolderList.swift in Sources */,
+				1D7672AD7B36C2F0DB194CD4 /* AppSegmentedPicker.swift in Sources */,
+				4FE59F9AFF4E4848840D342E /* InputMappingInspectorModifier.swift in Sources */,
+				8294D06E99A01E94658427A3 /* InputMappingToolbarButton.swift in Sources */,
 				C2F7244FB6AFCCA152832E79 /* LiveSetlistTransportToolbar.swift in Sources */,
 				FC8DDF5AC5E03409BAC05195 /* LiveToolbarSongTitle.swift in Sources */,
 				3F76A6C82B73329326854D52 /* LiveSetlistWaveformLoadingPlaceholder.swift in Sources */,
@@ -2015,6 +2040,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8B17E0070A8AE682AA9E9B14 /* LiveSongBrowser.swift in Sources */,
+				1A8922C612BBE0C78BE1D3F9 /* LiveSongFolderList.swift in Sources */,
+				17DF05C9181EF73D264521FE /* AppSegmentedPicker.swift in Sources */,
+				7C0B3113DF8B2766A4211B2C /* InputMappingInspectorModifier.swift in Sources */,
+				C6CFAD68ADF1D93B9A51BCF2 /* InputMappingToolbarButton.swift in Sources */,
 				7FF0A9F3F1119ECF8032DE03 /* LiveSetlistTransportToolbar.swift in Sources */,
 				56EAD2DAF5834C9162600524 /* LiveToolbarSongTitle.swift in Sources */,
 				69B0B2415891199E56521737 /* LiveSetlistWaveformLoadingPlaceholder.swift in Sources */,

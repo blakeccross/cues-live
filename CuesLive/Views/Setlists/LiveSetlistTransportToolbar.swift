@@ -79,7 +79,7 @@ private struct LiveToolbarTransportControls: View {
                 Label("Stop", systemImage: "stop.fill")
             }
             .help("Stop")
-            .mappableLiveControl(.stop)
+            .mappableLiveControl(.stop, isOutlined: false)
 
             playPauseButton
 
@@ -91,7 +91,7 @@ private struct LiveToolbarTransportControls: View {
             .tint(AppColors.transportLoop)
             .disabled(!canLoop)
             .help("Loop Section")
-            .mappableLiveControl(.loop)
+            .mappableLiveControl(.loop, isOutlined: false)
         }
         .labelStyle(.iconOnly)
         .toggleStyle(.button)
@@ -113,7 +113,7 @@ private struct LiveToolbarTransportControls: View {
         }
         .foregroundStyle(coordinator.isPlaying ? AppColors.transportPlay : AppColors.textPrimary)
         .help(coordinator.isPlaying ? "Pause" : "Play")
-        .mappableLiveControl(.playPause)
+        .mappableLiveControl(.playPause, isOutlined: false)
     }
 
     /// Blinks while a fade is running so the state reads from across a stage.
@@ -129,7 +129,7 @@ private struct LiveToolbarTransportControls: View {
                 fadeToggleContent
             }
         }
-        .mappableLiveControl(.fade)
+        .mappableLiveControl(.fade, isOutlined: false)
     }
 
     private var fadeToggleContent: some View {

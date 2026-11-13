@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Persists whether the remote session's song library pane is open so it survives navigating
-/// to the song editor and relaunches. The local live view opens the library from its sidebar
+/// to the song editor and relaunches. The local live view uses `LiveSongBrowser`
 /// instead. On iOS the library is a sheet and always starts closed.
 enum SongLibraryPanePreference {
     static let storageKey = "songSidebarVisible"
