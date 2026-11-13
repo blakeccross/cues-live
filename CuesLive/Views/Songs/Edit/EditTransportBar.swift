@@ -19,6 +19,9 @@ struct EditTransportBar<Chrome: View>: View {
     let currentSectionAtTime: (TimeInterval) -> SongSection?
     let onStopTransport: () -> Void
     let onToggleLoopAtTime: (TimeInterval) -> Void
+    let onToggleFade: () -> Void
+    /// Owned by the editor so mapped keys and MIDI drive the same fade the button shows.
+    let groupMixFade: GroupMixFadeController
     let onPlay: () -> Void
     /// Time used for the loop button while stopped. Playback leaves this where the insertion is.
     let stoppedDisplayTime: TimeInterval
@@ -30,9 +33,7 @@ struct EditTransportBar<Chrome: View>: View {
 
     @State private var showingClickEditor = false
     @State private var showingSmartGuideEditor = false
-    @State private var groupMixFade = GroupMixFadeController()
     @Bindable private var audioEngine = AudioEngineManager.shared
-    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         VStack(spacing: 0) {
@@ -199,25 +200,13 @@ struct EditTransportBar<Chrome: View>: View {
             isLoaded: viewModel.isLoaded,
             isLooping: sectionLoopIsActive(at: time),
             canLoop: currentSectionAtTime(time) != nil,
-            onStop: {
-                groupMixFade.clearFade(context: modelContext) {
-                    audioEngine.applyGroupMix(GroupMixStore.snapshot(in: modelContext))
-                    try? modelContext.save()
-                }
-                onStopTransport()
-            },
+            onStop: onStopTransport,
             onPlay: onPlay,
             onPause: viewModel.pause,
             onToggleLoop: { onToggleLoopAtTime(time) },
             isFadedOut: groupMixFade.isFadedOut,
             isFading: groupMixFade.isFading,
-            onToggleFade: {
-                groupMixFade.toggleFade(context: modelContext) {
-                    audioEngine.applyGroupMix(GroupMixStore.snapshot(in: modelContext))
-                } onComplete: {
-                    try? modelContext.save()
-                }
-            }
+            onToggleFade: onToggleFade
         )
     }
 

@@ -513,6 +513,8 @@
 		39135153DD4D38A5FCE0D0A6 /* WaveformPeakResampler+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */; };
 		2916D25059C6B918CF97BF90 /* WaveformPeakResampler+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */; };
 		EB0D5DA58F5B196BE1A1EED6 /* WaveformPeakResamplerTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */; };
+		F2D4077077D037F0EAA5E5B0 /* EditView+Transport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */; };
+		4BBDBB0F396294E19B3E6C64 /* EditView+Transport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -809,6 +811,7 @@
 		B707B6F9394671ACECA78CC3 /* LiveSetlistWaveformSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistWaveformSourceTests.swift; sourceTree = "<group>"; };
 		29FAFEB2BCCC7C3C2CC4BD34 /* WaveformPeakResampler+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WaveformPeakResampler+Timeline.swift"; sourceTree = "<group>"; };
 		C41A1F310214E2E5603DB503 /* WaveformPeakResamplerTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformPeakResamplerTimelineTests.swift; sourceTree = "<group>"; };
+		B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Transport.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1377,6 +1380,7 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				B469CB7A7E7F09CE6A13A9E2 /* EditView+Transport.swift */,
 				DC25BD6402D9BD88EE21B294 /* TempoChangePrompt.swift */,
 				E6712D5D85AAF092506750C1 /* EditView+LaneCanvas.swift */,
 				2502E9778299430BECC051F4 /* EditView+LaneHeights.swift */,
@@ -1533,6 +1537,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2D4077077D037F0EAA5E5B0 /* EditView+Transport.swift in Sources */,
 				39135153DD4D38A5FCE0D0A6 /* WaveformPeakResampler+Timeline.swift in Sources */,
 				FEE11C252438A9C185FA3D75 /* LiveSetlistWaveformSource.swift in Sources */,
 				2AFAEACF952F02065FF9849F /* LiveSetlistLaneCanvasView.swift in Sources */,
@@ -1815,6 +1820,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4BBDBB0F396294E19B3E6C64 /* EditView+Transport.swift in Sources */,
 				2916D25059C6B918CF97BF90 /* WaveformPeakResampler+Timeline.swift in Sources */,
 				C0DEE6538B297FB16763743C /* LiveSetlistWaveformSource.swift in Sources */,
 				FB4C4E6DF45EF7E7DDAAB71D /* LiveSetlistLaneCanvasView.swift in Sources */,

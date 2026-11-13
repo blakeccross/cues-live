@@ -14,8 +14,6 @@ final class SongEditorViewModel {
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var modelContext: ModelContext?
-    /// Set once the editor has applied show routing, so a later reload keeps it.
-    private var monitorsOutputRouting = false
 
     init(song: Song) {
         self.song = song
@@ -106,7 +104,7 @@ final class SongEditorViewModel {
             do {
                 var payloads = prepared
                 try appendTimecodePayloadIfNeeded(to: &payloads)
-                try audioEngine.loadPreparedTracks(payloads, routing: editorRoutingSnapshot())
+                try audioEngine.loadPreparedTracks(payloads, routing: currentRoutingSnapshot())
                 isLoaded = true
                 loadError = nil
                 // Loading clears the engine's arrangement. Restore it here rather than
@@ -197,9 +195,7 @@ final class SongEditorViewModel {
     }
 
     func applyOutputRoutingChange() {
-        guard let routing = currentRoutingSnapshot() else { return }
-        monitorsOutputRouting = true
-        guard isLoaded else { return }
+        guard isLoaded, let routing = currentRoutingSnapshot() else { return }
         pushTrackGroupsToEngine()
         audioEngine.applyOutputRoutingKeepingTracks(routing)
     }
@@ -216,13 +212,7 @@ final class SongEditorViewModel {
         }
     }
 
-    /// `nil` until the editor has applied an output change, so opening a song still
-    /// monitors through the master mixer.
-    private func editorRoutingSnapshot() -> OutputRoutingSnapshot? {
-        guard monitorsOutputRouting else { return nil }
-        return currentRoutingSnapshot()
-    }
-
+    /// Show routing, so the editor honours the same per-group destinations as the setlist.
     private func currentRoutingSnapshot() -> OutputRoutingSnapshot? {
         guard let modelContext else { return nil }
         let deviceUID = OutputRoutingStore.config(in: modelContext).selectedDeviceUID

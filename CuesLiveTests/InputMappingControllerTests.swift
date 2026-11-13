@@ -74,11 +74,39 @@ final class InputMappingControllerTests: XCTestCase {
     func testIdleKeyDoesNotFireWhenPlaybackActionsAreDisabled() {
         store.assignKey(Self.key("P", code: 35), to: .playPause)
         var received: MappableLiveAction?
-        _ = controller.activateLiveSession { received = $0 }
-        controller.arePlaybackActionsEnabled = false
+        let token = controller.activateLiveSession { received = $0 }
+        controller.setPlaybackActionsEnabled(false, token: token)
 
         XCTAssertFalse(controller.handleKey(Self.key("P", code: 35)))
         XCTAssertNil(received)
+    }
+
+    func testNewestSessionReceivesActionsOverDisabledOlderSession() {
+        store.assignKey(Self.key("P", code: 35), to: .playPause)
+        var liveReceived: MappableLiveAction?
+        var editorReceived: MappableLiveAction?
+        let liveToken = controller.activateLiveSession { liveReceived = $0 }
+        _ = controller.activateLiveSession { editorReceived = $0 }
+        controller.setPlaybackActionsEnabled(false, token: liveToken)
+
+        XCTAssertTrue(controller.handleKey(Self.key("P", code: 35)))
+        XCTAssertEqual(editorReceived, .playPause)
+        XCTAssertNil(liveReceived)
+    }
+
+    func testClosingNewestSessionReturnsActionsToPreviousSession() {
+        store.assignMIDI(MIDINoteBinding(note: 60, channel: 1, sourceName: nil), to: .stop)
+        var liveReceived: MappableLiveAction?
+        var editorReceived: MappableLiveAction?
+        _ = controller.activateLiveSession { liveReceived = $0 }
+        let editorToken = controller.activateLiveSession { editorReceived = $0 }
+
+        controller.deactivateLiveSession(token: editorToken)
+        controller.handleMIDI(MIDINoteBinding(note: 60, channel: 1, sourceName: nil))
+
+        XCTAssertEqual(liveReceived, .stop)
+        XCTAssertNil(editorReceived)
+        XCTAssertTrue(controller.isLiveSessionActive)
     }
 
     func testEscapeClearsPendingThenExitsMapping() {

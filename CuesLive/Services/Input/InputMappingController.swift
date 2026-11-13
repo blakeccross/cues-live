@@ -14,8 +14,9 @@ final class InputMappingController {
     private(set) var session: InputMappingSession = .idle
     private(set) var pendingAction: MappableLiveAction?
     private(set) var statusMessage: String?
-    private(set) var isLiveSessionActive = false
-    var arePlaybackActionsEnabled = true
+
+    /// True while any view has an input mapping session open.
+    var isLiveSessionActive: Bool { !liveSessions.isEmpty }
 
     let store: InputMappingStore
 
@@ -37,8 +38,9 @@ final class InputMappingController {
         }
     }
 
-    private var handlerToken = UUID()
-    private var actionHandler: ((MappableLiveAction) -> Void)?
+    /// Open sessions, oldest first. Only the newest receives actions, so an editor pushed
+    /// over the live setlist takes over, and the setlist gets them back when it closes.
+    private var liveSessions: [LiveSession] = []
     private var statusClearTask: Task<Void, Never>?
     private(set) var endsSessionAfterAssign = false
 
@@ -56,19 +58,25 @@ final class InputMappingController {
     }
 
     @discardableResult
-    func activateLiveSession(handler: @escaping (MappableLiveAction) -> Void) -> UUID {
+    func activateLiveSession(
+        playbackActionsEnabled: Bool = true,
+        handler: @escaping (MappableLiveAction) -> Void
+    ) -> UUID {
         let token = UUID()
-        handlerToken = token
-        actionHandler = handler
-        isLiveSessionActive = true
+        liveSessions.append(
+            LiveSession(token: token, handler: handler, arePlaybackActionsEnabled: playbackActionsEnabled)
+        )
         return token
     }
 
+    func setPlaybackActionsEnabled(_ enabled: Bool, token: UUID) {
+        guard let index = liveSessions.firstIndex(where: { $0.token == token }) else { return }
+        liveSessions[index].arePlaybackActionsEnabled = enabled
+    }
+
     func deactivateLiveSession(token: UUID) {
-        guard handlerToken == token else { return }
-        actionHandler = nil
-        isLiveSessionActive = false
-        arePlaybackActionsEnabled = true
+        guard let index = liveSessions.firstIndex(where: { $0.token == token }) else { return }
+        liveSessions.remove(at: index)
         if !endsSessionAfterAssign {
             endMapping()
         }
@@ -150,11 +158,11 @@ final class InputMappingController {
         case .midiMapping:
             return false
         case .idle:
-            guard arePlaybackActionsEnabled,
+            guard let session = activeLiveSession,
                   let action = store.action(forKey: binding) else {
                 return false
             }
-            actionHandler?(action)
+            session.handler(action)
             return true
         }
     }
@@ -167,11 +175,11 @@ final class InputMappingController {
         case .keyMapping:
             return
         case .idle:
-            guard arePlaybackActionsEnabled,
+            guard let session = activeLiveSession,
                   let action = store.action(forMIDI: binding) else {
                 return
             }
-            actionHandler?(action)
+            session.handler(action)
         }
     }
 
@@ -181,6 +189,12 @@ final class InputMappingController {
         case .midiMapping: "MIDI Mapping"
         case .idle: "Mapping"
         }
+    }
+
+    /// The newest session, when it currently accepts playback actions.
+    private var activeLiveSession: LiveSession? {
+        guard let session = liveSessions.last, session.arePlaybackActionsEnabled else { return nil }
+        return session
     }
 
     private func assignKey(_ binding: KeyBinding, to action: MappableLiveAction) {
@@ -229,4 +243,10 @@ final class InputMappingController {
         statusClearTask?.cancel()
         statusMessage = nil
     }
+}
+
+private struct LiveSession {
+    let token: UUID
+    let handler: (MappableLiveAction) -> Void
+    var arePlaybackActionsEnabled: Bool
 }

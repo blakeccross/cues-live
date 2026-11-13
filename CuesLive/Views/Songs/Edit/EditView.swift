@@ -66,6 +66,7 @@ struct EditView: View {
     @State var cueFlashPhase = false
     @State var sectionLoop = SectionLoopController()
     @State var sectionAnnouncer = SectionAnnouncer()
+    @State var groupMixFade = GroupMixFadeController()
     @Bindable var audioEngine = AudioEngineManager.shared
     @State var showingArrangementEditor = false
     @State var showingGroupEditor = false
@@ -109,6 +110,9 @@ struct EditView: View {
         .focusable()
         .focused($isTimelineFocused)
         .focusEffectDisabled()
+        .liveInputMappingSession(takesKeyFocus: false) { action in
+            handleMappedLiveAction(action)
+        }
         .focusedValue(\.clipEditorActions, clipEditorActions)
         .focusedValue(\.trackHeightActions, trackHeightActions)
         .onKeyPress(phases: .down) { press in
@@ -319,14 +323,10 @@ struct EditView: View {
                 currentSectionAtTime: { time in
                     displaySections.section(atTimeline: time)
                 },
-                onStopTransport: {
-                    clearMarkerCue()
-                    viewModel.stop()
-                },
-                onToggleLoopAtTime: { time in
-                    guard let section = displaySections.section(atTimeline: time) else { return }
-                    toggleLoopSection(section)
-                },
+                onStopTransport: stopTransport,
+                onToggleLoopAtTime: toggleLoop(at:),
+                onToggleFade: toggleGroupMixFade,
+                groupMixFade: groupMixFade,
                 onPlay: playFromInsertion,
                 stoppedDisplayTime: playbackStart,
                 captureSnapshot: captureSnapshot,

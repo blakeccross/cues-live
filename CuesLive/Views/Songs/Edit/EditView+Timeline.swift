@@ -98,14 +98,10 @@ extension EditView {
             currentSectionAtTime: { time in
                 displaySections.section(atTimeline: time)
             },
-            onStopTransport: {
-                clearMarkerCue()
-                viewModel.stop()
-            },
-            onToggleLoopAtTime: { time in
-                guard let section = displaySections.section(atTimeline: time) else { return }
-                toggleLoopSection(section)
-            },
+            onStopTransport: stopTransport,
+            onToggleLoopAtTime: toggleLoop(at:),
+            onToggleFade: toggleGroupMixFade,
+            groupMixFade: groupMixFade,
             onPlay: playFromInsertion,
             stoppedDisplayTime: playbackStart
         )
@@ -163,14 +159,10 @@ extension EditView {
             currentSectionAtTime: { time in
                 displaySections.section(atTimeline: time)
             },
-            onStopTransport: {
-                clearMarkerCue()
-                viewModel.stop()
-            },
-            onToggleLoopAtTime: { time in
-                guard let section = displaySections.section(atTimeline: time) else { return }
-                toggleLoopSection(section)
-            },
+            onStopTransport: stopTransport,
+            onToggleLoopAtTime: toggleLoop(at:),
+            onToggleFade: toggleGroupMixFade,
+            groupMixFade: groupMixFade,
             onPlay: playFromInsertion,
             stoppedDisplayTime: playbackStart,
             registerUndo: { actionName, before, after in

@@ -43,6 +43,9 @@ struct InputMappingToolbarMenu: View {
 struct LiveInputMappingSessionModifier: ViewModifier {
     let handler: (MappableLiveAction) -> Void
     var arePlaybackActionsEnabled: Bool = true
+    /// iOS only. When false, the content already focuses a descendant and this modifier
+    /// handles the key presses that bubble up from it instead of taking focus.
+    var takesKeyFocus: Bool = true
 
     @Environment(InputMappingController.self) private var mapping
     @State private var sessionToken: UUID?
@@ -53,7 +56,7 @@ struct LiveInputMappingSessionModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             #if os(iOS)
-            .focusable()
+            .focusable(takesKeyFocus)
             .focused($isFocused)
             .focusEffectDisabled()
             .onKeyPress(phases: .down) { press in
@@ -62,23 +65,30 @@ struct LiveInputMappingSessionModifier: ViewModifier {
             }
             #endif
             .onAppear {
-                sessionToken = mapping.activateLiveSession(handler: handler)
-                mapping.arePlaybackActionsEnabled = arePlaybackActionsEnabled
+                if let sessionToken {
+                    mapping.deactivateLiveSession(token: sessionToken)
+                }
+                sessionToken = mapping.activateLiveSession(
+                    playbackActionsEnabled: arePlaybackActionsEnabled,
+                    handler: handler
+                )
                 #if os(iOS)
-                isFocused = true
+                isFocused = takesKeyFocus
                 #endif
             }
             .onDisappear {
                 if let sessionToken {
                     mapping.deactivateLiveSession(token: sessionToken)
                 }
+                sessionToken = nil
             }
             .onChange(of: arePlaybackActionsEnabled) { _, enabled in
-                mapping.arePlaybackActionsEnabled = enabled
+                guard let sessionToken else { return }
+                mapping.setPlaybackActionsEnabled(enabled, token: sessionToken)
             }
             #if os(iOS)
             .onChange(of: mapping.isMapping) { _, isMapping in
-                if isMapping {
+                if isMapping, takesKeyFocus {
                     isFocused = true
                 }
             }
@@ -89,12 +99,14 @@ struct LiveInputMappingSessionModifier: ViewModifier {
 extension View {
     func liveInputMappingSession(
         arePlaybackActionsEnabled: Bool = true,
+        takesKeyFocus: Bool = true,
         handler: @escaping (MappableLiveAction) -> Void
     ) -> some View {
         modifier(
             LiveInputMappingSessionModifier(
                 handler: handler,
-                arePlaybackActionsEnabled: arePlaybackActionsEnabled
+                arePlaybackActionsEnabled: arePlaybackActionsEnabled,
+                takesKeyFocus: takesKeyFocus
             )
         )
     }
