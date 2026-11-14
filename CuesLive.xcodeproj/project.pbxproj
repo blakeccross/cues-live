@@ -618,6 +618,9 @@
 		12BC92FC8F97DAAB3C7F7055 /* EditView+Fades.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4DF304397BD22CDE340B7 /* EditView+Fades.swift */; };
 		BA4AC22FBC4E7E7C6343055C /* ClipFadeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EE2FAA559DE087F5093964 /* ClipFadeTests.swift */; };
 		6D0179874412861A54EDC792 /* ClipFadeRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */; };
+		680337D0BD1BB29C5120B2DE /* TimelineTrailingSpace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF73F9003EACCA86499BD71 /* TimelineTrailingSpace.swift */; };
+		9124AF579AE93BBC62DEA4D9 /* TimelineTrailingSpace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF73F9003EACCA86499BD71 /* TimelineTrailingSpace.swift */; };
+		D3638EC6FE73FC0503AD6FC8 /* TimelineTrailingSpaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E53DE72A602EA0FA2BEE6B7 /* TimelineTrailingSpaceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -970,6 +973,8 @@
 		86B4DF304397BD22CDE340B7 /* EditView+Fades.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Fades.swift"; sourceTree = "<group>"; };
 		22EE2FAA559DE087F5093964 /* ClipFadeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeTests.swift; sourceTree = "<group>"; };
 		7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeRendererTests.swift; sourceTree = "<group>"; };
+		3CF73F9003EACCA86499BD71 /* TimelineTrailingSpace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineTrailingSpace.swift; sourceTree = "<group>"; };
+		9E53DE72A602EA0FA2BEE6B7 /* TimelineTrailingSpaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineTrailingSpaceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1271,6 +1276,7 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				9E53DE72A602EA0FA2BEE6B7 /* TimelineTrailingSpaceTests.swift */,
 				7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */,
 				22EE2FAA559DE087F5093964 /* ClipFadeTests.swift */,
 				C7B482B39F990ECB74D8E2AD /* ScreenPresenceTests.swift */,
@@ -1555,6 +1561,7 @@
 		AA00000500000000000BB00A /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
+				3CF73F9003EACCA86499BD71 /* TimelineTrailingSpace.swift */,
 				15C6A25E1FD0A92617E24864 /* ClipFadeHandles.swift */,
 				F516D3FEBE57AFC2756DD2D9 /* ClipFadeLayout.swift */,
 				912CDF7C066CE59E71F9E034 /* WaveformColumnGain.swift */,
@@ -1750,6 +1757,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				680337D0BD1BB29C5120B2DE /* TimelineTrailingSpace.swift in Sources */,
 				0E67ED9E5E250F2A0C908E43 /* EditView+Fades.swift in Sources */,
 				CC3D52E08B94384C688E2718 /* ClipFadeHandles.swift in Sources */,
 				F056ECB46F4C089C73056881 /* ClipFadeLayout.swift in Sources */,
@@ -2029,6 +2037,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3638EC6FE73FC0503AD6FC8 /* TimelineTrailingSpaceTests.swift in Sources */,
 				6D0179874412861A54EDC792 /* ClipFadeRendererTests.swift in Sources */,
 				BA4AC22FBC4E7E7C6343055C /* ClipFadeTests.swift in Sources */,
 				DB989B1DC6C02991C1F3053A /* ScreenPresenceTests.swift in Sources */,
@@ -2088,6 +2097,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9124AF579AE93BBC62DEA4D9 /* TimelineTrailingSpace.swift in Sources */,
 				12BC92FC8F97DAAB3C7F7055 /* EditView+Fades.swift in Sources */,
 				CBA03164E3D13BFC3C28C6BD /* ClipFadeHandles.swift in Sources */,
 				16A81DF0D267247A04C5BF74 /* ClipFadeLayout.swift in Sources */,

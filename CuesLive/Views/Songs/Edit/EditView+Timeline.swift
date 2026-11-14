@@ -16,12 +16,22 @@ extension EditView {
         AudioEngineManager.shared.duration
     }
 
-    var timelineDuration: TimeInterval {
+    /// Where the song ends: the last clip or section.
+    var songDuration: TimeInterval {
         let duration = timeline.duration
         if duration > 0 {
             return duration
         }
         return max(sourceDuration, finiteEngineDuration, 1)
+    }
+
+    /// Length the editor lays out, including empty measures after the song's end.
+    var timelineDuration: TimeInterval {
+        TimelineTrailingSpace.displayDuration(
+            songDuration: songDuration,
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges
+        )
     }
 
     /// Before geometry is measured, `timelineZoom` is still 1 and would lay out the full

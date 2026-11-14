@@ -114,7 +114,7 @@ extension EditView {
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
-        let start = min(max(0, snappedTime), max(timelineDuration - 0.01, 0))
+        let start = min(max(0, snappedTime), max(songDuration - 0.01, 0))
         guard !markers.contains(where: { abs($0.startSeconds - start) < 0.02 }) else { return }
 
         let newMarker = ArrangementMarker(
@@ -144,7 +144,7 @@ extension EditView {
         guard !isDetectingSections else { return }
         let urls = SongSectionDetector.analysisTracks(in: song)
             .compactMap { FileStore.trackURL(for: song, track: $0) }
-        let songDuration = timelineDuration
+        let duration = songDuration
         isDetectingSections = true
 
         Task {
@@ -153,7 +153,7 @@ extension EditView {
                 let starts = try await SongSectionDetector.detectSectionStarts(from: urls)
                 let detected = SongSectionDetector.markers(
                     fromSectionStarts: starts,
-                    songDuration: songDuration
+                    songDuration: duration
                 )
                 guard detected.count > 1 else { throw SongSectionDetectorError.noSectionsFound }
                 performUndoableChange("Detect Sections") {
