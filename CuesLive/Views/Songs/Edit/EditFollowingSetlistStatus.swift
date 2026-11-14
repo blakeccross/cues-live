@@ -27,7 +27,7 @@ struct EditFollowingSetlistStatus: View {
 
     private func statusLabel(_ title: String, systemImage: String) -> some View {
         Label(title, systemImage: systemImage)
-            .font(AppTypography.caption())
+            .font(AppTypography.caption)
             .foregroundStyle(AppColors.textSecondary)
             .lineLimit(1)
             .padding(.vertical, AppSpacing.xxs)

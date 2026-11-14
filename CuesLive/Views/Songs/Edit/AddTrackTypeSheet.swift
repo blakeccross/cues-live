@@ -47,11 +47,11 @@ struct AddTrackTypeSheet: View {
                                 onChoose(kind)
                             } label: {
                                 Label {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                                         Text(kind.title)
                                             .foregroundStyle(AppColors.textPrimary)
                                         Text(kind.subtitle)
-                                            .font(.caption)
+                                            .font(AppTypography.caption)
                                             .foregroundStyle(AppColors.textTertiary)
                                     }
                                 } icon: {

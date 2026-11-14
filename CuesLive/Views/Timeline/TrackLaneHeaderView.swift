@@ -21,22 +21,22 @@ struct TrackLaneHeaderView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppSpacing.compact) {
             Text(track.displayName)
-                .font(.caption.weight(.semibold))
+                .font(AppTypography.captionEmphasized)
                 .foregroundStyle(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .padding(.horizontal, AppSpacing.xs)
+                .padding(.vertical, AppSpacing.xxs)
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: AppSpacing.compact) {
+                HStack(spacing: AppSpacing.compact) {
                     TrackMixButton(
                         label: "M",
                         isActive: track.isMuted,
-                        activeColor: .dawMuteActive
+                        activeColor: AppColors.muteActive
                     ) {
                         track.isMuted.toggle()
                         onMixChange()
@@ -45,7 +45,7 @@ struct TrackLaneHeaderView: View {
                     TrackMixButton(
                         label: "S",
                         isActive: track.isSolo,
-                        activeColor: .dawSoloActive
+                        activeColor: AppColors.soloActive
                     ) {
                         track.isSolo.toggle()
                         onMixChange()
@@ -66,15 +66,15 @@ struct TrackLaneHeaderView: View {
 
                 groupPicker
             }
-            .padding(.horizontal, 8)
-            .padding(.bottom, 6)
+            .padding(.horizontal, AppSpacing.xs)
+            .padding(.bottom, AppSpacing.compact)
         }
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
         .clipped()
         .background {
             if isSelected {
                 Rectangle()
-                    .fill(Color.dawTrackHeaderSelected)
+                    .fill(AppColors.trackHeaderSelected)
             }
         }
         .contentShape(Rectangle())
@@ -119,20 +119,19 @@ struct TrackLaneHeaderView: View {
                 onManageGroups()
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: AppSpacing.xxs) {
                 Text(track.group?.name ?? "No Group")
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
+                    .font(AppTypography.Compact.glyph)
             }
-            .font(.caption2)
+            .font(AppTypography.caption2)
             .foregroundStyle(trackColors.body)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
+            .padding(AppSpacing.chipInsets)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.dawMixButtonBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 3))
+            .background(AppColors.Timeline.mixButtonBackground)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.chip))
             .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)

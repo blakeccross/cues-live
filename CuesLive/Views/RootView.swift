@@ -43,11 +43,11 @@ struct RootView: View {
             showingDisconnectConfirm = true
         } label: {
             Text("Connected to: \(hostName)")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white)
+                .font(AppTypography.caption2Emphasized)
+                .foregroundStyle(AppColors.textOnFill)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
+                .padding(.vertical, AppSpacing.xxs)
                 .padding(.horizontal, AppSpacing.sm)
                 .contentShape(Rectangle())
         }
@@ -92,14 +92,14 @@ struct RootView: View {
         VStack(spacing: AppSpacing.md) {
             ProgressView()
             Text("Loading setlist from host…")
-                .font(.callout)
+                .font(AppTypography.callout)
                 .foregroundStyle(AppColors.textSecondary)
             Text("This should only take a few seconds.")
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(AppColors.textTertiary)
             if let host = remoteClient.hostDisplayName {
                 Text(host)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textTertiary)
             }
             Button("Cancel") {
@@ -115,12 +115,12 @@ struct RootView: View {
     private func remoteSessionErrorView(message: String) -> some View {
         VStack(spacing: AppSpacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.largeTitle)
-                .foregroundStyle(.yellow)
+                .font(AppTypography.largeTitle)
+                .foregroundStyle(AppColors.warning)
             Text("Remote Session Failed")
-                .font(.headline)
+                .font(AppTypography.headline)
             Text(message)
-                .font(.callout)
+                .font(AppTypography.callout)
                 .foregroundStyle(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)

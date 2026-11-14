@@ -1,24 +1,5 @@
 import SwiftUI
 
-enum ArrangementSectionPalette {
-    /// Saturated section fills — clear section identity without overpowering the waveform.
-    private static let pairs: [(background: Color, accent: Color)] = [
-        (Color(red: 0.10, green: 0.18, blue: 0.34), Color(red: 0.40, green: 0.68, blue: 1.00)),
-        (Color(red: 0.28, green: 0.20, blue: 0.06), Color(red: 0.95, green: 0.78, blue: 0.28)),
-        (Color(red: 0.30, green: 0.12, blue: 0.06), Color(red: 1.00, green: 0.55, blue: 0.28)),
-        (Color(red: 0.30, green: 0.08, blue: 0.16), Color(red: 1.00, green: 0.42, blue: 0.62)),
-        (Color(red: 0.04, green: 0.22, blue: 0.22), Color(red: 0.22, green: 0.88, blue: 0.78)),
-        (Color(red: 0.16, green: 0.08, blue: 0.32), Color(red: 0.72, green: 0.48, blue: 1.00)),
-    ]
-
-    static let backgroundFillOpacity: Double = 0.30
-    static let backgroundCueFillOpacity: Double = 0.48
-
-    static func colors(for index: Int) -> (background: Color, accent: Color) {
-        pairs[index % pairs.count]
-    }
-}
-
 enum LiveSetlistWaveformMetrics {
     static let appStorageKey = "liveSetlistWaveformHeight"
     #if os(iOS)

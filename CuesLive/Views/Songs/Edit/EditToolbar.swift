@@ -8,13 +8,13 @@ struct EditTransportStatusStrip: View {
         Group {
             if let loadError = viewModel.loadError {
                 Text(loadError)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textTertiary)
                     .frame(maxWidth: .infinity)
             }
         }
         .padding(.horizontal)
-        .padding(.vertical, 6)
+        .padding(.vertical, AppSpacing.compact)
         .background(AppColors.surfaceElevated)
     }
 }

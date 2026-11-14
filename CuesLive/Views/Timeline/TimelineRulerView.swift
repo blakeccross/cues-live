@@ -92,10 +92,10 @@ struct TimelineMeasureGridOverlay: View {
             context.translateBy(x: -slice.lowerBound, y: 0)
             let size = CGSize(width: stroked.upperBound, height: size.height)
 
-            let rulerLineColor = showsThroughContent ? Color.editorBarTick : Color.dawMeasureGridLine
-            let barColor = showsThroughContent ? Color.editorBarTick : Color.dawMeasureGridLine.opacity(0.75)
-            let beatColor = showsThroughContent ? Color.editorBeatTick : Color.dawMeasureGridLine.opacity(0.4)
-            let subdivisionColor = showsThroughContent ? Color.editorSubdivisionTick : Color.dawMeasureGridLine.opacity(0.4)
+            let rulerLineColor = showsThroughContent ? AppColors.Timeline.barTick : AppColors.Timeline.measureGridLine
+            let barColor = showsThroughContent ? AppColors.Timeline.barTick : AppColors.Timeline.rulerBarTick
+            let beatColor = showsThroughContent ? AppColors.Timeline.beatTick : AppColors.Timeline.rulerBeatTick
+            let subdivisionColor = showsThroughContent ? AppColors.Timeline.subdivisionTick : AppColors.Timeline.rulerBeatTick
             let rulerLineEnd = min(rulerHeight, size.height)
 
             for time in fine.subdivisions {
@@ -162,7 +162,7 @@ struct TimelineSectionMarkerLines: View {
         Canvas { context, size in
             guard size.width > 0, size.height > 0, contentWidth > 0 else { return }
             let safeDuration = max(duration, 0.001)
-            let color = GraphicsContext.Shading.color(.sectionMarkerLine)
+            let color = GraphicsContext.Shading.color(AppColors.Timeline.sectionMarkerLine)
             for time in times {
                 let x = TimelineLayout.xPosition(
                     for: time,
@@ -295,10 +295,10 @@ struct TimelineRulerView: View {
                 .frame(width: effectiveDisplayWidth, height: sectionMarkerHeight)
         }
         .frame(width: effectiveDisplayWidth, alignment: .leading)
-        .background(Color.dawStickyRulerBackground)
+        .background(AppColors.Timeline.stickyRulerBackground)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.dawTimelineDivider)
+                .fill(AppColors.Timeline.divider)
                 .frame(height: 1)
         }
     }
@@ -351,7 +351,7 @@ struct TimelineTimeRulerView: View {
     var body: some View {
         Canvas { context, size in
             let scale = TimeRulerScale(pixelsPerSecond: pixelsPerSecond)
-            let mark = GraphicsContext.Shading.color(Color.secondary.opacity(0.5))
+            let mark = GraphicsContext.Shading.color(AppColors.Timeline.timeRulerTick)
             let end = extendedMaximumTime
             guard scale.minor > 0, end >= 0 else { return }
 
@@ -384,7 +384,6 @@ struct TimelineTimeRulerView: View {
             context.stroke(minorPath, with: mark, lineWidth: 1)
             context.stroke(majorPath, with: mark, lineWidth: 1)
 
-            let labelFont = Font.system(size: 9, design: .monospaced)
             for step in stride(from: 0, through: stepCount, by: subdivisions) {
                 let time = Double(step) * scale.minor
                 let x = TimelineLayout.xPosition(
@@ -395,14 +394,14 @@ struct TimelineTimeRulerView: View {
                 guard x <= size.width - 8 else { break }
                 let label = context.resolve(
                     Text(Self.formatRulerTime(time, showsFraction: scale.major < 1))
-                        .font(labelFont)
+                        .font(AppTypography.Compact.timecode)
                         .foregroundStyle(.secondary)
                 )
                 context.draw(label, at: CGPoint(x: x + 4, y: 6), anchor: .topLeading)
             }
         }
         .frame(width: effectiveDisplayWidth, height: height)
-        .background(Color.dawStickyRulerBackground)
+        .background(AppColors.Timeline.stickyRulerBackground)
         .allowsHitTesting(false)
     }
 

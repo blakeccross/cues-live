@@ -27,10 +27,10 @@ struct SongLibraryListRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
             HStack(spacing: AppSpacing.xxs) {
                 Text(song.name)
-                    .font(.body.weight(.medium))
+                    .font(AppTypography.bodyMedium)
                     .foregroundStyle(AppColors.textPrimary)
                     .lineLimit(1)
                 if song.smartGuideEnabled {
@@ -38,10 +38,10 @@ struct SongLibraryListRow: View {
                 }
             }
             Text(details)
-                .font(.callout.monospacedDigit())
+                .font(AppTypography.callout.monospacedDigit())
                 .foregroundStyle(
                     backgroundProminence == .increased
-                        ? AppColors.textPrimary.opacity(0.8)
+                        ? AppColors.textHighlighted
                         : AppColors.textSecondary
                 )
                 .lineLimit(1)

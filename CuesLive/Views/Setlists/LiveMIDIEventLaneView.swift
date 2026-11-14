@@ -10,6 +10,8 @@ struct LiveMIDIEventLaneView: View {
     let events: [MIDIEvent]
 
     private static let dotSize: CGFloat = 6
+    /// Keeps the device tag just inside the lane's rounded corner.
+    private static let tagOffset = CGSize(width: 3, height: 1)
 
     private var safeDuration: TimeInterval {
         max(timelineDuration, 0.001)
@@ -18,11 +20,11 @@ struct LiveMIDIEventLaneView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(AppColors.Live.midiLaneBackground)
 
             ForEach(events) { event in
                 Circle()
-                    .fill(Color.white.opacity(0.85))
+                    .fill(AppColors.Live.midiEventDot)
                     .frame(width: Self.dotSize, height: Self.dotSize)
                     .position(
                         x: TimelineLayout.xPosition(
@@ -35,15 +37,12 @@ struct LiveMIDIEventLaneView: View {
             }
 
             Text(deviceName.uppercased())
-                .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                .font(AppTypography.Compact.laneTag)
                 .foregroundStyle(AppColors.textTertiary)
                 .lineLimit(1)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1)
-                .background(AppColors.surfaceElevated.opacity(0.9))
-                .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
-                .padding(.leading, 3)
-                .padding(.top, 1)
+                .appTag(AppColors.Live.tagBackground)
+                .padding(.leading, Self.tagOffset.width)
+                .padding(.top, Self.tagOffset.height)
         }
         .frame(width: contentWidth, height: LiveSetlistWaveformMetrics.midiLaneRowHeight)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))

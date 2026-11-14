@@ -130,8 +130,8 @@ struct SetlistOverlapEditorView: View {
 
                 if let previewError {
                     Text(previewError)
-                        .font(.caption)
-                        .foregroundStyle(.red)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.error)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
@@ -176,10 +176,10 @@ struct SetlistOverlapEditorView: View {
     private var editorHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(context.outgoingSong.name)
-                .font(.subheadline.weight(.semibold))
+                .font(AppTypography.subheadlineEmphasized)
                 .foregroundStyle(AppColors.textSecondary)
             Text("into \(context.incomingSong.name)")
-                .font(.headline)
+                .font(AppTypography.headline)
                 .foregroundStyle(AppColors.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -310,7 +310,7 @@ struct SetlistOverlapEditorView: View {
                         previewEngine.isPlaying ? "Stop" : "Preview",
                         systemImage: previewEngine.isPlaying ? "stop.fill" : "play.fill"
                     )
-                    .font(.subheadline.weight(.semibold))
+                    .font(AppTypography.subheadlineEmphasized)
                 }
             }
             .disabled(windowDuration <= 0 || isLoadingPreview)
@@ -469,7 +469,7 @@ struct SetlistOverlapEditorView: View {
                     .offset(x: xOffset)
                     .overlay {
                         Text("No waveform")
-                            .font(.caption)
+                            .font(AppTypography.caption)
                             .foregroundStyle(AppColors.textTertiary)
                     }
             }
@@ -634,14 +634,14 @@ private struct OverlapWaveformLaneView: View {
     var body: some View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(Color.liveVoiceMemosBackground)
+                .fill(AppColors.LiveWaveform.background)
 
             if sourcePeaks.isEmpty {
                 ProgressView()
                     .controlSize(.small)
             } else if displayPeaks.isEmpty {
                 Text("No waveform")
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textTertiary)
             } else {
                 WaveformBarsCanvas(
@@ -649,11 +649,11 @@ private struct OverlapWaveformLaneView: View {
                     showsEmptyBaseline: false,
                     style: .voiceMemosBars,
                     playheadFraction: playheadFraction,
-                    playedColor: .white.opacity(LiveSetlistWaveformMetrics.waveformPlayedOpacity),
-                    unplayedColor: .white.opacity(LiveSetlistWaveformMetrics.waveformUnplayedOpacity)
+                    playedColor: AppColors.LiveWaveform.monochrome.opacity(LiveSetlistWaveformMetrics.waveformPlayedOpacity),
+                    unplayedColor: AppColors.LiveWaveform.monochrome.opacity(LiveSetlistWaveformMetrics.waveformUnplayedOpacity)
                 )
                 .frame(width: max(contentWidth, 1), height: height)
-                .padding(.vertical, 2)
+                .padding(.vertical, AppSpacing.xxxs)
             }
         }
         .frame(width: max(contentWidth, 1), height: height)

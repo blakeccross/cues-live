@@ -41,7 +41,7 @@ private struct AppIconButtonStyleBody<Label: View>: View {
             .frame(width: style.size, height: style.size)
             .contentShape(Rectangle())
             .animation(AppAnimation.fadeQuick, value: style.isOn)
-            .opacity(isEnabled ? 1 : 0.4)
+            .opacity(isEnabled ? 1 : AppOpacity.disabled)
             .scaleEffect(isPressed && isEnabled ? 0.97 : 1)
             .animation(AppAnimation.springSnappy, value: isPressed)
     }

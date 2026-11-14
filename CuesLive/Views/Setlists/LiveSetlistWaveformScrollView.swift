@@ -100,7 +100,7 @@ struct LiveSetlistWaveformScrollView: View {
             }
         }
         .padding(.leading, AppSpacing.md)
-        .padding(.vertical, 2)
+        .padding(.vertical, AppSpacing.xxxs)
         .fixedSize(horizontal: true, vertical: false)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width

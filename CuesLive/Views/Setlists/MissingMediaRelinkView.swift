@@ -61,7 +61,7 @@ struct MissingMediaRelinkView: View {
                         VStack(spacing: 0) {
                             if let statusMessage {
                                 Text(statusMessage)
-                                    .font(.caption)
+                                    .font(AppTypography.caption)
                                     .foregroundStyle(AppColors.textSecondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, AppSpacing.md)
@@ -74,12 +74,12 @@ struct MissingMediaRelinkView: View {
                                         ForEach(group.tracks) { missing in
                                             HStack(alignment: .center, spacing: AppSpacing.sm) {
                                                 Image(systemName: "exclamationmark.triangle.fill")
-                                                    .foregroundStyle(.orange)
-                                                VStack(alignment: .leading, spacing: 2) {
+                                                    .foregroundStyle(AppColors.warning)
+                                                VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                                                     Text(missing.trackName)
                                                         .foregroundStyle(AppColors.textPrimary)
                                                     Text(missing.expectedFileName)
-                                                        .font(.caption)
+                                                        .font(AppTypography.caption)
                                                         .foregroundStyle(AppColors.textTertiary)
                                                         .lineLimit(1)
                                                 }

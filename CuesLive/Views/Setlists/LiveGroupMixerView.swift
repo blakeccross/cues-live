@@ -313,7 +313,7 @@ struct LiveGroupChannelStrip: View {
                 TrackMixButton(
                     label: "M",
                     isActive: isMuted,
-                    activeColor: .dawMuteActive
+                    activeColor: AppColors.muteActive
                 ) {
                     isMuted.toggle()
                     onMixChange()
@@ -324,8 +324,8 @@ struct LiveGroupChannelStrip: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             Text(title)
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.white)
+                .font(AppTypography.caption2Emphasized)
+                .foregroundStyle(AppColors.textOnFill)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, minHeight: 18, alignment: .center)

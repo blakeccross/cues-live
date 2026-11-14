@@ -20,7 +20,7 @@ struct MappableLiveControlModifier: ViewModifier {
                 if isHighlighted {
                     ZStack {
                         shape
-                            .fill(AppColors.accent.opacity(isPending ? 0.5 : 0.25))
+                            .fill(isPending ? AppColors.mappingHighlightPending : AppColors.mappingHighlight)
                             .allowsHitTesting(false)
 
                         Color.clear
@@ -63,17 +63,15 @@ private struct MappingAssignmentBadge: View {
 
     var body: some View {
         Text(title)
-            .font(.system(size: 9, weight: .bold))
+            .font(AppTypography.Compact.badge)
             .monospacedDigit()
             .foregroundStyle(AppColors.textPrimary)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(Color.black.opacity(0.82), in: Capsule())
+            .appTag(AppColors.mappingBadgeBackground)
             .overlay {
                 Capsule()
-                    .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
+                    .strokeBorder(AppColors.mappingBadgeBorder, lineWidth: 0.5)
             }
             .fixedSize()
     }

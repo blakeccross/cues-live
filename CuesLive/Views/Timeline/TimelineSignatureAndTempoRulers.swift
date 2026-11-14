@@ -29,7 +29,7 @@ struct TimelineTimeSignatureRulerView: View {
     var body: some View {
         ZStack(alignment: .leading) {
             Rectangle()
-                .fill(Color.dawStickyRulerBackground)
+                .fill(AppColors.Timeline.stickyRulerBackground)
 
             ForEach(Array(timeSignatureSegments.enumerated()), id: \.offset) { index, segment in
                 let startX = TimelineLayout.xPosition(
@@ -47,7 +47,7 @@ struct TimelineTimeSignatureRulerView: View {
                 let segmentWidth = max(0, endX - startX)
 
                 Text(segment.displayName)
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .font(AppTypography.Compact.rulerValue)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -96,7 +96,7 @@ struct TimelineTimeSignatureRulerView: View {
         )
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.dawTimelineDivider)
+                .fill(AppColors.Timeline.divider)
                 .frame(height: 1)
                 .allowsHitTesting(false)
         }
@@ -195,7 +195,7 @@ struct TimelineTempoRulerView: View {
         let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
         ZStack(alignment: .leading) {
             Rectangle()
-                .fill(Color.dawStickyRulerBackground)
+                .fill(AppColors.Timeline.stickyRulerBackground)
                 .contextMenu {
                     Button("Tempo Operations…") {
                         onTempoOperations()
@@ -220,7 +220,7 @@ struct TimelineTempoRulerView: View {
 
                 if segmentWidth >= 28 {
                     Text(String(format: "%.0f", segment.bpm))
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(AppTypography.Compact.rulerValue)
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -273,7 +273,7 @@ struct TimelineTempoRulerView: View {
         )
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(Color.dawTimelineDivider)
+                .fill(AppColors.Timeline.divider)
                 .frame(height: 1)
                 .allowsHitTesting(false)
         }
@@ -353,7 +353,7 @@ private struct RulerChangeDot: View {
 
     var body: some View {
         Circle()
-            .fill(Color(white: 0.58))
+            .fill(AppColors.Timeline.rulerChangeMarker)
             .frame(width: Self.diameter, height: Self.diameter)
             .frame(width: Self.hitExtent, height: Self.hitExtent)
             .contentShape(Rectangle())

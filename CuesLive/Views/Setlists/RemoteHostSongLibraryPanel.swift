@@ -72,7 +72,7 @@ struct RemoteHostSongLibraryPanel: View {
                 Button("Clear") {
                     searchText = ""
                 }
-                .font(.subheadline)
+                .font(AppTypography.subheadline)
                 .foregroundStyle(AppColors.textSecondary)
                 .buttonStyle(.plain)
             }
@@ -154,13 +154,13 @@ private struct RemoteHostSongLibraryRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                 Text(song.name)
-                    .font(.body.weight(.semibold))
+                    .font(AppTypography.bodyEmphasized)
                     .lineLimit(2)
                     .foregroundStyle(AppColors.textPrimary)
                 Text(subtitle)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textTertiary)
                     .lineLimit(1)
             }
@@ -174,7 +174,7 @@ private struct RemoteHostSongLibraryRow: View {
 
             Button(action: onAddToSetlist) {
                 Image(systemName: "plus")
-                    .font(.body.weight(.semibold))
+                    .font(AppTypography.bodyEmphasized)
                     .frame(width: 32, height: 32)
                     .contentShape(Rectangle())
             }

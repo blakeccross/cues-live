@@ -28,7 +28,7 @@ struct TimeSignatureChangePrompt: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text("What time signature should measure \(measure) change to?")
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -141,12 +141,12 @@ struct TempoOperationsMenu: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Tempo Operations")
-                .font(.headline)
+                .font(AppTypography.headline)
 
             Text(caption)
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -157,7 +157,7 @@ struct TempoOperationsMenu: View {
             }
 
             if kind.usesRange {
-                HStack(spacing: 16) {
+                HStack(spacing: AppSpacing.md) {
                     Stepper(value: $startBar, in: 1...9_999) {
                         Text("Start bar \(startBar)")
                             .monospacedDigit()
@@ -174,7 +174,7 @@ struct TempoOperationsMenu: View {
             }
 
             if kind.usesCurve {
-                HStack(spacing: 16) {
+                HStack(spacing: AppSpacing.md) {
                     bpmField("Start", value: $startBPM)
                     bpmField("End", value: $endBPM)
                 }
@@ -184,9 +184,9 @@ struct TempoOperationsMenu: View {
                     }
                 }
                 if kind == .parabolic {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text("Curvature \(curvature, format: .number.precision(.fractionLength(2)))")
-                            .font(.caption)
+                            .font(AppTypography.caption)
                             .monospacedDigit()
                         Slider(value: $curvature, in: -1...1)
                     }
@@ -194,9 +194,9 @@ struct TempoOperationsMenu: View {
             }
 
             if kind.usesFactor {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(kind == .stretch ? "Length factor \(factor, format: .number.precision(.fractionLength(2)))" : "Tempo factor \(factor, format: .number.precision(.fractionLength(2)))")
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .monospacedDigit()
                     Slider(value: $factor, in: 0.05...20)
                 }
@@ -204,8 +204,8 @@ struct TempoOperationsMenu: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.error)
             }
 
             Button("Apply") {
@@ -232,7 +232,7 @@ struct TempoOperationsMenu: View {
     }
 
     private func bpmField(_ title: String, value: Binding<Double>) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppSpacing.xs) {
             Text(title)
                 .foregroundStyle(.secondary)
             TextField(
