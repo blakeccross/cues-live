@@ -17,8 +17,8 @@ enum SongLibraryPanePreference {
 
 #if os(macOS)
 /// Places the song library in a resizable pane beside the setlist. A plain stack rather than
-/// a split view, so the window's bottom safe area reaches both panes. When the pane touches
-/// the top of the window, its background and divider run up under the toolbar like a column.
+/// a split view, so the window's bottom safe area reaches both panes. The pane stops at the
+/// toolbar, which runs unbroken across the window above it.
 struct LiveSongLibrarySplitLayout<Library: View, SetlistContent: View>: View {
     let isLibraryVisible: Bool
     @ViewBuilder let library: () -> Library
@@ -31,7 +31,7 @@ struct LiveSongLibrarySplitLayout<Library: View, SetlistContent: View>: View {
         HStack(spacing: 0) {
             if isLibraryVisible {
                 library()
-                    .background(AppColors.backgroundSecondary.ignoresSafeArea(edges: .top))
+                    .background(AppColors.backgroundSecondary)
                     .frame(width: LivePlaybackSidebarMetrics.clampedSidebarWidth(libraryWidth, totalWidth: totalWidth))
 
                 AppResizableDivider(
@@ -40,7 +40,6 @@ struct LiveSongLibrarySplitLayout<Library: View, SetlistContent: View>: View {
                     clamp: { LivePlaybackSidebarMetrics.clampedSidebarWidth($0, totalWidth: totalWidth) },
                     accessibilityLabel: "Song library width"
                 )
-                .ignoresSafeArea(edges: .top)
                 .zIndex(1)
             }
 

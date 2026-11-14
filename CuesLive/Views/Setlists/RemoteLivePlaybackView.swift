@@ -44,10 +44,13 @@ struct RemoteLivePlaybackView: View {
     var body: some View {
         Group {
             #if os(macOS)
-            LivePlaybackTrailingSidebarLayout(isVisible: mapping.isMapping) {
+            LivePlaybackSidebarLayout(isVisible: mapping.isMapping) {
                 InputMappingPanel()
             } mainContent: {
                 remotePlaybackMain
+            }
+            .overlay(alignment: .top) {
+                AppHairline()
             }
             .toolbarBackground(.hidden, for: .windowToolbar)
             #else

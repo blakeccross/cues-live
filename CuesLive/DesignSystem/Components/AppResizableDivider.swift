@@ -18,14 +18,10 @@ struct AppResizableDivider: View {
     var onResizeEnded: () -> Void = {}
 
     @State private var dragStartLength: CGFloat?
-    @Environment(\.displayScale) private var displayScale
 
     private static let hitAreaThickness: CGFloat = 10
-
-    /// One device pixel, so the line renders on 1x displays where a 0.5pt line falls between pixels.
-    private var lineThickness: CGFloat {
-        1 / max(displayScale, 1)
-    }
+    /// Matches `AppHairline` under the toolbar, so pane edges and the toolbar line read as one weight.
+    private static let lineThickness: CGFloat = 2
 
     private var isHorizontalLine: Bool {
         edge == .top || edge == .bottom
@@ -39,7 +35,7 @@ struct AppResizableDivider: View {
     var body: some View {
         Rectangle()
             .fill(AppColors.paneDivider)
-            .frame(width: isHorizontalLine ? nil : lineThickness, height: isHorizontalLine ? lineThickness : nil)
+            .frame(width: isHorizontalLine ? nil : Self.lineThickness, height: isHorizontalLine ? Self.lineThickness : nil)
             .frame(
                 maxWidth: isHorizontalLine ? .infinity : nil,
                 maxHeight: isHorizontalLine ? nil : .infinity

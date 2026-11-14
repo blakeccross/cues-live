@@ -179,13 +179,22 @@ struct LivePlaybackView: View {
     private func playbackBodyChrome(for setlist: Setlist) -> some View {
         Group {
             #if os(macOS)
-            LivePlaybackTrailingSidebarLayout(
-                isVisible: mapping.isMapping || isSongBrowserVisible,
-                minimumWidth: trailingPaneMinimumWidth
+            LivePlaybackSidebarLayout(
+                edge: .leading,
+                isVisible: isSongBrowserShowing,
+                minimumWidth: LiveSongBrowser<EmptyView>.minimumWidth,
+                widthStorageKey: LivePlaybackSidebarMetrics.songBrowserAppStorageKey
             ) {
-                trailingPane
+                songBrowser
             } mainContent: {
-                playbackMainLayout
+                LivePlaybackSidebarLayout(isVisible: mapping.isMapping) {
+                    InputMappingPanel()
+                } mainContent: {
+                    playbackMainLayout
+                }
+            }
+            .overlay(alignment: .top) {
+                AppHairline()
             }
             .toolbarBackground(.hidden, for: .windowToolbar)
             #else

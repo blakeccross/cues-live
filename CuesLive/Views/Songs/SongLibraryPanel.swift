@@ -275,7 +275,8 @@ struct SongLibraryPanel: View {
                     .draggable(SongDragPayload.string(for: song.id))
             }
         }
-        .listStyle(.inset)
+        .listStyle(.plain)
+        .alternatingRowBackgrounds()
         .onDeleteCommand(perform: requestDeleteSelection)
         .onExitCommand { selection.removeAll() }
         #else

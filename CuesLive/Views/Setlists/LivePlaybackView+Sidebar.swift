@@ -42,20 +42,11 @@ extension LivePlaybackView {
         )
     }
 
-    /// The mapping inspector takes the trailing pane while mapping; otherwise the song browser does.
-    @ViewBuilder
-    var trailingPane: some View {
-        if mapping.isMapping {
-            InputMappingPanel()
-        } else {
-            LiveSongBrowser(folderSelection: $songBrowserFolder) {
-                songLibraryPanel(scope: songBrowserScope)
-            }
+    /// The leading pane: song folders beside the selected folder's songs.
+    var songBrowser: some View {
+        LiveSongBrowser(folderSelection: $songBrowserFolder) {
+            songLibraryPanel(scope: songBrowserScope)
         }
-    }
-
-    var trailingPaneMinimumWidth: CGFloat {
-        mapping.isMapping ? LivePlaybackSidebarMetrics.minimumSidebarWidth : LiveSongBrowser<EmptyView>.minimumWidth
     }
 
     private var songBrowserScope: SongLibraryScope {
@@ -66,12 +57,12 @@ extension LivePlaybackView {
         return .folder(folder)
     }
 
-    /// Whether the song browser is the pane showing, rather than hidden or covered by mapping.
+    /// Whether the song browser is showing. Mapping hides it to leave room for the inspector.
     var isSongBrowserShowing: Bool {
         isSongBrowserVisible && !mapping.isMapping
     }
 
-    /// Shows or hides the song browser. Showing it ends any mapping session, which shares the pane.
+    /// Shows or hides the song browser. Showing it ends any mapping session.
     func toggleSongBrowser() {
         if isSongBrowserShowing {
             isSongBrowserVisible = false

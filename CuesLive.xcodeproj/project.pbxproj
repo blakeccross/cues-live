@@ -626,6 +626,12 @@
 		ABF4108669D7E227F40F28E7 /* SongTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF0B056D1FC70762C297535 /* SongTimelineTests.swift */; };
 		745CF3078ABCF7980BC662C5 /* SongTimeline+SectionEdges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D223A4A564A9010DE83B56 /* SongTimeline+SectionEdges.swift */; };
 		59A25C650C7EF4EC56429EB4 /* SongTimeline+SectionEdges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D223A4A564A9010DE83B56 /* SongTimeline+SectionEdges.swift */; };
+		664CE976AD88030535272BAE /* LivePlaybackSidebarMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2187A8952F67BCD866AC9AE4 /* LivePlaybackSidebarMetrics.swift */; };
+		C5E1DA8E725EF0F8CAEF8269 /* LivePlaybackSidebarMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2187A8952F67BCD866AC9AE4 /* LivePlaybackSidebarMetrics.swift */; };
+		5D762E220BAFC1145AE76D94 /* LivePlaybackSidebarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1DAAFE599F6387221E441 /* LivePlaybackSidebarLayout.swift */; };
+		AE082424725A9188390EF3F2 /* LivePlaybackSidebarLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B1DAAFE599F6387221E441 /* LivePlaybackSidebarLayout.swift */; };
+		E006E7B89B383DA950846882 /* AppHairline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26521F80D7EDA0426AF224F /* AppHairline.swift */; };
+		DDCFE3246BC271AFEE39E397 /* AppHairline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26521F80D7EDA0426AF224F /* AppHairline.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -983,6 +989,9 @@
 		917C777E1F02A61F01047BAB /* ToolbarTransportControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarTransportControls.swift; sourceTree = "<group>"; };
 		6AF0B056D1FC70762C297535 /* SongTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongTimelineTests.swift; sourceTree = "<group>"; };
 		02D223A4A564A9010DE83B56 /* SongTimeline+SectionEdges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongTimeline+SectionEdges.swift"; sourceTree = "<group>"; };
+		2187A8952F67BCD866AC9AE4 /* LivePlaybackSidebarMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackSidebarMetrics.swift; sourceTree = "<group>"; };
+		B3B1DAAFE599F6387221E441 /* LivePlaybackSidebarLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePlaybackSidebarLayout.swift; sourceTree = "<group>"; };
+		B26521F80D7EDA0426AF224F /* AppHairline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppHairline.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1197,6 +1206,8 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				B3B1DAAFE599F6387221E441 /* LivePlaybackSidebarLayout.swift */,
+				2187A8952F67BCD866AC9AE4 /* LivePlaybackSidebarMetrics.swift */,
 				AB04BD545A9B2DC5379FC45E /* SetlistSectionGridView.swift */,
 				87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */,
 				78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */,
@@ -1371,6 +1382,7 @@
 		AA00000500000000000000A3 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				B26521F80D7EDA0426AF224F /* AppHairline.swift */,
 				61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */,
 				C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */,
 				9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */,
@@ -1768,6 +1780,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E006E7B89B383DA950846882 /* AppHairline.swift in Sources */,
+				5D762E220BAFC1145AE76D94 /* LivePlaybackSidebarLayout.swift in Sources */,
+				664CE976AD88030535272BAE /* LivePlaybackSidebarMetrics.swift in Sources */,
 				745CF3078ABCF7980BC662C5 /* SongTimeline+SectionEdges.swift in Sources */,
 				07FAE5CB4F9DF72E068EB295 /* ToolbarTransportControls.swift in Sources */,
 				E66D52B55133C839AD8FCC36 /* SetlistSectionGridView.swift in Sources */,
@@ -2111,6 +2126,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DDCFE3246BC271AFEE39E397 /* AppHairline.swift in Sources */,
+				AE082424725A9188390EF3F2 /* LivePlaybackSidebarLayout.swift in Sources */,
+				C5E1DA8E725EF0F8CAEF8269 /* LivePlaybackSidebarMetrics.swift in Sources */,
 				59A25C650C7EF4EC56429EB4 /* SongTimeline+SectionEdges.swift in Sources */,
 				55B723C520047443A9425052 /* ToolbarTransportControls.swift in Sources */,
 				703A5ED995B313FD429DD51D /* SetlistSectionGridView.swift in Sources */,
