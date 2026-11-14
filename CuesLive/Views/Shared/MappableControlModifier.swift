@@ -3,9 +3,6 @@ import SwiftUI
 struct MappableLiveControlModifier: ViewModifier {
     let action: MappableLiveAction
     var cornerRadius: CGFloat = AppRadius.sm
-    /// When false the control gets no outline or idle tint in mapping mode, only a fill
-    /// while it is the pending control. Used for compact transport buttons.
-    var isOutlined: Bool = true
 
     @Environment(InputMappingController.self) private var mapping
 
@@ -23,12 +20,7 @@ struct MappableLiveControlModifier: ViewModifier {
                 if isHighlighted {
                     ZStack {
                         shape
-                            .fill(AppColors.accent.opacity(isPending ? 0.22 : (isOutlined ? 0.08 : 0)))
-                            .overlay {
-                                if isOutlined {
-                                    shape.strokeBorder(AppColors.accent, lineWidth: isPending ? 3 : 2)
-                                }
-                            }
+                            .fill(AppColors.accent.opacity(isPending ? 0.5 : 0.25))
                             .allowsHitTesting(false)
 
                         Color.clear
@@ -90,15 +82,8 @@ private struct MappingAssignmentBadge: View {
 extension View {
     func mappableLiveControl(
         _ action: MappableLiveAction,
-        cornerRadius: CGFloat = AppRadius.sm,
-        isOutlined: Bool = true
+        cornerRadius: CGFloat = AppRadius.sm
     ) -> some View {
-        modifier(
-            MappableLiveControlModifier(
-                action: action,
-                cornerRadius: cornerRadius,
-                isOutlined: isOutlined
-            )
-        )
+        modifier(MappableLiveControlModifier(action: action, cornerRadius: cornerRadius))
     }
 }

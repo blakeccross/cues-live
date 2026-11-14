@@ -1,36 +1,41 @@
 import SwiftUI
 
-/// The sections of one setlist song, shown when its row is expanded. For the current song each
-/// section fills with a progress bar as the playhead crosses it, and passed sections dim. Tapping
-/// a section cues it exactly like tapping it in the waveform.
-struct SetlistSectionListView: View {
+/// The sections of one setlist song as tile cards, shown when its row is expanded. Cards wrap
+/// to fit as many across as the width allows. For the current song each card fills with a
+/// progress bar as the playhead crosses it, and passed sections dim. Tapping a card cues the
+/// section exactly like tapping it in the waveform.
+struct SetlistSectionGridView: View {
     let sections: [SongSection]
     let playbackIndex: Int
     let isCurrent: Bool
     let isEnabled: Bool
     let playback: SetlistSectionPlayback
 
+    private let columns = [
+        GridItem(.adaptive(minimum: 132, maximum: 220), spacing: AppSpacing.xs, alignment: .top)
+    ]
+
     var body: some View {
         if isCurrent {
-            // Only the current song's rows redraw with the playhead.
+            // Only the current song's cards redraw with the playhead.
             TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !playback.isPlaying)) { _ in
-                rows(at: playback.idlePlayheadTime ?? playback.playheadTime())
+                cards(at: playback.idlePlayheadTime ?? playback.playheadTime())
             }
         } else {
-            rows(at: nil)
+            cards(at: nil)
         }
     }
 
-    private func rows(at time: TimeInterval?) -> some View {
-        VStack(spacing: AppSpacing.xxs) {
+    private func cards(at time: TimeInterval?) -> some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: AppSpacing.xs) {
             ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
-                SetlistSectionRow(
+                SetlistSectionCard(
                     section: section,
                     playheadTime: time,
                     isCued: isCurrent && playback.cuedSectionID == section.id,
                     cueFlashPhase: playback.cueFlashPhase
                 )
-                .contentShape(Rectangle())
+                .contentShape(RoundedRectangle(cornerRadius: SetlistSectionCard.cornerRadius, style: .continuous))
                 .onTapGesture {
                     guard isEnabled else { return }
                     playback.selectSection(playbackIndex, section)
@@ -40,7 +45,7 @@ struct SetlistSectionListView: View {
                 .appLinkPointer()
                 .mappableLiveControl(
                     .goToSection(songIndex: playbackIndex, sectionIndex: index),
-                    cornerRadius: SetlistSectionRow.cornerRadius
+                    cornerRadius: SetlistSectionCard.cornerRadius
                 )
             }
         }
@@ -48,14 +53,18 @@ struct SetlistSectionListView: View {
     }
 }
 
-private struct SetlistSectionRow: View {
-    static let cornerRadius: CGFloat = 8
+private struct SetlistSectionCard: View {
+    static let cornerRadius: CGFloat = 10
 
     let section: SongSection
     /// Nil for songs that aren't current, which show no progress.
     let playheadTime: TimeInterval?
     let isCued: Bool
     let cueFlashPhase: Bool
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
+    }
 
     private var progress: Double {
         guard let playheadTime, section.duration > 0 else { return 0 }
@@ -80,36 +89,38 @@ private struct SetlistSectionRow: View {
     }
 
     var body: some View {
-        HStack(spacing: AppSpacing.xs) {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
             Text(section.name)
-                .font(.subheadline.weight(isActive ? .semibold : .regular))
+                .font(.subheadline.weight(isActive ? .semibold : .medium))
                 .foregroundStyle(AppColors.textPrimary)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .truncationMode(.tail)
 
-            if section.loops {
-                Image(systemName: "repeat")
-                    .font(.caption)
+            HStack(spacing: AppSpacing.xxs) {
+                Text(timeText)
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(AppColors.textSecondary)
-                    .accessibilityLabel("Loops")
+                Spacer(minLength: 0)
+                if section.loops {
+                    Image(systemName: "repeat")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.textSecondary)
+                        .accessibilityLabel("Loops")
+                }
             }
-
-            Text(timeText)
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(AppColors.textSecondary)
         }
         .padding(.horizontal, AppSpacing.sm)
-        .frame(minHeight: 34)
+        .padding(.vertical, AppSpacing.xs)
+        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
         .background(progressBackground)
-        .overlay(cueOutline)
+        .overlay(border)
         .opacity(isPassed ? 0.4 : 1)
         .accessibilityElement(children: .combine)
         .accessibilityValue(isCued ? "Cued" : "")
     }
 
     private var progressBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
-        return shape
+        shape
             .fill(AppColors.headerBand)
             .overlay(alignment: .leading) {
                 GeometryReader { proxy in
@@ -122,10 +133,11 @@ private struct SetlistSectionRow: View {
     }
 
     @ViewBuilder
-    private var cueOutline: some View {
+    private var border: some View {
         if isCued {
-            RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous)
-                .strokeBorder(AppColors.accent.opacity(cueFlashPhase ? 1 : 0.35), lineWidth: 2)
+            shape.strokeBorder(AppColors.accent.opacity(cueFlashPhase ? 1 : 0.35), lineWidth: 2)
+        } else {
+            shape.strokeBorder(Color.white.opacity(isActive ? 0.14 : 0.06), lineWidth: 1)
         }
     }
 }

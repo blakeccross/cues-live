@@ -120,7 +120,7 @@ private extension View {
         cornerRadius: CGFloat
     ) -> some View {
         if enabled {
-            mappableLiveControl(action, cornerRadius: cornerRadius, isOutlined: false)
+            mappableLiveControl(action, cornerRadius: cornerRadius)
         } else {
             self
         }

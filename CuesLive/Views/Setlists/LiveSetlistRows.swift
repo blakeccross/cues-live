@@ -213,7 +213,7 @@ struct SetlistListView: View {
             .mappableLiveControl(.goToSong(song.playbackIndex), cornerRadius: AppRadius.sm)
 
             if let sectionPlayback, expansion?.wrappedValue == true {
-                SetlistSectionListView(
+                SetlistSectionGridView(
                     sections: song.sections,
                     playbackIndex: song.playbackIndex,
                     isCurrent: isCurrent,
