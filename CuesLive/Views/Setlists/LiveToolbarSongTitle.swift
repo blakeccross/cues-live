@@ -10,6 +10,16 @@ struct LiveToolbarSongTitle: View {
         RoundedRectangle(cornerRadius: AppRadius.sm - 2, style: .continuous)
     }
 
+    /// Fills the toolbar's usable height: the macOS unified toolbar leaves 46pt for an item,
+    /// while the iOS navigation bar is 44pt overall.
+    private static var panelHeight: CGFloat {
+        #if os(macOS)
+        46
+        #else
+        38
+        #endif
+    }
+
     private var hasContent: Bool {
         !title.isEmpty || upNextName != nil
     }
@@ -41,8 +51,7 @@ struct LiveToolbarSongTitle: View {
             }
         }
         .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, upNextName == nil ? AppSpacing.xs - 2 : AppSpacing.xxs)
-        .frame(minWidth: 140)
+        .frame(minWidth: 160, minHeight: Self.panelHeight)
         .background(shape.fill(AppColors.headerBand))
         .overlay(shape.strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
         .contentShape(shape)

@@ -102,7 +102,7 @@ private struct LiveToolbarNowPlaying: View {
             title: coordinator.currentSong?.name ?? "Not Playing",
             upNext: coordinator.nextSong?.name
         )
-        .frame(minWidth: 120, maxWidth: 260)
+        .frame(minWidth: 160, maxWidth: 320)
         .accessibilityElement(children: .combine)
     }
 }
