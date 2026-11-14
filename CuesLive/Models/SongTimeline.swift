@@ -40,7 +40,8 @@ struct SongTimeline: Codable, Hashable {
     }
 }
 
-/// The span from one marker to the next. Derived on demand; never stored.
+/// The span from one marker to the next, or to the marker's own end when it stops short.
+/// Derived on demand; never stored.
 struct SongSection: Identifiable, Hashable, Sendable {
     /// The starting marker's ID.
     let id: UUID
@@ -56,10 +57,12 @@ struct SongSection: Identifiable, Hashable, Sendable {
     }
 
     /// The last section ends at `songEnd`; sections that would start at or after it are dropped.
+    /// An explicit marker end never runs past the next marker or the song end.
     static func derive(markers: [ArrangementMarker], songEnd: TimeInterval) -> [SongSection] {
         let sorted = markers.sortedByTime
         return sorted.enumerated().compactMap { index, marker in
-            let end = index + 1 < sorted.count ? sorted[index + 1].startSeconds : songEnd
+            let limit = index + 1 < sorted.count ? sorted[index + 1].startSeconds : songEnd
+            let end = min(marker.endSeconds ?? limit, limit)
             guard end > marker.startSeconds else { return nil }
             return SongSection(
                 id: marker.id,

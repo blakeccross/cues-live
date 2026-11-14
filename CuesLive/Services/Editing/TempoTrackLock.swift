@@ -40,6 +40,7 @@ enum TempoTrackLock {
         result.markers = timeline.markers.map { marker in
             var moved = marker
             moved.startSeconds = position(marker.startSeconds, from: old, to: new)
+            moved.endSeconds = marker.endSeconds.map { position($0, from: old, to: new) }
             return moved
         }
         let movedEvents = midiEvents.map { event in

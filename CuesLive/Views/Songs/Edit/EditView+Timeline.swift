@@ -85,24 +85,6 @@ extension EditView {
         viewModel.seekAndPlay(to: playbackStart)
     }
 
-    #if os(macOS)
-    private var editorTransportCluster: some View {
-        EditSongTransportCluster(
-            viewModel: viewModel,
-            loopSectionIDs: loopSectionIDs,
-            currentSectionAtTime: { time in
-                displaySections.section(atTimeline: time)
-            },
-            onStopTransport: stopTransport,
-            onToggleLoopAtTime: toggleLoop(at:),
-            onToggleFade: toggleGroupMixFade,
-            groupMixFade: groupMixFade,
-            onPlay: playFromInsertion,
-            stoppedDisplayTime: playbackStart
-        )
-    }
-    #endif
-
     @ViewBuilder
     var editorRoot: some View {
         #if os(macOS)
@@ -112,10 +94,6 @@ extension EditView {
             if viewModel.followsSetlist {
                 LiveTransportBottomBar {
                     EditFollowingSetlistStatus(isActiveSong: viewModel.isActiveSetlistSong)
-                }
-            } else if LiveTransportLayout.macOSPlacesControlsAtBottom {
-                LiveTransportBottomBar {
-                    editorTransportCluster
                 }
             }
         }
@@ -234,6 +212,8 @@ extension EditView {
             onAddSection: addSection,
             onRenameSection: beginRenameSection,
             onRemoveMarker: removeMarker,
+            previewSections: previewSections(_:),
+            onEditSectionEdge: applySectionEdge(_:),
             onTimeSignatureRulerTap: handleTimeSignatureRulerTap,
             onEditTimeSignatureMarker: { marker in
                 activeSheet = .timeSignatureChange(TimeSignatureLanePrompt(

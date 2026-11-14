@@ -32,7 +32,6 @@ struct EditTransportBar<Chrome: View>: View {
 
     @State private var showingClickEditor = false
     @State private var showingSmartGuideEditor = false
-    @Bindable private var audioEngine = AudioEngineManager.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,11 +45,6 @@ struct EditTransportBar<Chrome: View>: View {
                     .background(AppColors.surfaceElevated)
             }
             content
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            LiveTransportBottomBar {
-                transportCluster
-            }
         }
         #if os(iOS)
         .toolbar {
@@ -87,6 +81,10 @@ struct EditTransportBar<Chrome: View>: View {
     private var editorToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             backButton
+        }
+
+        ToolbarItem(placement: .principal) {
+            transportCluster
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
@@ -174,40 +172,19 @@ struct EditTransportBar<Chrome: View>: View {
         }
         .help("Back")
     }
-    #endif
 
     private var transportCluster: some View {
-        Group {
-            if audioEngine.isPlaying {
-                TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
-                    transportStrip(at: audioEngine.currentTime)
-                }
-            } else {
-                transportStrip(at: stoppedDisplayTime)
-            }
-        }
-    }
-
-    private func transportStrip(at time: TimeInterval) -> some View {
-        SharedTransportStrip(
-            buttonSize: 44,
-            isPlaying: audioEngine.isPlaying,
-            isLoaded: viewModel.isLoaded,
-            isLooping: sectionLoopIsActive(at: time),
-            canLoop: currentSectionAtTime(time) != nil,
-            onStop: onStopTransport,
+        EditSongTransportCluster(
+            viewModel: viewModel,
+            loopSectionIDs: loopSectionIDs,
+            currentSectionAtTime: currentSectionAtTime,
+            onStopTransport: onStopTransport,
+            onToggleLoopAtTime: onToggleLoopAtTime,
+            onToggleFade: onToggleFade,
+            groupMixFade: groupMixFade,
             onPlay: onPlay,
-            onPause: viewModel.pause,
-            onToggleLoop: { onToggleLoopAtTime(time) },
-            isFadedOut: groupMixFade.isFadedOut,
-            isFading: groupMixFade.isFading,
-            onToggleFade: onToggleFade
+            stoppedDisplayTime: stoppedDisplayTime
         )
     }
-
-    private func sectionLoopIsActive(at time: TimeInterval) -> Bool {
-        guard let section = currentSectionAtTime(time) else { return false }
-        return loopSectionIDs.contains(section.id)
-    }
-
+    #endif
 }

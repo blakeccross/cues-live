@@ -444,11 +444,17 @@ enum ClipEditing {
 
         let owner = timeline.sortedMarkers.last { $0.startSeconds <= end + tolerance }
         let hasMarkerAtEnd = timeline.markers.contains { abs($0.startSeconds - end) <= tolerance }
+        // Explicit section ends inside the removed range land on its start; later ones shift left.
+        let closedGap = { (time: TimeInterval) -> TimeInterval in
+            if time < start - tolerance { return time }
+            return time < end - tolerance ? start : time - length
+        }
         timeline.markers = timeline.markers.compactMap { marker in
-            if marker.startSeconds < start - tolerance {
-                return marker
-            }
             var shifted = marker
+            shifted.endSeconds = marker.endSeconds.map(closedGap)
+            if marker.startSeconds < start - tolerance {
+                return shifted
+            }
             if marker.startSeconds >= end - tolerance {
                 shifted.startSeconds -= length
                 return shifted
@@ -482,8 +488,13 @@ enum ClipEditing {
         }
         sort(&timeline.clips)
 
-        for index in timeline.markers.indices where timeline.markers[index].startSeconds >= position - tolerance {
-            timeline.markers[index].startSeconds += length
+        for index in timeline.markers.indices {
+            if timeline.markers[index].startSeconds >= position - tolerance {
+                timeline.markers[index].startSeconds += length
+            }
+            if let sectionEnd = timeline.markers[index].endSeconds, sectionEnd > position + tolerance {
+                timeline.markers[index].endSeconds = sectionEnd + length
+            }
         }
         for index in midiEvents.indices where midiEvents[index].timelineSeconds >= position - tolerance {
             midiEvents[index].timelineSeconds += length
@@ -516,6 +527,11 @@ enum ClipEditing {
         }
 
         let sorted = timeline.sortedMarkers
+        // An explicit section end inside the copied range is copied with it.
+        let copiedEnd = { (sectionEnd: TimeInterval?) -> TimeInterval? in
+            guard let sectionEnd, sectionEnd > start + tolerance, sectionEnd <= end + tolerance else { return nil }
+            return destination + (sectionEnd - start)
+        }
         var markerIDMap: [UUID: UUID] = [:]
         var copiedMarkers = sorted
             .filter { $0.startSeconds >= start - tolerance && $0.startSeconds < end - tolerance }
@@ -523,6 +539,7 @@ enum ClipEditing {
                 let copy = ArrangementMarker(
                     name: marker.name,
                     startSeconds: destination + max(0, marker.startSeconds - start),
+                    endSeconds: copiedEnd(marker.endSeconds),
                     loops: copyLoops && marker.loops
                 )
                 markerIDMap[marker.id] = copy.id
@@ -531,11 +548,19 @@ enum ClipEditing {
         let copyStartsOnMarker = sorted.contains { abs($0.startSeconds - start) <= tolerance }
         if !copyStartsOnMarker, let owner = sorted.last(where: { $0.startSeconds < start }) {
             copiedMarkers.append(
-                ArrangementMarker(name: owner.name, startSeconds: destination, loops: copyLoops && owner.loops)
+                ArrangementMarker(
+                    name: owner.name,
+                    startSeconds: destination,
+                    endSeconds: copiedEnd(owner.endSeconds),
+                    loops: copyLoops && owner.loops
+                )
             )
         }
 
-        let destinationOwner = sorted.last { $0.startSeconds < destination - tolerance }
+        // A destination in the gap after a short section belongs to no section.
+        let destinationOwner = sorted
+            .last { $0.startSeconds < destination - tolerance }
+            .flatMap { owner in (owner.endSeconds ?? .infinity) > destination + tolerance ? owner : nil }
         let destinationOnMarker = sorted.contains { abs($0.startSeconds - destination) <= tolerance }
         let materialFollows = timeline.clips.contains { $0.timelineEndSeconds > destination + tolerance }
             || sorted.contains { $0.startSeconds > destination + tolerance }
@@ -557,10 +582,13 @@ enum ClipEditing {
         sort(&timeline.clips)
         timeline.markers.append(contentsOf: copiedMarkers)
         if let destinationOwner, !destinationOnMarker, materialFollows {
+            // The owner's end was pushed right with the material after the insertion point.
+            let shiftedOwnerEnd = timeline.markers.first { $0.id == destinationOwner.id }?.endSeconds
             timeline.markers.append(
                 ArrangementMarker(
                     name: destinationOwner.name,
                     startSeconds: destination + length,
+                    endSeconds: shiftedOwnerEnd,
                     loops: destinationOwner.loops
                 )
             )
@@ -612,6 +640,7 @@ enum ClipEditing {
                 return marker
             }
             restored.startSeconds = marker.startSeconds
+            restored.endSeconds = marker.endSeconds
             return restored
         }
     }

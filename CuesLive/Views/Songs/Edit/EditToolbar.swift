@@ -19,7 +19,7 @@ struct EditTransportStatusStrip: View {
     }
 }
 
-#if os(macOS)
+/// The editor's own playback through the shared toolbar transport, so it matches the setlist window.
 struct EditSongTransportCluster: View {
     let viewModel: SongEditorViewModel
     let loopSectionIDs: Set<UUID>
@@ -36,31 +36,27 @@ struct EditSongTransportCluster: View {
     @Bindable private var audioEngine = AudioEngineManager.shared
 
     var body: some View {
-        Group {
-            if audioEngine.isPlaying {
-                TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
-                    transportStrip(at: audioEngine.currentTime)
-                }
-            } else {
-                transportStrip(at: stoppedDisplayTime)
+        if audioEngine.isPlaying {
+            TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
+                controls(at: audioEngine.currentTime)
             }
+        } else {
+            controls(at: stoppedDisplayTime)
         }
     }
 
-    private func transportStrip(at time: TimeInterval) -> some View {
-        SharedTransportStrip(
-            buttonSize: 44,
+    private func controls(at time: TimeInterval) -> some View {
+        ToolbarTransportControls(
             isPlaying: audioEngine.isPlaying,
             isLoaded: viewModel.isLoaded,
             isLooping: sectionLoopIsActive(at: time),
             canLoop: currentSectionAtTime(time) != nil,
-            onStop: onStopTransport,
-            onPlay: onPlay,
-            onPause: viewModel.pause,
-            onToggleLoop: { onToggleLoopAtTime(time) },
             isFadedOut: groupMixFade.isFadedOut,
             isFading: groupMixFade.isFading,
-            onToggleFade: onToggleFade
+            onStop: onStopTransport,
+            onPlayPause: audioEngine.isPlaying ? viewModel.pause : onPlay,
+            onToggleFade: onToggleFade,
+            onToggleLoop: { onToggleLoopAtTime(time) }
         )
     }
 
@@ -70,6 +66,7 @@ struct EditSongTransportCluster: View {
     }
 }
 
+#if os(macOS)
 struct EditSongToolbarContent: ToolbarContent {
     let viewModel: SongEditorViewModel
     @Bindable var song: Song
@@ -106,12 +103,15 @@ struct EditSongToolbarContent: ToolbarContent {
             .cuesHideSharedBackground()
         }
 
-        ToolbarItem(placement: .principal) {
-            if LiveTransportLayout.macOSPlacesControlsAtBottom {
-                LiveToolbarSongTitle(title: song.name, upNext: nil)
-            } else {
+        // The setlist window owns playback while this editor follows it.
+        if !viewModel.followsSetlist {
+            ToolbarItem(placement: .principal) {
                 editorTransportCluster
             }
+        }
+
+        ToolbarItem(placement: .principal) {
+            LiveToolbarSongTitle(title: song.name, upNext: nil)
         }
         .cuesHideSharedBackground()
 

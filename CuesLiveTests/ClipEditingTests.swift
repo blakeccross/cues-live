@@ -285,6 +285,41 @@ final class ClipEditingTests: XCTestCase {
         XCTAssertEqual(timeline.sortedMarkers[1].id, sectionB)
     }
 
+    func testRippleDeleteShiftsExplicitSectionEnds() {
+        var timeline = makeTimeline()
+        var midi: [MIDIEvent] = []
+        timeline.markers[0].endSeconds = 5
+        timeline.markers[2].endSeconds = 50
+
+        ClipEditing.rippleDelete(from: 20, to: 40, timeline: &timeline, midiEvents: &midi)
+
+        XCTAssertEqual(timeline.sortedMarkers.map(\.endSeconds), [5, 30])
+    }
+
+    func testInsertSpaceShiftsExplicitEndsAfterThePosition() {
+        var timeline = makeTimeline()
+        var midi: [MIDIEvent] = []
+        timeline.markers[0].endSeconds = 5
+        timeline.markers[1].endSeconds = 30
+
+        ClipEditing.insertSpace(at: 25, length: 10, timeline: &timeline, midiEvents: &midi)
+
+        XCTAssertEqual(timeline.sortedMarkers.map(\.endSeconds), [5, 40, nil])
+    }
+
+    func testDuplicatingShortSectionKeepsGapUnnamed() {
+        var timeline = makeTimeline()
+        var midi: [MIDIEvent] = []
+        timeline.markers[1].endSeconds = 30
+
+        ClipEditing.duplicateSection(timeline.markers[1].id, timeline: &timeline, midiEvents: &midi)
+
+        let spans = timeline.sections(songEnd: timeline.duration)
+            .map { [$0.timelineStartSeconds, $0.timelineEndSeconds] }
+        XCTAssertEqual(timeline.sortedMarkers.map(\.name), ["A", "B", "B", "C"])
+        XCTAssertEqual(spans, [[0, 20], [20, 30], [30, 40], [50, 70]])
+    }
+
     func testRemovingLastSectionLeavesNoStrayMarker() {
         var timeline = makeTimeline()
         var midi: [MIDIEvent] = []

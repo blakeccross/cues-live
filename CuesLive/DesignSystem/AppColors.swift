@@ -47,6 +47,10 @@ enum AppColors {
 
     /// Highlighted track header background when the track row is selected.
     static let trackHeaderSelected = Color("TrackHeaderSelected")
+
+    /// Editor section-marker blocks: the track palette's dark gray, lifting to its white when selected.
+    static let sectionMarker = Color("TrackPaletteDarkGray")
+    static let sectionMarkerSelected = Color("TrackPaletteWhite")
 }
 
 extension Color {

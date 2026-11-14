@@ -162,12 +162,6 @@ struct SharedTransportStrip: View {
     }
 }
 
-/// Transport stays in the bottom bar. `macOSPlacesControlsAtBottom` is the macOS editor toggle.
-enum LiveTransportLayout {
-    /// Set to false to put the macOS song-editor transport back in the toolbar.
-    static let macOSPlacesControlsAtBottom = true
-}
-
 /// Shared bottom-bar chrome for portrait transport controls.
 struct LiveTransportBottomBar<Content: View>: View {
     @ViewBuilder let content: () -> Content

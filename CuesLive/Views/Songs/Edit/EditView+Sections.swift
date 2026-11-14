@@ -191,6 +191,26 @@ extension EditView {
         }
     }
 
+    /// Sections as they would be after `edit`, for the marker ruler to draw mid-drag.
+    func previewSections(_ edit: SectionEdgeEdit) -> [SongSection] {
+        timeline
+            .applying(edit, songEnd: timeline.duration)
+            .sections(songEnd: timeline.duration)
+    }
+
+    /// Commits a dragged section edge. The drag has already snapped the time to a beat;
+    /// only markers change, never audio.
+    func applySectionEdge(_ edit: SectionEdgeEdit) {
+        var edited = timeline
+        guard edited.apply(edit, songEnd: timeline.duration) else { return }
+        if cuedSectionID != nil {
+            clearMarkerCue()
+        }
+        commitTimelineEdit("Move Marker") { timeline in
+            timeline = edited
+        }
+    }
+
     /// Removes the marker only; the audio stays and joins the previous section.
     func removeMarker(_ section: SongSection) {
         if cuedSectionID == section.id {

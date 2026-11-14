@@ -58,97 +58,38 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
     }
 }
 
-/// Stop, play/pause, fade, and loop as native toolbar controls. Reads the coordinator itself
+/// The shared toolbar transport, bound to the setlist's playback. Reads the coordinator itself
 /// so playback state changes redraw only the toolbar, not the setlist.
 private struct LiveToolbarTransportControls: View {
     let coordinator: PlaybackCoordinator
-    @Bindable var sectionLoop: SectionLoopController
-    @Bindable var groupMixFade: GroupMixFadeController
+    let sectionLoop: SectionLoopController
+    let groupMixFade: GroupMixFadeController
     let canLoop: Bool
     let onStop: () -> Void
     let onToggleLoop: () -> Void
     let onToggleFade: () -> Void
 
-    private var isLoaded: Bool {
-        coordinator.isLoaded && !coordinator.isLoadingSong
-    }
-
     var body: some View {
-        HStack(spacing: 0) {
-            Button(action: onStop) {
-                Label("Stop", systemImage: "stop.fill")
-            }
-            .help("Stop")
-            .mappableLiveControl(.stop)
-
-            playPauseButton
-
-            fadeToggle
-
-            Toggle(isOn: Binding(get: { sectionLoop.isLooping }, set: { _ in onToggleLoop() })) {
-                Label("Loop Section", systemImage: "repeat")
-            }
-            .tint(AppColors.transportLoop)
-            .disabled(!canLoop)
-            .help("Loop Section")
-            .mappableLiveControl(.loop)
-        }
-        .labelStyle(.iconOnly)
-        .toggleStyle(.button)
-        .disabled(!isLoaded)
+        ToolbarTransportControls(
+            isPlaying: coordinator.isPlaying,
+            isLoaded: coordinator.isLoaded && !coordinator.isLoadingSong,
+            isLooping: sectionLoop.isLooping,
+            canLoop: canLoop,
+            isFadedOut: groupMixFade.isFadedOut,
+            isFading: groupMixFade.isFading,
+            onStop: onStop,
+            onPlayPause: togglePlayback,
+            onToggleFade: onToggleFade,
+            onToggleLoop: onToggleLoop
+        )
     }
 
-    private var playPauseButton: some View {
-        Button {
-            if coordinator.isPlaying {
-                coordinator.pause()
-            } else {
-                coordinator.play()
-            }
-        } label: {
-            Label(
-                coordinator.isPlaying ? "Pause" : "Play",
-                systemImage: coordinator.isPlaying ? "pause.fill" : "play.fill"
-            )
+    private func togglePlayback() {
+        if coordinator.isPlaying {
+            coordinator.pause()
+        } else {
+            coordinator.play()
         }
-        .foregroundStyle(coordinator.isPlaying ? AppColors.transportPlay : AppColors.textPrimary)
-        .help(coordinator.isPlaying ? "Pause" : "Play")
-        .mappableLiveControl(.playPause)
-    }
-
-    /// Blinks while a fade is running so the state reads from across a stage.
-    @ViewBuilder
-    private var fadeToggle: some View {
-        Group {
-            if groupMixFade.isFading {
-                TimelineView(.animation(minimumInterval: 0.35)) { context in
-                    let isDimmed = Int(context.date.timeIntervalSinceReferenceDate / 0.35) % 2 == 0
-                    fadeToggleContent.opacity(isDimmed ? 0.28 : 1)
-                }
-            } else {
-                fadeToggleContent
-            }
-        }
-        .mappableLiveControl(.fade)
-    }
-
-    private var fadeToggleContent: some View {
-        Toggle(
-            isOn: Binding(
-                get: { groupMixFade.isFadedOut || groupMixFade.isFading },
-                set: { _ in onToggleFade() }
-            )
-        ) {
-            Label {
-                Text("Fade Out")
-            } icon: {
-                // The symbol's right angle is bottom-left; mirror it for idle (bottom-right).
-                Image(systemName: "righttriangle.fill")
-                    .scaleEffect(x: groupMixFade.isFadedOut ? 1 : -1, y: 1)
-            }
-        }
-        .tint(AppColors.transportFade)
-        .help(groupMixFade.isFadedOut ? "Fade In" : "Fade Out")
     }
 }
 
