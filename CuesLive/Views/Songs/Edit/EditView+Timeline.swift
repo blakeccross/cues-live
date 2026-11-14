@@ -64,7 +64,7 @@ extension EditView {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.dawTimelineBackground)
+        .background(AppColors.Timeline.background)
     }
 
     /// Where Play begins: the range start while a selection is showing, otherwise the insertion.
@@ -177,7 +177,7 @@ extension EditView {
 
     private var timelineRulerStack: some View {
         timelineRulerSection
-            .background(Color.dawStickyRulerBackground)
+            .background(AppColors.Timeline.stickyRulerBackground)
             .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
     }
 
@@ -344,7 +344,7 @@ extension EditView {
                 ForEach(drag.firstRow...drag.lastRow, id: \.self) { row in
                     let lane = frames.rows[row]
                     Rectangle()
-                        .fill(Color.soundcraftSelection)
+                        .fill(AppColors.Timeline.selection)
                         .frame(width: max(x1 - x0, 1), height: lane.height)
                         .offset(x: x0, y: lane.originY)
                 }
@@ -489,30 +489,30 @@ extension EditView {
             }
         }
         .frame(width: TimelineLayout.trackHeaderWidth)
-        .background(Color.dawTrackHeaderColumnBackground)
+        .background(AppColors.Timeline.trackHeaderColumnBackground)
         .onReceive(Timer.publish(every: 1.0 / 30.0, on: .main, in: .common).autoconnect()) { _ in
             guard audioEngine.isPlaying || audioEngine.hasVisibleMeterLevel else { return }
             audioEngine.refreshGroupMeters()
         }
         .overlay(alignment: .trailing) {
             Rectangle()
-                .fill(Color.dawTimelineDivider)
+                .fill(AppColors.Timeline.divider)
                 .frame(width: 1)
         }
     }
 
     private func rulerLaneLabel(_ title: String, height: CGFloat) -> some View {
         Text(title)
-            .font(.system(size: 9, weight: .semibold))
+            .font(AppTypography.Compact.label)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, AppSpacing.xs)
             .frame(height: height)
     }
 
     private var rulerLaneDivider: some View {
         Rectangle()
-            .fill(Color.dawTimelineDivider)
+            .fill(AppColors.Timeline.divider)
             .frame(height: 1)
             .allowsHitTesting(false)
     }
@@ -524,18 +524,18 @@ extension EditView {
             rulerLaneLabel("Markers", height: TimelineLayout.sectionMarkerHeight)
         }
         .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.topRulerHeight)
-        .background(Color.dawTrackHeaderBackground)
+        .background(AppColors.Timeline.trackHeaderBackground)
         .overlay(alignment: .bottom) { rulerLaneDivider }
         .overlay(alignment: .trailing) {
             Rectangle()
-                .fill(Color.dawTimelineDivider)
+                .fill(AppColors.Timeline.divider)
                 .frame(width: 1)
         }
     }
 
     private var trackHeaderTimeRulerCorner: some View {
         Rectangle()
-            .fill(Color.dawStickyRulerBackground)
+            .fill(AppColors.Timeline.stickyRulerBackground)
             .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerHeight)
             .allowsHitTesting(false)
     }

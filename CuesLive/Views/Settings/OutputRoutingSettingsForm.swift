@@ -155,7 +155,7 @@ struct OutputRoutingSettingsForm: View {
 
     private func groupRouteRow(title: String, routeID: UUID) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 8) {
+            HStack(spacing: AppSpacing.xs) {
                 destinationPicker(selection: binding(for: routeID), title: title)
                 outputTestButton(routeID: routeID)
             }

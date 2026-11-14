@@ -313,17 +313,17 @@ struct WaveformLaneView: View {
     ) -> some View {
         // Dark text on the light selected header, like Logic; muted white on the plain header.
         let foregroundColor = isSelected
-            ? Color.black.opacity(0.72)
-            : Color.white.opacity(0.65)
+            ? AppColors.Timeline.clipHeaderTextSelected
+            : AppColors.Timeline.clipHeaderText
 
         return ZStack {
             headerColor
 
             Text(track.displayName)
-                .font(.system(size: 9, weight: .semibold))
+                .font(AppTypography.Compact.label)
                 .foregroundStyle(foregroundColor)
                 .lineLimit(1)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppSpacing.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .allowsHitTesting(false)
 
@@ -422,13 +422,13 @@ struct WaveformLaneView: View {
                 let y = TimelineLayout.clipHeaderHeight + CGFloat(
                     ClipGain.lineY(decibels: clip.gainDB, bodyHeight: Double(bodyHeight))
                 )
-                Color.white.opacity(170.0 / 255.0)
+                AppColors.Timeline.clipGainLine
                     .frame(width: clipWidth, height: 1)
                     .offset(y: y - 0.5)
             }
             if showMark && clipWidth >= 48 && bodyHeight >= 30 {
                 ClipGainIcon(decibels: clip.gainDB)
-                    .padding(.leading, 4)
+                    .padding(.leading, AppSpacing.xxs)
                     .padding(.top, max(clipHeight - 16, 0))
                     .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
             }
@@ -491,7 +491,7 @@ private struct ClipHeaderEdgeTrimControl<G: Gesture>: View {
 
     var body: some View {
         Text(icon)
-            .font(.system(size: 10, weight: .heavy, design: .monospaced))
+            .font(AppTypography.Compact.trimHandle)
             .foregroundStyle(foregroundColor.opacity(isActive ? 1 : 0.92))
             .frame(width: TimelineLayout.clipTrimHandleWidth)
             .frame(maxHeight: .infinity)

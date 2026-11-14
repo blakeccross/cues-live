@@ -8,12 +8,12 @@ struct AppPrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.body.weight(.semibold))
+                .font(AppTypography.bodyEmphasized)
                 .foregroundStyle(AppColors.textPrimary)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.sm)
                 .frame(minHeight: 44)
-                .background(AppColors.accent.opacity(isEnabled ? 1 : 0.4), in: Capsule())
+                .background(AppColors.accent.opacity(isEnabled ? 1 : AppOpacity.disabled), in: Capsule())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -35,7 +35,7 @@ struct AppSecondaryButton: View {
                 }
                 Text(title)
             }
-            .font(.body.weight(.medium))
+            .font(AppTypography.bodyMedium)
             .foregroundStyle(AppColors.textSecondary)
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)

@@ -40,7 +40,7 @@ struct InputMappingPanel: View {
             )
 
             Text(instruction)
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -89,14 +89,14 @@ struct InputMappingPanel: View {
 
     private func emptyRow(_ message: String) -> some View {
         Text(message)
-            .font(.callout)
+            .font(AppTypography.callout)
             .foregroundStyle(AppColors.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func statusBar(_ message: String) -> some View {
         Label(message, systemImage: "checkmark.circle.fill")
-            .font(.callout.weight(.medium))
+            .font(AppTypography.calloutMedium)
             .foregroundStyle(AppColors.textPrimary)
             .lineLimit(1)
             .frame(maxWidth: .infinity)

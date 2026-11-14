@@ -41,7 +41,6 @@ enum TimelinePlayheadStyle {
 /// Playhead drawn in one canvas pass with a shared pixel-aligned center.
 struct TimelinePlayheadOverlay: View {
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.colorScheme) private var colorScheme
 
     let playheadTime: TimeInterval
     let duration: TimeInterval
@@ -88,7 +87,7 @@ struct TimelinePlayheadOverlay: View {
             path.addLine(to: CGPoint(x: centerX, y: size.height))
             context.stroke(
                 path,
-                with: .color(.soundcraftPlayhead(colorScheme: colorScheme)),
+                with: .color(AppColors.Timeline.playhead),
                 style: StrokeStyle(lineWidth: 1.5)
             )
         }
@@ -106,7 +105,7 @@ struct TimelinePlayheadOverlay: View {
             width: PlayheadMetrics.lineTotalWidth,
             height: lineHeight
         )
-        context.fill(Path(borderRect), with: .color(.dawPlayheadBorder))
+        context.fill(Path(borderRect), with: .color(AppColors.Timeline.playheadHandleBorder))
 
         let innerRect = CGRect(
             x: lineLeft + PlayheadMetrics.borderWidth,
@@ -114,7 +113,7 @@ struct TimelinePlayheadOverlay: View {
             width: PlayheadMetrics.lineWidth,
             height: lineHeight
         )
-        context.fill(Path(innerRect), with: .color(.dawPlayheadFill))
+        context.fill(Path(innerRect), with: .color(AppColors.Timeline.playheadHandleFill))
     }
 
     private func drawHandle(in context: GraphicsContext, centerX: CGFloat) {
@@ -127,10 +126,10 @@ struct TimelinePlayheadOverlay: View {
         )
         let handlePath = playheadHandlePath(in: handleRect)
 
-        context.fill(handlePath, with: .color(.dawPlayheadFill))
+        context.fill(handlePath, with: .color(AppColors.Timeline.playheadHandleFill))
         context.stroke(
             handlePath,
-            with: .color(.dawPlayheadBorder),
+            with: .color(AppColors.Timeline.playheadHandleBorder),
             style: StrokeStyle(lineWidth: PlayheadMetrics.borderWidth)
         )
     }
@@ -156,8 +155,6 @@ struct TimelinePlayheadOverlay: View {
 
 /// Blinking insertion on the selected lanes. Visible while stopped, until playback starts.
 struct TimelineInsertionCursor: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let time: TimeInterval
     let duration: TimeInterval
     let contentWidth: CGFloat
@@ -177,7 +174,7 @@ struct TimelineInsertionCursor: View {
                     duration: max(duration, 0.001),
                     contentWidth: contentWidth
                 )
-                let color = Color.soundcraftInsertion(colorScheme: colorScheme)
+                let color = AppColors.Timeline.insertionCursor
                 for row in rows {
                     var path = Path()
                     path.move(to: CGPoint(x: x, y: row.originY))

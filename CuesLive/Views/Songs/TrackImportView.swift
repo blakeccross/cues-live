@@ -30,7 +30,7 @@ struct TrackImportView: View {
                         }
                     } else {
                         Text("Select audio files or a folder containing a Multitracks subfolder and an optional Ableton file.")
-                            .font(.subheadline)
+                            .font(AppTypography.subheadline)
                             .foregroundStyle(AppColors.textTertiary)
                             .multilineTextAlignment(.center)
                     }

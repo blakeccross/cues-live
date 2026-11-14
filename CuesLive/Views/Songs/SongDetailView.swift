@@ -117,7 +117,7 @@ struct SongDetailView: View {
                 .controlSize(.small)
                 .tint(AppColors.accent)
             Text("Loading audio…")
-                .font(.subheadline.weight(.medium))
+                .font(AppTypography.subheadlineMedium)
                 .foregroundStyle(AppColors.textPrimary)
             Spacer(minLength: 0)
         }
@@ -130,17 +130,17 @@ struct SongDetailView: View {
 
     private func songLoadingOverlay(for viewModel: SongEditorViewModel) -> some View {
         ZStack {
-            Color.black.opacity(0.35)
+            AppColors.scrim
                 .ignoresSafeArea()
             VStack(spacing: AppSpacing.sm) {
                 ProgressView()
                     .tint(AppColors.accent)
                 Text("Loading audio…")
-                    .font(.headline)
+                    .font(AppTypography.headline)
                     .foregroundStyle(AppColors.textPrimary)
                 if let loadError = viewModel.loadError {
                     Text(loadError)
-                        .font(.subheadline)
+                        .font(AppTypography.subheadline)
                         .foregroundStyle(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }

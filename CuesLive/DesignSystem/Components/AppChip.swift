@@ -8,7 +8,7 @@ struct AppChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(AppTypography.captionEmphasized)
                 .padding(.horizontal, AppSpacing.sm)
                 .padding(.vertical, AppSpacing.xs)
                 .foregroundStyle(isSelected ? AppColors.textPrimary : AppColors.textSecondary)

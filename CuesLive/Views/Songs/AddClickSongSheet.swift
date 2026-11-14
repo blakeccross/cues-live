@@ -56,7 +56,7 @@ struct AddClickSongSheet: View {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Song name")
-                            .font(.caption.weight(.semibold))
+                            .font(AppTypography.captionEmphasized)
                             .foregroundStyle(AppColors.textSecondary)
 
                         TextField("My Song", text: $songName)
@@ -66,7 +66,7 @@ struct AddClickSongSheet: View {
 
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Tempo (BPM)")
-                            .font(.caption.weight(.semibold))
+                            .font(AppTypography.captionEmphasized)
                             .foregroundStyle(AppColors.textSecondary)
 
                         TextField("120", text: $bpmText)
@@ -78,7 +78,7 @@ struct AddClickSongSheet: View {
 
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Meter")
-                            .font(.caption.weight(.semibold))
+                            .font(AppTypography.captionEmphasized)
                             .foregroundStyle(AppColors.textSecondary)
 
                         Picker("Meter", selection: $selectedPreset) {
@@ -91,7 +91,7 @@ struct AddClickSongSheet: View {
                     }
 
                     Text("Creates an 8-bar click track set to loop.")
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(AppColors.textTertiary)
                 }
                 .padding(AppSpacing.lg)

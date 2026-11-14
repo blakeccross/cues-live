@@ -18,7 +18,7 @@ struct SongLibraryRow: View {
     }
 
     private var secondaryColor: Color {
-        isHighlighted ? AppColors.textPrimary.opacity(0.8) : AppColors.textTertiary
+        isHighlighted ? AppColors.textHighlighted : AppColors.textTertiary
     }
 
     private var details: String {
@@ -40,10 +40,10 @@ struct SongLibraryRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                 HStack(spacing: AppSpacing.xxs) {
                     Text(song.name)
-                        .font(.body.weight(.semibold))
+                        .font(AppTypography.bodyEmphasized)
                         .foregroundStyle(AppColors.textPrimary)
                         .lineLimit(1)
                     if song.smartGuideEnabled {
@@ -51,7 +51,7 @@ struct SongLibraryRow: View {
                     }
                 }
                 Text(details)
-                    .font(.caption.monospacedDigit())
+                    .font(AppTypography.caption.monospacedDigit())
                     .foregroundStyle(secondaryColor)
                     .lineLimit(1)
             }
@@ -66,7 +66,7 @@ struct SongLibraryRow: View {
 
             addButton
         }
-        .font(.callout.monospacedDigit())
+        .font(AppTypography.callout.monospacedDigit())
         .foregroundStyle(isHighlighted ? AppColors.textPrimary : AppColors.textSecondary)
         .padding(.vertical, AppSpacing.xxs)
         .contentShape(Rectangle())
@@ -77,7 +77,7 @@ struct SongLibraryRow: View {
     private var addButton: some View {
         Button(action: onAddToSetlist) {
             Image(systemName: "plus.circle.fill")
-                .font(.title3)
+                .font(AppTypography.title3)
                 .symbolRenderingMode(.hierarchical)
                 .frame(width: Self.addButtonWidth, height: Self.addButtonWidth)
                 .contentShape(Rectangle())

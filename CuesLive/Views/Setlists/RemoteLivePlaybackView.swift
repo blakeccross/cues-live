@@ -186,8 +186,8 @@ struct RemoteLivePlaybackView: View {
         VStack(spacing: 0) {
             if let loadError = state.loadError {
                 Text(loadError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.error)
                     .padding(AppSpacing.md)
             }
 

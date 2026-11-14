@@ -91,19 +91,19 @@ private struct SetlistSectionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
             Text(section.name)
-                .font(.subheadline.weight(isActive ? .semibold : .medium))
+                .font(isActive ? AppTypography.subheadlineEmphasized : AppTypography.subheadlineMedium)
                 .foregroundStyle(AppColors.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
 
             HStack(spacing: AppSpacing.xxs) {
                 Text(timeText)
-                    .font(.caption.monospacedDigit())
+                    .font(AppTypography.caption.monospacedDigit())
                     .foregroundStyle(AppColors.textSecondary)
                 Spacer(minLength: 0)
                 if section.loops {
                     Image(systemName: "repeat")
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(AppColors.textSecondary)
                         .accessibilityLabel("Loops")
                 }
@@ -125,7 +125,7 @@ private struct SetlistSectionCard: View {
             .overlay(alignment: .leading) {
                 GeometryReader { proxy in
                     Rectangle()
-                        .fill(AppColors.accent.opacity(0.55))
+                        .fill(AppColors.Live.sectionProgress)
                         .frame(width: proxy.size.width * progress)
                 }
             }
@@ -137,7 +137,7 @@ private struct SetlistSectionCard: View {
         if isCued {
             shape.strokeBorder(AppColors.accent.opacity(cueFlashPhase ? 1 : 0.35), lineWidth: 2)
         } else {
-            shape.strokeBorder(Color.white.opacity(isActive ? 0.14 : 0.06), lineWidth: 1)
+            shape.strokeBorder(isActive ? AppColors.Live.sectionCardBorderActive : AppColors.Live.sectionCardBorder, lineWidth: 1)
         }
     }
 }

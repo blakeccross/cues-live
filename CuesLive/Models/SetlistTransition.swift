@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 
 enum SetlistTransition: String, CaseIterable, Identifiable {
     case `continue`
@@ -30,49 +29,7 @@ enum SetlistTransition: String, CaseIterable, Identifiable {
         }
     }
 
-    var badgeColor: Color {
-        switch self {
-        case .continue:
-            return AppColors.textSecondary
-        case .stop:
-            return AppColors.muteActive
-        case .overlap:
-            return Color(red: 0.45, green: 0.70, blue: 0.78)
-        }
-    }
-
     var requiresOverlapConfig: Bool {
         self == .overlap
-    }
-}
-
-struct SetlistTransitionBadge: View {
-    let transition: SetlistTransition
-    var size: CGFloat = 28
-    var onTap: (() -> Void)? = nil
-
-    var body: some View {
-        if let onTap {
-            Button(action: onTap) {
-                badgeContent
-            }
-            .buttonStyle(.plain)
-            .appLinkPointer()
-        } else {
-            badgeContent
-        }
-    }
-
-    private var badgeContent: some View {
-        Image(systemName: transition.systemImage)
-            .font(.system(size: size * 0.38, weight: .semibold))
-            .foregroundStyle(AppColors.textPrimary)
-            .frame(width: size, height: size)
-            .background(AppColors.surfaceElevated)
-            .overlay {
-                Circle()
-                    .stroke(transition.badgeColor, lineWidth: 1.5)
-            }
-            .clipShape(Circle())
     }
 }

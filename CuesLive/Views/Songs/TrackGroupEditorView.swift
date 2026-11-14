@@ -74,7 +74,7 @@ struct TrackGroupEditorView: View {
             } footer: {
                 if let nameError {
                     Text(nameError)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AppColors.error)
                 }
             }
         }
@@ -110,6 +110,8 @@ struct TrackGroupEditorView: View {
 }
 
 private struct TrackGroupEditorRow: View {
+    private static let swatchCornerRadius: CGFloat = 5
+
     @Environment(\.modelContext) private var modelContext
 
     @Bindable var group: TrackGroup
@@ -147,16 +149,16 @@ private struct TrackGroupEditorRow: View {
                 .onSubmit(commitKeywords)
 
             Text("Comma-separated names that auto-assign tracks to this group, in addition to the group name.")
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(.secondary)
         } label: {
             HStack(spacing: AppSpacing.sm) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.xxs, style: .continuous)
                     .fill(bodyColor)
                     .frame(width: 18, height: 18)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .strokeBorder(Color.secondary.opacity(0.4), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: AppRadius.xxs, style: .continuous)
+                            .strokeBorder(AppColors.swatchPreviewBorder, lineWidth: 1)
                     )
                     .accessibilityHidden(true)
 
@@ -198,12 +200,12 @@ private struct TrackGroupEditorRow: View {
     private var colorPicker: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Color")
-                .font(.caption.weight(.semibold))
+                .font(AppTypography.captionEmphasized)
                 .foregroundStyle(AppColors.textSecondary)
 
             LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8),
-                spacing: 6
+                columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.compact), count: 8),
+                spacing: AppSpacing.compact
             ) {
                 ForEach(TrackGroupPalette.Key.allCases) { key in
                     let isSelected = group.paletteKey == key.rawValue
@@ -211,13 +213,13 @@ private struct TrackGroupEditorRow: View {
                         group.paletteKey = key.rawValue
                         try? modelContext.save()
                     } label: {
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        RoundedRectangle(cornerRadius: Self.swatchCornerRadius, style: .continuous)
                             .fill(key.color)
                             .frame(height: 22)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                RoundedRectangle(cornerRadius: Self.swatchCornerRadius, style: .continuous)
                                     .strokeBorder(
-                                        isSelected ? AppColors.accent : AppColors.separator.opacity(0.5),
+                                        isSelected ? AppColors.accent : AppColors.swatchBorder,
                                         lineWidth: isSelected ? 2 : 1
                                     )
                             )

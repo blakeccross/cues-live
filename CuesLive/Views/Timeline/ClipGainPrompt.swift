@@ -6,7 +6,7 @@ struct ClipGainIcon: View {
     let decibels: Double
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: AppSpacing.tagGlyphGap) {
             ZStack {
                 Rectangle()
                     .frame(width: 1, height: 13)
@@ -16,10 +16,10 @@ struct ClipGainIcon: View {
             }
             .frame(width: 9, height: 13)
             Text("\(ClipGain.readout(decibels)) dB")
-                .font(.system(size: 9.5))
+                .font(AppTypography.Compact.clipGain)
                 .lineLimit(1)
         }
-        .foregroundStyle(Color.white.opacity(200.0 / 255.0))
+        .foregroundStyle(AppColors.Timeline.clipGainReadout)
         .fixedSize()
         .contentShape(Rectangle())
         .accessibilityLabel("Clip gain \(ClipGain.readout(decibels)) decibels")
@@ -62,11 +62,11 @@ struct ClipGainPrompt: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text(prompt)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.xs) {
                     TextField("0.0", text: $gainText)
                         .textFieldStyle(.roundedBorder)
                         .monospacedDigit()
@@ -82,7 +82,7 @@ struct ClipGainPrompt: View {
                 }
 
                 Text("From −144 to +36.")
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(.secondary)
             }
             .padding()

@@ -37,11 +37,11 @@ struct EditTransportBar<Chrome: View>: View {
         VStack(spacing: 0) {
             if let loadError = viewModel.loadError {
                 Text(loadError)
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textTertiary)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppSpacing.compact)
                     .background(AppColors.surfaceElevated)
             }
             content

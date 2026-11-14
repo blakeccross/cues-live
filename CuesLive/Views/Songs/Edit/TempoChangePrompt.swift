@@ -96,7 +96,7 @@ struct TempoChangePrompt: View {
                 Spacer()
                 Button(allLocked ? "Unlock All" : "Lock All", action: toggleAll)
                     .buttonStyle(.borderless)
-                    .font(.callout)
+                    .font(AppTypography.callout)
             }
         } footer: {
             Text("Locked tracks speed up or slow down to stay on the beat. Unlocked tracks keep playing as recorded.")

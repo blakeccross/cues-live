@@ -115,7 +115,7 @@ struct EditView: View {
     /// The timeline with focus, keyboard, and drop handling.
     private var focusableEditor: some View {
         editorRoot
-            .background(Color.dawTimelineBackground)
+            .background(AppColors.Timeline.background)
             .modifier(AudioFileDropModifier(
                 isTargeted: $isAudioDropTargeted,
                 onDrop: performAudioFileDrop

@@ -24,7 +24,7 @@ struct RenameSectionSheet: View {
                         ForEach(SongSectionPresets.groups, id: \.title) { group in
                             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                                 Text(group.title)
-                                    .font(.caption.weight(.semibold))
+                                    .font(AppTypography.captionEmphasized)
                                     .foregroundStyle(AppColors.textSecondary)
 
                                 LazyVGrid(columns: columns, alignment: .leading, spacing: AppSpacing.xs) {
@@ -39,7 +39,7 @@ struct RenameSectionSheet: View {
 
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             Text("Custom Name")
-                                .font(.caption.weight(.semibold))
+                                .font(AppTypography.captionEmphasized)
                                 .foregroundStyle(AppColors.textSecondary)
 
                             HStack(spacing: AppSpacing.sm) {

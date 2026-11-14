@@ -1,7 +1,5 @@
 import SwiftUI
 
-private let mixerMeterGreen = Color(red: 0.22, green: 0.82, blue: 0.36)
-
 struct TrackMixButton: View {
     let label: String
     let isActive: Bool
@@ -11,10 +9,10 @@ struct TrackMixButton: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(AppTypography.Compact.mixButton)
                 .frame(width: 22, height: 20)
-                .foregroundStyle(isActive ? Color.black.opacity(0.85) : AppColors.textSecondary)
-                .background(isActive ? activeColor : AppColors.surface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .foregroundStyle(isActive ? AppColors.Mixer.buttonActiveLabel : AppColors.textSecondary)
+                .background(isActive ? activeColor : AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.xs, style: .continuous))
         }
         .buttonStyle(.plain)
         .appPressable()
@@ -107,7 +105,7 @@ struct TrackValueField: View {
                     .minimumScaleFactor(0.7)
             }
         }
-        .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
+        .font(AppTypography.Compact.mixReadout.monospacedDigit())
         .foregroundStyle(AppColors.textPrimary)
         .frame(maxWidth: .infinity)
         .frame(height: boxHeight)
@@ -118,7 +116,7 @@ struct TrackValueField: View {
                     Rectangle().fill(AppColors.surface)
 
                     Rectangle()
-                        .fill(mixerMeterGreen.opacity(0.55))
+                        .fill(AppColors.Mixer.readoutLevel)
                         .frame(width: width * (fill.upperBound - fill.lowerBound))
                         .offset(x: width * fill.lowerBound)
                 }
@@ -239,6 +237,11 @@ enum MixerFaderScale {
     static let markerStepDB: Double = 6
     /// Matches the fader cap so scale marks line up with the thumb center.
     static let thumbHeight: CGFloat = 28
+    /// Gap between a fader and its level meter.
+    static let meterGap: CGFloat = 3
+    /// Gap between the grip lines on the fader thumb.
+    static let gripLineSpacing: CGFloat = 3
+    static let meterCornerRadius: CGFloat = 2
 
     static var spanDB: Double { maxBoostDB + maxAttenuationDB }
 
@@ -316,7 +319,7 @@ struct MixerFaderColumn: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 3) {
+        HStack(alignment: .top, spacing: MixerFaderScale.meterGap) {
             faderTrack
             GroupPeakMeterBar(groupID: groupID, width: meterWidth, height: height)
         }
@@ -376,23 +379,23 @@ struct MixerFaderColumn: View {
     }
 
     private var faderThumb: some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous)
+        RoundedRectangle(cornerRadius: AppRadius.xxs, style: .continuous)
             .fill(AppColors.backgroundPrimary)
             .overlay {
-                VStack(spacing: 3) {
+                VStack(spacing: MixerFaderScale.gripLineSpacing) {
                     ForEach(0..<3, id: \.self) { _ in
                         Rectangle()
-                            .fill(AppColors.textTertiary.opacity(0.35))
+                            .fill(AppColors.Mixer.faderGrip)
                             .frame(height: 1)
                     }
                 }
-                .padding(.horizontal, 6)
+                .padding(.horizontal, AppSpacing.compact)
             }
             .overlay {
                 Rectangle()
-                    .fill(Color.white.opacity(0.9))
+                    .fill(AppColors.Mixer.faderThumbLine)
                     .frame(height: 2)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, AppSpacing.xxs)
             }
             .frame(width: thumbWidth, height: thumbHeight)
     }
@@ -410,7 +413,7 @@ struct MixerFaderColumn: View {
                 let isUnity = db == 0
 
                 Text(MixerFaderScale.markerLabel(for: db))
-                    .font(.system(size: 8, weight: isUnity ? .bold : .medium, design: .rounded))
+                    .font(isUnity ? AppTypography.Compact.faderScaleEmphasized : AppTypography.Compact.faderScale)
                     .foregroundStyle(isUnity ? AppColors.textSecondary : AppColors.textTertiary)
                     .frame(width: labelWidth, height: labelHeight, alignment: .trailing)
                     .offset(y: y - labelHeight / 2)
@@ -454,7 +457,7 @@ struct MixerFaderColumn: View {
                 )
                 let isUnity = db == 0
                 let width = isUnity ? tickWidth + 4 : tickWidth
-                let tickColor = isUnity ? AppColors.textSecondary : AppColors.textTertiary.opacity(0.6)
+                let tickColor = isUnity ? AppColors.textSecondary : AppColors.Mixer.scaleTick
 
                 Rectangle()
                     .fill(tickColor)
@@ -506,11 +509,11 @@ private struct GroupPeakMeterBar: View {
             let fill = travel * MixerFaderScale.faderMeterFillFraction(forPeak: meterLevel)
 
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                RoundedRectangle(cornerRadius: MixerFaderScale.meterCornerRadius, style: .continuous)
                     .fill(AppColors.separator)
 
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(mixerMeterGreen.opacity(0.85))
+                RoundedRectangle(cornerRadius: MixerFaderScale.meterCornerRadius, style: .continuous)
+                    .fill(AppColors.Mixer.faderLevel)
                     .frame(height: fill)
             }
             .padding(.vertical, inset)

@@ -62,11 +62,11 @@ struct WaveformBarsCanvas: View, Equatable {
     var showsEmptyBaseline = true
     var baselineRanges: [ClosedRange<CGFloat>] = []
     var headerHeight: CGFloat = 0
-    var fillColor: Color = Color.dawWaveformFill
+    var fillColor: Color = AppColors.Timeline.waveformFill
     var style: WaveformRenderStyle = .filledEnvelope
     var playheadFraction: CGFloat?
-    var playedColor: Color = Color.liveVoiceMemosPlayed
-    var unplayedColor: Color = Color.liveVoiceMemosUnplayed
+    var playedColor: Color = AppColors.LiveWaveform.played
+    var unplayedColor: Color = AppColors.LiveWaveform.unplayed
     /// Metal offscreens help short static waveforms but thrash scroll for
     /// setlist-length lanes (tens of thousands of points wide).
     var usesDrawingGroup = true
@@ -116,7 +116,7 @@ struct WaveformBarsCanvas: View, Equatable {
             return
         }
 
-        let usesCustomFill = fillColor != Color.dawWaveformFill
+        let usesCustomFill = fillColor != AppColors.Timeline.waveformFill
         let playedFill = usesCustomFill
             ? fillColor.opacity(LiveSetlistWaveformMetrics.waveformPlayedOpacity)
             : playedColor
@@ -244,10 +244,10 @@ struct WaveformBarsCanvas: View, Equatable {
 
     private func voiceMemosBarColor(at centerX: CGFloat, playheadX: CGFloat?) -> Color {
         guard let playheadX else {
-            return fillColor == Color.dawWaveformFill ? unplayedColor : fillColor
+            return fillColor == AppColors.Timeline.waveformFill ? unplayedColor : fillColor
         }
 
-        let usesCustomFill = fillColor != Color.dawWaveformFill
+        let usesCustomFill = fillColor != AppColors.Timeline.waveformFill
         let activeColor = usesCustomFill
             ? fillColor.opacity(LiveSetlistWaveformMetrics.waveformPlayedOpacity)
             : playedColor
