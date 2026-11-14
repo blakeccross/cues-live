@@ -44,7 +44,7 @@ struct DocsTopicDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 Text(topic.title)
-                    .font(.largeTitle.weight(.bold))
+                    .font(AppTypography.largeTitleEmphasized)
                     .foregroundStyle(AppColors.textPrimary)
 
                 topicContent
@@ -100,7 +100,7 @@ struct DocParagraph: View {
 
     var body: some View {
         Text(text)
-            .font(.body)
+            .font(AppTypography.body)
             .foregroundStyle(AppColors.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -111,7 +111,7 @@ struct DocHeading: View {
 
     var body: some View {
         Text(title)
-            .font(.title3.weight(.semibold))
+            .font(AppTypography.title)
             .foregroundStyle(AppColors.textPrimary)
             .padding(.top, AppSpacing.xs)
     }
@@ -127,7 +127,7 @@ struct DocBulletList: View {
                     Text("•")
                         .foregroundStyle(AppColors.accent)
                     Text(item)
-                        .font(.body)
+                        .font(AppTypography.body)
                         .foregroundStyle(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -144,11 +144,11 @@ struct DocNumberedList: View {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
                     Text("\(index + 1).")
-                        .font(.body.weight(.semibold))
+                        .font(AppTypography.bodyEmphasized)
                         .foregroundStyle(AppColors.accent)
                         .frame(width: 22, alignment: .trailing)
                     Text(item)
-                        .font(.body)
+                        .font(AppTypography.body)
                         .foregroundStyle(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -162,12 +162,12 @@ struct DocDefinitionRow: View {
     let detail: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
             Text(term)
-                .font(.body.weight(.semibold))
+                .font(AppTypography.bodyEmphasized)
                 .foregroundStyle(AppColors.textPrimary)
             Text(detail)
-                .font(.body)
+                .font(AppTypography.body)
                 .foregroundStyle(AppColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -183,9 +183,9 @@ struct DocLinkRow: View {
             HStack(spacing: AppSpacing.xs) {
                 Text(title)
                 Image(systemName: "arrow.up.right")
-                    .font(.caption.weight(.semibold))
+                    .font(AppTypography.captionEmphasized)
             }
-            .font(.body.weight(.medium))
+            .font(AppTypography.bodyMedium)
             .foregroundStyle(AppColors.accent)
         }
     }
@@ -199,14 +199,14 @@ struct DocShortcutRow: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.body)
+                .font(AppTypography.body)
                 .foregroundStyle(AppColors.textSecondary)
             Spacer()
             Text(shortcut)
-                .font(.body.monospaced())
+                .font(AppTypography.body.monospaced())
                 .foregroundStyle(AppColors.textPrimary)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, AppSpacing.xxxs)
     }
 }
 #endif
@@ -446,7 +446,7 @@ private struct AboutDocContent: View {
                 Text(appVersionLabel)
                     .foregroundStyle(AppColors.textSecondary)
             }
-            .font(.body)
+            .font(AppTypography.body)
 
             DocParagraph("Logo design by Tyler Lamb.")
 

@@ -5,7 +5,7 @@ struct AppSectionHeader: View {
 
     var body: some View {
         Text(title)
-            .font(AppTypography.title())
+            .font(AppTypography.title)
             .foregroundStyle(AppColors.textPrimary)
     }
 }

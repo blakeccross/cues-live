@@ -20,15 +20,15 @@ struct SetlistSongRowView<MenuContent: View>: View {
             leadingIndicator
                 .frame(width: 28)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                 Text(song.title)
-                    .font(.body.weight(isCurrent ? .semibold : .medium))
+                    .font(isCurrent ? AppTypography.bodyEmphasized : AppTypography.bodyMedium)
                     .foregroundStyle(isFinished ? AppColors.textTertiary : AppColors.textPrimary)
                     .lineLimit(2)
 
                 if let detailText {
                     Text(detailText)
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(AppColors.textTertiary)
                         .lineLimit(1)
                 }
@@ -38,7 +38,7 @@ struct SetlistSongRowView<MenuContent: View>: View {
             badges
 
             Text(song.durationText)
-                .font(.subheadline.monospacedDigit())
+                .font(AppTypography.subheadline.monospacedDigit())
                 .foregroundStyle(isCurrent ? AppColors.textSecondary : AppColors.textTertiary)
                 .accessibilityLabel("Duration \(song.durationText)")
 
@@ -54,8 +54,8 @@ struct SetlistSongRowView<MenuContent: View>: View {
     private var badges: some View {
         if song.hasMissingMedia {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-                .font(.caption)
+                .foregroundStyle(AppColors.warning)
+                .font(AppTypography.caption)
                 .accessibilityLabel("Missing audio files")
                 .help("Missing audio files — use Relink Missing Files in the menu")
         }
@@ -66,7 +66,7 @@ struct SetlistSongRowView<MenuContent: View>: View {
 
         if let transition = song.transition {
             Image(systemName: transition.systemImage)
-                .font(.caption.weight(.semibold))
+                .font(AppTypography.captionEmphasized)
                 .foregroundStyle(transition.badgeColor)
                 .accessibilityLabel("Transition to next: \(transition.label)")
                 .help("Transition to next: \(transition.label)")
@@ -77,13 +77,13 @@ struct SetlistSongRowView<MenuContent: View>: View {
     private var leadingIndicator: some View {
         if isCurrent {
             Image(systemName: "speaker.wave.2.fill")
-                .font(.subheadline)
+                .font(AppTypography.subheadline)
                 .foregroundStyle(AppColors.accent)
                 .symbolEffect(.variableColor.iterative, isActive: isPlaying)
                 .accessibilityLabel("Now playing")
         } else {
             Text("\(song.playbackIndex + 1)")
-                .font(.subheadline.monospacedDigit())
+                .font(AppTypography.subheadline.monospacedDigit())
                 .foregroundStyle(AppColors.textTertiary)
                 .accessibilityHidden(true)
         }

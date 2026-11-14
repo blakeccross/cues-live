@@ -141,7 +141,7 @@ struct EditStemTimelineView<
                 }
                 .overlay(alignment: .top) {
                     Rectangle()
-                        .fill(Color.dawTimelineDivider)
+                        .fill(AppColors.Timeline.divider)
                         .frame(height: 1)
                         .allowsHitTesting(false)
                 }
@@ -179,7 +179,7 @@ struct EditStemTimelineView<
                 Color.clear
                     .frame(height: max(row.height - TimelineLayout.laneDividerHeight, 0))
                 Rectangle()
-                    .fill(Color.dawTrackLaneDivider)
+                    .fill(AppColors.Timeline.laneDivider)
                     .frame(maxWidth: .infinity)
                     .frame(height: TimelineLayout.laneDividerHeight)
             }

@@ -73,7 +73,7 @@ struct TimelineLaneCanvas: Equatable {
             },
             duration: max(duration, 0.001),
             contentWidth: contentWidth,
-            backgroundColor: Color.dawTimelineBackground.resolve(in: environment).cgColor,
+            backgroundColor: AppColors.Timeline.background.resolve(in: environment).cgColor,
             loadsWaveforms: loadsWaveforms
         )
     }

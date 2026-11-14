@@ -17,7 +17,7 @@ struct ArrangementEditorMenu: View {
             AppSectionHeader(title: "Song Arrangement")
 
             Text("Drag to reorder. Reordering, duplicating, or removing a section edits the audio on every track.")
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(AppColors.textTertiary)
 
             if actions.sections.isEmpty {
@@ -32,15 +32,15 @@ struct ArrangementEditorMenu: View {
                     ForEach(actions.sections) { section in
                         HStack(spacing: AppSpacing.sm) {
                             Image(systemName: "line.3.horizontal")
-                                .font(.caption)
+                                .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textTertiary)
 
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
                                 Text(section.name)
-                                    .font(.body.weight(.medium))
+                                    .font(AppTypography.bodyMedium)
                                     .foregroundStyle(AppColors.textPrimary)
                                 Text("\(formatTime(section.timelineStartSeconds)) – \(formatTime(section.timelineEndSeconds))")
-                                    .font(.caption.monospacedDigit())
+                                    .font(AppTypography.caption.monospacedDigit())
                                     .foregroundStyle(AppColors.textSecondary)
                             }
 
@@ -63,7 +63,7 @@ struct ArrangementEditorMenu: View {
                             .buttonStyle(.borderless)
                             .help("Remove section")
                         }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, AppSpacing.xxxs)
                     }
                     .onMove(perform: move)
                 }

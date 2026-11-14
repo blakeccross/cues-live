@@ -86,22 +86,22 @@ struct SmartGuideMenu: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Smart Guide")
-                .font(.headline)
+                .font(AppTypography.headline)
 
             Toggle("Call out sections", isOn: $song.smartGuideEnabled)
                 .toggleStyle(.switch)
 
             Text("A voice calls each section one measure before it starts, and calls a looping section on every pass. Cueing a section too late skips the call. Plays through the Cues output.")
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             if song.smartGuideEnabled, let cuesTrack = legacyCuesTrack, !cuesTrack.isMuted {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("This song has a baked Cues track, so callouts would play twice.")
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button("Mute Cues Track") {
@@ -112,16 +112,16 @@ struct SmartGuideMenu: View {
             }
 
             if song.smartGuideEnabled, !sectionsWithoutVoice.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Label("No voice for:", systemImage: "exclamationmark.triangle")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.orange)
+                        .font(AppTypography.captionEmphasized)
+                        .foregroundStyle(AppColors.warning)
                     Text(sectionsWithoutVoice.joined(separator: ", "))
-                        .font(.caption)
+                        .font(AppTypography.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("These sections will not be called. Rename them to a standard section name to hear them.")
-                        .font(.caption2)
+                        .font(AppTypography.caption2)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -245,9 +245,9 @@ struct ClickTrackEditorMenu: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Click Track")
-                .font(.headline)
+                .font(AppTypography.headline)
 
             Button {
                 onGenerate()
@@ -264,12 +264,12 @@ struct ClickTrackEditorMenu: View {
 
             if let generateError {
                 Text(generateError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.error)
             }
 
             Text("Creates an audio track with clicks aligned to the song tempo map.")
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(.secondary)
         }
         .padding()

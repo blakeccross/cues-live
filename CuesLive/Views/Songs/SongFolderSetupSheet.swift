@@ -92,7 +92,7 @@ struct SongFolderSetupSheet: View {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if previews.count > 1 {
                         Text("Song \(index + 1) of \(previews.count)")
-                            .font(.caption.weight(.semibold))
+                            .font(AppTypography.captionEmphasized)
                             .foregroundStyle(AppColors.textTertiary)
                     }
 
@@ -133,7 +133,7 @@ struct SongFolderSetupSheet: View {
 
                     if currentPreview.bpm != nil || currentPreview.timeSignatureNumerator != nil {
                         Text("Tempo and meter were read from the Ableton set.")
-                            .font(.caption)
+                            .font(AppTypography.caption)
                             .foregroundStyle(AppColors.textTertiary)
                     }
                 }
@@ -170,7 +170,7 @@ struct SongFolderSetupSheet: View {
     private func labeledField<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(AppTypography.captionEmphasized)
                 .foregroundStyle(AppColors.textSecondary)
             content()
         }

@@ -264,7 +264,7 @@ private extension View {
                     Button(action: edit) {
                         Label("Edit", systemImage: "pencil")
                     }
-                    .tint(.blue)
+                    .tint(AppColors.info)
                 }
             }
         #else
@@ -346,7 +346,7 @@ struct SetlistRowMenuButton<MenuContent: View>: View {
             menu()
         } label: {
             Image(systemName: "ellipsis")
-                .font(.body.weight(.semibold))
+                .font(AppTypography.bodyEmphasized)
                 .foregroundStyle(AppColors.textSecondary)
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
@@ -372,7 +372,7 @@ private struct SetlistHeaderRowView<MenuContent: View>: View {
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(AppTypography.captionEmphasized)
                 .tracking(0.6)
                 .textCase(.uppercase)
                 .foregroundStyle(AppColors.textTertiary)
@@ -380,7 +380,7 @@ private struct SetlistHeaderRowView<MenuContent: View>: View {
 
             if let timeText {
                 Text(timeText)
-                    .font(.subheadline.monospacedDigit())
+                    .font(AppTypography.subheadline.monospacedDigit())
                     .foregroundStyle(AppColors.textTertiary)
                     .accessibilityLabel("Time \(timeText)")
             }
@@ -397,7 +397,7 @@ private struct SetlistHeaderRowView<MenuContent: View>: View {
 struct SmartGuideBadge: View {
     var body: some View {
         Image(systemName: "person.wave.2.fill")
-            .font(.caption)
+            .font(AppTypography.caption)
             .foregroundStyle(AppColors.accent)
             .accessibilityLabel("Smart Guide on")
             .help("Smart Guide on")

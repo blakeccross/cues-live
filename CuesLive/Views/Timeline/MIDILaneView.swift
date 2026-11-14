@@ -14,39 +14,38 @@ struct MIDITrackHeaderView: View {
     let onResizeEnded: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppSpacing.compact) {
+            HStack(alignment: .top, spacing: AppSpacing.compact) {
                 Image(systemName: "pianokeys")
-                    .font(.caption)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.textTertiary)
 
                 TextField("MIDI Track", text: $track.displayName)
                     .textFieldStyle(.plain)
-                    .font(.caption.weight(.semibold))
+                    .font(AppTypography.captionEmphasized)
                     .foregroundStyle(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
                     .onSubmit { onConfigChange() }
             }
 
             Button(action: onEditDevice) {
-                HStack(spacing: 4) {
+                HStack(spacing: AppSpacing.xxs) {
                     Text(deviceLabel)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(AppTypography.Compact.glyph)
                 }
-                .font(.caption2)
+                .font(AppTypography.caption2)
                 .foregroundStyle(track.device == nil ? AppColors.textTertiary : AppColors.textPrimary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.dawMixButtonBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(AppSpacing.chipInsets)
+                .background(AppColors.Timeline.mixButtonBackground)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.xs))
             }
             .buttonStyle(.plain)
 
-            HStack(spacing: 6) {
+            HStack(spacing: AppSpacing.compact) {
                 Text(routingLabel)
-                    .font(.system(size: 9))
+                    .font(AppTypography.Compact.detail)
                     .foregroundStyle(AppColors.textTertiary)
                     .lineLimit(1)
 
@@ -54,24 +53,24 @@ struct MIDITrackHeaderView: View {
 
                 Button(action: onSendTest) {
                     Text("Test")
-                        .font(.system(size: 9, weight: .semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.dawMixButtonBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .font(AppTypography.Compact.label)
+                        .padding(.horizontal, AppSpacing.xs)
+                        .padding(.vertical, AppSpacing.chipInsets.top)
+                        .background(AppColors.Timeline.mixButtonBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.xs))
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSendTest)
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, AppSpacing.xs)
+        .padding(.vertical, AppSpacing.compact)
         .frame(width: TimelineLayout.trackHeaderWidth, height: laneHeight, alignment: .topLeading)
         .clipped()
         .background {
             if isSelected {
                 Rectangle()
-                    .fill(Color.dawTrackHeaderSelected)
+                    .fill(AppColors.trackHeaderSelected)
             }
         }
         .contentShape(Rectangle())
@@ -218,13 +217,13 @@ struct MIDILaneView: View {
 
         VStack(alignment: .leading, spacing: 0) {
             Text(flagText(event))
-                .font(.system(size: 9, weight: .semibold))
+                .font(AppTypography.Compact.label)
                 .lineLimit(1)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 2)
-                .foregroundStyle(.white)
-                .background(trackColors.header)
-                .clipShape(RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous))
+                .foregroundStyle(AppColors.textOnFill)
+                .appTag(
+                    trackColors.header,
+                    in: RoundedRectangle(cornerRadius: TimelineLayout.clipCornerRadius, style: .continuous)
+                )
 
             Rectangle()
                 .fill(trackColors.header)
@@ -313,7 +312,7 @@ struct MIDIEventEditorView: View {
                     Section("Command") {
                         if commands.isEmpty {
                             Text("This track's device has no commands. Edit the device to add commands.")
-                                .font(.caption)
+                                .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.textTertiary)
                         } else {
                             Picker("Command", selection: $commandID) {

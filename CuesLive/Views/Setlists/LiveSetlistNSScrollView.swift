@@ -175,10 +175,11 @@ private final class LiveSetlistPlayheadNSView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.backgroundColor = NSColor.white.withAlphaComponent(0.92).cgColor
+        layer?.backgroundColor = NSColor(AppColors.LiveWaveform.playhead).cgColor
         shadow = {
             let shadow = NSShadow()
-            shadow.shadowColor = NSColor.black.withAlphaComponent(0.35)
+            shadow.shadowColor = NSColor(AppColors.LiveWaveform.playheadShadow)
+                .withAlphaComponent(CGFloat(AppColors.LiveWaveform.playheadShadowOpacity))
             shadow.shadowBlurRadius = 1
             shadow.shadowOffset = .zero
             return shadow

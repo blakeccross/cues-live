@@ -116,11 +116,30 @@ SwiftUI out of it.
 
 - Views are structs with `let` inputs and `@State` for local UI state only. Put logic in services and
   view models under `Services/` and `ViewModels/`.
-- Use the design system (`AppColors`, `AppSpacing`, `AppTypography`, `AppRadius`, `App*` components)
-  instead of literal colors, paddings, and fonts.
+- Use the design system (`AppColors`, `AppSpacing`, `AppTypography`, `AppRadius`, `AppOpacity`, `App*`
+  components) instead of literal colors, paddings, and fonts. See [Design tokens](#design-tokens).
 - Platform differences go through `#if os(macOS)` / `#if os(iOS)` at the smallest scope that works.
 - Mark views `@MainActor` explicitly when they hold `@StateObject` or observable state; Swift 6 will no
   longer infer it from property wrappers.
+
+### Design tokens
+
+Every visual constant has one home in `DesignSystem/`, so restyling the app is an edit to one file.
+
+- **Colors.** Fixed colors live in `Assets.xcassets` (with light/dark variants where they differ) and are
+  read through Xcode's generated symbols, `Color(.surface)`, never `Color("Surface")`. `AppColors` and its
+  area extensions (`AppColors.Timeline`, `.LiveWaveform`, `.Live`, `.Mixer`) wrap them and may add opacity
+  variants. Views never write `Color(red:…)`, `Color(white:…)`, `Color.white`/`.black`, or `.red`-style
+  system colors; reach for a token, or add one. Exceptions: `Color.clear`, hierarchical styles
+  (`.secondary`, `.tertiary`), and opacity on data-driven colors such as a track's palette color.
+- **Fonts.** `AppTypography` wraps Apple's text styles so text follows Dynamic Type; the suffix names the
+  emphasis (`caption`, `captionEmphasized`, `bodyMedium`). Text smaller than `caption2` in the timeline,
+  rulers, and mixer uses `AppTypography.Compact`. No `.font(.caption)` or `.system(size:)` in views; sizes
+  derived from a control's own size (an icon at `size * 0.38`) are the exception.
+- **Spacing and radius.** Use the `AppSpacing` scale (`xxxs` 2 … `xl` 24, plus `tagInsets`/`chipInsets`)
+  and `AppRadius` (`chip` 3 … `lg` 20). Small label pills use the `appTag` modifier. A value that belongs to one component's geometry is a named
+  `static let` on that component or its metrics type, not a bare literal. `0` and `.padding()` with the
+  system default are fine.
 
 ## Availability
 

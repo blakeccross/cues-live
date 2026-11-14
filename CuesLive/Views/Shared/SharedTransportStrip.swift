@@ -67,10 +67,10 @@ struct SharedTransportControlButtons: View {
         .background {
             if showsBackground {
                 RoundedRectangle(cornerRadius: buttonSize * 0.14, style: .continuous)
-                    .fill(Color.black.opacity(0.30))
+                    .fill(AppColors.transportStripBackground)
                     .overlay {
                         RoundedRectangle(cornerRadius: buttonSize * 0.14, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.055), lineWidth: 0.5)
+                            .strokeBorder(AppColors.transportStripBorder, lineWidth: 0.5)
                     }
             }
         }

@@ -14,7 +14,7 @@ struct SongLibraryListRow: View {
 
     /// Selected rows sit on the accent highlight, where secondary text would wash out.
     private var secondaryColor: Color {
-        backgroundProminence == .increased ? AppColors.textPrimary.opacity(0.8) : AppColors.textSecondary
+        backgroundProminence == .increased ? AppColors.textHighlighted : AppColors.textSecondary
     }
 
     private var tempoText: String? {
@@ -40,14 +40,14 @@ struct SongLibraryListRow: View {
             detailColumn(song.timeSignatureDisplay, width: Self.meterColumnWidth)
                 .help("Time signature")
         }
-        .font(.body)
+        .font(AppTypography.body)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
     }
 
     private func detailColumn(_ value: String?, width: CGFloat) -> some View {
         Text(value ?? "–")
-            .font(.callout.monospacedDigit())
+            .font(AppTypography.callout.monospacedDigit())
             .foregroundStyle(secondaryColor)
             .lineLimit(1)
             .frame(width: width, alignment: .trailing)

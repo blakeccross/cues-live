@@ -55,10 +55,10 @@ struct MIDIDevicePickerView: View {
     }
 
     private func deviceRow(_ device: MIDIDevice) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: AppSpacing.xxxs) {
             Text(device.name)
             Text(subtitle(for: device))
-                .font(.caption)
+                .font(AppTypography.caption)
                 .foregroundStyle(.secondary)
         }
     }

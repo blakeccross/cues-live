@@ -33,9 +33,9 @@ final class LiveSetlistUIScrollView: UIScrollView, UIScrollViewDelegate {
         addSubview(hostingController.view)
 
         playheadView.isUserInteractionEnabled = false
-        playheadView.backgroundColor = UIColor.white.withAlphaComponent(0.92)
-        playheadView.layer.shadowColor = UIColor.black.cgColor
-        playheadView.layer.shadowOpacity = 0.35
+        playheadView.backgroundColor = UIColor(AppColors.LiveWaveform.playhead)
+        playheadView.layer.shadowColor = UIColor(AppColors.LiveWaveform.playheadShadow).cgColor
+        playheadView.layer.shadowOpacity = AppColors.LiveWaveform.playheadShadowOpacity
         playheadView.layer.shadowRadius = 1
         playheadView.layer.shadowOffset = .zero
         addSubview(playheadView)

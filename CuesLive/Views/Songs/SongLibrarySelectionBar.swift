@@ -9,7 +9,7 @@ struct SongLibrarySelectionBar: View {
     var body: some View {
         HStack(spacing: AppSpacing.xs) {
             Text(count == 1 ? "1 song selected" : "\(count) songs selected")
-                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .font(AppTypography.subheadlineEmphasized.monospacedDigit())
                 .foregroundStyle(count == 0 ? AppColors.textTertiary : AppColors.textPrimary)
                 .lineLimit(1)
 

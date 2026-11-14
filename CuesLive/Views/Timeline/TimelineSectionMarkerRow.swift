@@ -47,7 +47,7 @@ struct TimelineSectionMarkerRowView: View {
             }
         }
         .frame(width: displayWidth, height: height, alignment: .topLeading)
-        .background(Color.dawStickyRulerBackground)
+        .background(AppColors.Timeline.stickyRulerBackground)
         .overlay { interactionSurface(sections: shown) }
         .overlay(alignment: .topLeading) {
             ForEach(SectionEdge.edges(of: sections)) { edge in
@@ -75,20 +75,20 @@ struct TimelineSectionMarkerRowView: View {
 
     private func blockLabel(_ section: SongSection, isSelected: Bool) -> some View {
         let name = section.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return HStack(spacing: 3) {
+        return HStack(spacing: AppSpacing.tagGlyphGap) {
             if loopSectionIDs.contains(section.id) {
                 Image(systemName: "repeat")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(AppTypography.Compact.glyphEmphasized)
             }
             if !name.isEmpty {
                 Text(name)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(AppTypography.Compact.sectionName)
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
             }
         }
         .foregroundStyle(isSelected ? AppColors.backgroundSecondary : AppColors.textPrimary)
-        .padding(.horizontal, 5)
+        .padding(.horizontal, AppSpacing.tagInsets.leading)
     }
 
     /// A cued block pulses between its fill and a dimmer version of it.

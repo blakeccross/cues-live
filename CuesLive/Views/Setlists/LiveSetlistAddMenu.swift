@@ -14,7 +14,7 @@ struct LiveSetlistAddMenu: View {
                 Button(isEditing.wrappedValue ? "Done" : "Edit") {
                     withAnimation { isEditing.wrappedValue.toggle() }
                 }
-                .font(.body)
+                .font(AppTypography.body)
                 .accessibilityLabel(isEditing.wrappedValue ? "Done reordering" : "Edit setlist order")
             }
             #endif
@@ -31,7 +31,7 @@ struct LiveSetlistAddMenu: View {
                 }
             } label: {
                 Image(systemName: "plus")
-                    .font(.body.weight(.semibold))
+                    .font(AppTypography.bodyEmphasized)
                     .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
             }

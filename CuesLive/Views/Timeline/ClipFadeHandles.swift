@@ -50,8 +50,8 @@ struct ClipFadeHandles: View {
         let isVisible = showsKnobs || activeHandle != nil
         let isLit = hoveredHandle == handle || activeHandle == handle
         return Circle()
-            .fill(Color.black.opacity(0.35))
-            .overlay(Circle().strokeBorder(Color.white.opacity(isLit ? 0.9 : 0.78), lineWidth: 1))
+            .fill(AppColors.Timeline.fadeKnobFill)
+            .overlay(Circle().strokeBorder(isLit ? AppColors.Timeline.fadeKnobBorderLit : AppColors.Timeline.fadeKnobBorder, lineWidth: 1))
             .frame(width: Self.knobSize, height: Self.knobSize)
             .opacity(isVisible ? 1 : 0)
             .frame(width: ClipFadeLayout.handleSize, height: ClipFadeLayout.handleSize)

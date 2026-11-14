@@ -6,14 +6,14 @@ import AppKit
 extension SongLibraryPanel {
     var importProgressOverlay: some View {
         ZStack {
-            Color.black.opacity(0.35)
+            AppColors.scrim
                 .ignoresSafeArea()
 
             VStack(spacing: AppSpacing.sm) {
                 ProgressView()
                     .tint(AppColors.accent)
                 Text(isPreparingFolderSetup ? "Reading song folder…" : "Importing song folder…")
-                    .font(.headline)
+                    .font(AppTypography.headline)
                     .foregroundStyle(AppColors.textPrimary)
             }
             .padding(AppSpacing.xl)

@@ -60,7 +60,7 @@ struct LiveSetlistLaneCanvas: Equatable {
                 )
             },
             cueFlashPhase: cueFlashPhase,
-            backgroundColor: resolved(.liveVoiceMemosBackground),
+            backgroundColor: resolved(AppColors.LiveWaveform.background),
             separatorColor: resolved(AppColors.separator),
             accentColor: resolved(AppColors.accent)
         )

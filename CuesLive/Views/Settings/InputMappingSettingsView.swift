@@ -58,7 +58,7 @@ struct InputMappingSettingsView: View {
         let isLearningMIDI = mapping.session == .midiMapping && mapping.pendingAction == action
 
         return LabeledContent {
-            HStack(spacing: 8) {
+            HStack(spacing: AppSpacing.xs) {
                 bindingButton(
                     title: isLearningKey ? "Press key…" : (record?.key?.displayName ?? "Key"),
                     isLearning: isLearningKey
@@ -100,7 +100,7 @@ struct InputMappingSettingsView: View {
         Button(title, action: action)
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .tint(isLearning ? Color.accentColor : nil)
+            .tint(isLearning ? AppColors.accent : nil)
             .fixedSize()
             .help(isLearning ? title : "Click to assign")
     }

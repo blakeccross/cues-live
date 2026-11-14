@@ -72,9 +72,9 @@ struct RemoteSessionSettingsView: View {
             TextField("Device Name", text: $settings.displayName)
 
             LabeledContent("Password") {
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.xs) {
                     Text(settings.pin)
-                        .font(.body.monospaced())
+                        .font(AppTypography.body.monospaced())
                         .textSelection(.enabled)
                     Button("Regenerate") {
                         settings.regeneratePIN()
@@ -137,7 +137,7 @@ struct RemoteSessionSettingsView: View {
 
                 if let lastError = client.lastError {
                     Text(lastError)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AppColors.error)
                 }
 
                 switch client.phase {
