@@ -24,13 +24,37 @@ extension EditView {
         )
     }
 
+    /// Delete clears the edit selection's range on the rows it covers. Without a range, it removes
+    /// the selected clips whole.
     func removeClipSelection() {
+        if let selection = editSelection, selection.end - selection.start > ClipEditing.tolerance {
+            removeRange(selection)
+            return
+        }
         guard !clipSelection.isEmpty else { return }
         let ids = clipSelection.clipIDs
         commitTimelineEdit("Delete Clips") { timeline in
             ClipEditing.delete(clipIDs: ids, in: &timeline.clips)
         }
         clipSelection.deselectAll()
+        clearMarkerCue(cancellingScheduledTransition: false)
+    }
+
+    /// Cuts `[start, end)` out of the clips on the selection's rows. Clips that span an edge keep
+    /// the part outside the range; nothing shifts. The range stays selected.
+    private func removeRange(_ selection: ClipRangeDrag) {
+        let ids = displayedTrackIDs
+        let firstRow = max(selection.firstRow, 0)
+        let lastRow = min(selection.lastRow, ids.count - 1)
+        guard firstRow <= lastRow else { return }
+        let trackIDs = Set(ids[firstRow...lastRow])
+        var edited = timeline.clips
+        ClipEditing.deleteRange(trackIDs: trackIDs, from: selection.start, to: selection.end, in: &edited)
+        clipSelection.deselectAll()
+        guard edited != timeline.clips else { return }
+        commitTimelineEdit("Delete Range") { timeline in
+            timeline.clips = edited
+        }
         clearMarkerCue(cancellingScheduledTransition: false)
     }
 
@@ -253,7 +277,12 @@ extension EditView {
         case .adjustGain: beginAdjustGain()
         case .fadeShape(let shape): setSelectedFadeShape(shape)
         case .removeFades: removeSelectedFades()
-        case .delete: removeClipSelection()
+        case .delete:
+            // Deleting a clip outside the selection removes that clip, not the range.
+            if !clipWasSelected {
+                editSelection = nil
+            }
+            removeClipSelection()
         }
     }
 

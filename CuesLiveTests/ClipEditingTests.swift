@@ -217,6 +217,32 @@ final class ClipEditingTests: XCTestCase {
         XCTAssertEqual(source(timeline, drums, at: 15), 15)
     }
 
+    func testDeleteRangeKeepsAudioOutsideTheRangeOnEveryTrack() throws {
+        var timeline = makeTimeline()
+        let drumID = try XCTUnwrap(timeline.clips(forTrack: drums).first?.id)
+        ClipEditing.split(clipID: drumID, at: 25, in: &timeline.clips)
+
+        ClipEditing.deleteRange(trackIDs: [drums, bass], from: 10, to: 30, in: &timeline.clips)
+
+        XCTAssertEqual(timeline.clips.count, 4, "each track keeps a piece on both sides")
+        for track in [drums, bass] {
+            XCTAssertEqual(source(timeline, track, at: 5), 5)
+            XCTAssertNil(source(timeline, track, at: 10))
+            XCTAssertNil(source(timeline, track, at: 29))
+            XCTAssertEqual(source(timeline, track, at: 30), 30)
+        }
+        XCTAssertEqual(timeline.clips(forTrack: drums).last?.timelineEndSeconds, 60)
+        XCTAssertEqual(timeline.clips(forTrack: bass).last?.timelineEndSeconds, 50)
+    }
+
+    func testDeleteRangeLeavesTracksOutsideTheSelection() {
+        var timeline = makeTimeline()
+        ClipEditing.deleteRange(trackIDs: [drums], from: 10, to: 30, in: &timeline.clips)
+
+        XCTAssertEqual(timeline.clips(forTrack: bass).count, 1)
+        XCTAssertEqual(source(timeline, bass, at: 20), 20)
+    }
+
     func testJoinRefusesDiscontinuousSource() throws {
         var timeline = makeTimeline()
         let clipID = try XCTUnwrap(timeline.clips(forTrack: drums).first?.id)
