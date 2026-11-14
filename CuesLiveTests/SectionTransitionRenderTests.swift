@@ -105,6 +105,52 @@ final class SectionTransitionRenderTests: XCTestCase {
         XCTAssertEqual(silenced[silenced.count / 2], 0, accuracy: 0.000_1)
     }
 
+    func testClipFadesShapeTheRenderedAudio() throws {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(1)
+        let seconds = 1.0
+        let amplitude: Float = 0.25
+        let frames = Int(seconds * sampleRate)
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1))
+        let pcm = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames)))
+        pcm.frameLength = AVAudioFrameCount(frames)
+        let data = try XCTUnwrap(pcm.floatChannelData)[0]
+        for index in 0..<frames { data[index] = amplitude }
+        let clip = TrackClip(
+            trackID: UUID(),
+            timelineStartSeconds: 0,
+            duration: seconds,
+            sourceStartSeconds: 0,
+            fadeIn: ClipFade(duration: 0.25, shape: .linear),
+            fadeOut: ClipFade(duration: 0.5, shape: .linear)
+        )
+        let player = makePlayer(
+            buffer: try DecodedStemBuffer.monoStem(from: pcm),
+            transport: transport,
+            seconds: seconds,
+            mapper: ArrangementTimelineMapper(clips: [clip], fileDuration: seconds)
+        )
+
+        let origin = hostTicks(seconds: 100)
+        transport.beginPlayback(from: 0)
+        var output: [Float] = []
+        for block in 0..<(frames / Int(blockFrames)) {
+            let elapsed = Double(block) * Double(blockFrames) / sampleRate
+            output += try renderBlock(player, hostTime: origin + hostTicks(seconds: elapsed))
+        }
+
+        func expected(atFrame frame: Int) -> Float {
+            amplitude * clip.fadeGain(atOffset: Double(frame) / sampleRate)
+        }
+        XCTAssertEqual(output[0], 0, accuracy: 0.000_1)
+        for frame in [1_000, 6_000, 11_999, 12_000, 20_000, 24_000, 30_000, 40_000, output.count - 1] {
+            XCTAssertEqual(output[frame], expected(atFrame: frame), accuracy: 0.000_5, "frame \(frame)")
+        }
+        XCTAssertEqual(output[6_000], amplitude / 2, accuracy: 0.000_5)
+        XCTAssertEqual(output[20_000], amplitude, accuracy: 0.000_1)
+        XCTAssertEqual(output[36_000], amplitude / 2, accuracy: 0.000_5)
+    }
+
     func testReTimedClipPlaysItsClicksTwiceAsOften() throws {
         let transport = AudioPlaybackTransport()
         transport.setDuration(10)

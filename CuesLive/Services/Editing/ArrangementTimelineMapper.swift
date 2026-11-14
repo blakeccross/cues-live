@@ -110,4 +110,10 @@ struct ArrangementTimelineMapper: Sendable {
         guard usesClips, let clip = clip(containing: master) else { return 1 }
         return clip.linearGain
     }
+
+    /// The clip playing at `master` when it has a fade, for the renderer to shape.
+    func fadedClip(atMasterTimeline master: TimeInterval) -> TrackClip? {
+        guard usesClips, let clip = clip(containing: master), clip.hasFades else { return nil }
+        return clip
+    }
 }

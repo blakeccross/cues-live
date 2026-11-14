@@ -30,6 +30,9 @@ enum AppColors {
     /// Brand orange (#E25303) — reserved for current/active state.
     static let accent = Color.accentColor
     static let separator = Color("AppSeparator")
+    /// Dark hairline between side-by-side panes, matching the split-view column edge AppKit
+    /// draws beside the sidebar. `separator` is a light lift that disappears against panes.
+    static let paneDivider = Color.black.opacity(0.5)
 
     /// Resting glyph color for bare icon buttons.
     static let iconNeutral = Color(red: 0.78, green: 0.80, blue: 0.82)

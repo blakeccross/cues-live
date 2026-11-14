@@ -102,6 +102,16 @@ enum TempoTrackLock {
                 )
             )
         }
+
+        // Fades stay on the clip's two outer ends and keep their length in beats.
+        if !pieces.isEmpty {
+            pieces[0].fadeIn = clip.fadeIn.with(
+                duration: position(start + clip.fadeIn.duration, from: old, to: new) - position(start, from: old, to: new)
+            )
+            pieces[pieces.count - 1].fadeOut = clip.fadeOut.with(
+                duration: position(end, from: old, to: new) - position(end - clip.fadeOut.duration, from: old, to: new)
+            )
+        }
         return pieces
     }
 }

@@ -8,7 +8,7 @@ extension WaveformPeakResampler {
     }
 
     /// Sums every track's clips onto one timeline, the way the engine plays them: each clip reads
-    /// its own stretch of its file at its own rate and gain, and audio a clip trims away is not
+    /// its own stretch of its file at its own rate, gain and fades, and audio a clip trims away is not
     /// drawn. Columns, channels and tracks add like `summedMinMax`, and the result is scaled so
     /// the loudest excursion fills the lane.
     static func timelineSummedMinMax(
@@ -59,8 +59,11 @@ extension WaveformPeakResampler {
 
         func accumulate(_ column: Int, _ range: (Float, Float)?) {
             guard let range else { return }
-            sum.mins[column] += range.0 * gain
-            sum.maxes[column] += range.1 * gain
+            // A fade is read once, at the middle of the column.
+            let offset = (Double(column) + 0.5) * columnDuration - clip.timelineStartSeconds
+            let columnGain = clip.hasFades ? gain * clip.fadeGain(atOffset: offset) : gain
+            sum.mins[column] += range.0 * columnGain
+            sum.maxes[column] += range.1 * columnGain
         }
 
         let interiorStart = Int(ceil(clip.timelineStartSeconds / columnDuration))

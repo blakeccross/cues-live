@@ -18,6 +18,8 @@ struct WaveformLaneView: View {
     let sections: [SongSection]
     let selection: ClipSelection
     let clipDrag: ClipDrag?
+    /// The clip under the pointer, which shows its fade knobs.
+    let hoveredClipID: UUID?
     let actions: ClipLaneActions
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
@@ -47,29 +49,14 @@ struct WaveformLaneView: View {
         max(timelineDuration, 0.001)
     }
 
-    /// Clips as drawn, with any in-progress drag on the selection applied.
+    /// Clips as drawn, with any in-progress drag applied.
     private var displayClips: [TrackClip] {
-        var preview = clips
-        guard let clipDrag else { return preview }
-        let selectedHere = selection.clipIDs.intersection(clips.map(\.id))
-        guard !selectedHere.isEmpty else { return preview }
-        switch clipDrag {
-        case .move(let delta, let copy):
-            if copy {
-                ClipEditing.copy(clipIDs: selectedHere, by: delta, in: &preview)
-            } else {
-                ClipEditing.move(clipIDs: selectedHere, by: delta, in: &preview)
-            }
-        case .trim(let edge, let delta):
-            ClipEditing.trim(
-                clipIDs: selectedHere,
-                edge: edge,
-                by: delta,
-                sourceDuration: { _ in fileDuration },
-                in: &preview
-            )
-        }
-        return preview
+        guard let clipDrag else { return clips }
+        return clipDrag.applied(
+            to: clips,
+            clipIDs: selection.clipIDs.intersection(clips.map(\.id)),
+            sourceDuration: { _ in fileDuration }
+        )
     }
 
     /// Clip headers, borders and gestures. The lane canvas behind this view draws the clip
@@ -193,6 +180,14 @@ struct WaveformLaneView: View {
                 Button("Join") { actions.menu(.join, clip.id) }
                 Button("Duplicate") { actions.menu(.duplicate, clip.id) }
                 Button("Adjust Gain…") { actions.menu(.adjustGain, clip.id) }
+                if clip.hasFades {
+                    Menu("Fade Shape") {
+                        ForEach(ClipFadeShape.allCases, id: \.self) { shape in
+                            Button(shape.label) { actions.menu(.fadeShape(shape), clip.id) }
+                        }
+                    }
+                    Button("Remove Fades") { actions.menu(.removeFades, clip.id) }
+                }
                 Button("Delete", role: .destructive) { actions.menu(.delete, clip.id) }
                 if let section {
                     Divider()
@@ -251,20 +246,43 @@ struct WaveformLaneView: View {
             clipGainChrome(clip: clip, clipWidth: clipWidth, clipHeight: clipHeight)
         }
         .contentShape(Rectangle())
+        .overlay(alignment: .topLeading) {
+            ClipFadeHandles(
+                clip: clip,
+                clipWidth: clipWidth,
+                clipHeight: clipHeight,
+                showsKnobs: showsFadeKnobs(on: clip),
+                onDrag: { edge, fade in actions.drag(.fade(clipID: clip.id, edge: edge, fade: fade)) },
+                onEndDrag: actions.endDrag
+            )
+        }
         .padding(.vertical, TimelineLayout.clipLaneInset)
         #if os(macOS)
         .onContinuousHover { phase in
             switch phase {
             case .active(let location):
-                ClipPointerCursor.zone(
+                if hoveredClipID != clip.id { actions.hover(clip.id) }
+                let fadeCursor = ClipFadeLayout(clip: clip, clipWidth: clipWidth, clipHeight: clipHeight)
+                    .cursor(at: location)
+                (fadeCursor ?? ClipPointerCursor.zone(
                     at: location,
                     clipWidth: clipWidth,
                     laneHeight: laneHeight
-                ).apply()
+                )).apply()
             case .ended:
+                if hoveredClipID == clip.id { actions.hover(nil) }
                 ClipPointerCursor.reset()
             }
         }
+        #endif
+    }
+
+    /// Under the pointer on macOS. Touch has no hover, so there a clip shows the knobs of the fades it has.
+    private func showsFadeKnobs(on clip: TrackClip) -> Bool {
+        #if os(macOS)
+        hoveredClipID == clip.id
+        #else
+        clip.hasFades
         #endif
     }
 

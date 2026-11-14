@@ -57,14 +57,6 @@ enum ProjectFileStore {
         )
     }
 
-    static func projectURL(named fileName: String, adjacentTo folderURL: URL) -> URL {
-        uniqueProjectURL(
-            in: folderURL,
-            baseName: sanitizedFileName(fileName),
-            extension: ProjectUTType.songProjectExtension
-        )
-    }
-
     static func load(from url: URL) throws -> SongProjectDocument {
         let data = try Data(contentsOf: url)
         let decoder = JSONDecoder()

@@ -148,7 +148,8 @@ extension EditView {
             locate: { trackID, time in
                 placeInsertion(on: trackID, at: time)
             },
-            menu: performClipMenuAction
+            menu: performClipMenuAction,
+            hover: { hoveredClipID = $0 }
         )
     }
 
@@ -198,6 +199,9 @@ extension EditView {
         case .trim(let reference, let edge, let rawTime):
             let edgeTime = edge == .leading ? reference.timelineStartSeconds : reference.timelineEndSeconds
             clipDrag = .trim(edge: edge, delta: snappedToBeat(rawTime) - edgeTime)
+        case .fade(let clipID, let edge, let fade):
+            // Fades are not snapped: their length is set by ear, not by the grid.
+            clipDrag = .fade(clipID: clipID, edge: edge, fade: fade)
         }
     }
 
@@ -229,6 +233,8 @@ extension EditView {
                     in: &timeline.clips
                 )
             }
+        case .fade(let clipID, let edge, let fade):
+            commitFade(fade, edge: edge, clipID: clipID)
         }
         clipSelection.retain(existing: timeline.clips)
     }
@@ -245,6 +251,8 @@ extension EditView {
         case .join: joinSelectedClips()
         case .duplicate: duplicateSelectedClips()
         case .adjustGain: beginAdjustGain()
+        case .fadeShape(let shape): setSelectedFadeShape(shape)
+        case .removeFades: removeSelectedFades()
         case .delete: removeClipSelection()
         }
     }

@@ -69,6 +69,7 @@ struct LivePlaybackTrailingSidebarLayout<Sidebar: View, MainContent: View>: View
                     accessibilityLabel: "Side panel width",
                     onResizeEnded: persistSidebarWidth
                 )
+                .ignoresSafeArea(edges: .top)
                 .zIndex(1)
 
                 sidebar()

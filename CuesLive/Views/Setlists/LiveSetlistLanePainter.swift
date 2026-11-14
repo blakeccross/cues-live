@@ -172,7 +172,7 @@ final class LiveSetlistLanePainter {
             channelCount: 1,
             columns: first..<last,
             half: lane.height * WaveformColumnGeometry.amplitudeFraction,
-            gain: 1
+            gain: WaveformColumnGain()
         ) { range in
             // Each column is centered on its pixel, and the window reaches one point into its neighbours.
             let start = Double(range.lowerBound) / Double(scale) * framesPerPoint - overlap * 0.5

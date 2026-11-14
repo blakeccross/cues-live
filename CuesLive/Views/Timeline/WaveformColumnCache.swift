@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Columns sit on a fixed pixel grid, so a scroll reuses every chunk already built and computes
 /// only the ones it exposes. Columns are kept while a waveform's `Geometry` holds; the paths are
-/// rebuilt from them when only the gain or the lane height changes.
+/// rebuilt from them when only the gain, a fade or the lane height changes.
 ///
 /// `Key` names one waveform (a clip, a setlist song). `Geometry` is everything that decides its
 /// columns; a change drops them.
@@ -19,7 +19,7 @@ final class WaveformColumnCache<Key: Hashable, Geometry: Equatable> {
     /// Everything else a path depends on.
     private struct PathStyle: Equatable {
         let half: CGFloat
-        let gain: Float
+        let gain: WaveformColumnGain
     }
 
     private struct Chunk {
@@ -55,7 +55,7 @@ final class WaveformColumnCache<Key: Hashable, Geometry: Equatable> {
         channelCount: Int,
         columns: Range<Int>,
         half: CGFloat,
-        gain: Float,
+        gain: WaveformColumnGain,
         compute: (Range<Int>) -> [[(Float, Float)?]]
     ) -> [[CGPath]] {
         drawnThisPass.insert(key)
@@ -123,9 +123,10 @@ final class WaveformColumnCache<Key: Hashable, Geometry: Equatable> {
                 continue
             }
             if run.isEmpty { runStart = index }
+            let gain = style.gain.value(atX: (CGFloat(firstColumn + index) + 0.5) * columnWidth)
             run.append(WaveformColumnGeometry.thicken(
-                min: scaled(column.0, gain: style.gain),
-                max: scaled(column.1, gain: style.gain),
+                min: scaled(column.0, gain: gain),
+                max: scaled(column.1, gain: gain),
                 half: style.half,
                 scale: scale
             ))

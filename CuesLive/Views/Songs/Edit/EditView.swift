@@ -75,6 +75,8 @@ struct EditView: View {
     /// Shift-press on an already selected clip; removed on release unless the press became a drag.
     @State var pendingShiftDeselectID: UUID?
     @State var clipDrag: ClipDrag?
+    /// The clip under the pointer, which shows its fade curve and knobs.
+    @State var hoveredClipID: UUID?
     /// The edit selection. A selector drag writes it, and it stays after the pointer
     /// goes up. A click replaces it with an insertion, which has no range.
     @State var editSelection: ClipRangeDrag?

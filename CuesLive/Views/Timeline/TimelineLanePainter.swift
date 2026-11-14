@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 
-/// Draws the visible part of the editor's audio lanes: the lane background, each clip's body
-/// and its waveform. Clip headers, borders and gestures stay in SwiftUI above it.
+/// Draws the visible part of the editor's audio lanes: the lane background, each clip's body,
+/// its waveform and its fade curves. Clip headers, borders and gestures stay in SwiftUI above it.
 ///
 /// Like SoundCraft and other DAWs, every frame is drawn synchronously from the overview
 /// pyramid at the current offset and zoom, so scrolling or zooming never shows a blank or
@@ -49,6 +49,9 @@ final class TimelineLanePainter {
 
     private static let waveformColor = CGColor(gray: 1, alpha: 0.55)
     private static let baselineColor = CGColor(gray: 1, alpha: 0.35)
+    private static let fadeCurveColor = CGColor(gray: 1, alpha: 0.6)
+    /// Darkens the part of the body a fade takes away, above its curve.
+    private static let fadeShadeColor = CGColor(gray: 0, alpha: 0.28)
 
     private(set) var scene = Scene()
     /// Horizontal scroll offset in content points. View x is content x minus the offset.
@@ -123,7 +126,20 @@ final class TimelineLanePainter {
             width: endX - startX,
             visibleX: (shown.minX + offset)...(shown.maxX + offset)
         )
+        let fades = fadePaths(span, band: band)
+        if let fades {
+            context.setFillColor(Self.fadeShadeColor)
+            context.addPath(fades.shade)
+            context.fillPath()
+        }
         drawWaveform(span, fileURL: lane.fileURL, band: band, context: context)
+        if let fades, clip.showsFadeCurves {
+            context.setStrokeColor(Self.fadeCurveColor)
+            context.setLineWidth(1.2)
+            context.setLineJoin(.round)
+            context.addPath(fades.curves)
+            context.strokePath()
+        }
         context.restoreGState()
         return true
     }
@@ -192,7 +208,7 @@ final class TimelineLanePainter {
             channelCount: channelCount,
             columns: columns,
             half: bandHeight * WaveformColumnGeometry.amplitudeFraction,
-            gain: span.clip.linearGain
+            gain: span.clip.columnGain(startX: span.startX, width: span.width)
         ) { range in
             Self.columns(
                 range,
@@ -269,13 +285,14 @@ final class TimelineLanePainter {
     ) {
         let samples = window.channels[channel]
         let half = band.height * WaveformColumnGeometry.amplitudeFraction
+        let gain = span.clip.columnGain(startX: span.startX, width: span.width)
         let path = CGMutablePath()
         for frame in frames {
             let index = frame - window.origin
             guard samples.indices.contains(index) else { continue }
-            let x = span.startX + CGFloat((Double(frame) - origin) / framesPerPoint) - offset
-            let value = WaveformColumnGeometry.clampedAmplitude(samples[index] * span.clip.linearGain)
-            let point = CGPoint(x: x, y: band.midY - CGFloat(value) * half)
+            let contentX = span.startX + CGFloat((Double(frame) - origin) / framesPerPoint)
+            let value = WaveformColumnGeometry.clampedAmplitude(samples[index] * gain.value(atX: contentX))
+            let point = CGPoint(x: contentX - offset, y: band.midY - CGFloat(value) * half)
             if path.isEmpty {
                 path.move(to: point)
             } else {
@@ -286,6 +303,44 @@ final class TimelineLanePainter {
         context.setLineWidth(max(1 / scale, 0.5))
         context.addPath(path)
         context.strokePath()
+    }
+
+    /// Each fade's curve across the clip body, silence at the bottom and unity at the top, and
+    /// the area above it. Nil when the clip has no fade on screen.
+    private func fadePaths(_ span: ClipSpan, band: CGRect) -> (curves: CGPath, shade: CGPath)? {
+        let clip = span.clip
+        let duration = clip.timelineEnd - clip.timelineStart
+        guard duration > 0 else { return nil }
+        let path = CGMutablePath()
+        let shade = CGMutablePath()
+        for (fade, isFadeIn) in [(clip.fadeIn, true), (clip.fadeOut, false)] where fade.isActive {
+            let width = span.width * CGFloat(fade.duration / duration)
+            let startX = isFadeIn ? span.startX : span.startX + span.width - width
+            let upper = min(startX + width, span.visibleX.upperBound)
+            var x = max(startX, span.visibleX.lowerBound)
+            guard width > 0, upper > x else { continue }
+            let lower = x
+            var isFirst = true
+            while true {
+                let position = Double((x - startX) / width)
+                let gain = fade.gain(at: isFadeIn ? position : 1 - position)
+                let point = CGPoint(x: x - offset, y: band.maxY - band.height * CGFloat(gain))
+                if isFirst {
+                    path.move(to: point)
+                    shade.move(to: point)
+                    isFirst = false
+                } else {
+                    path.addLine(to: point)
+                    shade.addLine(to: point)
+                }
+                guard x < upper else { break }
+                x = min(x + 1, upper)
+            }
+            shade.addLine(to: CGPoint(x: upper - offset, y: band.minY))
+            shade.addLine(to: CGPoint(x: lower - offset, y: band.minY))
+            shade.closeSubpath()
+        }
+        return path.isEmpty ? nil : (path, shade)
     }
 
     private func strokeBaseline(in band: CGRect, context: CGContext) {

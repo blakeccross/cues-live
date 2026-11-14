@@ -27,6 +27,8 @@ enum ClipPointerCursor: Equatable {
     case select
     case move
     case trim
+    case fadeLength
+    case fadeCurve
 
     /// Trim handles own the header ends. The top half of the lane selects a range; the bottom half moves.
     static func zone(
@@ -54,7 +56,8 @@ enum ClipPointerCursor: Equatable {
         switch self {
         case .select: NSCursor.iBeam.set()
         case .move: NSCursor.openHand.set()
-        case .trim: NSCursor.resizeLeftRight.set()
+        case .trim, .fadeLength: NSCursor.resizeLeftRight.set()
+        case .fadeCurve: NSCursor.resizeUpDown.set()
         }
         #endif
     }
@@ -66,10 +69,35 @@ enum ClipPointerCursor: Equatable {
     }
 }
 
-/// An in-progress drag on the clip selection, already snapped and clamped.
+/// An in-progress drag, already snapped and clamped. Moves and trims act on the clip selection;
+/// a fade drag acts on the one clip whose handle is held.
 enum ClipDrag: Equatable {
     case move(delta: TimeInterval, copy: Bool)
     case trim(edge: ClipEditing.Edge, delta: TimeInterval)
+    case fade(clipID: UUID, edge: ClipEditing.Edge, fade: ClipFade)
+
+    /// `clips` as they will be if the drag ends here. `clipIDs` is the selection.
+    func applied(
+        to clips: [TrackClip],
+        clipIDs: Set<UUID>,
+        sourceDuration: (_ trackID: UUID) -> TimeInterval
+    ) -> [TrackClip] {
+        var preview = clips
+        switch self {
+        case .move(let delta, let copy):
+            if copy {
+                ClipEditing.copy(clipIDs: clipIDs, by: delta, in: &preview)
+            } else {
+                ClipEditing.move(clipIDs: clipIDs, by: delta, in: &preview)
+            }
+        case .trim(let edge, let delta):
+            guard !clipIDs.isEmpty else { return clips }
+            ClipEditing.trim(clipIDs: clipIDs, edge: edge, by: delta, sourceDuration: sourceDuration, in: &preview)
+        case .fade(let clipID, let edge, let fade):
+            ClipEditing.setFade(fade, edge: edge, clipID: clipID, in: &preview)
+        }
+        return preview
+    }
 }
 
 /// A raw drag reported by a lane. `reference` is the clip under the pointer; the editor snaps
@@ -77,13 +105,16 @@ enum ClipDrag: Equatable {
 enum ClipDragRequest {
     case move(reference: TrackClip, rawDelta: TimeInterval, copy: Bool)
     case trim(reference: TrackClip, edge: ClipEditing.Edge, rawTime: TimeInterval)
+    case fade(clipID: UUID, edge: ClipEditing.Edge, fade: ClipFade)
 }
 
-enum ClipMenuAction {
+enum ClipMenuAction: Equatable {
     case split
     case duplicate
     case join
     case adjustGain
+    case fadeShape(ClipFadeShape)
+    case removeFades
     case delete
 }
 
@@ -104,4 +135,6 @@ struct ClipLaneActions {
     /// Selector press. Places the insertion cursor on this track at the snapped beat.
     var locate: (_ trackID: UUID, _ time: TimeInterval) -> Void
     var menu: (_ action: ClipMenuAction, _ clipID: UUID) -> Void
+    /// The pointer moved onto a clip, or off every clip of the lane.
+    var hover: (_ clipID: UUID?) -> Void
 }

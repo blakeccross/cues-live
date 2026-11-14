@@ -600,6 +600,24 @@
 		1A8922C612BBE0C78BE1D3F9 /* LiveSongFolderList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */; };
 		E86395016C528AC91CE38A1F /* LiveSongBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */; };
 		8B17E0070A8AE682AA9E9B14 /* LiveSongBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */; };
+		9D26242CB7334BDDF5E7044F /* ClipFade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01574BA9D3BCC2D207BF662B /* ClipFade.swift */; };
+		F444946108089D13A03517A0 /* ClipFade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01574BA9D3BCC2D207BF662B /* ClipFade.swift */; };
+		9CA8CFAF4D36FA8D54E074B0 /* ClipFadeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA344C61EB87CA08DBB1AAB /* ClipFadeShape.swift */; };
+		08473D2A243678B7F3802AE8 /* ClipFadeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA344C61EB87CA08DBB1AAB /* ClipFadeShape.swift */; };
+		BEF60BBA3AE0C1A2E041FFFF /* ClipEditing+Fades.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6BE0AD74E302CEAF5DF9217 /* ClipEditing+Fades.swift */; };
+		F685A26215DEC86982D5CEAF /* ClipEditing+Fades.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6BE0AD74E302CEAF5DF9217 /* ClipEditing+Fades.swift */; };
+		F86A6DC6E2BA042B7ECC3A0A /* ClipFadeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B39B60ED2E3836B62122795 /* ClipFadeRenderer.swift */; };
+		1BC3CE2119E515D636CAE07C /* ClipFadeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B39B60ED2E3836B62122795 /* ClipFadeRenderer.swift */; };
+		7F02CE4C572E95749FD2E5A8 /* WaveformColumnGain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912CDF7C066CE59E71F9E034 /* WaveformColumnGain.swift */; };
+		1499F7C623C1A3D7D560255A /* WaveformColumnGain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912CDF7C066CE59E71F9E034 /* WaveformColumnGain.swift */; };
+		F056ECB46F4C089C73056881 /* ClipFadeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F516D3FEBE57AFC2756DD2D9 /* ClipFadeLayout.swift */; };
+		16A81DF0D267247A04C5BF74 /* ClipFadeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = F516D3FEBE57AFC2756DD2D9 /* ClipFadeLayout.swift */; };
+		CC3D52E08B94384C688E2718 /* ClipFadeHandles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C6A25E1FD0A92617E24864 /* ClipFadeHandles.swift */; };
+		CBA03164E3D13BFC3C28C6BD /* ClipFadeHandles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C6A25E1FD0A92617E24864 /* ClipFadeHandles.swift */; };
+		0E67ED9E5E250F2A0C908E43 /* EditView+Fades.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4DF304397BD22CDE340B7 /* EditView+Fades.swift */; };
+		12BC92FC8F97DAAB3C7F7055 /* EditView+Fades.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4DF304397BD22CDE340B7 /* EditView+Fades.swift */; };
+		BA4AC22FBC4E7E7C6343055C /* ClipFadeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EE2FAA559DE087F5093964 /* ClipFadeTests.swift */; };
+		6D0179874412861A54EDC792 /* ClipFadeRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -942,6 +960,16 @@
 		61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSegmentedPicker.swift; sourceTree = "<group>"; };
 		78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongFolderList.swift; sourceTree = "<group>"; };
 		87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSongBrowser.swift; sourceTree = "<group>"; };
+		01574BA9D3BCC2D207BF662B /* ClipFade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFade.swift; sourceTree = "<group>"; };
+		5CA344C61EB87CA08DBB1AAB /* ClipFadeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeShape.swift; sourceTree = "<group>"; };
+		E6BE0AD74E302CEAF5DF9217 /* ClipEditing+Fades.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ClipEditing+Fades.swift"; sourceTree = "<group>"; };
+		4B39B60ED2E3836B62122795 /* ClipFadeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeRenderer.swift; sourceTree = "<group>"; };
+		912CDF7C066CE59E71F9E034 /* WaveformColumnGain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformColumnGain.swift; sourceTree = "<group>"; };
+		F516D3FEBE57AFC2756DD2D9 /* ClipFadeLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeLayout.swift; sourceTree = "<group>"; };
+		15C6A25E1FD0A92617E24864 /* ClipFadeHandles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeHandles.swift; sourceTree = "<group>"; };
+		86B4DF304397BD22CDE340B7 /* EditView+Fades.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditView+Fades.swift"; sourceTree = "<group>"; };
+		22EE2FAA559DE087F5093964 /* ClipFadeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeTests.swift; sourceTree = "<group>"; };
+		7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFadeRendererTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1047,6 +1075,8 @@
 		AA0000050000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				5CA344C61EB87CA08DBB1AAB /* ClipFadeShape.swift */,
+				01574BA9D3BCC2D207BF662B /* ClipFade.swift */,
 				0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */,
 				B50BEFA6E2DC468DE5A65EF3 /* TrackClip.swift */,
 				AA0000050000000000000012 /* Project */,
@@ -1241,6 +1271,8 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */,
+				22EE2FAA559DE087F5093964 /* ClipFadeTests.swift */,
 				C7B482B39F990ECB74D8E2AD /* ScreenPresenceTests.swift */,
 				4F5240158AA03DFF00891BE0 /* SetlistLibraryStoreTests.swift */,
 				0464C4851DE00254630722E2 /* SongFolderStoreTests.swift */,
@@ -1392,6 +1424,7 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				4B39B60ED2E3836B62122795 /* ClipFadeRenderer.swift */,
 				2325E5195BD9D225D659527C /* PlaybackCoordinator+LiveEdits.swift */,
 				053BFCF0850D3EBA91E18CB6 /* SetlistEditorLink.swift */,
 				1D191F5F9E3E59A45174F25E /* LiveSetlistWaveformSource.swift */,
@@ -1505,6 +1538,7 @@
 		AA00000500000000000BB009 /* Editing */ = {
 			isa = PBXGroup;
 			children = (
+				E6BE0AD74E302CEAF5DF9217 /* ClipEditing+Fades.swift */,
 				B7A689E2E3CD1BE86914752E /* TempoTrackLock.swift */,
 				AA0000020000000000000021 /* ArrangementTimelineMapper.swift */,
 				AA0000F20000000000000002 /* ClipEditing.swift */,
@@ -1521,6 +1555,9 @@
 		AA00000500000000000BB00A /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
+				15C6A25E1FD0A92617E24864 /* ClipFadeHandles.swift */,
+				F516D3FEBE57AFC2756DD2D9 /* ClipFadeLayout.swift */,
+				912CDF7C066CE59E71F9E034 /* WaveformColumnGain.swift */,
 				C78DD6807E906DC7D3E1D288 /* ScrollWheelZoom.swift */,
 				546BB49204A0848D0FB7DFE5 /* TimelineHorizontalScrollModel.swift */,
 				C9228AD0F58B2B6379CDEEB2 /* TimelineLaneCanvasView.swift */,
@@ -1551,6 +1588,7 @@
 		AA00000500000000000EDI01 /* Edit */ = {
 			isa = PBXGroup;
 			children = (
+				86B4DF304397BD22CDE340B7 /* EditView+Fades.swift */,
 				E7B1FCA47ECD5301F3E7EA17 /* EditView+Zoom.swift */,
 				E010D899E4ADC12AC64F3DCD /* EditView+Sheets.swift */,
 				136AAB24A152D2941FE3A4AD /* EditSheet.swift */,
@@ -1712,6 +1750,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E67ED9E5E250F2A0C908E43 /* EditView+Fades.swift in Sources */,
+				CC3D52E08B94384C688E2718 /* ClipFadeHandles.swift in Sources */,
+				F056ECB46F4C089C73056881 /* ClipFadeLayout.swift in Sources */,
+				7F02CE4C572E95749FD2E5A8 /* WaveformColumnGain.swift in Sources */,
+				F86A6DC6E2BA042B7ECC3A0A /* ClipFadeRenderer.swift in Sources */,
+				BEF60BBA3AE0C1A2E041FFFF /* ClipEditing+Fades.swift in Sources */,
+				9CA8CFAF4D36FA8D54E074B0 /* ClipFadeShape.swift in Sources */,
+				9D26242CB7334BDDF5E7044F /* ClipFade.swift in Sources */,
 				E86395016C528AC91CE38A1F /* LiveSongBrowser.swift in Sources */,
 				4ECE26CD392668D1A2F65BD5 /* LiveSongFolderList.swift in Sources */,
 				1D7672AD7B36C2F0DB194CD4 /* AppSegmentedPicker.swift in Sources */,
@@ -1983,6 +2029,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D0179874412861A54EDC792 /* ClipFadeRendererTests.swift in Sources */,
+				BA4AC22FBC4E7E7C6343055C /* ClipFadeTests.swift in Sources */,
 				DB989B1DC6C02991C1F3053A /* ScreenPresenceTests.swift in Sources */,
 				C2168D62A6C3F6654D4516C2 /* SetlistLibraryStoreTests.swift in Sources */,
 				E408F2BAA745CCD2CE0F1FEE /* SongFolderStoreTests.swift in Sources */,
@@ -2040,6 +2088,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				12BC92FC8F97DAAB3C7F7055 /* EditView+Fades.swift in Sources */,
+				CBA03164E3D13BFC3C28C6BD /* ClipFadeHandles.swift in Sources */,
+				16A81DF0D267247A04C5BF74 /* ClipFadeLayout.swift in Sources */,
+				1499F7C623C1A3D7D560255A /* WaveformColumnGain.swift in Sources */,
+				1BC3CE2119E515D636CAE07C /* ClipFadeRenderer.swift in Sources */,
+				F685A26215DEC86982D5CEAF /* ClipEditing+Fades.swift in Sources */,
+				08473D2A243678B7F3802AE8 /* ClipFadeShape.swift in Sources */,
+				F444946108089D13A03517A0 /* ClipFade.swift in Sources */,
 				8B17E0070A8AE682AA9E9B14 /* LiveSongBrowser.swift in Sources */,
 				1A8922C612BBE0C78BE1D3F9 /* LiveSongFolderList.swift in Sources */,
 				17DF05C9181EF73D264521FE /* AppSegmentedPicker.swift in Sources */,

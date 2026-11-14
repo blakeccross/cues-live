@@ -238,7 +238,8 @@ enum ClipEditing {
     }
 
     /// Joins a clip with the next clip on its track when both play one continuous stretch of the
-    /// file, filling any gap between them. Returns the joined clip's ID.
+    /// file, filling any gap between them. The joined clip fades in like the first and out like
+    /// the second. Returns the joined clip's ID.
     @discardableResult
     static func joinWithNext(clipID: UUID, in clips: inout [TrackClip]) -> UUID? {
         guard let clip = clips.first(where: { $0.id == clipID }),
@@ -251,6 +252,7 @@ enum ClipEditing {
         }
 
         clips[index].duration = next.timelineEndSeconds - clip.timelineStartSeconds
+        clips[index].fadeOut = next.fadeOut
         clips.removeAll { $0.id == next.id }
         return clipID
     }
@@ -291,7 +293,9 @@ enum ClipEditing {
                 duration: clip.duration,
                 sourceStartSeconds: clip.sourceStartSeconds,
                 gainDB: clip.gainDB,
-                playbackRate: clip.playbackRate
+                playbackRate: clip.playbackRate,
+                fadeIn: clip.fadeIn,
+                fadeOut: clip.fadeOut
             )
         }
         place(copies, in: &clips)
@@ -661,6 +665,8 @@ enum ClipEditing {
 
     // MARK: - Helpers
 
+    /// The part of `clip` between `start` and `end`. It keeps the fade at each end it shares with
+    /// the clip; an end made by a cut has none.
     private static func subClip(
         _ clip: TrackClip,
         from start: TimeInterval,
@@ -674,7 +680,9 @@ enum ClipEditing {
             duration: end - start,
             sourceStartSeconds: clip.sourceTime(atTimeline: start),
             gainDB: clip.gainDB,
-            playbackRate: clip.playbackRate
+            playbackRate: clip.playbackRate,
+            fadeIn: abs(start - clip.timelineStartSeconds) <= tolerance ? clip.fadeIn : .none,
+            fadeOut: abs(end - clip.timelineEndSeconds) <= tolerance ? clip.fadeOut : .none
         )
     }
 }

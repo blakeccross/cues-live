@@ -315,6 +315,7 @@ extension EditView {
                     sections: displaySections,
                     selection: clipSelection,
                     clipDrag: clipDrag,
+                    hoveredClipID: hoveredClipID,
                     actions: clipLaneActions,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
@@ -395,30 +396,15 @@ extension EditView {
         midiTracks.map(\.id) + song.sortedTracks.map(\.id)
     }
 
-    /// Clips as drawn, including an in-progress move or trim.
+    /// Clips as drawn, including an in-progress move, trim or fade.
     var previewClips: [TrackClip] {
-        var preview = timeline.clips
-        guard let clipDrag else { return preview }
-        let ids = clipSelection.clipIDs
-        guard !ids.isEmpty else { return preview }
-        switch clipDrag {
-        case .move(let delta, let copy):
-            if copy {
-                ClipEditing.copy(clipIDs: ids, by: delta, in: &preview)
-            } else {
-                ClipEditing.move(clipIDs: ids, by: delta, in: &preview)
-            }
-        case .trim(let edge, let delta):
-            let durations = Dictionary(uniqueKeysWithValues: song.sortedTracks.map { ($0.id, viewModel.fileDuration(for: $0)) })
-            ClipEditing.trim(
-                clipIDs: ids,
-                edge: edge,
-                by: delta,
-                sourceDuration: { durations[$0] ?? 0 },
-                in: &preview
-            )
-        }
-        return preview
+        guard let clipDrag else { return timeline.clips }
+        let durations = Dictionary(uniqueKeysWithValues: song.sortedTracks.map { ($0.id, viewModel.fileDuration(for: $0)) })
+        return clipDrag.applied(
+            to: timeline.clips,
+            clipIDs: clipSelection.clipIDs,
+            sourceDuration: { durations[$0] ?? 0 }
+        )
     }
 
     /// Name bars of the clips on screen. Measure lines stop here so the header stays opaque.

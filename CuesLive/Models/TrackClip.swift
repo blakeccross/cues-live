@@ -10,7 +10,9 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
     let id: UUID
     var trackID: UUID
     var timelineStartSeconds: TimeInterval
-    var duration: TimeInterval
+    var duration: TimeInterval {
+        didSet { fitFades() }
+    }
     /// Offset into the track's audio file where this clip starts playing.
     var sourceStartSeconds: TimeInterval
     /// Static clip gain in decibels. 0 is unity. The audio file stays unchanged.
@@ -18,6 +20,13 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
     /// Source seconds played per timeline second. Above 1 the audio plays faster, at its
     /// original pitch. Set when a tempo change re-times a track locked to the tempo.
     var playbackRate: Double
+    /// Fades at the clip's two ends, in timeline seconds. Neither is ever longer than the clip.
+    var fadeIn: ClipFade {
+        didSet { fitFades() }
+    }
+    var fadeOut: ClipFade {
+        didSet { fitFades() }
+    }
 
     init(
         id: UUID = UUID(),
@@ -26,7 +35,9 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
         duration: TimeInterval,
         sourceStartSeconds: TimeInterval,
         gainDB: Double = 0,
-        playbackRate: Double = 1
+        playbackRate: Double = 1,
+        fadeIn: ClipFade = .none,
+        fadeOut: ClipFade = .none
     ) {
         self.id = id
         self.trackID = trackID
@@ -35,6 +46,8 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
         self.sourceStartSeconds = sourceStartSeconds
         self.gainDB = ClipGain.stored(gainDB)
         self.playbackRate = Self.storedRate(playbackRate)
+        self.fadeIn = fadeIn.fitted(to: duration)
+        self.fadeOut = fadeOut.fitted(to: duration)
     }
 
     var timelineEndSeconds: TimeInterval { timelineStartSeconds + duration }
@@ -74,6 +87,20 @@ struct TrackClip: Codable, Hashable, Identifiable, Sendable {
         ClipGain.linearGain(decibels: gainDB)
     }
 
+    var hasFades: Bool { fadeIn.isActive || fadeOut.isActive }
+
+    /// Gain of the fades `offset` timeline seconds into the clip. Clip gain is separate.
+    func fadeGain(atOffset offset: TimeInterval) -> Float {
+        Float(ClipFade.envelope(atOffset: offset, clipDuration: duration, fadeIn: fadeIn, fadeOut: fadeOut))
+    }
+
+    private mutating func fitFades() {
+        let fittedIn = fadeIn.fitted(to: duration)
+        let fittedOut = fadeOut.fitted(to: duration)
+        if fittedIn != fadeIn { fadeIn = fittedIn }
+        if fittedOut != fadeOut { fadeOut = fittedOut }
+    }
+
     /// The whole file placed at the start of the timeline.
     static func wholeFile(trackID: UUID, duration: TimeInterval) -> TrackClip {
         TrackClip(trackID: trackID, timelineStartSeconds: 0, duration: duration, sourceStartSeconds: 0)
@@ -109,6 +136,8 @@ extension TrackClip {
         case sourceStartSeconds
         case gainDB
         case playbackRate
+        case fadeIn
+        case fadeOut
     }
 
     init(from decoder: Decoder) throws {
@@ -120,7 +149,9 @@ extension TrackClip {
             duration: try container.decode(TimeInterval.self, forKey: .duration),
             sourceStartSeconds: try container.decode(TimeInterval.self, forKey: .sourceStartSeconds),
             gainDB: try container.decodeIfPresent(Double.self, forKey: .gainDB) ?? 0,
-            playbackRate: try container.decodeIfPresent(Double.self, forKey: .playbackRate) ?? 1
+            playbackRate: try container.decodeIfPresent(Double.self, forKey: .playbackRate) ?? 1,
+            fadeIn: try container.decodeIfPresent(ClipFade.self, forKey: .fadeIn) ?? .none,
+            fadeOut: try container.decodeIfPresent(ClipFade.self, forKey: .fadeOut) ?? .none
         )
     }
 
@@ -133,5 +164,7 @@ extension TrackClip {
         try container.encode(sourceStartSeconds, forKey: .sourceStartSeconds)
         try container.encode(gainDB, forKey: .gainDB)
         try container.encode(playbackRate, forKey: .playbackRate)
+        try container.encode(fadeIn, forKey: .fadeIn)
+        try container.encode(fadeOut, forKey: .fadeOut)
     }
 }

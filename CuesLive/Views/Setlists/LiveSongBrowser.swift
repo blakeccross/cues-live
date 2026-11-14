@@ -21,7 +21,7 @@ struct LiveSongBrowser<Songs: View>: View {
             songs()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(AppColors.backgroundSecondary)
+        .background(AppColors.backgroundSecondary.ignoresSafeArea(edges: .top))
     }
 }
 #endif

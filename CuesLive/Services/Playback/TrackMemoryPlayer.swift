@@ -340,6 +340,16 @@ final class TrackMemoryPlayer {
                             gain: gain
                         )
                     }
+                    if let clip = mapper.fadedClip(atMasterTimeline: playbackMasterTime) {
+                        ClipFadeRenderer.apply(
+                            clip,
+                            clipOffset: playbackMasterTime - clip.timelineStartSeconds,
+                            sampleRate: sampleRate,
+                            to: UnsafeMutableAudioBufferListPointer(outputBuffer),
+                            outputOffset: renderedFrames,
+                            frameCount: runFrames
+                        )
+                    }
                 }
 
                 renderedFrames += runFrames

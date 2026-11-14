@@ -50,7 +50,9 @@ enum SongLibraryStore {
                     duration: clip.duration,
                     sourceStartSeconds: clip.sourceStartSeconds,
                     gainDB: clip.gainDB,
-                    playbackRate: clip.playbackRate
+                    playbackRate: clip.playbackRate,
+                    fadeIn: clip.fadeIn,
+                    fadeOut: clip.fadeOut
                 )
             }
             let midiEvents = sourceState.midiEvents.map { event in

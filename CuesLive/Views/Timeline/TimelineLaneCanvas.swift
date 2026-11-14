@@ -17,14 +17,36 @@ struct TimelineCanvasClip: Equatable {
     let sourceStart: TimeInterval
     let sourceDuration: TimeInterval
     let linearGain: Float
+    let fadeIn: ClipFade
+    let fadeOut: ClipFade
+    /// The fade curves are drawn as lines. The shading under them is always drawn.
+    let showsFadeCurves: Bool
 
-    init(_ clip: TrackClip) {
+    init(_ clip: TrackClip, showsFadeCurves: Bool) {
         id = clip.id
         timelineStart = clip.timelineStartSeconds
         timelineEnd = clip.timelineEndSeconds
         sourceStart = clip.sourceStartSeconds
         sourceDuration = clip.sourceDuration
         linearGain = clip.linearGain
+        fadeIn = clip.fadeIn
+        fadeOut = clip.fadeOut
+        self.showsFadeCurves = showsFadeCurves
+    }
+
+    /// Gain of the clip's waveform when it is drawn `width` points wide from content x `startX`.
+    func columnGain(startX: CGFloat, width: CGFloat) -> WaveformColumnGain {
+        guard fadeIn.isActive || fadeOut.isActive else { return WaveformColumnGain(level: linearGain) }
+        return WaveformColumnGain(
+            level: linearGain,
+            fades: WaveformColumnGain.Fades(
+                startX: startX,
+                width: width,
+                duration: timelineEnd - timelineStart,
+                fadeIn: fadeIn,
+                fadeOut: fadeOut
+            )
+        )
     }
 }
 

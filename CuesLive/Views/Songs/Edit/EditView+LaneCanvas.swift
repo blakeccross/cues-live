@@ -27,8 +27,21 @@ extension EditView {
                 height: row.height,
                 fileURL: fileURL,
                 bodyColor: TrackGroupPalette.colors(forPaletteKey: track.group?.paletteKey).body,
-                clips: (clipsByTrack[track.id] ?? []).map(TimelineCanvasClip.init)
+                clips: (clipsByTrack[track.id] ?? []).map { clip in
+                    TimelineCanvasClip(clip, showsFadeCurves: showsFadeCurves(on: clip))
+                }
             )
         }
+    }
+
+    /// Under the pointer, or while one of its fades is dragged. Touch has no hover, so there
+    /// the curves are always drawn.
+    private func showsFadeCurves(on clip: TrackClip) -> Bool {
+        #if os(macOS)
+        if case .fade(let clipID, _, _) = clipDrag, clipID == clip.id { return true }
+        return hoveredClipID == clip.id
+        #else
+        true
+        #endif
     }
 }
