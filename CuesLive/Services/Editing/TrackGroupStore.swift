@@ -4,6 +4,7 @@ import SwiftData
 enum TrackGroupStore {
     /// Group that carries guide audio (the Cues track group and Smart Guide callouts).
     static let guideGroupName = "Cues"
+    static let clickGroupName = "Click"
 
     static let defaultNames = [
         "Drums",
@@ -108,6 +109,20 @@ enum TrackGroupStore {
         guard !missing.isEmpty else { return false }
         group.setKeywordList(existing + missing)
         return true
+    }
+
+    /// Whether `group` has `name`, ignoring case and surrounding whitespace.
+    static func isGroup(_ group: TrackGroup?, named name: String) -> Bool {
+        guard let group else { return false }
+        return group.name
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .caseInsensitiveCompare(name) == .orderedSame
+    }
+
+    /// Whether tracks in `group` are left out of the setlist's song waveforms. Click and Cues
+    /// stems run through the whole song and would flatten the shape of the music.
+    static func isExcludedFromWaveform(_ group: TrackGroup?) -> Bool {
+        isGroup(group, named: clickGroupName) || isGroup(group, named: guideGroupName)
     }
 
     static func sortedGroups(from context: ModelContext) -> [TrackGroup] {

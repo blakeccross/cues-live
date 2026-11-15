@@ -20,10 +20,8 @@ extension LivePlaybackView {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(AppSpacing.md)
                 .contentShape(Rectangle())
-                .dropDestination(for: String.self) { items, _ in
-                    let ids = items.compactMap(SongDragPayload.songID(from:))
-                    insertDroppedSongs(at: 0, songIDs: ids)
-                    return !ids.isEmpty
+                .onDrop(of: SetlistListView.dropTypes, isTargeted: nil) { providers in
+                    performSetlistDrop(at: 0, providers: providers)
                 }
                 .contextMenu {
                     Button {
@@ -41,7 +39,7 @@ extension LivePlaybackView {
                     actions: setlistRowActions(for:),
                     onMove: moveSetlistRows,
                     onAddHeader: addHeader,
-                    onInsertSongs: insertDroppedSongs,
+                    onDropItems: { performSetlistDrop(at: $0, providers: $1) },
                     sectionPlayback: setlistSectionPlayback,
                     rowHorizontalPadding: AppSpacing.xl
                 )
@@ -50,6 +48,13 @@ extension LivePlaybackView {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(item: $setlistFolderSetupSession) { session in
+            SongFolderSetupSheet(previews: session.previews) { requests in
+                setlistFolderSetupSession = nil
+                guard !requests.isEmpty else { return }
+                importSongs(from: requests, insertingIntoSetlistAt: session.setlistRowIndex)
+            }
+        }
         .onChange(of: workingSetlist.sortedEntries.isEmpty) { _, isEmpty in
             if isEmpty { isEditingSetlist = false }
         }
@@ -128,7 +133,7 @@ extension LivePlaybackView {
 
     /// Translates list offsets (visible rows only) into offsets in the full sorted entry list.
     /// `rowIndex` is a position among the visible rows; map it to `sortedEntries` like `moveSetlistRows`.
-    private func insertDroppedSongs(at rowIndex: Int, songIDs: [UUID]) {
+    func insertDroppedSongs(at rowIndex: Int, songIDs: [UUID]) {
         let sorted = workingSetlist.sortedEntries
         let visible = sorted.filter { $0.isHeader || $0.song != nil }
         var index = rowIndex < visible.count

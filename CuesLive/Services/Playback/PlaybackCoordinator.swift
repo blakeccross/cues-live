@@ -765,6 +765,7 @@ final class PlaybackCoordinator {
             FileStore.cacheSourceDuration(duration, for: track)
             return (track, url, duration)
         }
+        .filter { !TrackGroupStore.isExcludedFromWaveform($0.track.group) }
         let trackSources = playableTracks.map { (url: $0.url, duration: $0.duration) }
 
         // Missing media keeps its cached length so sections still lay out, just without a waveform.

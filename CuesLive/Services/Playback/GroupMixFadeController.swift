@@ -198,12 +198,7 @@ final class GroupMixFadeController {
     }
 
     private static func isExcludedFromFade(_ group: TrackGroup) -> Bool {
-        isClickGroup(group) || TimecodePlaybackSupport.isTimecodeGroup(group)
-    }
-
-    private static func isClickGroup(_ group: TrackGroup) -> Bool {
-        group.name
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .caseInsensitiveCompare("Click") == .orderedSame
+        TrackGroupStore.isGroup(group, named: TrackGroupStore.clickGroupName)
+            || TimecodePlaybackSupport.isTimecodeGroup(group)
     }
 }

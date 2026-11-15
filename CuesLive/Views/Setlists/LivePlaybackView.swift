@@ -54,6 +54,7 @@ struct LivePlaybackView: View {
     @State var showFileDocument: ShowFileDocument?
     @State var songImportFeedback: SongImportFeedback?
     @State var isImportingSongFolder = false
+    @State var setlistFolderSetupSession: SongFolderSetupSession?
     @State var mixerDetent: LiveGroupMixerDetent = .hidden
     @State var headerPendingEdit: SetlistEntry?
     @State var isCreatingHeader = false

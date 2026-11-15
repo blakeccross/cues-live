@@ -57,4 +57,15 @@ final class TrackGroupStoreTests: XCTestCase {
             )
         }
     }
+
+    func testClickAndCuesGroupsAreExcludedFromWaveform() {
+        let groups = Dictionary(uniqueKeysWithValues: defaultGroups().map { ($0.name, $0) })
+
+        XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(groups["Click"]))
+        XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(groups["Cues"]))
+        XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(TrackGroup(name: " click ", sortOrder: 0)))
+        XCTAssertFalse(TrackGroupStore.isExcludedFromWaveform(groups["Drums"]))
+        XCTAssertFalse(TrackGroupStore.isExcludedFromWaveform(groups["Timecode"]))
+        XCTAssertFalse(TrackGroupStore.isExcludedFromWaveform(nil))
+    }
 }

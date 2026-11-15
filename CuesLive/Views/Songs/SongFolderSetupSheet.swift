@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 struct SongFolderSetupSession: Identifiable {
     let id = UUID()
     let previews: [SongFolderImporter.Preview]
+    /// The setlist row the imported songs are inserted at, or nil to import into the library only.
+    var setlistRowIndex: Int?
 }
 
 struct SongFolderSetupSheet: View {

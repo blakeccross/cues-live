@@ -58,7 +58,7 @@ extension SongLibraryPanel {
     @ViewBuilder
     var folderDropHighlight: some View {
         if isTargetedForFolderDrop {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            Rectangle()
                 .stroke(AppColors.accent, lineWidth: 2)
                 .padding(AppSpacing.xs)
                 .allowsHitTesting(false)
@@ -93,22 +93,7 @@ extension SongLibraryPanel {
             await Task.yield()
             defer { isPreparingFolderSetup = false }
 
-            var previews: [SongFolderImporter.Preview] = []
-            var failures: [String] = []
-            for url in urls {
-                do {
-                    let preview = try await Task.detached(priority: .userInitiated) {
-                        try SongFolderImporter.previewFolder(at: url)
-                    }.value
-                    previews.append(preview)
-                } catch {
-                    failures.append(
-                        urls.count == 1
-                            ? error.localizedDescription
-                            : "\(url.lastPathComponent): \(error.localizedDescription)"
-                    )
-                }
-            }
+            let (previews, failures) = await SongFolderDrop.previews(for: urls)
 
             if !failures.isEmpty {
                 songActionError = failures.joined(separator: "\n")

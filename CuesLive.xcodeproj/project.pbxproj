@@ -669,6 +669,8 @@
 		E42C3FB3FCE268DF411C120C /* OutputTestRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889AD81AD8513578C9F710FC /* OutputTestRun.swift */; };
 		B44018689886DEB36B98D097 /* OutputTestRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889AD81AD8513578C9F710FC /* OutputTestRun.swift */; };
 		B234B2D75EEAB48CBB5A5EE5 /* OutputTestRunTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB44129F74D4C70FDED72E6E /* OutputTestRunTests.swift */; };
+		2436436419FD4718D2A5DBE0 /* LivePlaybackView+SetlistDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF40B2AF19E607B46BFE3031 /* LivePlaybackView+SetlistDrop.swift */; };
+		7840E5ABE439D03850290F20 /* LivePlaybackView+SetlistDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF40B2AF19E607B46BFE3031 /* LivePlaybackView+SetlistDrop.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1049,6 +1051,7 @@
 		EF3AA89D69553D07D105005F /* OutputTestSignalBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestSignalBuilderTests.swift; sourceTree = "<group>"; };
 		889AD81AD8513578C9F710FC /* OutputTestRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestRun.swift; sourceTree = "<group>"; };
 		AB44129F74D4C70FDED72E6E /* OutputTestRunTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestRunTests.swift; sourceTree = "<group>"; };
+		EF40B2AF19E607B46BFE3031 /* LivePlaybackView+SetlistDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+SetlistDrop.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1263,6 +1266,7 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				EF40B2AF19E607B46BFE3031 /* LivePlaybackView+SetlistDrop.swift */,
 				B3B1DAAFE599F6387221E441 /* LivePlaybackSidebarLayout.swift */,
 				2187A8952F67BCD866AC9AE4 /* LivePlaybackSidebarMetrics.swift */,
 				B41C977E01A012170398E97A /* SetlistTransitionBadge.swift */,
@@ -1857,6 +1861,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2436436419FD4718D2A5DBE0 /* LivePlaybackView+SetlistDrop.swift in Sources */,
 				E42C3FB3FCE268DF411C120C /* OutputTestRun.swift in Sources */,
 				95F0377C469B77FF4FB85BAE /* OutputChannelTestPlayer+AllOutputs.swift in Sources */,
 				DFD6D6E7E68BAE21AC8BDD60 /* OutputTestSpeech.swift in Sources */,
@@ -2223,6 +2228,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7840E5ABE439D03850290F20 /* LivePlaybackView+SetlistDrop.swift in Sources */,
 				B44018689886DEB36B98D097 /* OutputTestRun.swift in Sources */,
 				C728275A926A3607B129322D /* OutputChannelTestPlayer+AllOutputs.swift in Sources */,
 				714F36F09015226F4DD7FC18 /* OutputTestSpeech.swift in Sources */,

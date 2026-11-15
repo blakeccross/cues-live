@@ -103,13 +103,22 @@ struct SetlistListView: View {
     let actions: (SetlistRowModel) -> SetlistRowActions
     let onMove: (IndexSet, Int) -> Void
     var onAddHeader: (() -> Void)? = nil
-    /// Called with the row index to insert at when a library song is dropped on the list.
-    var onInsertSongs: ((Int, [UUID]) -> Void)? = nil
+    /// Called with the row index to insert at when library songs or Finder folders are dropped on the list.
+    var onDropItems: ((Int, [NSItemProvider]) -> Void)? = nil
     /// Enables expandable section lists under song rows.
     var sectionPlayback: SetlistSectionPlayback? = nil
     /// Inset of row content from the list's edges. Rows are padded rather than the list,
     /// so the scroller stays at the edge.
     var rowHorizontalPadding: CGFloat = 0
+
+    /// Library song drags, plus Finder folders on macOS, which are imported as new songs.
+    static var dropTypes: [UTType] {
+        #if os(macOS)
+        [.plainText, .fileURL]
+        #else
+        [.plainText]
+        #endif
+    }
 
     /// Rows the user expanded or collapsed by hand; others follow the current song.
     @State private var expansionOverrides: [AnyHashable: Bool] = [:]
@@ -124,12 +133,8 @@ struct SetlistListView: View {
                 rowView(row)
             }
             .onMove(perform: onMove)
-            .onInsert(of: [.plainText]) { index, providers in
-                guard let onInsertSongs else { return }
-                Task { @MainActor in
-                    let ids = await SongDragPayload.songIDs(from: providers)
-                    if !ids.isEmpty { onInsertSongs(index, ids) }
-                }
+            .onInsert(of: onDropItems == nil ? [] : Self.dropTypes) { index, providers in
+                onDropItems?(index, providers)
             }
         }
         .listStyle(.plain)
