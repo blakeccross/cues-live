@@ -42,6 +42,7 @@ struct LivePlaybackView: View {
     @AppStorage("liveSongBrowserVisible") var isSongBrowserVisible = true
     @State var songBrowserFolder: LiveSongFolderList.Item? = .allSongs
     #endif
+    @AppStorage("liveWaveformVisible") var isWaveformVisible = true
     @State private var songToEditID: UUID?
     /// Song to open once the library sheet has dismissed, so the editor pushes as a screen.
     @State private var songPendingEditorID: UUID?
@@ -480,11 +481,13 @@ struct LivePlaybackView: View {
             sectionLoop: sectionLoop,
             groupMixFade: groupMixFade,
             canLoop: !loopSections.isEmpty,
+            isWaveformVisible: isWaveformVisible,
             isMixerVisible: mixerDetent == .visible,
             isEditorOpen: isSongEditorOpen,
             onStop: stopPlayback,
             onToggleLoop: toggleSectionLoop,
             onToggleFade: toggleGroupMixFade,
+            onToggleWaveform: toggleWaveform,
             onToggleMixer: toggleMixer,
             onToggleEditor: toggleSongEditor
         )

@@ -59,6 +59,10 @@ extension LivePlaybackView {
     }
     #endif
 
+    func toggleWaveform() {
+        withAnimation { isWaveformVisible.toggle() }
+    }
+
     func toggleMixer() {
         mixerDetent = mixerDetent == .hidden ? .visible : .hidden
     }
@@ -108,7 +112,7 @@ extension LivePlaybackView {
 
     private var playbackMainSection: some View {
         VStack(spacing: 0) {
-            if setlistHasSongs {
+            if setlistHasSongs && isWaveformVisible {
                 currentSongSection
                     .background(AppColors.backgroundPrimary)
             }

@@ -27,16 +27,21 @@ enum OutputDestination: Codable, Equatable, Hashable, Identifiable {
         }
     }
 
-    /// Spoken line used while identifying this output from settings.
-    var testPhrase: String {
+    /// Spoken-style name, such as "Output 3" or "Output 1 and 2".
+    var name: String {
         switch self {
         case .none:
-            return ""
+            return "No Output"
         case .stereoPair(let startChannel):
-            return "Testing Output \(startChannel) and \(startChannel + 1)"
+            return "Output \(startChannel) and \(startChannel + 1)"
         case .mono(let channel):
-            return "Testing Output \(channel)"
+            return "Output \(channel)"
         }
+    }
+
+    /// Spoken line used while identifying this output from settings.
+    var testPhrase: String {
+        self == .none ? "" : "Testing \(name)"
     }
 
     /// Zero-based buffer channels that should carry this destination's test signal.

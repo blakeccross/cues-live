@@ -8,17 +8,24 @@ struct LiveSetlistTransportToolbarContent: ToolbarContent {
     let sectionLoop: SectionLoopController
     let groupMixFade: GroupMixFadeController
     let canLoop: Bool
+    let isWaveformVisible: Bool
     let isMixerVisible: Bool
     let isEditorOpen: Bool
     let onStop: () -> Void
     let onToggleLoop: () -> Void
     let onToggleFade: () -> Void
+    let onToggleWaveform: () -> Void
     let onToggleMixer: () -> Void
     let onToggleEditor: () -> Void
 
     @ToolbarContentBuilder
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: viewTogglePlacement) {
+            Toggle(isOn: Binding(get: { isWaveformVisible }, set: { _ in onToggleWaveform() })) {
+                Label("Waveform", systemImage: "waveform")
+            }
+            .help(isWaveformVisible ? "Hide Waveform" : "Show Waveform")
+
             Toggle(isOn: Binding(get: { isMixerVisible }, set: { _ in onToggleMixer() })) {
                 Label("Group Mixer", systemImage: "slider.vertical.3")
             }

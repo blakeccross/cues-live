@@ -35,6 +35,7 @@ struct OutputRoutingSettingsForm: View {
     @State private var timecodeStartingHour = 1
     @State private var timecodeFrameRate: TimecodeFrameRate = .fps30
     @State private var outputTester = OutputChannelTestPlayer.shared
+    @State private var showingTestAllOutputs = false
 
     private var stereoDestinations: [OutputDestination] {
         OutputRoutingStore.destinations(for: channelCount).stereo
@@ -57,6 +58,13 @@ struct OutputRoutingSettingsForm: View {
             }
         }
         .formStyle(.grouped)
+        .sheet(isPresented: $showingTestAllOutputs) {
+            TestAllOutputsSheet(
+                routedDestinations: groups.map { destination(for: $0.id) } + [ungroupedDestination],
+                deviceUID: selectedDeviceUID,
+                channelCount: channelCount
+            )
+        }
         .onAppear(perform: loadState)
         .onDisappear {
             outputTester.stop()
@@ -100,7 +108,18 @@ struct OutputRoutingSettingsForm: View {
             }
             groupRouteRow(title: "No Group", routeID: OutputRoutingStore.ungroupedRouteID)
         } header: {
-            Text("Group Outputs")
+            HStack {
+                Text("Group Outputs")
+                Spacer()
+                Button("Test All Outputs…") {
+                    outputTester.stop()
+                    showingTestAllOutputs = true
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .textCase(nil)
+                .help("Play a test signal on several outputs at once or one after another")
+            }
         } footer: {
             if sections.contains(.footer) {
                 Text("Assign each track group to a stereo pair or mono output channel on the selected device. Route the Timecode group to a dedicated mono output for lighting or video gear.")

@@ -654,6 +654,21 @@
 		C57E215E29EBF7C8D3FAE264 /* AppOpacity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3164CD37C653775A3FFA1711 /* AppOpacity.swift */; };
 		2554E80261FE0B9F8E000B10 /* AppTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D35AB082F8D64BD945D19B5 /* AppTag.swift */; };
 		73E1CBF549A9172ADB425B3A /* AppTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D35AB082F8D64BD945D19B5 /* AppTag.swift */; };
+		EA6DD42276ABE31DBBBF1C8A /* TestAllOutputsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64EE507A9F907EDB201EEA1F /* TestAllOutputsSheet.swift */; };
+		00F2410934454B67BB28D4DD /* TestAllOutputsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64EE507A9F907EDB201EEA1F /* TestAllOutputsSheet.swift */; };
+		F3FF5D457EA4D5320E0299E3 /* OutputTestPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11EDD065F726476AB86A46C /* OutputTestPlan.swift */; };
+		15FD469E01DF82F5E7E30261 /* OutputTestPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11EDD065F726476AB86A46C /* OutputTestPlan.swift */; };
+		1A6ACE1C4188379239E0EAAB /* OutputTestSignalBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4564FDDB479E195A6DCF39F /* OutputTestSignalBuilder.swift */; };
+		2167501026B21200EEE9DBB4 /* OutputTestSignalBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4564FDDB479E195A6DCF39F /* OutputTestSignalBuilder.swift */; };
+		DFD6D6E7E68BAE21AC8BDD60 /* OutputTestSpeech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3E64CBA924E46791971692 /* OutputTestSpeech.swift */; };
+		714F36F09015226F4DD7FC18 /* OutputTestSpeech.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A3E64CBA924E46791971692 /* OutputTestSpeech.swift */; };
+		95F0377C469B77FF4FB85BAE /* OutputChannelTestPlayer+AllOutputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2BADE4E9136A066B6C12F0 /* OutputChannelTestPlayer+AllOutputs.swift */; };
+		C728275A926A3607B129322D /* OutputChannelTestPlayer+AllOutputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2BADE4E9136A066B6C12F0 /* OutputChannelTestPlayer+AllOutputs.swift */; };
+		9812E82EFB5A7227D81AEFA1 /* OutputTestPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6972006F012B4AAE4B88270 /* OutputTestPlanTests.swift */; };
+		1BAB9C5627198031D3927AA9 /* OutputTestSignalBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF3AA89D69553D07D105005F /* OutputTestSignalBuilderTests.swift */; };
+		E42C3FB3FCE268DF411C120C /* OutputTestRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889AD81AD8513578C9F710FC /* OutputTestRun.swift */; };
+		B44018689886DEB36B98D097 /* OutputTestRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889AD81AD8513578C9F710FC /* OutputTestRun.swift */; };
+		B234B2D75EEAB48CBB5A5EE5 /* OutputTestRunTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB44129F74D4C70FDED72E6E /* OutputTestRunTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1025,6 +1040,15 @@
 		464A0D86A5773AC271AE3CCF /* AppRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRadius.swift; sourceTree = "<group>"; };
 		3164CD37C653775A3FFA1711 /* AppOpacity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppOpacity.swift; sourceTree = "<group>"; };
 		5D35AB082F8D64BD945D19B5 /* AppTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTag.swift; sourceTree = "<group>"; };
+		64EE507A9F907EDB201EEA1F /* TestAllOutputsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAllOutputsSheet.swift; sourceTree = "<group>"; };
+		C11EDD065F726476AB86A46C /* OutputTestPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestPlan.swift; sourceTree = "<group>"; };
+		D4564FDDB479E195A6DCF39F /* OutputTestSignalBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestSignalBuilder.swift; sourceTree = "<group>"; };
+		9A3E64CBA924E46791971692 /* OutputTestSpeech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestSpeech.swift; sourceTree = "<group>"; };
+		3D2BADE4E9136A066B6C12F0 /* OutputChannelTestPlayer+AllOutputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OutputChannelTestPlayer+AllOutputs.swift"; sourceTree = "<group>"; };
+		F6972006F012B4AAE4B88270 /* OutputTestPlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestPlanTests.swift; sourceTree = "<group>"; };
+		EF3AA89D69553D07D105005F /* OutputTestSignalBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestSignalBuilderTests.swift; sourceTree = "<group>"; };
+		889AD81AD8513578C9F710FC /* OutputTestRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestRun.swift; sourceTree = "<group>"; };
+		AB44129F74D4C70FDED72E6E /* OutputTestRunTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputTestRunTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1332,6 +1356,9 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				AB44129F74D4C70FDED72E6E /* OutputTestRunTests.swift */,
+				EF3AA89D69553D07D105005F /* OutputTestSignalBuilderTests.swift */,
+				F6972006F012B4AAE4B88270 /* OutputTestPlanTests.swift */,
 				6AF0B056D1FC70762C297535 /* SongTimelineTests.swift */,
 				9E53DE72A602EA0FA2BEE6B7 /* TimelineTrailingSpaceTests.swift */,
 				7B023B5FAB1D098DC1B77531 /* ClipFadeRendererTests.swift */,
@@ -1460,6 +1487,7 @@
 		AA0000050000000000000210 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				64EE507A9F907EDB201EEA1F /* TestAllOutputsSheet.swift */,
 				AA0000020000000000000210 /* OutputRoutingSettingsForm.swift */,
 				AA0000020000000000000211 /* AppSettingsView.swift */,
 				AA0000020000000000000309 /* RemoteSessionSettingsView.swift */,
@@ -1525,6 +1553,11 @@
 		AA00000500000000000BB002 /* Output */ = {
 			isa = PBXGroup;
 			children = (
+				889AD81AD8513578C9F710FC /* OutputTestRun.swift */,
+				3D2BADE4E9136A066B6C12F0 /* OutputChannelTestPlayer+AllOutputs.swift */,
+				9A3E64CBA924E46791971692 /* OutputTestSpeech.swift */,
+				D4564FDDB479E195A6DCF39F /* OutputTestSignalBuilder.swift */,
+				C11EDD065F726476AB86A46C /* OutputTestPlan.swift */,
 				AA0000020000000000000031 /* AudioOutputDeviceService.swift */,
 				AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */,
 				AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */,
@@ -1824,6 +1857,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E42C3FB3FCE268DF411C120C /* OutputTestRun.swift in Sources */,
+				95F0377C469B77FF4FB85BAE /* OutputChannelTestPlayer+AllOutputs.swift in Sources */,
+				DFD6D6E7E68BAE21AC8BDD60 /* OutputTestSpeech.swift in Sources */,
+				1A6ACE1C4188379239E0EAAB /* OutputTestSignalBuilder.swift in Sources */,
+				F3FF5D457EA4D5320E0299E3 /* OutputTestPlan.swift in Sources */,
+				EA6DD42276ABE31DBBBF1C8A /* TestAllOutputsSheet.swift in Sources */,
 				E006E7B89B383DA950846882 /* AppHairline.swift in Sources */,
 				5D762E220BAFC1145AE76D94 /* LivePlaybackSidebarLayout.swift in Sources */,
 				664CE976AD88030535272BAE /* LivePlaybackSidebarMetrics.swift in Sources */,
@@ -2120,6 +2159,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B234B2D75EEAB48CBB5A5EE5 /* OutputTestRunTests.swift in Sources */,
+				1BAB9C5627198031D3927AA9 /* OutputTestSignalBuilderTests.swift in Sources */,
+				9812E82EFB5A7227D81AEFA1 /* OutputTestPlanTests.swift in Sources */,
 				ABF4108669D7E227F40F28E7 /* SongTimelineTests.swift in Sources */,
 				D3638EC6FE73FC0503AD6FC8 /* TimelineTrailingSpaceTests.swift in Sources */,
 				6D0179874412861A54EDC792 /* ClipFadeRendererTests.swift in Sources */,
@@ -2181,6 +2223,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B44018689886DEB36B98D097 /* OutputTestRun.swift in Sources */,
+				C728275A926A3607B129322D /* OutputChannelTestPlayer+AllOutputs.swift in Sources */,
+				714F36F09015226F4DD7FC18 /* OutputTestSpeech.swift in Sources */,
+				2167501026B21200EEE9DBB4 /* OutputTestSignalBuilder.swift in Sources */,
+				15FD469E01DF82F5E7E30261 /* OutputTestPlan.swift in Sources */,
+				00F2410934454B67BB28D4DD /* TestAllOutputsSheet.swift in Sources */,
 				DDCFE3246BC271AFEE39E397 /* AppHairline.swift in Sources */,
 				AE082424725A9188390EF3F2 /* LivePlaybackSidebarLayout.swift in Sources */,
 				C5E1DA8E725EF0F8CAEF8269 /* LivePlaybackSidebarMetrics.swift in Sources */,
