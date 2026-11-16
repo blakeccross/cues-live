@@ -130,7 +130,11 @@ extension RemoteSessionSnapshot {
 
         for entry in entries {
             if let header = entry.headerTitle, entry.songID == nil {
-                items.append(.header(scrollID: entry.id.uuidString, title: header))
+                items.append(.header(
+                    scrollID: entry.id.uuidString,
+                    title: header,
+                    timeSeconds: entry.headerTimeSeconds
+                ))
                 continue
             }
             guard let songID = entry.songID,

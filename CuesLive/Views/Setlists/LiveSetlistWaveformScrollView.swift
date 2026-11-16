@@ -15,7 +15,7 @@ struct LiveSetlistWaveformScrollView: View {
     let cueFlashPhase: Bool
     let onSeek: (TimeInterval) -> Void
     let onCueSection: (SongSection) -> Void
-    var onOverlapBadgeTapped: ((Int) -> Void)?
+    var onOverlapTapped: ((Int) -> Void)?
     /// When set, tapping a non-current song lane jumps to that song, at the tapped section's start when one was hit.
     var onSelectSong: ((Int, TimeInterval?) -> Void)?
     /// Largest MIDI device lane count across the setlist's songs, so every
@@ -33,11 +33,9 @@ struct LiveSetlistWaveformScrollView: View {
     @State var horizontalZoom = LiveSetlistWaveformMetrics.defaultHorizontalZoom
     @State var pinchStartZoom: CGFloat?
 
-    private let laneSpacing: CGFloat = 24
-
     private var laneIndices: Set<Int> {
         Set(timelineItems.compactMap { item in
-            if case .song(_, let playbackIndex, _) = item { return playbackIndex }
+            if case .song(_, let playbackIndex, _, _) = item { return playbackIndex }
             return nil
         })
     }
@@ -45,7 +43,7 @@ struct LiveSetlistWaveformScrollView: View {
     private var laneCanvas: LiveSetlistLaneCanvas {
         LiveSetlistLaneCanvas(
             songs: timelineItems.compactMap { item in
-                guard case .song(let songID, let playbackIndex, _) = item,
+                guard case .song(let songID, let playbackIndex, _, _) = item,
                       let snapshot = waveformSnapshotForSongID(songID) else { return nil }
                 return LiveSetlistLaneCanvas.Song(
                     index: playbackIndex,
@@ -56,6 +54,22 @@ struct LiveSetlistWaveformScrollView: View {
             cuedSectionID: cuedSectionID,
             cueFlashPhase: cueFlashPhase
         )
+    }
+
+    /// Songs whose next item in the strip is a header rather than another song.
+    private var songsFollowedByHeader: Set<Int> {
+        var indices: Set<Int> = []
+        var previousSongIndex: Int?
+        for item in timelineItems {
+            switch item {
+            case .song(_, let playbackIndex, _, _):
+                previousSongIndex = playbackIndex
+            case .header:
+                if let previousSongIndex { indices.insert(previousSongIndex) }
+                previousSongIndex = nil
+            }
+        }
+        return indices
     }
 
     private var midiLanesExtraHeight: CGFloat {
@@ -93,14 +107,14 @@ struct LiveSetlistWaveformScrollView: View {
     }
 
     /// The song lanes, laid out once across the whole setlist. The scroll host moves them.
+    /// Transition and header markers carry their own padding, so they set the gaps between lanes.
     private var stripContent: some View {
-        HStack(alignment: .center, spacing: laneSpacing) {
+        HStack(alignment: .top, spacing: 0) {
             ForEach(timelineItems) { item in
                 timelineItemView(item)
             }
         }
         .padding(.leading, AppSpacing.md)
-        .padding(.vertical, AppSpacing.xxxs)
         .fixedSize(horizontal: true, vertical: false)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
@@ -117,31 +131,28 @@ struct LiveSetlistWaveformScrollView: View {
     @ViewBuilder
     private func timelineItemView(_ item: LiveSetlistTimelineItem) -> some View {
         switch item {
-        case .header(_, let title):
-            SetlistWaveformHeaderMarker(title: title, extraHeight: midiLanesExtraHeight)
+        case .header(_, let title, let timeSeconds):
+            SetlistWaveformHeaderMarker(
+                title: title,
+                timeSeconds: timeSeconds,
+                extraHeight: midiLanesExtraHeight
+            )
 
-        case .song(let songID, let playbackIndex, let transitionAfter):
-            HStack(alignment: .center, spacing: laneSpacing) {
+        case .song(let songID, let playbackIndex, let transitionAfter, let overlapSeconds):
+            HStack(alignment: .top, spacing: 0) {
                 songLane(songID: songID, playbackIndex: playbackIndex)
 
                 if let transitionAfter {
-                    transitionBadge(transitionAfter, playbackIndex: playbackIndex)
+                    SetlistWaveformTransitionMarker(
+                        transition: transitionAfter,
+                        overlapSeconds: overlapSeconds,
+                        isFollowedBySong: !songsFollowedByHeader.contains(playbackIndex),
+                        extraHeight: midiLanesExtraHeight,
+                        onTap: transitionAfter == .overlap
+                            ? { onOverlapTapped?(playbackIndex) }
+                            : nil
+                    )
                 }
-            }
-        }
-    }
-
-    private func transitionBadge(_ transition: SetlistTransition, playbackIndex: Int) -> some View {
-        VStack(spacing: 0) {
-            SetlistTransitionBadge(
-                transition: transition,
-                onTap: transition == .overlap
-                    ? { onOverlapBadgeTapped?(playbackIndex) }
-                    : nil
-            )
-            .frame(height: waveformHeight)
-            if midiLanesExtraHeight > 0 {
-                Color.clear.frame(height: midiLanesExtraHeight)
             }
         }
     }
@@ -226,8 +237,7 @@ private struct LiveSetlistWaveformLanePlaceholder: View {
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
 
     var body: some View {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(AppColors.backgroundPrimary)
+            AppColors.LiveWaveform.background
                 .frame(width: LiveSetlistWaveformMetrics.unloadedLaneWidth, height: waveformHeight)
             .opacity(isCurrent ? 1 : 0.72)
             .overlay {

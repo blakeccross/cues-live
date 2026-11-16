@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 
-/// Draws the visible part of the setlist strip's song lanes: background, section bands, measure
+/// Draws the visible part of the setlist strip's song lanes: background, the section ribbon, measure
 /// grid, the summed waveform and the played split. Labels and gestures stay in SwiftUI above it.
 ///
 /// Like the editor's `TimelineLanePainter`, every frame is drawn synchronously from an overview
@@ -12,8 +12,6 @@ final class LiveSetlistLanePainter {
     struct Band: Equatable {
         let start: TimeInterval
         let end: TimeInterval
-        let color: CGColor
-        let cuedColor: CGColor
         let isCued: Bool
     }
 
@@ -35,7 +33,12 @@ final class LiveSetlistLanePainter {
         var cueFlashPhase = false
         var backgroundColor = CGColor(gray: 0, alpha: 1)
         var separatorColor = CGColor(gray: 1, alpha: 0.1)
-        var accentColor = CGColor(gray: 1, alpha: 1)
+        /// Section markers in songs other than the current one.
+        var markerColor = CGColor(gray: 0.23, alpha: 1)
+        /// Ribbon left of the playhead in the current song.
+        var playedMarkerColor = CGColor(gray: 1, alpha: 1)
+        /// Ribbon right of the playhead in the current song.
+        var unplayedMarkerColor = CGColor(gray: 0.5, alpha: 1)
     }
 
     /// Where things are this frame, in strip coordinates. Compared each display-link frame, so
@@ -54,8 +57,6 @@ final class LiveSetlistLanePainter {
         let sourceKey: String
     }
 
-    private static let cornerRadius = AppRadius.md
-    private static let borderColor = CGColor(gray: 1, alpha: 0.08)
     private static let loadingColor = CGColor(gray: 1, alpha: 0.25)
     static let gridInset: CGFloat = 8
 
@@ -119,30 +120,18 @@ final class LiveSetlistLanePainter {
             context.setAlpha(LiveSetlistWaveformMetrics.nonCurrentLaneOpacity)
             context.beginTransparencyLayer(in: shown, auxiliaryInfo: nil)
         }
-        let outline = CGPath(
-            roundedRect: lane,
-            cornerWidth: Self.cornerRadius,
-            cornerHeight: Self.cornerRadius,
-            transform: nil
-        )
-        context.saveGState()
-        context.addPath(outline)
-        context.clip()
+        // Lanes run the strip's full height with square edges; the gaps between songs separate them.
         context.clip(to: shown)
 
         context.setFillColor(scene.backgroundColor)
         context.fill(shown)
-        drawBands(song, in: lane, shown: shown, context: context)
+        let ribbonHeight = song.bands.isEmpty ? 0 : LiveSetlistWaveformMetrics.sectionRibbonHeight
+        let (ribbon, body) = lane.divided(atDistance: ribbonHeight, from: .minYEdge)
+        drawRibbon(song, in: ribbon, lane: lane, shown: shown, context: context)
+        drawWaveform(song, in: body, shown: shown, context: context)
         if song.showsMeasureGrid {
-            drawMeasureGrid(song, in: lane, shown: shown, context: context)
+            drawMeasureGrid(song, in: body, shown: shown, context: context)
         }
-        drawWaveform(song, in: lane, shown: shown, context: context)
-        context.restoreGState()
-
-        context.addPath(outline)
-        context.setStrokeColor(Self.borderColor)
-        context.setLineWidth(0.5)
-        context.strokePath()
         if !song.isCurrent {
             context.endTransparencyLayer()
         }

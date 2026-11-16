@@ -66,19 +66,23 @@ enum LiveSetlistWaveformMetrics {
     /// Width of a song lane whose waveform snapshot has not loaded yet.
     static let unloadedLaneWidth: CGFloat = 180
 
+    /// Strip across the top of a lane that holds the section markers. Lanes without sections omit it.
+    static let sectionRibbonHeight: CGFloat = 22
+
     /// Waveform ahead of the playhead.
-    static let waveformUnplayedOpacity: CGFloat = 0.32
-    /// Waveform the playhead has passed. Brighter than the rest, still translucent.
-    static let waveformPlayedOpacity: CGFloat = 0.80
+    static let waveformUnplayedOpacity: CGFloat = 0.28
+    /// Waveform the playhead has passed.
+    static let waveformPlayedOpacity: CGFloat = 0.92
     /// Songs other than the current one are dimmed.
     static let nonCurrentLaneOpacity: CGFloat = 0.72
 
-    /// Bar lines. A step down from solid so the waveform stays in front.
-    static let downbeatTickOpacity: CGFloat = 0.50
+    /// Bar lines. Drawn with a difference blend over the waveform, so these read as light lines on
+    /// the background and dark lines through the waveform.
+    static let downbeatTickOpacity: CGFloat = 0.16
     /// Quarter-note (or meter beat) ticks.
-    static let beatTickOpacity: CGFloat = 0.16
-    /// Halfway between beats. Fainter than the downbeat.
-    static let subdivisionTickOpacity: CGFloat = 0.08
+    static let beatTickOpacity: CGFloat = 0.07
+    /// Halfway between beats. Fainter than the beat.
+    static let subdivisionTickOpacity: CGFloat = 0.035
     static let beatGridMaximumDuration: TimeInterval = 10 * 60
     static let minimumBeatTickSpacing: CGFloat = 8
     static let minimumSubdivisionTickSpacing: CGFloat = 6

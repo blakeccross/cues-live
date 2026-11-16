@@ -15,7 +15,6 @@ struct LiveSetlistWaveformResizablePane<Content: View>: View {
         VStack(spacing: 0) {
             content()
                 .environment(\.liveSetlistWaveformHeight, waveformHeight)
-                .padding(.bottom, AppSpacing.xs)
 
             AppResizableDivider(
                 length: $waveformHeight,

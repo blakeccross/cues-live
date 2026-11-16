@@ -624,10 +624,6 @@
 		D299C1CF39D874723A90C48F /* AppColors+Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8AF299723838DA113E87603 /* AppColors+Timeline.swift */; };
 		9FFFEDBE534E4FE635B0FC53 /* AppColors+LiveWaveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885C378415BF4BC4410612B4 /* AppColors+LiveWaveform.swift */; };
 		B539C2F9B4574FBCDFAD5EB7 /* AppColors+LiveWaveform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885C378415BF4BC4410612B4 /* AppColors+LiveWaveform.swift */; };
-		C8B83B0B644C13CBB25AAD78 /* ArrangementSectionPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1463570CF270EB70A8DD4682 /* ArrangementSectionPalette.swift */; };
-		BDC57E7C6A4C07D8E28AA7DC /* ArrangementSectionPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1463570CF270EB70A8DD4682 /* ArrangementSectionPalette.swift */; };
-		433BCA6F5C0954266DF52226 /* SetlistTransitionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41C977E01A012170398E97A /* SetlistTransitionBadge.swift */; };
-		F8FA21081E2154D73551E5C6 /* SetlistTransitionBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41C977E01A012170398E97A /* SetlistTransitionBadge.swift */; };
 		84BF509F0605A98C438245CD /* AppColors+Mixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E4B38890522C607F5B620B /* AppColors+Mixer.swift */; };
 		D7BF9D23A78AE1881E10EA10 /* AppColors+Mixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56E4B38890522C607F5B620B /* AppColors+Mixer.swift */; };
 		D59F10A108840582FD060945 /* AppColors+Live.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2B5A7821DBB8DB4B8FDDE34 /* AppColors+Live.swift */; };
@@ -758,6 +754,13 @@
 		8D7564AC88777BD8D1B0DD7F /* ClickScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A1C12D3DF8D42242D9D737 /* ClickScheduler.swift */; };
 		F61C5914308C87261BE1B009 /* ClickScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A1C12D3DF8D42242D9D737 /* ClickScheduler.swift */; };
 		9C21A7661F02F69FD520F5DA /* ClickSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61D63E0040BD9E28899BD348 /* ClickSchedulerTests.swift */; };
+		9CC0F101F16D6A8B4262B2EC /* PlaybackCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EA36D6E57D5C363D3AFFB3 /* PlaybackCoordinatorTests.swift */; };
+		F0E706E51092BAE6F3DE72F9 /* SetlistWaveformTransitionMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */; };
+		EEA0EE53E5A5E7FE45FEA141 /* SetlistWaveformTransitionMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */; };
+		AE874D9A05E054F3DAB1BF4D /* SetlistWaveformHeaderMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */; };
+		40081ECBCC9B06A43C496994 /* SetlistWaveformHeaderMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */; };
+		E4F1035E72B803EA52AEBEF5 /* SetlistTransition+BadgeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */; };
+		9331A259A043A8FFE557801F /* SetlistTransition+BadgeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1113,8 +1116,6 @@
 		92A801E8B63989C3C863F23A /* TrackGroupPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroupPalette.swift; sourceTree = "<group>"; };
 		D8AF299723838DA113E87603 /* AppColors+Timeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppColors+Timeline.swift"; sourceTree = "<group>"; };
 		885C378415BF4BC4410612B4 /* AppColors+LiveWaveform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppColors+LiveWaveform.swift"; sourceTree = "<group>"; };
-		1463570CF270EB70A8DD4682 /* ArrangementSectionPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrangementSectionPalette.swift; sourceTree = "<group>"; };
-		B41C977E01A012170398E97A /* SetlistTransitionBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistTransitionBadge.swift; sourceTree = "<group>"; };
 		56E4B38890522C607F5B620B /* AppColors+Mixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppColors+Mixer.swift"; sourceTree = "<group>"; };
 		C2B5A7821DBB8DB4B8FDDE34 /* AppColors+Live.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppColors+Live.swift"; sourceTree = "<group>"; };
 		4455865CBAE698C6DA6E0B79 /* AppTypography+Compact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppTypography+Compact.swift"; sourceTree = "<group>"; };
@@ -1187,6 +1188,10 @@
 		1D91AF3F9F4CB4063FA29F45 /* SmartGuideEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideEditorSheet.swift; sourceTree = "<group>"; };
 		B1A1C12D3DF8D42242D9D737 /* ClickScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickScheduler.swift; sourceTree = "<group>"; };
 		61D63E0040BD9E28899BD348 /* ClickSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickSchedulerTests.swift; sourceTree = "<group>"; };
+		56EA36D6E57D5C363D3AFFB3 /* PlaybackCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorTests.swift; sourceTree = "<group>"; };
+		54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistWaveformTransitionMarker.swift; sourceTree = "<group>"; };
+		1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistWaveformHeaderMarker.swift; sourceTree = "<group>"; };
+		3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistTransition+BadgeColor.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1410,11 +1415,12 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */,
+				1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */,
+				54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */,
 				EF40B2AF19E607B46BFE3031 /* LivePlaybackView+SetlistDrop.swift */,
 				B3B1DAAFE599F6387221E441 /* LivePlaybackSidebarLayout.swift */,
 				2187A8952F67BCD866AC9AE4 /* LivePlaybackSidebarMetrics.swift */,
-				B41C977E01A012170398E97A /* SetlistTransitionBadge.swift */,
-				1463570CF270EB70A8DD4682 /* ArrangementSectionPalette.swift */,
 				AB04BD545A9B2DC5379FC45E /* SetlistSectionGridView.swift */,
 				87DEF538CFA79A0C5E9F1E62 /* LiveSongBrowser.swift */,
 				78440C85B578AD11AEB8A577 /* LiveSongFolderList.swift */,
@@ -1508,6 +1514,7 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				56EA36D6E57D5C363D3AFFB3 /* PlaybackCoordinatorTests.swift */,
 				61D63E0040BD9E28899BD348 /* ClickSchedulerTests.swift */,
 				70346C78EADD8BD0182B1D66 /* ClickSettingsTests.swift */,
 				73483B517E83B90D462518F5 /* ProceduralClickSourceTests.swift */,
@@ -2044,6 +2051,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4F1035E72B803EA52AEBEF5 /* SetlistTransition+BadgeColor.swift in Sources */,
+				AE874D9A05E054F3DAB1BF4D /* SetlistWaveformHeaderMarker.swift in Sources */,
+				F0E706E51092BAE6F3DE72F9 /* SetlistWaveformTransitionMarker.swift in Sources */,
 				8D7564AC88777BD8D1B0DD7F /* ClickScheduler.swift in Sources */,
 				AAB5DB242501F1607B004089 /* SmartGuideEditorSheet.swift in Sources */,
 				DD7E6302DACD3BFAFF586D22 /* ClickSettingsSheet.swift in Sources */,
@@ -2105,8 +2115,6 @@
 				F95EBE6DA863F3B9DE7BBB1A /* AppTypography+Compact.swift in Sources */,
 				D59F10A108840582FD060945 /* AppColors+Live.swift in Sources */,
 				84BF509F0605A98C438245CD /* AppColors+Mixer.swift in Sources */,
-				433BCA6F5C0954266DF52226 /* SetlistTransitionBadge.swift in Sources */,
-				C8B83B0B644C13CBB25AAD78 /* ArrangementSectionPalette.swift in Sources */,
 				9FFFEDBE534E4FE635B0FC53 /* AppColors+LiveWaveform.swift in Sources */,
 				EE03E0F80D1AB4B771CF4E9F /* AppColors+Timeline.swift in Sources */,
 				069B6F59691212441E4B84FA /* TrackGroupPalette.swift in Sources */,
@@ -2386,6 +2394,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9CC0F101F16D6A8B4262B2EC /* PlaybackCoordinatorTests.swift in Sources */,
 				9C21A7661F02F69FD520F5DA /* ClickSchedulerTests.swift in Sources */,
 				F312E9D035555008C0B8C8EC /* ClickSettingsTests.swift in Sources */,
 				460A55DAC0787F3E7BF6FEA7 /* ProceduralClickSourceTests.swift in Sources */,
@@ -2459,6 +2468,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9331A259A043A8FFE557801F /* SetlistTransition+BadgeColor.swift in Sources */,
+				40081ECBCC9B06A43C496994 /* SetlistWaveformHeaderMarker.swift in Sources */,
+				EEA0EE53E5A5E7FE45FEA141 /* SetlistWaveformTransitionMarker.swift in Sources */,
 				F61C5914308C87261BE1B009 /* ClickScheduler.swift in Sources */,
 				5B83909C90BCDAF5794683E1 /* SmartGuideEditorSheet.swift in Sources */,
 				E8E685A81246FE2D6C5AC97E /* ClickSettingsSheet.swift in Sources */,
@@ -2520,8 +2532,6 @@
 				51229AA695B438A31AD83FED /* AppTypography+Compact.swift in Sources */,
 				967A23B223029AB2EC538EA3 /* AppColors+Live.swift in Sources */,
 				D7BF9D23A78AE1881E10EA10 /* AppColors+Mixer.swift in Sources */,
-				F8FA21081E2154D73551E5C6 /* SetlistTransitionBadge.swift in Sources */,
-				BDC57E7C6A4C07D8E28AA7DC /* ArrangementSectionPalette.swift in Sources */,
 				B539C2F9B4574FBCDFAD5EB7 /* AppColors+LiveWaveform.swift in Sources */,
 				D299C1CF39D874723A90C48F /* AppColors+Timeline.swift in Sources */,
 				1A6D4FFEF76E7A320C445836 /* TrackGroupPalette.swift in Sources */,

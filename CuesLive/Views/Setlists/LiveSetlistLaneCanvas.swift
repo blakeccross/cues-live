@@ -43,13 +43,10 @@ struct LiveSetlistLaneCanvas: Equatable {
                     index: song.index,
                     source: song.source,
                     window: song.window,
-                    bands: song.sections.enumerated().map { index, section in
-                        let background = ArrangementSectionPalette.colors(for: index).background
-                        return LiveSetlistLanePainter.Band(
+                    bands: song.sections.map { section in
+                        LiveSetlistLanePainter.Band(
                             start: section.timelineStartSeconds,
                             end: section.timelineEndSeconds,
-                            color: resolved(background.opacity(ArrangementSectionPalette.backgroundFillOpacity)),
-                            cuedColor: resolved(background.opacity(ArrangementSectionPalette.backgroundCueFillOpacity)),
                             isCued: song.isCurrent && section.id == cuedSectionID
                         )
                     },
@@ -62,7 +59,9 @@ struct LiveSetlistLaneCanvas: Equatable {
             cueFlashPhase: cueFlashPhase,
             backgroundColor: resolved(AppColors.LiveWaveform.background),
             separatorColor: resolved(AppColors.separator),
-            accentColor: resolved(AppColors.accent)
+            markerColor: resolved(AppColors.LiveWaveform.sectionMarker),
+            playedMarkerColor: resolved(AppColors.LiveWaveform.sectionMarkerPlayed),
+            unplayedMarkerColor: resolved(AppColors.LiveWaveform.sectionMarkerUnplayed)
         )
     }
 }

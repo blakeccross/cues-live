@@ -106,14 +106,22 @@ struct LiveSongWaveformSnapshot: Identifiable {
 }
 
 enum LiveSetlistTimelineItem: Identifiable {
-    case header(scrollID: String, title: String)
-    case song(songID: UUID, playbackIndex: Int, transitionAfter: SetlistTransition?)
+    /// `timeSeconds` is how long the header's segment of the show runs, when it has one.
+    case header(scrollID: String, title: String, timeSeconds: TimeInterval? = nil)
+    /// `overlapSeconds` is how far the next song starts before this one ends, when
+    /// `transitionAfter` is an overlap and its length is known.
+    case song(
+        songID: UUID,
+        playbackIndex: Int,
+        transitionAfter: SetlistTransition?,
+        overlapSeconds: TimeInterval? = nil
+    )
 
     var id: String {
         switch self {
-        case .header(let scrollID, _):
+        case .header(let scrollID, _, _):
             scrollID
-        case .song(_, let playbackIndex, _):
+        case .song(_, let playbackIndex, _, _):
             "song-\(playbackIndex)"
         }
     }

@@ -11,14 +11,14 @@ struct LiveSetlistWaveformLoadingPlaceholder: View {
     }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+        Rectangle()
             .fill(AppColors.backgroundPrimary)
             .overlay {
                 if let message {
                     ProgressView(message)
                         .tint(AppColors.accent)
                 } else {
-                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    Rectangle()
                         .stroke(AppColors.separator, lineWidth: 0.5)
                 }
             }

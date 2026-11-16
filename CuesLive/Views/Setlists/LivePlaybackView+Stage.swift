@@ -127,12 +127,10 @@ extension LivePlaybackView {
             #if os(macOS)
             LiveSetlistWaveformResizablePane {
                 waveformContent
-                    .padding(.top, AppSpacing.xs)
                     .overlay(alignment: .topLeading) { loadErrorBanner }
             }
             #else
             waveformContent
-                .padding(.top, AppSpacing.xs)
                 .overlay(alignment: .topLeading) { loadErrorBanner }
             #endif
         }
@@ -181,7 +179,7 @@ extension LivePlaybackView {
                 cueFlashPhase: cueFlashPhase,
                 onSeek: coordinator.seek,
                 onCueSection: cueSection,
-                onOverlapBadgeTapped: { playbackIndex in
+                onOverlapTapped: { playbackIndex in
                     presentOverlapEditor(forPlaybackIndex: playbackIndex)
                 },
                 onSelectSong: { index, startTime in

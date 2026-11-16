@@ -196,16 +196,19 @@ final class PlaybackCoordinator {
                 syncedTimeline.append(
                     .header(
                         scrollID: "header-\(entry.persistentModelID)",
-                        title: entry.headerTitle ?? ""
+                        title: entry.headerTitle ?? "",
+                        timeSeconds: entry.headerTimeSeconds
                     )
                 )
             } else if let song = entry.song {
                 let hasNextSong = entries[(index + 1)...].contains { $0.song != nil }
+                let transitionAfter = hasNextSong ? entry.transition : nil
                 syncedTimeline.append(
                     .song(
                         songID: song.id,
                         playbackIndex: songIndex,
-                        transitionAfter: hasNextSong ? entry.transition : nil
+                        transitionAfter: transitionAfter,
+                        overlapSeconds: transitionAfter == .overlap ? entry.overlapConfig?.startOffsetSeconds : nil
                     )
                 )
                 syncedSongs.append(song)

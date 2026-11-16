@@ -344,7 +344,6 @@ struct RemoteLivePlaybackView: View {
                 ))
             }
         )
-        .padding(.top, AppSpacing.xs)
     }
 
     @ViewBuilder

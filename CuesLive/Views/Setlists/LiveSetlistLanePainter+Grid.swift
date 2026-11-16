@@ -1,24 +1,42 @@
 import CoreGraphics
 import Foundation
 
-/// Section bands and the measure grid behind a song's waveform.
+/// The section ribbon above a song's waveform, and the measure grid over it.
 extension LiveSetlistLanePainter {
-    func drawBands(_ song: Song, in lane: CGRect, shown: CGRect, context: CGContext) {
+    private static let cueOutlineWidth: CGFloat = 1.5
+
+    /// Draws one flush marker per section across `ribbon`. In the current song, everything left of
+    /// the playhead takes the played color and everything right of it the unplayed color; other
+    /// songs use the plain marker color.
+    func drawRibbon(_ song: Song, in ribbon: CGRect, lane: CGRect, shown: CGRect, context: CGContext) {
+        guard ribbon.height > 0 else { return }
+        let playheadX = song.isCurrent ? layout.playheadX.map { $0 - layout.origin.x } : nil
         for band in song.bands {
             let startX = lane.minX + x(for: band.start, song: song, lane: lane)
             let endX = lane.minX + x(for: band.end, song: song, lane: lane)
             guard endX >= shown.minX, startX <= shown.maxX else { continue }
-            let bandRect = CGRect(x: startX, y: lane.minY, width: max(0, endX - startX), height: lane.height)
+            let marker = CGRect(x: startX, y: ribbon.minY, width: max(0, endX - startX), height: ribbon.height)
 
-            context.setFillColor(band.isCued && scene.cueFlashPhase ? band.cuedColor : band.color)
-            context.fill(bandRect.intersection(shown))
+            let (played, ahead) = marker.divided(
+                atDistance: playheadX.map { $0 - startX } ?? 0,
+                from: .minXEdge
+            )
+            context.setFillColor(scene.playedMarkerColor)
+            context.fill(played.intersection(shown))
+            context.setFillColor(song.isCurrent ? scene.unplayedMarkerColor : scene.markerColor)
+            context.fill(ahead.intersection(shown))
             if band.isCued {
-                context.setStrokeColor(scene.accentColor.copy(alpha: scene.cueFlashPhase ? 1 : 0.35) ?? scene.accentColor)
-                context.setLineWidth(2)
-                context.stroke(bandRect)
+                let inset = Self.cueOutlineWidth
+                context.setStrokeColor(CGColor(gray: 1, alpha: scene.cueFlashPhase ? 1 : 0.35))
+                context.setLineWidth(Self.cueOutlineWidth)
+                context.stroke(marker.insetBy(dx: inset, dy: inset))
             }
+            guard startX > lane.minX else { continue }
+            // A seam between neighbouring markers, continued as a hairline through the waveform.
+            context.setFillColor(scene.backgroundColor)
+            context.fill(CGRect(x: startX - 0.5, y: ribbon.minY, width: 1, height: ribbon.height).intersection(shown))
             context.setFillColor(scene.separatorColor)
-            context.fill(CGRect(x: startX, y: lane.minY, width: 0.5, height: lane.height).intersection(shown))
+            context.fill(CGRect(x: startX, y: ribbon.maxY, width: 0.5, height: lane.maxY - ribbon.maxY).intersection(shown))
         }
     }
 
@@ -55,6 +73,11 @@ extension LiveSetlistLanePainter {
             )
             : MeasureTiming.BeatGridTimes(beats: [], subdivisions: [])
 
+        // Drawn over the waveform with a difference blend, so a tick lightens the background and
+        // darkens the waveform it crosses, staying visible on both.
+        context.saveGState()
+        defer { context.restoreGState() }
+        context.setBlendMode(.difference)
         let inset = min(Self.gridInset, lane.height / 2)
         let lines = GridLines(
             top: lane.minY + inset,

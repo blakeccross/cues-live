@@ -29,7 +29,7 @@ struct LiveSongWaveformView: View {
             .frame(width: contentWidth, height: waveformHeight)
             .overlay(alignment: .topLeading) {
                 sectionMarkers
-                    .frame(width: contentWidth, height: waveformHeight, alignment: .leading)
+                    .frame(width: contentWidth, height: waveformHeight, alignment: .topLeading)
             }
             .overlay(alignment: .topLeading) {
                 if isInteractive {
@@ -63,42 +63,47 @@ struct LiveSongWaveformView: View {
     @ViewBuilder
     private var sectionMarkers: some View {
         if usesArrangementLayout {
-            ZStack(alignment: .leading) {
-                ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+            ZStack(alignment: .topLeading) {
+                ForEach(sections) { section in
                     let startX = window.x(for: section.timelineStartSeconds, width: contentWidth)
                     let endX = window.x(for: section.timelineEndSeconds, width: contentWidth)
                     let segmentWidth = max(0, endX - startX)
-                    let palette = ArrangementSectionPalette.colors(for: index)
-                    let isLoopSection = loopSectionIDs.contains(section.id)
 
-                    HStack(spacing: AppSpacing.tagGlyphGap) {
-                        if isLoopSection {
-                            Image(systemName: "repeat")
-                                .font(AppTypography.Compact.glyphEmphasized)
-                                .foregroundStyle(palette.accent)
-                        }
-                        Text(section.name.uppercased())
-                            .font(AppTypography.Compact.sectionTag)
-                            .foregroundStyle(palette.accent)
-                            .lineLimit(1)
-                    }
-                    .appTag(AppColors.Live.tagBackground)
-                    .padding(.leading, AppSpacing.xxs)
-                    .padding(.top, AppSpacing.xxs)
-                    .frame(width: segmentWidth, height: waveformHeight, alignment: .topLeading)
-                    .offset(x: startX)
+                    sectionLabel(section, width: segmentWidth)
+                        .offset(x: startX)
 
                     if showsMissingMediaWarning {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(AppTypography.Compact.overlayGlyph)
                             .foregroundStyle(AppColors.warning)
-                            .frame(width: segmentWidth, height: waveformHeight)
-                            .offset(x: startX)
+                            .frame(width: segmentWidth, height: waveformHeight - ribbonHeight)
+                            .offset(x: startX, y: ribbonHeight)
                     }
                 }
             }
             .allowsHitTesting(false)
         }
+    }
+
+    private var ribbonHeight: CGFloat {
+        LiveSetlistWaveformMetrics.sectionRibbonHeight
+    }
+
+    /// The section's name inside its marker in the ribbon the lane painter draws.
+    private func sectionLabel(_ section: SongSection, width: CGFloat) -> some View {
+        HStack(spacing: AppSpacing.tagGlyphGap) {
+            if loopSectionIDs.contains(section.id) {
+                Image(systemName: "repeat")
+                    .font(AppTypography.Compact.glyphEmphasized)
+            }
+            Text(section.name)
+                .font(AppTypography.Compact.sectionName)
+                .lineLimit(1)
+        }
+        .foregroundStyle(AppColors.LiveWaveform.sectionLabel)
+        .padding(.horizontal, AppSpacing.xs)
+        .frame(width: width, height: ribbonHeight, alignment: .leading)
+        .clipped()
     }
 
     @ViewBuilder
@@ -142,35 +147,5 @@ struct LiveSongWaveformView: View {
                 }
             }
         }
-    }
-}
-
-struct SetlistWaveformHeaderMarker: View {
-    let title: String
-    /// Matches the MIDI-lane space reserved below song waveforms, so the
-    /// divider spans the same height as the surrounding song lanes.
-    var extraHeight: CGFloat = 0
-
-    @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
-
-    private let markerWidth: CGFloat = 40
-
-    var body: some View {
-        let totalHeight = waveformHeight + extraHeight
-        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-            .fill(AppColors.backgroundPrimary)
-            .overlay {
-                Text(title)
-                    .font(AppTypography.subheadlineEmphasized)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.7)
-                    .multilineTextAlignment(.center)
-                    // Lay out along the vertical axis before rotating into the marker.
-                    .frame(width: max(0, totalHeight - AppSpacing.md), height: markerWidth)
-                    .rotationEffect(.degrees(-90))
-            }
-            .frame(width: markerWidth, height: totalHeight)
-            .clipped()
     }
 }

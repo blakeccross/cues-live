@@ -18,10 +18,8 @@ extension AppTypography {
         static let badge = Font.system(size: 9, weight: .bold)
         /// Clip gain readout while dragging the gain line.
         static let clipGain = Font.system(size: 9.5)
-        /// Section name on the edit timeline's marker row.
+        /// Section name on a marker row: the edit timeline's, and the live waveform's section ribbon.
         static let sectionName = Font.system(size: 11, weight: .semibold)
-        /// Section name over the live waveform.
-        static let sectionTag = Font.system(size: 10, weight: .semibold, design: .monospaced)
         /// Device name tag on a live MIDI lane.
         static let laneTag = Font.system(size: 8, weight: .semibold, design: .monospaced)
         /// Clip trim handle glyphs.
@@ -31,6 +29,8 @@ extension AppTypography {
         static let glyph = Font.system(size: 8, weight: .semibold)
         /// Inline SF Symbols that mark state, such as the loop-section icon.
         static let glyphEmphasized = Font.system(size: 8, weight: .bold)
+        /// Transition symbol between songs in the live setlist strip.
+        static let transitionGlyph = Font.system(size: 10, weight: .bold)
         /// Large warning glyph centered over a waveform segment.
         static let overlayGlyph = Font.system(size: 22, weight: .semibold)
 
