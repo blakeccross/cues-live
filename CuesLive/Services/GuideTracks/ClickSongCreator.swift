@@ -15,8 +15,9 @@ enum ClickSongCreatorError: LocalizedError, Equatable {
     }
 }
 
+/// Makes a looping song that is only the generated click: no tracks, no audio files.
 enum ClickSongCreator {
-    static let barCount = 8
+    static let barCount = 36
     static let sectionName = "Click"
 
     static func durationForBars(
@@ -60,6 +61,7 @@ enum ClickSongCreator {
         song.bpm = clampedBPM
         song.timeSignatureNumerator = safeNumerator
         song.timeSignatureDenominator = safeDenominator
+        song.clickSettings = ClickSettings(isEnabled: true)
         context.insert(song)
 
         do {
@@ -73,14 +75,7 @@ enum ClickSongCreator {
                 timeSignatureChanges: timeSignatureChanges
             )
 
-            try ClickTrackFileGenerator.generateAndAttach(
-                to: song,
-                context: context,
-                duration: duration,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
-
+            // No audio: the out point gives the song its length and the generated click plays it.
             var timeline = SongProjectBridge.projectStateOrDefaults(for: song).timeline
             timeline.markers = [
                 ArrangementMarker(
@@ -90,6 +85,7 @@ enum ClickSongCreator {
                     loops: true
                 )
             ]
+            timeline.playRange = SongPlayRange(startSeconds: 0, endSeconds: duration)
 
             try SongProjectBridge.persist(
                 song: song,

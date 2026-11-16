@@ -28,7 +28,7 @@ final class AudioEngineManager {
         let groupID: UUID?
     }
 
-    private struct TrackState {
+    struct TrackState {
         let trackID: UUID
         let memoryPlayer: TrackMemoryPlayer
         let timePitchNode: AVAudioUnitTimePitch
@@ -48,7 +48,7 @@ final class AudioEngineManager {
     private var isAnnouncementPlayerWired = false
     private let transport = AudioPlaybackTransport()
     private let midiScheduler: MIDIScheduler
-    private var tracks: [UUID: TrackState] = [:]
+    private(set) var tracks: [UUID: TrackState] = [:]
     private var scheduledOverlapStartTime: TimeInterval?
     private var overlapStartHandler: (() -> Void)?
     private var didNotifyPlaybackFinished = false

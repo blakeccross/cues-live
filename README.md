@@ -10,7 +10,7 @@ Requires macOS 14+ or iOS/iPadOS 17+.
 - Import stems (`.wav`, `.aiff`, `.mp3`, `.m4a`), a folder of stems, or an Ableton Live set
 - Timeline editor with non-destructive trims, gaps, clip regions and clip fades, plus undo/redo
 - Arrangement sections with tempo and time-signature maps, and a section-loop mode
-- Generated click tracks and Smart Guide, a live voice that calls sections one measure early and on every loop pass
+- A generated click (Default, Woodblock or Beep, in any rhythm) and Smart Guide, a live voice that calls sections one measure early and on every loop pass
 - MIDI lanes that send cues to external devices
 - Track groups with colors and per-group mix
 
@@ -72,7 +72,7 @@ CuesLive/
     ├── Shared/       Transport strip, mix controls, mapping UI
     └── Docs/         In-app help
 CuesLiveTests/        Unit tests
-Scripts/              DMG packaging and pbxproj-sources.py (registers new source files)
+Scripts/              DMG packaging, pbxproj-sources.py (registers new source files), generate-click-sounds.py (synthesizes the click sounds)
 ```
 
 Contribution rules, build commands and code conventions live in `AGENTS.md` (`CLAUDE.md` links to it).

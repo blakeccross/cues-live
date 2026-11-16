@@ -145,7 +145,6 @@ extension EditView {
             onPlay: playFromInsertion,
             stoppedDisplayTime: playbackStart,
             registerUndo: registerSnapshotChange(_:before:after:),
-            onClickTrackGenerated: reloadTimelineFromProject,
             onBack: onBack,
             undoController: undoController,
             content: content()

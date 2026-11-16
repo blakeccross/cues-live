@@ -194,7 +194,6 @@ extension SongLibraryPanel {
                 try SongFolderStore.move([song], to: folder, context: modelContext)
             }
             showingAddClickSheet = false
-            onEdit(song)
         } catch {
             createSongError = error.localizedDescription
         }

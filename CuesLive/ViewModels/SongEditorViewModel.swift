@@ -16,6 +16,8 @@ final class SongEditorViewModel {
     private var reloadTask: Task<Void, Never>?
     private var reloadGeneration = 0
     private var modelContext: ModelContext?
+    /// The tempo map last sent to the engine, which the click is built from.
+    @ObservationIgnored private var syncedTempoMap: (tempo: [TempoChange], signatures: [TimeSignatureChange])?
 
     /// - Parameter setlist: When set, playback stays with the setlist and edits apply to
     ///   its engine while it has this song loaded. Transport calls are ignored.
@@ -86,6 +88,14 @@ final class SongEditorViewModel {
         reloadSong()
     }
 
+    /// Saves the song's click and applies it to the loaded song without reloading.
+    func updateClickSettings(_ settings: ClickSettings, context: ModelContext) throws {
+        song.clickSettings = settings
+        try context.save()
+        try SongProjectBridge.syncProjectFile(for: song, context: context)
+        refreshClick()
+    }
+
     /// Saves the song's key and shifts each included stem live; nothing is rendered.
     func applyKeyChange(context: ModelContext) throws {
         try context.save()
@@ -119,7 +129,8 @@ final class SongEditorViewModel {
             return
         }
 
-        guard !trackInputs.isEmpty else {
+        let playsWithoutAudio = SongTrackLoader.playsWithoutAudio(song)
+        guard !trackInputs.isEmpty || playsWithoutAudio else {
             isLoaded = false
             loadError = "Import at least one track to preview this song."
             return
@@ -128,7 +139,7 @@ final class SongEditorViewModel {
         audioEngine.stop()
 
         let preparationResult = Result {
-            try SongTrackLoader.streamingPayloads(trackInputs: trackInputs)
+            playsWithoutAudio ? [] : try SongTrackLoader.streamingPayloads(trackInputs: trackInputs)
         }
 
         guard generation == reloadGeneration, !Task.isCancelled else { return }
@@ -147,6 +158,13 @@ final class SongEditorViewModel {
             do {
                 var payloads = prepared
                 try appendTimecodePayloadIfNeeded(to: &payloads)
+                ClickPlaybackSupport.appendPayload(
+                    to: &payloads,
+                    for: song,
+                    tempoChanges: tempoChanges,
+                    timeSignatureChanges: timeSignatureChanges,
+                    duration: projectState.timeline.playbackRange.upperBound
+                )
                 try audioEngine.loadPreparedTracks(payloads, routing: currentRoutingSnapshot())
                 isLoaded = true
                 loadError = nil
@@ -303,9 +321,11 @@ final class SongEditorViewModel {
         guard isLoaded else { return }
         if let setlist {
             setlist.applyEditedArrangement(timeline, songID: song.id)
+            refreshClick()
             return
         }
         audioEngine.setArrangement(SongPlaybackLayout(timeline: timeline))
+        refreshClick()
     }
 
     func syncTempoMap(
@@ -320,17 +340,34 @@ final class SongEditorViewModel {
             defaultNumerator: song.timeSignatureNumerator ?? MeasureTiming.defaultNumerator,
             defaultDenominator: song.timeSignatureDenominator ?? MeasureTiming.defaultDenominator
         )
+        syncedTempoMap = (normalizedTempo, normalizedSignatures)
         if let setlist {
             setlist.applyEditedTempoMap(
                 normalizedTempo,
                 timeSignatureChanges: normalizedSignatures,
                 songID: song.id
             )
-            return
+        } else {
+            audioEngine.setTempoMap(
+                normalizedTempo,
+                timeSignatureChanges: normalizedSignatures
+            )
         }
-        audioEngine.setTempoMap(
-            normalizedTempo,
-            timeSignatureChanges: normalizedSignatures
+        refreshClick()
+    }
+
+    /// Rebuilds the click's events from the song's settings and current tempo map.
+    private func refreshClick() {
+        guard isLoaded, ownsLoadedSong else { return }
+        let tempoMap = syncedTempoMap ?? {
+            let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
+            return (projectState.tempoChanges, projectState.timeSignatureChanges)
+        }()
+        ClickPlaybackSupport.refresh(
+            in: engine,
+            settings: song.clickSettings,
+            tempoChanges: tempoMap.tempo,
+            timeSignatureChanges: tempoMap.signatures
         )
     }
 

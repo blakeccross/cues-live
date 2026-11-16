@@ -318,38 +318,10 @@ final class DecodedStemBuffer: StemSampleSource, @unchecked Sendable {
         )
     }
 
-    func mixAdding(_ sample: DecodedStemBuffer, atFrame startFrame: Int) {
-        let channelsToMix = min(channelCount, sample.channelCount)
-        guard channelsToMix > 0, startFrame >= 0 else { return }
-
-        for channel in 0..<channelsToMix {
-            let destination = channels[channel]
-            let source = sample.channels[channel]
-            let available = min(sample.frameCount, frameCount - startFrame)
-            guard available > 0 else { continue }
-
-            for index in 0..<available {
-                destination[startFrame + index] += source[index]
-            }
-        }
-    }
-
     /// Exposes a channel's PCM for in-place synthesis (e.g. LTC).
     func withMutableSamples(channel: Int, _ body: (UnsafeMutablePointer<Float>, Int) -> Void) {
         guard channel >= 0, channel < channelCount else { return }
         body(channels[channel], frameCount)
-    }
-
-    static func impulseSample(
-        frameCount: Int = 100,
-        peakFrame: Int = 0,
-        amplitude: Float = 1.0,
-        sampleRate: Double = engineSampleRate
-    ) throws -> DecodedStemBuffer {
-        let buffer = try silent(frameCount: frameCount, sampleRate: sampleRate)
-        guard peakFrame >= 0, peakFrame < frameCount else { return buffer }
-        buffer.channels[0][peakFrame] = amplitude
-        return buffer
     }
 
     private static func readDirectly(

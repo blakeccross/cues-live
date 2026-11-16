@@ -9,7 +9,7 @@ final class ClickSongCreatorTests: XCTestCase {
         return try ModelContainer(for: schema, configurations: [configuration])
     }
 
-    func testDurationForEightBarsAt120FourFour() {
+    func testDurationForThirtySixBarsAt120FourFour() {
         let tempoChanges = [TempoChange(startMeasure: 1, bpm: 120)]
         let timeSignatures = [
             TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1)
@@ -20,12 +20,12 @@ final class ClickSongCreatorTests: XCTestCase {
             timeSignatureChanges: timeSignatures
         )
 
-        // 8 bars × 4 beats × 0.5s = 16s
-        XCTAssertEqual(duration, 16, accuracy: 0.0001)
-        XCTAssertEqual(ClickSongCreator.barCount, 8)
+        // 36 bars × 4 beats × 0.5s = 72s
+        XCTAssertEqual(duration, 72, accuracy: 0.0001)
+        XCTAssertEqual(ClickSongCreator.barCount, 36)
     }
 
-    func testDurationForEightBarsAt120ThreeFour() {
+    func testDurationForThirtySixBarsAt120ThreeFour() {
         let tempoChanges = [TempoChange(startMeasure: 1, bpm: 120)]
         let timeSignatures = [
             TimeSignatureChange(numerator: 3, denominator: 4, startMeasure: 1)
@@ -36,11 +36,11 @@ final class ClickSongCreatorTests: XCTestCase {
             timeSignatureChanges: timeSignatures
         )
 
-        // 8 bars × 3 beats × 0.5s = 12s
-        XCTAssertEqual(duration, 12, accuracy: 0.0001)
+        // 36 bars × 3 beats × 0.5s = 54s
+        XCTAssertEqual(duration, 54, accuracy: 0.0001)
     }
 
-    func testCreateSetsTempoMeterClickAndLoopSection() throws {
+    func testCreateMakesLoopingSongWithClickOnAndNoAudio() throws {
         let container = try makeContainer()
         let context = ModelContext(container)
         var createdSong: Song?
@@ -66,16 +66,17 @@ final class ClickSongCreatorTests: XCTestCase {
         XCTAssertEqual(song.timeSignatureNumerator, 4)
         XCTAssertEqual(song.timeSignatureDenominator, 4)
 
-        let click = ClickTrackFileGenerator.existingClickTrack(in: song)
-        XCTAssertNotNil(click)
-        XCTAssertEqual(click?.trimEndSeconds ?? 0, 16, accuracy: 0.01)
+        XCTAssertTrue(song.sortedTracks.isEmpty)
+        XCTAssertEqual(song.clickSettings, ClickSettings(isEnabled: true))
+        XCTAssertTrue(SongTrackLoader.playsWithoutAudio(song))
+        XCTAssertEqual(try SongTrackLoader.playbackPayloads(for: song).count, 0)
 
         let state = try SongProjectBridge.loadProjectState(for: song)
         XCTAssertEqual(state.markers.count, 1)
         XCTAssertEqual(state.markers.first?.name, ClickSongCreator.sectionName)
         XCTAssertEqual(state.markers.first?.loops, true)
-        XCTAssertEqual(state.timeline.clips(forTrack: click!.id).count, 1)
-        XCTAssertEqual(state.timeline.clips(forTrack: click!.id).first?.duration ?? 0, 16, accuracy: 0.01)
+        XCTAssertTrue(state.timeline.clips.isEmpty)
+        XCTAssertEqual(state.timeline.playbackRange.upperBound, 72, accuracy: 0.01)
         XCTAssertEqual(state.tempoChanges.referenceBPM, 120, accuracy: 0.001)
         XCTAssertEqual(state.timeSignatureChanges.first?.numerator, 4)
         XCTAssertEqual(state.timeSignatureChanges.first?.denominator, 4)

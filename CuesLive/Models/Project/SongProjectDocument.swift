@@ -9,6 +9,8 @@ struct SongProjectMetadata: Codable, Hashable {
     var keyModeRaw: String?
     var transposeSemitones: Int
     var smartGuideEnabled: Bool
+    /// Missing from files written before the generated click.
+    var click: ClickSettings
 
     enum CodingKeys: String, CodingKey {
         case bpm
@@ -18,6 +20,7 @@ struct SongProjectMetadata: Codable, Hashable {
         case keyModeRaw
         case transposeSemitones
         case smartGuideEnabled
+        case click
     }
 
     init(from song: Song) {
@@ -28,6 +31,7 @@ struct SongProjectMetadata: Codable, Hashable {
         keyModeRaw = song.keyModeRaw
         transposeSemitones = song.transposeSemitones
         smartGuideEnabled = song.smartGuideEnabled
+        click = song.clickSettings
     }
 
     init(from decoder: Decoder) throws {
@@ -39,6 +43,7 @@ struct SongProjectMetadata: Codable, Hashable {
         keyModeRaw = try container.decodeIfPresent(String.self, forKey: .keyModeRaw)
         transposeSemitones = try container.decodeIfPresent(Int.self, forKey: .transposeSemitones) ?? 0
         smartGuideEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartGuideEnabled) ?? false
+        click = try container.decodeIfPresent(ClickSettings.self, forKey: .click) ?? ClickSettings()
     }
 
     func encode(to encoder: Encoder) throws {
@@ -50,6 +55,7 @@ struct SongProjectMetadata: Codable, Hashable {
         try container.encodeIfPresent(keyModeRaw, forKey: .keyModeRaw)
         try container.encode(transposeSemitones, forKey: .transposeSemitones)
         try container.encode(smartGuideEnabled, forKey: .smartGuideEnabled)
+        try container.encode(click, forKey: .click)
     }
 
     func apply(to song: Song) {
@@ -60,6 +66,7 @@ struct SongProjectMetadata: Codable, Hashable {
         song.keyModeRaw = keyModeRaw
         song.transposeSemitones = transposeSemitones
         song.smartGuideEnabled = smartGuideEnabled
+        song.clickSettings = click
     }
 }
 

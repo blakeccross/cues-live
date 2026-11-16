@@ -16,6 +16,11 @@ final class Song {
     /// Semitone offset baked into included stems. Zero plays the original files.
     var transposeSemitones: Int = 0
     var smartGuideEnabled: Bool = false
+    var clickEnabled: Bool = false
+    /// `ClickRhythm.rawValue`; nil means auto.
+    var clickRhythmRaw: String?
+    /// `ClickSound.rawValue`; nil means the default sound.
+    var clickSoundRaw: String?
     var projectFilePath: String?
     /// Library folder; nil keeps the song only in All Songs.
     var folder: SongFolder?
@@ -56,6 +61,21 @@ final class Song {
             return nil
         }
         return "\(numerator)/\(denominator)"
+    }
+
+    var clickSettings: ClickSettings {
+        get {
+            ClickSettings(
+                isEnabled: clickEnabled,
+                rhythm: clickRhythmRaw.flatMap(ClickRhythm.init(rawValue:)) ?? .auto,
+                sound: clickSoundRaw.flatMap(ClickSound.init(rawValue:)) ?? .standard
+            )
+        }
+        set {
+            clickEnabled = newValue.isEnabled
+            clickRhythmRaw = newValue.rhythm.rawValue
+            clickSoundRaw = newValue.sound.rawValue
+        }
     }
 
     var sortedTracks: [AudioTrack] {

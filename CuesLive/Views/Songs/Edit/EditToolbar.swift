@@ -91,7 +91,6 @@ struct EditSongToolbarContent: ToolbarContent {
     let stoppedDisplayTime: TimeInterval
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
-    let onClickTrackGenerated: () -> Void
     @Binding var showingClickEditor: Bool
 
     @ToolbarContentBuilder
@@ -116,11 +115,11 @@ struct EditSongToolbarContent: ToolbarContent {
         .cuesHideSharedBackground()
 
         ToolbarItem(placement: .principal) {
-            generateClickButton
+            clickButton
         }
 
         ToolbarItem(placement: .principal) {
-            SmartCuesToolbarToggle(
+            SmartGuideToolbarToggle(
                 song: song,
                 captureSnapshot: captureSnapshot,
                 registerUndo: registerUndo
@@ -196,22 +195,20 @@ struct EditSongToolbarContent: ToolbarContent {
         .help("Add MIDI Lane")
     }
 
-    private var generateClickButton: some View {
-        Button {
-            showingClickEditor = true
-        } label: {
-            Label("Generate Click", systemImage: "metronome")
-                .labelStyle(.iconOnly)
+    /// Shows as on while the click plays; pressing it opens the click settings either way.
+    private var clickButton: some View {
+        Toggle(isOn: Binding(get: { song.clickEnabled }, set: { _ in showingClickEditor = true })) {
+            Label("Click", systemImage: "metronome")
         }
-        .help("Generate Click")
-        .popover(isPresented: $showingClickEditor, arrowEdge: .bottom) {
-            ClickTrackEditorButton(
+        .toggleStyle(.button)
+        .labelStyle(.iconOnly)
+        .help(song.clickEnabled ? "Click On" : "Click Off")
+        .sheet(isPresented: $showingClickEditor) {
+            ClickSettingsSheet(
                 song: song,
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo,
-                onClickTrackGenerated: onClickTrackGenerated,
-                chrome: .sheet
+                registerUndo: registerUndo
             )
         }
     }
@@ -253,8 +250,8 @@ struct EditSongToolbarContent: ToolbarContent {
     }
 }
 
-/// Turns the song's Smart Cues callouts on and off as one undoable edit.
-private struct SmartCuesToolbarToggle: View {
+/// Turns the song's Smart Guide callouts on and off as one undoable edit.
+private struct SmartGuideToolbarToggle: View {
     @Environment(\.modelContext) private var modelContext
     let song: Song
     let captureSnapshot: () -> SongEditSnapshot
@@ -262,11 +259,11 @@ private struct SmartCuesToolbarToggle: View {
 
     var body: some View {
         Toggle(isOn: isEnabled) {
-            Label("Smart Cues", systemImage: "person.wave.2")
+            Label("Smart Guide", systemImage: "person.wave.2")
         }
         .toggleStyle(.button)
         .labelStyle(.iconOnly)
-        .help(song.smartGuideEnabled ? "Turn Off Smart Cues" : "Turn On Smart Cues")
+        .help(song.smartGuideEnabled ? "Turn Off Smart Guide" : "Turn On Smart Guide")
     }
 
     private var isEnabled: Binding<Bool> {
@@ -278,7 +275,7 @@ private struct SmartCuesToolbarToggle: View {
                 song.smartGuideEnabled = isOn
                 try? modelContext.save()
                 try? SongProjectBridge.syncProjectFile(for: song, context: modelContext)
-                registerUndo("Smart Cues", before, captureSnapshot())
+                registerUndo("Smart Guide", before, captureSnapshot())
             }
         )
     }

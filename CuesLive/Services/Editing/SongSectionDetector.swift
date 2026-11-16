@@ -41,7 +41,7 @@ enum SongSectionDetector {
     /// Tracks that describe the song rather than belong to it; analyzing them would skew the result.
     static func analysisTracks(in song: Song) -> [AudioTrack] {
         song.sortedTracks.filter { track in
-            let isClick = track.displayName.caseInsensitiveCompare(ClickTrackFileGenerator.trackDisplayName) == .orderedSame
+            let isClick = track.displayName.caseInsensitiveCompare(TrackGroupStore.clickGroupName) == .orderedSame
             let isGuide = track.displayName.caseInsensitiveCompare(TrackGroupStore.guideGroupName) == .orderedSame
             return !isClick && !isGuide
         }

@@ -4,7 +4,7 @@ enum KeyChangeTrackSelection {
     static let excludedGroupNames: Set<String> = ["drums", "percussion", "click", "timecode"]
 
     static func includesByDefault(displayName: String, groupName: String?) -> Bool {
-        if displayName.caseInsensitiveCompare(ClickTrackFileGenerator.trackDisplayName) == .orderedSame {
+        if displayName.caseInsensitiveCompare(TrackGroupStore.clickGroupName) == .orderedSame {
             return false
         }
         let group = groupName?

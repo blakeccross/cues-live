@@ -90,7 +90,7 @@ struct AddClickSongSheet: View {
                         .labelsHidden()
                     }
 
-                    Text("Creates an 8-bar click track set to loop.")
+                    Text("Creates a 36-bar song that loops the click. No audio is added.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.textTertiary)
                 }

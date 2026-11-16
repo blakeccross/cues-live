@@ -46,10 +46,10 @@ final class SectionCueEngineTests: XCTestCase {
         accentTemplates = (0..<markerCount).map { clickBurst(amplitude: 1.0, frequency: frequency(forSection: $0)) }
         normalTemplates = (0..<markerCount).map { clickBurst(amplitude: 0.5, frequency: frequency(forSection: $0)) }
 
-        let clicks = ClickTrackScheduler.scheduledClicks(
+        let clicks = ClickScheduler.scheduledClicks(
             from: 0, to: songSeconds,
             tempoChanges: tempo, timeSignatureChanges: signatures,
-            subdivision: .quarter
+            rhythm: .quarter
         )
         let totalFrames = Int(songSeconds * sampleRate)
         var track = [Float](repeating: 0, count: totalFrames)

@@ -28,6 +28,7 @@ struct SongMetadataSnapshot: Equatable, Hashable {
     var keyModeRaw: String? = nil
     var transposeSemitones: Int
     var smartGuideEnabled: Bool
+    var click = ClickSettings()
 }
 
 struct SongEditSnapshot: Equatable {
@@ -59,7 +60,8 @@ struct SongEditSnapshot: Equatable {
                 baseKeyRaw: song.baseKeyRaw,
                 keyModeRaw: song.keyModeRaw,
                 transposeSemitones: song.transposeSemitones,
-                smartGuideEnabled: song.smartGuideEnabled
+                smartGuideEnabled: song.smartGuideEnabled,
+                click: song.clickSettings
             ),
             tracks: song.sortedTracks.map { track in
                 TrackEditSnapshot(
@@ -96,6 +98,7 @@ struct SongEditSnapshot: Equatable {
         song.keyModeRaw = songMetadata.keyModeRaw
         song.transposeSemitones = songMetadata.transposeSemitones
         song.smartGuideEnabled = songMetadata.smartGuideEnabled
+        song.clickSettings = songMetadata.click
     }
 
     func applyTracks(to song: Song, context: ModelContext) {

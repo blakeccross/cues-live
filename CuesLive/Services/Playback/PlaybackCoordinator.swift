@@ -30,7 +30,7 @@ final class PlaybackCoordinator {
     private var waveformPeakPrefetchTask: Task<Void, Never>?
     private var pendingWaveformPeakJobs: [(songID: UUID, sources: [(url: URL, duration: TimeInterval)])] = []
     private var pendingWaveformSnapshotSongIDs: Set<UUID> = []
-    private var waveformSnapshotsBySongID: [UUID: LiveSongWaveformSnapshot] = [:]
+    var waveformSnapshotsBySongID: [UUID: LiveSongWaveformSnapshot] = [:]
     private var prefetchedIncomingPayloads: [AudioEngineManager.PreparedTrackPayload]?
     private var prefetchedIncomingLayout: SongEngineLayout?
     private var prefetchedIncomingSongID: UUID?
@@ -652,7 +652,7 @@ final class PlaybackCoordinator {
         case .success(let prepared):
             do {
                 var payloads = prepared
-                try appendTimecodePayloadIfNeeded(
+                try appendGeneratedPayloads(
                     to: &payloads,
                     song: song,
                     songIndex: currentIndex
@@ -755,7 +755,7 @@ final class PlaybackCoordinator {
     }
 
     static func makeWaveformSnapshot(for song: Song) -> LiveSongWaveformSnapshot? {
-        guard !song.sortedTracks.isEmpty else { return nil }
+        guard !song.sortedTracks.isEmpty || SongTrackLoader.playsWithoutAudio(song) else { return nil }
 
         let playableTracks: [(track: AudioTrack, url: URL, duration: TimeInterval)] = song.sortedTracks.compactMap { track in
             guard let url = FileStore.trackURL(for: song, track: track),
@@ -768,7 +768,7 @@ final class PlaybackCoordinator {
 
         // Missing media keeps its cached length so sections still lay out, just without a waveform.
         let cachedDuration = song.sortedTracks.compactMap(\.sourceDurationSeconds).max() ?? 0
-        guard !trackSources.isEmpty || cachedDuration > 0 else { return nil }
+        guard !trackSources.isEmpty || cachedDuration > 0 || song.sortedTracks.isEmpty else { return nil }
 
         let fileDuration = trackSources.map(\.duration).max() ?? cachedDuration
         let projectState = SongProjectBridge.projectStateOrDefaults(for: song)
@@ -860,44 +860,13 @@ final class PlaybackCoordinator {
             if case .success(let payloads) = result {
                 var mutablePayloads = payloads
                 let incomingIndex = currentIndex + 1
-                try? appendTimecodePayloadIfNeeded(
+                try? appendGeneratedPayloads(
                     to: &mutablePayloads,
                     song: incoming,
                     songIndex: incomingIndex
                 )
                 prefetchedIncomingPayloads = mutablePayloads
             }
-        }
-    }
-
-    private func appendTimecodePayloadIfNeeded(
-        to payloads: inout [AudioEngineManager.PreparedTrackPayload],
-        song: Song,
-        songIndex: Int
-    ) throws {
-        let settings = timecodeSettingsProvider?() ?? .default
-        guard settings.isEnabled else { return }
-
-        let duration = waveformSnapshotsBySongID[song.id]?.timelineDuration
-            ?? TimecodePlaybackSupport.timelineDuration(for: song)
-        let priorDurations = priorSongDurations(upTo: songIndex)
-        let groupID = timecodeGroupIDProvider?()
-
-        try TimecodePlaybackSupport.appendPayloadIfNeeded(
-            to: &payloads,
-            settings: settings,
-            songIndex: songIndex,
-            priorSongDurations: priorDurations,
-            duration: duration,
-            groupID: groupID
-        )
-    }
-
-    private func priorSongDurations(upTo songIndex: Int) -> [TimeInterval] {
-        guard songIndex > 0 else { return [] }
-        return songs.prefix(songIndex).map { song in
-            waveformSnapshotsBySongID[song.id]?.timelineDuration
-                ?? TimecodePlaybackSupport.timelineDuration(for: song)
         }
     }
 

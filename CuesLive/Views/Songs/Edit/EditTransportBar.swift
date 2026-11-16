@@ -26,7 +26,6 @@ struct EditTransportBar<Chrome: View>: View {
     /// Time used for the loop button while stopped. Playback leaves this where the insertion is.
     let stoppedDisplayTime: TimeInterval
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
-    let onClickTrackGenerated: () -> Void
     let onBack: () -> Void
     let undoController: SongUndoController
     let content: Chrome
@@ -53,22 +52,19 @@ struct EditTransportBar<Chrome: View>: View {
         }
         #endif
         .sheet(isPresented: $showingClickEditor) {
-            ClickTrackEditorButton(
+            ClickSettingsSheet(
                 song: song,
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo,
-                onClickTrackGenerated: onClickTrackGenerated,
-                chrome: .sheet
+                registerUndo: registerUndo
             )
         }
         .sheet(isPresented: $showingSmartGuideEditor) {
-            SmartGuideEditorButton(
+            SmartGuideEditorSheet(
                 song: song,
                 viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
-                registerUndo: registerUndo,
-                chrome: .sheet
+                registerUndo: registerUndo
             )
         }
         .sheet(isPresented: $showingArrangementEditor) {
@@ -125,13 +121,13 @@ struct EditTransportBar<Chrome: View>: View {
             Button {
                 showingClickEditor = true
             } label: {
-                Label("Generate Click", systemImage: "metronome")
+                Label("Click", systemImage: "metronome")
             }
 
             Button {
                 showingSmartGuideEditor = true
             } label: {
-                Label("Smart Cues", systemImage: "person.wave.2")
+                Label("Smart Guide", systemImage: "person.wave.2")
             }
 
             Button {

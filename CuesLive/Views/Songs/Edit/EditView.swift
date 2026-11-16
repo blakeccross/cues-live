@@ -270,7 +270,6 @@ struct EditView: View {
             stoppedDisplayTime: playbackStart,
             captureSnapshot: captureSnapshot,
             registerUndo: registerSnapshotChange(_:before:after:),
-            onClickTrackGenerated: reloadTimelineFromProject,
             showingClickEditor: $showingClickEditor
         )
     }

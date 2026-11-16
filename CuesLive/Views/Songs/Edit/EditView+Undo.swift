@@ -97,13 +97,6 @@ extension EditView {
         )
     }
 
-    /// Picks up timeline changes written straight to the project file, such as a regenerated click clip.
-    func reloadTimelineFromProject() {
-        guard let state = try? SongProjectBridge.loadProjectState(for: song) else { return }
-        timeline = state.timeline
-        syncPlayback()
-    }
-
     func syncPlayback() {
         viewModel.syncArrangement(timeline)
     }

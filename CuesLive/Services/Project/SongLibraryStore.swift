@@ -38,6 +38,7 @@ enum SongLibraryStore {
         copy.keyModeRaw = source.keyModeRaw
         copy.transposeSemitones = source.transposeSemitones
         copy.smartGuideEnabled = source.smartGuideEnabled
+        copy.clickSettings = source.clickSettings
         context.insert(copy)
 
         do {

@@ -1,6 +1,7 @@
 import Foundation
 
-enum ClickTrackScheduler {
+/// Places clicks on the tempo map: an accent on each downbeat, then one click every `rhythm`.
+enum ClickScheduler {
     struct ScheduledClick: Equatable {
         let time: TimeInterval
         let isAccent: Bool
@@ -11,7 +12,7 @@ enum ClickTrackScheduler {
         to endTime: TimeInterval,
         tempoChanges: [TempoChange],
         timeSignatureChanges: [TimeSignatureChange],
-        subdivision: ClickTrackSubdivision
+        rhythm: ClickRhythm
     ) -> [ScheduledClick] {
         guard endTime > startTime else { return [] }
 
@@ -23,7 +24,6 @@ enum ClickTrackScheduler {
             defaultDenominator: MeasureTiming.defaultDenominator
         )
 
-        let subdivisionsPerBeat = subdivision.subdivisionsPerBeat
         let timeline = TempoTimeline(
             tempoChanges: normalizedTempo,
             timeSignatureChanges: normalizedSignatures
@@ -46,38 +46,28 @@ enum ClickTrackScheduler {
         while measure <= 1_000_000 {
             let measureStart = timeline.seconds(atTick: barTick)
             if measureStart >= endTime { break }
-
-            let bpm = timeline.bpm(atTick: barTick)
-            guard bpm > 0 else { break }
+            guard timeline.bpm(atTick: barTick) > 0 else { break }
 
             let signature = MeasureTiming.numeratorDenominatorForMeasure(
                 measure,
                 changes: normalizedSignatures
             )
-            let beatsInMeasure = Int(
-                MeasureTiming.beatsPerMeasure(
-                    numerator: signature.numerator,
-                    denominator: signature.denominator
-                ).rounded(.down)
-            )
-            let tickStep = TempoChange.ticksPerQuarter / subdivisionsPerBeat
-            let subdivisionsInMeasure = max(1, beatsInMeasure) * subdivisionsPerBeat
-
-            for subdivisionIndex in 0..<subdivisionsInMeasure {
-                let clickTime = timeline.seconds(atTick: barTick + subdivisionIndex * tickStep)
-                if clickTime >= endTime { break }
-                if clickTime >= startTime {
-                    result.append(
-                        ScheduledClick(time: clickTime, isAccent: subdivisionIndex == 0)
-                    )
-                }
-            }
-
             let quarters = MeasureTiming.beatsPerMeasure(
                 numerator: signature.numerator,
                 denominator: signature.denominator
             )
-            barTick += max(0, Int((quarters * Double(TempoChange.ticksPerQuarter)).rounded()))
+            let measureTicks = max(0, Int((quarters * Double(TempoChange.ticksPerQuarter)).rounded()))
+            let tickStep = max(1, rhythm.ticksPerClick(denominator: signature.denominator))
+
+            for offset in stride(from: 0, to: max(measureTicks, 1), by: tickStep) {
+                let clickTime = timeline.seconds(atTick: barTick + offset)
+                if clickTime >= endTime { break }
+                if clickTime >= startTime {
+                    result.append(ScheduledClick(time: clickTime, isAccent: offset == 0))
+                }
+            }
+
+            barTick += measureTicks
             measure += 1
         }
 
