@@ -716,6 +716,12 @@
 		24DF816DB654B7782BE4894E /* SongFolderSetupSheet+Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */; };
 		CD648B8B8ED787B703E945F6 /* SongFolderSetupSheet+Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */; };
 		BDD1EA6E94499AA95724DB09 /* SongKeyModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10477D72C69FDFD1E870433 /* SongKeyModeTests.swift */; };
+		C763C52F3F895705015AA3AC /* TrackURLCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44D60A703FEE7007CBD75B7 /* TrackURLCache.swift */; };
+		526B358BD019D1F924FFBF08 /* TrackURLCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44D60A703FEE7007CBD75B7 /* TrackURLCache.swift */; };
+		BE4D7853BD4C77C3ADEF15BD /* TimelineClipHoverModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6777432B38CBC780DCB0A90 /* TimelineClipHoverModel.swift */; };
+		FAD2FFC3485D25C4A11447FD /* TimelineClipHoverModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6777432B38CBC780DCB0A90 /* TimelineClipHoverModel.swift */; };
+		E0C1D885FA7C719FD2A64238 /* TrackURLCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E62824B2ADA0352D6EEC462 /* TrackURLCacheTests.swift */; };
+		4E900151A8FF848CF2FD6919 /* TimelineClipHoverModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4D39CA4CFF851931C41318E /* TimelineClipHoverModelTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1121,6 +1127,10 @@
 		C52FA891E9DD9A90C557DEE0 /* SongKeyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongKeyMode.swift; sourceTree = "<group>"; };
 		1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongFolderSetupSheet+Key.swift"; sourceTree = "<group>"; };
 		A10477D72C69FDFD1E870433 /* SongKeyModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongKeyModeTests.swift; sourceTree = "<group>"; };
+		B44D60A703FEE7007CBD75B7 /* TrackURLCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackURLCache.swift; sourceTree = "<group>"; };
+		E6777432B38CBC780DCB0A90 /* TimelineClipHoverModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineClipHoverModel.swift; sourceTree = "<group>"; };
+		0E62824B2ADA0352D6EEC462 /* TrackURLCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackURLCacheTests.swift; sourceTree = "<group>"; };
+		F4D39CA4CFF851931C41318E /* TimelineClipHoverModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineClipHoverModelTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1439,6 +1449,8 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				F4D39CA4CFF851931C41318E /* TimelineClipHoverModelTests.swift */,
+				0E62824B2ADA0352D6EEC462 /* TrackURLCacheTests.swift */,
 				A10477D72C69FDFD1E870433 /* SongKeyModeTests.swift */,
 				49D1F02B9CC2D20EFBED7481 /* VideoPlacementTests.swift */,
 				949A1389040435D7447F711C /* VideoSyncPolicyTests.swift */,
@@ -1706,6 +1718,7 @@
 		AA00000500000000000BB008 /* Project */ = {
 			isa = PBXGroup;
 			children = (
+				B44D60A703FEE7007CBD75B7 /* TrackURLCache.swift */,
 				30452F2CDA668C0DDA6D8CE0 /* VideoThumbnailStore.swift */,
 				AE55BD2DC061496CCF97D1F4 /* FileStore+Video.swift */,
 				4726A8231C0E15FFCEE0F7D5 /* SongProjectBridge+Video.swift */,
@@ -1755,6 +1768,7 @@
 		AA00000500000000000BB00A /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
+				E6777432B38CBC780DCB0A90 /* TimelineClipHoverModel.swift */,
 				B20C3A6B15E47BEFDE3F4F97 /* VideoTrackHeaderView.swift */,
 				CAFD19901A0010169E5C0454 /* VideoLaneView.swift */,
 				92A801E8B63989C3C863F23A /* TrackGroupPalette.swift */,
@@ -1954,6 +1968,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BE4D7853BD4C77C3ADEF15BD /* TimelineClipHoverModel.swift in Sources */,
+				C763C52F3F895705015AA3AC /* TrackURLCache.swift in Sources */,
 				24DF816DB654B7782BE4894E /* SongFolderSetupSheet+Key.swift in Sources */,
 				C842043008B69D1A0D964759 /* SongKeyMode.swift in Sources */,
 				FAC469E396E8D8DAFDCC97A4 /* SongKeyDetector.swift in Sources */,
@@ -2278,6 +2294,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4E900151A8FF848CF2FD6919 /* TimelineClipHoverModelTests.swift in Sources */,
+				E0C1D885FA7C719FD2A64238 /* TrackURLCacheTests.swift in Sources */,
 				BDD1EA6E94499AA95724DB09 /* SongKeyModeTests.swift in Sources */,
 				F3D705B279F65450C2D567D9 /* VideoPlacementTests.swift in Sources */,
 				5CF60AD3FACCFBFF8EF43976 /* VideoSyncPolicyTests.swift in Sources */,
@@ -2345,6 +2363,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAD2FFC3485D25C4A11447FD /* TimelineClipHoverModel.swift in Sources */,
+				526B358BD019D1F924FFBF08 /* TrackURLCache.swift in Sources */,
 				CD648B8B8ED787B703E945F6 /* SongFolderSetupSheet+Key.swift in Sources */,
 				E5E1C51D2AAB1C496C872EE9 /* SongKeyMode.swift in Sources */,
 				1977A413A5998DE168D1D3CF /* SongKeyDetector.swift in Sources */,

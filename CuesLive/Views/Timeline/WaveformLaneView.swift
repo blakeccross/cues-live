@@ -18,8 +18,9 @@ struct WaveformLaneView: View {
     let sections: [SongSection]
     let selection: ClipSelection
     let clipDrag: ClipDrag?
-    /// The clip under the pointer, which shows its fade knobs.
-    let hoveredClipID: UUID?
+    /// The clip under the pointer. Only the fade handles read it, so a hover change does not
+    /// rebuild the lane.
+    let hover: TimelineClipHoverModel
     let actions: ClipLaneActions
     let tempoChanges: [TempoChange]
     let timeSignatureChanges: [TimeSignatureChange]
@@ -252,6 +253,7 @@ struct WaveformLaneView: View {
                 clipWidth: clipWidth,
                 clipHeight: clipHeight,
                 showsKnobs: showsFadeKnobs(on: clip),
+                hover: hover,
                 onDrag: { edge, fade in actions.drag(.fade(clipID: clip.id, edge: edge, fade: fade)) },
                 onEndDrag: actions.endDrag
             )
@@ -261,7 +263,7 @@ struct WaveformLaneView: View {
         .onContinuousHover { phase in
             switch phase {
             case .active(let location):
-                if hoveredClipID != clip.id { actions.hover(clip.id) }
+                hover.setClipID(clip.id)
                 let fadeCursor = ClipFadeLayout(clip: clip, clipWidth: clipWidth, clipHeight: clipHeight)
                     .cursor(at: location)
                 (fadeCursor ?? ClipPointerCursor.zone(
@@ -270,17 +272,18 @@ struct WaveformLaneView: View {
                     laneHeight: laneHeight
                 )).apply()
             case .ended:
-                if hoveredClipID == clip.id { actions.hover(nil) }
+                if hover.clipID == clip.id { hover.setClipID(nil) }
                 ClipPointerCursor.reset()
             }
         }
         #endif
     }
 
-    /// Under the pointer on macOS. Touch has no hover, so there a clip shows the knobs of the fades it has.
+    /// On macOS the knobs follow the pointer through `hover`. Touch has no hover, so there a clip
+    /// always shows the knobs of the fades it has.
     private func showsFadeKnobs(on clip: TrackClip) -> Bool {
         #if os(macOS)
-        hoveredClipID == clip.id
+        false
         #else
         clip.hasFades
         #endif

@@ -172,8 +172,7 @@ extension EditView {
             locate: { trackID, time in
                 placeInsertion(on: trackID, at: time)
             },
-            menu: performClipMenuAction,
-            hover: { hoveredClipID = $0 }
+            menu: performClipMenuAction
         )
     }
 

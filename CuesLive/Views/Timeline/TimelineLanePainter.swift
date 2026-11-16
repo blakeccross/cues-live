@@ -56,6 +56,8 @@ final class TimelineLanePainter {
     private(set) var scene = Scene()
     /// Horizontal scroll offset in content points. View x is content x minus the offset.
     var offset: CGFloat = 0
+    /// The clip under the pointer, which shows its fade curves.
+    var hoveredClipID: UUID?
     var scale: CGFloat = 2
     /// Asks the view to draw again, when a waveform or a sample window arrives.
     var onNeedsDisplay: () -> Void = {}
@@ -133,7 +135,7 @@ final class TimelineLanePainter {
             context.fillPath()
         }
         drawWaveform(span, fileURL: lane.fileURL, band: band, context: context)
-        if let fades, clip.showsFadeCurves {
+        if let fades, clip.showsFadeCurves || clip.id == hoveredClipID {
             context.setStrokeColor(Self.fadeCurveColor)
             context.setLineWidth(1.2)
             context.setLineJoin(.round)

@@ -7,7 +7,8 @@ extension EditView {
             lanes: laneCanvasLanes,
             duration: timelineDuration,
             contentWidth: timelineContentWidth,
-            loadsWaveforms: viewModel.isLoaded
+            loadsWaveforms: viewModel.isLoaded,
+            hover: clipHover
         )
     }
 
@@ -17,7 +18,7 @@ extension EditView {
         let clipsByTrack = Dictionary(grouping: previewClips, by: \.trackID)
         return song.sortedTracks.compactMap { track in
             guard let row = rowByID[track.id],
-                  let fileURL = FileStore.trackURL(for: song, track: track) else {
+                  let fileURL = FileStore.cachedTrackURL(for: song, track: track) else {
                 return nil
             }
             return TimelineCanvasLane(
@@ -32,12 +33,12 @@ extension EditView {
         }
     }
 
-    /// Under the pointer, or while one of its fades is dragged. Touch has no hover, so there
-    /// the curves are always drawn.
+    /// While one of its fades is dragged. The canvas also draws them under the pointer, from
+    /// `clipHover`. Touch has no hover, so there the curves are always drawn.
     private func showsFadeCurves(on clip: TrackClip) -> Bool {
         #if os(macOS)
         if case .fade(let clipID, _, _) = clipDrag, clipID == clip.id { return true }
-        return hoveredClipID == clip.id
+        return false
         #else
         true
         #endif

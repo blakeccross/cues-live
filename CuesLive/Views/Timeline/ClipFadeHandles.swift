@@ -14,8 +14,11 @@ struct ClipFadeHandles: View {
     let clip: TrackClip
     let clipWidth: CGFloat
     let clipHeight: CGFloat
-    /// The knobs are drawn only while this is set, or while one of them is being dragged.
+    /// The knobs are drawn while this is set, while the pointer is over the clip, or while one
+    /// of them is being dragged.
     let showsKnobs: Bool
+    /// Read here rather than by the lane, so a hover change redraws only the knobs.
+    let hover: TimelineClipHoverModel
     /// The fade the drag asks for at that end. The editor previews it until the drag ends.
     let onDrag: (_ edge: ClipEditing.Edge, _ fade: ClipFade) -> Void
     let onEndDrag: () -> Void
@@ -47,7 +50,7 @@ struct ClipFadeHandles: View {
     }
 
     private func knob(_ handle: Handle, at center: CGPoint) -> some View {
-        let isVisible = showsKnobs || activeHandle != nil
+        let isVisible = showsKnobs || hover.clipID == clip.id || activeHandle != nil
         let isLit = hoveredHandle == handle || activeHandle == handle
         return Circle()
             .fill(AppColors.Timeline.fadeKnobFill)

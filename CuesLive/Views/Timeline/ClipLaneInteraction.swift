@@ -135,6 +135,4 @@ struct ClipLaneActions {
     /// Selector press. Places the insertion cursor on this track at the snapped beat.
     var locate: (_ trackID: UUID, _ time: TimeInterval) -> Void
     var menu: (_ action: ClipMenuAction, _ clipID: UUID) -> Void
-    /// The pointer moved onto a clip, or off every clip of the lane.
-    var hover: (_ clipID: UUID?) -> Void
 }

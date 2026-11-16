@@ -304,7 +304,7 @@ extension EditView {
             }
 
             ForEach(song.sortedTracks, id: \.id) { track in
-                if FileStore.trackURL(for: song, track: track) != nil, let row = rowByID[track.id] {
+                if FileStore.cachedTrackURL(for: song, track: track) != nil, let row = rowByID[track.id] {
                 WaveformLaneView(
                     track: track,
                     fileDuration: viewModel.fileDuration(for: track),
@@ -314,7 +314,7 @@ extension EditView {
                     sections: displaySections,
                     selection: clipSelection,
                     clipDrag: clipDrag,
-                    hoveredClipID: hoveredClipID,
+                    hover: clipHover,
                     actions: clipLaneActions,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,

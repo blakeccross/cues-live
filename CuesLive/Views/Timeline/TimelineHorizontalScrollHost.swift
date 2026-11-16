@@ -33,6 +33,7 @@ struct TimelineHorizontalScrollHost<Content: View>: NSViewRepresentable {
         view.onWheelZoom = onWheelZoom
         view.onPointerDown = onPointerDown
         view.update(rootView: content(), contentWidth: contentWidth, contentHeight: contentHeight)
+        view.canvasView.follow(canvas.hover)
         view.canvasView.update(canvas.scene(in: context.environment))
     }
 }
