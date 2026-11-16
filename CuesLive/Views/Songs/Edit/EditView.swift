@@ -68,7 +68,6 @@ struct EditView: View {
     @Bindable var audioEngine = AudioEngineManager.shared
     @State var showingArrangementEditor = false
     @State private var showingClickEditor = false
-    @State private var showingSmartGuideEditor = false
     @State var showingTempoOperations = false
     @State var trackPendingRename: AudioTrack?
     @State var renameTrackName = ""
@@ -272,8 +271,7 @@ struct EditView: View {
             captureSnapshot: captureSnapshot,
             registerUndo: registerSnapshotChange(_:before:after:),
             onClickTrackGenerated: reloadTimelineFromProject,
-            showingClickEditor: $showingClickEditor,
-            showingSmartGuideEditor: $showingSmartGuideEditor
+            showingClickEditor: $showingClickEditor
         )
     }
     #endif

@@ -6,6 +6,8 @@ extension AppTypography {
     enum Compact {
         /// Small labels and buttons: lane titles, clip names, "UP NEXT", ruler lane names.
         static let label = Font.system(size: 9, weight: .semibold)
+        /// Tiny captions over a value, such as the tempo/key/meter labels under the editor's song title.
+        static let microLabel = Font.system(size: 7, weight: .semibold)
         /// Secondary detail beside a `label`, such as a MIDI lane's routing.
         static let detail = Font.system(size: 9)
         /// Tempo and time signature values on the rulers. Pair with `.monospacedDigit()`.
