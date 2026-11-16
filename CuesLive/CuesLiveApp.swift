@@ -105,6 +105,20 @@ struct CuesLiveApp: App {
         )
         .windowResizability(.contentMinSize)
         .windowToolbarStyle(.unified)
+
+        Window("Video", id: VideoWindowID.value) {
+            VideoOutputWindowView()
+                .frame(minWidth: 320, minHeight: 180)
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 960, height: 540)
+        .windowResizability(.contentMinSize)
+        .windowToolbarStyle(.unifiedCompact)
+        #else
+        WindowGroup("Video", id: VideoWindowID.value) {
+            VideoOutputWindowView()
+                .preferredColorScheme(.dark)
+        }
         #endif
     }
 }
@@ -348,21 +362,6 @@ struct LiveMappingCommands: Commands {
             Button(mapping.session == .midiMapping ? "Done MIDI Mapping" : "MIDI Mapping") {
                 mapping.toggleMIDIMapping()
             }
-        }
-    }
-}
-
-struct WindowMenuCommands: Commands {
-    @Environment(\.openWindow) private var openWindow
-
-    var body: some Commands {
-        CommandGroup(before: .windowList) {
-            Button("Song Editor") {
-                openWindow(id: SetlistSongEditorWindowID.value)
-            }
-            .keyboardShortcut("e", modifiers: [.command, .option])
-
-            Divider()
         }
     }
 }

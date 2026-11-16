@@ -329,6 +329,7 @@ struct LivePlaybackView: View {
                 groupMixFade.cancel()
                 prepareSectionAnnouncements()
             }
+            .videoOutputClaim(song: coordinator.currentSong, engine: coordinator.playbackEngine)
             .onChange(of: coordinator.currentSong?.smartGuideEnabled ?? false) { _, _ in
                 prepareSectionAnnouncements()
             }

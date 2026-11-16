@@ -24,6 +24,10 @@ final class Song {
     @Relationship(deleteRule: .cascade, inverse: \MIDITrack.song)
     var midiTracks: [MIDITrack]
 
+    /// The movie shown in the Video window while this song plays.
+    @Relationship(deleteRule: .cascade, inverse: \VideoTrack.song)
+    var videoTrack: VideoTrack?
+
     init(name: String) {
         id = UUID()
         self.name = name
@@ -38,6 +42,7 @@ final class Song {
         folder = nil
         tracks = []
         midiTracks = []
+        videoTrack = nil
     }
 
     var timeSignatureDisplay: String? {

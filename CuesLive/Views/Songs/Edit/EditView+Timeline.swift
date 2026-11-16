@@ -25,10 +25,11 @@ extension EditView {
         return max(sourceDuration, finiteEngineDuration, 1)
     }
 
-    /// Length the editor lays out, including empty measures after the song's end.
+    /// Length the editor lays out, including empty measures after the song's end. A video that
+    /// runs past the audio extends it, so the whole clip can be seen and moved.
     var timelineDuration: TimeInterval {
         TimelineTrailingSpace.displayDuration(
-            songDuration: songDuration,
+            songDuration: max(songDuration, videoEndSeconds),
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges
         )
@@ -54,6 +55,7 @@ extension EditView {
 
     private var hasTimelineContent: Bool {
         !song.sortedTracks.isEmpty || !displaySections.isEmpty || !song.midiTracks.isEmpty
+            || song.videoTrack != nil
     }
 
     private var timelineLoadingPlaceholder: some View {
@@ -130,6 +132,7 @@ extension EditView {
             onDetectSections: requestDetectSections,
             onImportAbleton: presentAbletonImporter,
             onAddMIDILane: { activeSheet = .midiDevicePicker },
+            onAddVideo: presentVideoImporter,
             onClearMarkerCue: { clearMarkerCue() },
             captureSnapshot: captureSnapshot,
             currentSectionAtTime: { time in
@@ -276,15 +279,22 @@ extension EditView {
     }
 
     private var trackLanesContent: some View {
-        let frames = laneFrames
+        // Rows are looked up by track ID from one snapshot. The lazy stack builds rows after this
+        // body runs, so an index offset read then (a video or MIDI lane just added) could point
+        // past the end of these frames.
+        let rowByID = laneRowsByTrackID
         return LazyVStack(spacing: TimelineLayout.laneSpacing) {
-            ForEach(Array(midiTracks.enumerated()), id: \.element.id) { index, track in
+            if let video = song.videoTrack, let row = rowByID[video.id] {
+                videoLane(video, height: row.height, originY: row.originY)
+            }
+
+            ForEach(midiTracks, id: \.id) { track in
                 MIDILaneView(
                     track: track,
                     device: track.device,
                     timelineDuration: timelineDuration,
                     timelineContentWidth: timelineContentWidth,
-                    laneHeight: frames.rows[index].height,
+                    laneHeight: rowByID[track.id]?.height ?? TrackLaneHeight.resolved(track.laneHeight),
                     events: $midiEvents,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
@@ -293,9 +303,8 @@ extension EditView {
                 .frame(width: timelineContentWidth, alignment: .leading)
             }
 
-            ForEach(Array(song.sortedTracks.enumerated()), id: \.element.id) { index, track in
-                if FileStore.trackURL(for: song, track: track) != nil {
-                let row = frames.rows[midiTracks.count + index]
+            ForEach(song.sortedTracks, id: \.id) { track in
+                if FileStore.trackURL(for: song, track: track) != nil, let row = rowByID[track.id] {
                 WaveformLaneView(
                     track: track,
                     fileDuration: viewModel.fileDuration(for: track),
@@ -341,7 +350,8 @@ extension EditView {
             )
             let frames = laneFrames
             ZStack(alignment: .topLeading) {
-                ForEach(drag.firstRow...drag.lastRow, id: \.self) { row in
+                // The selection keeps row numbers from before a lane was added or removed.
+                ForEach(selectionRows(drag, in: frames), id: \.self) { row in
                     let lane = frames.rows[row]
                     Rectangle()
                         .fill(AppColors.Timeline.selection)
@@ -381,9 +391,9 @@ extension EditView {
         }
     }
 
-    /// MIDI lanes first, then audio, matching the header and lane order.
+    /// The video lane first, then MIDI, then audio, matching the header and lane order.
     var displayedTrackIDs: [UUID] {
-        midiTracks.map(\.id) + song.sortedTracks.map(\.id)
+        (song.videoTrack.map { [$0.id] } ?? []) + midiTracks.map(\.id) + song.sortedTracks.map(\.id)
     }
 
     /// Clips as drawn, including an in-progress move, trim or fade.
@@ -428,6 +438,10 @@ extension EditView {
 
     private var trackHeaderList: some View {
         LazyVStack(spacing: TimelineLayout.laneSpacing) {
+            if let video = song.videoTrack {
+                videoTrackHeader(video)
+            }
+
             ForEach(midiTracks, id: \.id) { track in
                 MIDITrackHeaderView(
                     track: track,

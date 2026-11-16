@@ -13,6 +13,7 @@ struct EditTransportBar<Chrome: View>: View {
     let onDetectSections: () -> Void
     let onImportAbleton: () -> Void
     let onAddMIDILane: () -> Void
+    let onAddVideo: () -> Void
     let onClearMarkerCue: () -> Void
     let captureSnapshot: () -> SongEditSnapshot
     let currentSectionAtTime: (TimeInterval) -> SongSection?
@@ -137,6 +138,12 @@ struct EditTransportBar<Chrome: View>: View {
                 onImportAbleton()
             } label: {
                 Label("Add Ableton File…", systemImage: "doc")
+            }
+
+            Button {
+                onAddVideo()
+            } label: {
+                Label(song.videoTrack == nil ? "Add Video…" : "Replace Video…", systemImage: "film")
             }
 
             if !arrangementActions.sections.isEmpty {

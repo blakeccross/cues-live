@@ -29,6 +29,9 @@ extension EditView {
         if let track = song.midiTracks.first(where: { $0.id == id }) {
             return TrackLaneHeight.resolved(track.laneHeight)
         }
+        if let video = song.videoTrack, video.id == id {
+            return TrackLaneHeight.resolved(video.laneHeight)
+        }
         return TrackLaneHeight.medium
     }
 
@@ -40,8 +43,14 @@ extension EditView {
             }
             return
         }
-        if let track = song.midiTracks.first(where: { $0.id == id }), track.laneHeight != stored {
-            track.laneHeight = stored
+        if let track = song.midiTracks.first(where: { $0.id == id }) {
+            if track.laneHeight != stored {
+                track.laneHeight = stored
+            }
+            return
+        }
+        if let video = song.videoTrack, video.id == id, video.laneHeight != stored {
+            video.laneHeight = stored
         }
     }
 

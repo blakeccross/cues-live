@@ -87,6 +87,8 @@ extension EditView {
             presentTrackImporter()
         case .midi:
             activeSheet = .midiDevicePicker
+        case .video:
+            presentVideoImporter()
         case .ableton:
             presentAbletonImporter()
         }
@@ -156,15 +158,20 @@ extension EditView {
         guard !providers.isEmpty else { return false }
         let timelineStart = playbackStart
         Task { @MainActor in
-            let opened = await AudioFileDrop.openAudioFiles(from: providers)
+            let opened = await AudioFileDrop.openMediaFiles(from: providers)
             defer {
                 for file in opened {
                     file.close()
                 }
             }
-            let urls = opened.map(\.url)
+            if let movie = opened.first(where: { FileStore.isSupportedVideoFile($0.url) }) {
+                attachVideo(from: movie.url)
+            }
+            let urls = opened.map(\.url).filter(FileStore.isSupportedAudioFile)
             guard !urls.isEmpty else {
-                importError = "Drop audio files to place them on the timeline."
+                if opened.isEmpty {
+                    importError = "Drop audio files to place them on the timeline, or a video to play with the song."
+                }
                 return
             }
             importAudioTracks(

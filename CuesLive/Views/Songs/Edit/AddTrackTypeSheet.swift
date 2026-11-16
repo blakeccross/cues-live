@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 enum AddTrackKind: CaseIterable, Identifiable {
     case audio
     case midi
+    case video
     case ableton
 
     var id: Self { self }
@@ -12,6 +13,7 @@ enum AddTrackKind: CaseIterable, Identifiable {
         switch self {
         case .audio: "Track"
         case .midi: "MIDI"
+        case .video: "Video"
         case .ableton: "Ableton File"
         }
     }
@@ -20,6 +22,7 @@ enum AddTrackKind: CaseIterable, Identifiable {
         switch self {
         case .audio: "waveform"
         case .midi: "pianokeys"
+        case .video: "film"
         case .ableton: "doc"
         }
     }
@@ -28,6 +31,7 @@ enum AddTrackKind: CaseIterable, Identifiable {
         switch self {
         case .audio: "Import audio stems"
         case .midi: "Add a MIDI lane"
+        case .video: "Play a video in the Video window"
         case .ableton: "Import sections and tempo"
         }
     }
@@ -125,8 +129,9 @@ struct AddTrackFlowModifier: ViewModifier {
     }
 }
 
-/// Audio files dragged onto the song editor. Each one lands on a new track at the
-/// edit insertion; the editor reads the files here and the caller does the placement.
+/// Files dragged onto the song editor. Each audio file lands on a new track at the
+/// edit insertion and a movie becomes the song's video; the editor reads the files here
+/// and the caller does the placement.
 enum AudioFileDrop {
     struct OpenedFile {
         let url: URL
@@ -139,10 +144,10 @@ enum AudioFileDrop {
         }
     }
 
-    static func openAudioFiles(from providers: [NSItemProvider]) async -> [OpenedFile] {
+    static func openMediaFiles(from providers: [NSItemProvider]) async -> [OpenedFile] {
         var opened: [OpenedFile] = []
         for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-            guard let url = await loadFileURL(from: provider), FileStore.isSupportedAudioFile(url) else { continue }
+            guard let url = await loadFileURL(from: provider), FileStore.isSupportedAudioFile(url) || FileStore.isSupportedVideoFile(url) else { continue }
             opened.append(OpenedFile(url: url, scoped: url.startAccessingSecurityScopedResource()))
         }
         return opened

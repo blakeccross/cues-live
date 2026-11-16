@@ -36,6 +36,7 @@ extension EditView {
         let trackIDsBeforeApply = Set(song.sortedTracks.map(\.id))
         snapshot.applyTracks(to: song, context: modelContext)
         snapshot.applyMIDILaneHeights(to: song)
+        snapshot.applyVideo(to: song, context: modelContext)
         let trackIDsChanged = trackIDsBeforeApply != Set(song.sortedTracks.map(\.id))
 
         let defaultBPM = song.bpm ?? TempoChange.defaultBPM

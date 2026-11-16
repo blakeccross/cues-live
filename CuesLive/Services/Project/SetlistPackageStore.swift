@@ -125,37 +125,54 @@ enum SetlistPackageStore {
                 continue
             }
 
-            try FileManager.default.createDirectory(at: stemsDirectory, withIntermediateDirectories: true)
-            let destinationURL = uniqueDestinationURL(
-                in: stemsDirectory,
-                preferredName: sourceURL.lastPathComponent
-            )
-
-            do {
-                if sourceURL.standardizedFileURL != destinationURL.standardizedFileURL {
-                    if FileManager.default.fileExists(atPath: destinationURL.path) {
-                        try FileManager.default.removeItem(at: destinationURL)
-                    }
-                    try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-                }
-            } catch {
-                throw PackageError.copyFailed(sourceURL.path)
-            }
-
-            var media = MediaReference.from(url: destinationURL, relativeTo: packagedProjectURL)
-            MediaReferenceResolver.refreshBookmark(
-                for: &media,
-                resolvedURL: destinationURL,
-                projectFileURL: packagedProjectURL
-            )
-
             var updatedTrack = track
-            updatedTrack.media = media
+            updatedTrack.media = try copyMedia(from: sourceURL, into: stemsDirectory, projectURL: packagedProjectURL)
             updatedTracks.append(updatedTrack)
         }
 
         document.tracks = updatedTracks
+        if let video = document.video,
+           let sourceURL = MediaReferenceResolver.resolve(video.media, projectFileURL: sourceProjectURL)
+            ?? FileStore.videoURL(for: song) {
+            document.video?.media = try copyMedia(
+                from: sourceURL,
+                into: songFolderURL.appendingPathComponent("Video", isDirectory: true),
+                projectURL: packagedProjectURL
+            )
+        }
         try ProjectFileStore.save(document, to: packagedProjectURL)
+    }
+
+    /// Copies one media file into `directory` and returns its reference from the packaged project.
+    private static func copyMedia(
+        from sourceURL: URL,
+        into directory: URL,
+        projectURL packagedProjectURL: URL
+    ) throws -> MediaReference {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let destinationURL = uniqueDestinationURL(
+            in: directory,
+            preferredName: sourceURL.lastPathComponent
+        )
+
+        do {
+            if sourceURL.standardizedFileURL != destinationURL.standardizedFileURL {
+                if FileManager.default.fileExists(atPath: destinationURL.path) {
+                    try FileManager.default.removeItem(at: destinationURL)
+                }
+                try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            }
+        } catch {
+            throw PackageError.copyFailed(sourceURL.path)
+        }
+
+        var media = MediaReference.from(url: destinationURL, relativeTo: packagedProjectURL)
+        MediaReferenceResolver.refreshBookmark(
+            for: &media,
+            resolvedURL: destinationURL,
+            projectFileURL: packagedProjectURL
+        )
+        return media
     }
 
     private static func uniqueSongFolderName(

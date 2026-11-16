@@ -15,6 +15,7 @@ enum PersistenceController {
         SongFolder.self,
         AudioTrack.self,
         MIDITrack.self,
+        VideoTrack.self,
         MIDIDevice.self,
         TrackGroup.self,
         OutputRoutingConfig.self,

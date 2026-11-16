@@ -35,6 +35,7 @@ struct ClipGainPromptRequest: Identifiable {
 
 struct EditView: View {
     @Environment(\.modelContext) var modelContext
+    @Environment(\.openWindow) var openWindow
 
     @Bindable var song: Song
     let viewModel: SongEditorViewModel
@@ -88,6 +89,9 @@ struct EditView: View {
     @FocusState var isTimelineFocused: Bool
     @State var isTimelineReady = false
     @State var isAudioDropTargeted = false
+    @State var showingVideoImporter = false
+    /// Size and length of the song's movie, read from the file.
+    @State var videoInfo: VideoFileInfo?
 
     @Query(sort: [SortDescriptor(\TrackGroup.sortOrder), SortDescriptor(\TrackGroup.name)])
     var trackGroups: [TrackGroup]
@@ -98,6 +102,12 @@ struct EditView: View {
                 sheetContent(for: sheet)
             }
             .modifier(addTrackFlowModifier)
+            .fileImporter(
+                isPresented: $showingVideoImporter,
+                allowedContentTypes: FileStore.supportedVideoTypes,
+                allowsMultipleSelection: false,
+                onCompletion: handleVideoImport
+            )
             .modifier(detectSectionsModifier)
             .alert("Rename Track", isPresented: isRenamingTrack) {
                 TextField("Track name", text: $renameTrackName)
@@ -144,6 +154,15 @@ struct EditView: View {
     private var editorWithLifecycle: some View {
         focusableEditor
             .onAppear(perform: handleAppear)
+            // A setlist-following editor leaves the Video window with the setlist.
+            .videoOutputClaim(song: song, engine: audioEngine, isEnabled: !viewModel.followsSetlist)
+            // The range selection is stored by row, and the video lane shifts every row below it.
+            .onChange(of: song.videoTrack?.id) { _, _ in
+                editSelection = nil
+            }
+            .task(id: song.videoTrack?.mediaPath) {
+                await refreshVideoInfo()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .outputRoutingDidChange)) { _ in
                 viewModel.applyOutputRoutingChange()
             }
@@ -238,6 +257,7 @@ struct EditView: View {
             onDetectSections: requestDetectSections,
             onImportAbleton: presentAbletonImporter,
             onAddMIDILane: { activeSheet = .midiDevicePicker },
+            onAddVideo: presentVideoImporter,
             onBack: viewModel.followsSetlist ? nil : onBack,
             currentSectionAtTime: { time in
                 displaySections.section(atTimeline: time)

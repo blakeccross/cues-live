@@ -109,7 +109,8 @@ enum SongProjectBridge {
             arrangement: SongProjectArrangement(timeline: storedTimeline),
             tempo: tempoChanges,
             timeSignatures: timeSignatureChanges,
-            midiEvents: midiEvents
+            midiEvents: midiEvents,
+            video: projectVideoTrack(for: song)
         )
     }
 
@@ -333,6 +334,8 @@ enum SongProjectBridge {
             context.insert(midiTrack)
             song.midiTracks.append(midiTrack)
         }
+
+        applyVideo(document.video, to: song, context: context)
 
         try context.save()
     }

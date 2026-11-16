@@ -37,6 +37,7 @@ struct SongEditSnapshot: Equatable {
     var songMetadata: SongMetadataSnapshot
     var tracks: [TrackEditSnapshot]
     var midiLaneHeights: [UUID: Double]
+    var video: VideoTrackEditSnapshot? = nil
 
     static func capture(
         song: Song,
@@ -80,7 +81,8 @@ struct SongEditSnapshot: Equatable {
             },
             midiLaneHeights: Dictionary(
                 uniqueKeysWithValues: song.sortedMIDITracks.map { ($0.id, $0.laneHeight) }
-            )
+            ),
+            video: song.videoTrack.map(VideoTrackEditSnapshot.init(video:))
         )
     }
 

@@ -255,6 +255,8 @@ struct SongProjectDocument: Codable, Identifiable {
     var tempo: [TempoChange]
     var timeSignatures: [TimeSignatureChange]
     var midiEvents: [MIDIEvent]
+    /// Optional, so files written before video support still decode.
+    var video: ProjectVideoTrack?
 
     init(
         id: UUID,
@@ -267,7 +269,8 @@ struct SongProjectDocument: Codable, Identifiable {
         arrangement: SongProjectArrangement,
         tempo: [TempoChange] = [],
         timeSignatures: [TimeSignatureChange] = [],
-        midiEvents: [MIDIEvent] = []
+        midiEvents: [MIDIEvent] = [],
+        video: ProjectVideoTrack? = nil
     ) {
         formatVersion = Self.currentFormatVersion
         self.id = id
@@ -281,5 +284,6 @@ struct SongProjectDocument: Codable, Identifiable {
         self.tempo = tempo
         self.timeSignatures = timeSignatures
         self.midiEvents = midiEvents
+        self.video = video
     }
 }

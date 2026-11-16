@@ -30,7 +30,7 @@ enum MediaConsolidator {
         }
 
         let tracks = song.sortedTracks
-        guard !tracks.isEmpty else {
+        guard !tracks.isEmpty || song.videoTrack != nil else {
             throw ConsolidateError.noTracks
         }
 
@@ -42,29 +42,15 @@ enum MediaConsolidator {
 
         for track in tracks {
             guard let sourceURL = FileStore.trackURL(for: song, track: track) else { continue }
-
-            let destinationURL = uniqueDestinationURL(
-                in: stemsDirectory,
-                preferredName: sourceURL.lastPathComponent
-            )
-
-            if sourceURL.standardizedFileURL != destinationURL.standardizedFileURL {
-                if FileManager.default.fileExists(atPath: destinationURL.path) {
-                    try FileManager.default.removeItem(at: destinationURL)
-                }
-                try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-            }
-
-            var reference = MediaReference.from(url: destinationURL, relativeTo: projectURL)
-            MediaReferenceResolver.refreshBookmark(
-                for: &reference,
-                resolvedURL: destinationURL,
-                projectFileURL: projectURL
-            )
+            let reference = try copy(sourceURL, into: stemsDirectory, projectURL: projectURL)
             track.mediaPath = reference.path
             track.mediaPathStyle = reference.pathStyle
             track.mediaBookmarkData = reference.bookmark
-            track.relativeFilePath = destinationURL.lastPathComponent
+            track.relativeFilePath = URL(fileURLWithPath: reference.path).lastPathComponent
+        }
+
+        if let video = song.videoTrack, let sourceURL = FileStore.videoURL(for: song) {
+            video.mediaReference = try copy(sourceURL, into: stemsDirectory, projectURL: projectURL)
         }
 
         try context.save()
@@ -79,6 +65,16 @@ enum MediaConsolidator {
             context: context
         )
         return stemsDirectory
+    }
+
+    private static func copy(_ sourceURL: URL, into directory: URL, projectURL: URL) throws -> MediaReference {
+        let destinationURL = uniqueDestinationURL(in: directory, preferredName: sourceURL.lastPathComponent)
+        if sourceURL.standardizedFileURL != destinationURL.standardizedFileURL {
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+        }
+        var reference = MediaReference.from(url: destinationURL, relativeTo: projectURL)
+        MediaReferenceResolver.refreshBookmark(for: &reference, resolvedURL: destinationURL, projectFileURL: projectURL)
+        return reference
     }
 
     private static func sanitizedFolderName(_ name: String) -> String {

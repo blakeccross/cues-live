@@ -79,6 +79,7 @@ struct EditSongToolbarContent: ToolbarContent {
     let onDetectSections: () -> Void
     let onImportAbleton: () -> Void
     let onAddMIDILane: () -> Void
+    let onAddVideo: () -> Void
     /// Nil hides the back button, as in the separate editor window.
     let onBack: (() -> Void)?
     let currentSectionAtTime: (TimeInterval) -> SongSection?
@@ -199,6 +200,12 @@ struct EditSongToolbarContent: ToolbarContent {
                 onImportAbleton()
             } label: {
                 Label("Add Ableton File…", systemImage: "doc")
+            }
+
+            Button {
+                onAddVideo()
+            } label: {
+                Label(song.videoTrack == nil ? "Add Video…" : "Replace Video…", systemImage: "film")
             }
 
             Divider()
