@@ -17,7 +17,7 @@ extension EditView {
         let clipsByTrack = Dictionary(grouping: previewClips, by: \.trackID)
         return song.sortedTracks.compactMap { track in
             guard let row = rowByID[track.id],
-                  let fileURL = FileStore.trackURL(for: song, track: track) else {
+                  let fileURL = FileStore.cachedTrackURL(for: song, track: track) else {
                 return nil
             }
             return TimelineCanvasLane(

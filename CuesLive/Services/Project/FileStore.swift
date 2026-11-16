@@ -25,17 +25,31 @@ enum FileStore {
     }
 
     static func trackURL(for song: Song, track: AudioTrack) -> URL? {
-        guard let mediaPath = track.mediaPath, let pathStyle = track.mediaPathStyle else {
-            return nil
-        }
-        let reference = MediaReference(
-            path: mediaPath,
-            pathStyle: pathStyle,
-            bookmark: track.mediaBookmarkData
-        )
+        guard let reference = mediaReference(for: track) else { return nil }
         return MediaReferenceResolver.resolve(
             reference,
             projectFileURL: SongProjectBridge.projectURL(for: song)
+        )
+    }
+
+    /// `trackURL(for:track:)` through `TrackURLCache`, for views that look files up on every update.
+    @MainActor
+    static func cachedTrackURL(for song: Song, track: AudioTrack) -> URL? {
+        guard let reference = mediaReference(for: track) else { return nil }
+        return TrackURLCache.shared.url(
+            for: reference,
+            projectFileURL: SongProjectBridge.projectURL(for: song)
+        )
+    }
+
+    private static func mediaReference(for track: AudioTrack) -> MediaReference? {
+        guard let mediaPath = track.mediaPath, let pathStyle = track.mediaPathStyle else {
+            return nil
+        }
+        return MediaReference(
+            path: mediaPath,
+            pathStyle: pathStyle,
+            bookmark: track.mediaBookmarkData
         )
     }
 
