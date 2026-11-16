@@ -709,6 +709,13 @@
 		75BF4337BEC27524F755CBF6 /* VideoWindowFullScreenSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E931872A9B2B3F989A062D0 /* VideoWindowFullScreenSupport.swift */; };
 		5C5118E8D4A666A4586F6F65 /* WindowMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6BB2BE539E21205748F8FA /* WindowMenuCommands.swift */; };
 		7D191048737C9EEA7E429EC7 /* WindowMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6BB2BE539E21205748F8FA /* WindowMenuCommands.swift */; };
+		FAC469E396E8D8DAFDCC97A4 /* SongKeyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F330701A11C89DEA6A7DE56 /* SongKeyDetector.swift */; };
+		1977A413A5998DE168D1D3CF /* SongKeyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F330701A11C89DEA6A7DE56 /* SongKeyDetector.swift */; };
+		C842043008B69D1A0D964759 /* SongKeyMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52FA891E9DD9A90C557DEE0 /* SongKeyMode.swift */; };
+		E5E1C51D2AAB1C496C872EE9 /* SongKeyMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52FA891E9DD9A90C557DEE0 /* SongKeyMode.swift */; };
+		24DF816DB654B7782BE4894E /* SongFolderSetupSheet+Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */; };
+		CD648B8B8ED787B703E945F6 /* SongFolderSetupSheet+Key.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */; };
+		BDD1EA6E94499AA95724DB09 /* SongKeyModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10477D72C69FDFD1E870433 /* SongKeyModeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1110,6 +1117,10 @@
 		49D1F02B9CC2D20EFBED7481 /* VideoPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlacementTests.swift; sourceTree = "<group>"; };
 		5E931872A9B2B3F989A062D0 /* VideoWindowFullScreenSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoWindowFullScreenSupport.swift; sourceTree = "<group>"; };
 		2F6BB2BE539E21205748F8FA /* WindowMenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowMenuCommands.swift; sourceTree = "<group>"; };
+		9F330701A11C89DEA6A7DE56 /* SongKeyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongKeyDetector.swift; sourceTree = "<group>"; };
+		C52FA891E9DD9A90C557DEE0 /* SongKeyMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongKeyMode.swift; sourceTree = "<group>"; };
+		1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SongFolderSetupSheet+Key.swift"; sourceTree = "<group>"; };
+		A10477D72C69FDFD1E870433 /* SongKeyModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongKeyModeTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1176,6 +1187,7 @@
 		AA0000050000000000000A02 /* Pitch */ = {
 			isa = PBXGroup;
 			children = (
+				9F330701A11C89DEA6A7DE56 /* SongKeyDetector.swift */,
 				AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */,
 			);
 			path = Pitch;
@@ -1216,6 +1228,7 @@
 		AA0000050000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				C52FA891E9DD9A90C557DEE0 /* SongKeyMode.swift */,
 				4C4BCB4A750895AFC2AD0A8F /* VideoPlacement.swift */,
 				5EDF3A80F695756724A9E439 /* VideoTrack.swift */,
 				02D223A4A564A9010DE83B56 /* SongTimeline+SectionEdges.swift */,
@@ -1302,6 +1315,7 @@
 		AA0000050000000000000008 /* Songs */ = {
 			isa = PBXGroup;
 			children = (
+				1A016C8B20EB7D8993478769 /* SongFolderSetupSheet+Key.swift */,
 				F577A5573101FE058A5B9300 /* SongLibraryListRow.swift */,
 				C762E0B034AE61A3FAA536AE /* SongLibraryPanel+EmptyState.swift */,
 				20B249536120A634E3D9D5CF /* SongLibraryScope.swift */,
@@ -1425,6 +1439,7 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				A10477D72C69FDFD1E870433 /* SongKeyModeTests.swift */,
 				49D1F02B9CC2D20EFBED7481 /* VideoPlacementTests.swift */,
 				949A1389040435D7447F711C /* VideoSyncPolicyTests.swift */,
 				AB44129F74D4C70FDED72E6E /* OutputTestRunTests.swift */,
@@ -1939,6 +1954,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24DF816DB654B7782BE4894E /* SongFolderSetupSheet+Key.swift in Sources */,
+				C842043008B69D1A0D964759 /* SongKeyMode.swift in Sources */,
+				FAC469E396E8D8DAFDCC97A4 /* SongKeyDetector.swift in Sources */,
 				5C5118E8D4A666A4586F6F65 /* WindowMenuCommands.swift in Sources */,
 				5B98E2DA02753CFAD687ED2A /* VideoWindowFullScreenSupport.swift in Sources */,
 				BC8C4FBDAFB870203F2B036F /* EditView+Video.swift in Sources */,
@@ -2260,6 +2278,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BDD1EA6E94499AA95724DB09 /* SongKeyModeTests.swift in Sources */,
 				F3D705B279F65450C2D567D9 /* VideoPlacementTests.swift in Sources */,
 				5CF60AD3FACCFBFF8EF43976 /* VideoSyncPolicyTests.swift in Sources */,
 				B234B2D75EEAB48CBB5A5EE5 /* OutputTestRunTests.swift in Sources */,
@@ -2326,6 +2345,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD648B8B8ED787B703E945F6 /* SongFolderSetupSheet+Key.swift in Sources */,
+				E5E1C51D2AAB1C496C872EE9 /* SongKeyMode.swift in Sources */,
+				1977A413A5998DE168D1D3CF /* SongKeyDetector.swift in Sources */,
 				7D191048737C9EEA7E429EC7 /* WindowMenuCommands.swift in Sources */,
 				75BF4337BEC27524F755CBF6 /* VideoWindowFullScreenSupport.swift in Sources */,
 				EFE04071933C1FCF4113F0C4 /* EditView+Video.swift in Sources */,

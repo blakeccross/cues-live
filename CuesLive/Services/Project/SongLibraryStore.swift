@@ -35,6 +35,7 @@ enum SongLibraryStore {
         copy.timeSignatureNumerator = source.timeSignatureNumerator
         copy.timeSignatureDenominator = source.timeSignatureDenominator
         copy.baseKeyRaw = source.baseKeyRaw
+        copy.keyModeRaw = source.keyModeRaw
         copy.transposeSemitones = source.transposeSemitones
         copy.smartGuideEnabled = source.smartGuideEnabled
         context.insert(copy)

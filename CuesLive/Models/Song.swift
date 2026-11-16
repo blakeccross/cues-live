@@ -11,6 +11,8 @@ final class Song {
     var timeSignatureDenominator: Int?
     /// User-selected root pitch class (`SongMusicalKey.rawValue`). Displayed key applies `transposeSemitones`.
     var baseKeyRaw: String?
+    /// `SongKeyMode.rawValue`; nil means major.
+    var keyModeRaw: String?
     /// Semitone offset baked into included stems. Zero plays the original files.
     var transposeSemitones: Int = 0
     var smartGuideEnabled: Bool = false
@@ -36,6 +38,7 @@ final class Song {
         timeSignatureNumerator = nil
         timeSignatureDenominator = nil
         baseKeyRaw = nil
+        keyModeRaw = nil
         transposeSemitones = 0
         smartGuideEnabled = false
         projectFilePath = nil

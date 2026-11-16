@@ -25,6 +25,7 @@ struct SongMetadataSnapshot: Equatable, Hashable {
     var timeSignatureNumerator: Int?
     var timeSignatureDenominator: Int?
     var baseKeyRaw: String?
+    var keyModeRaw: String? = nil
     var transposeSemitones: Int
     var smartGuideEnabled: Bool
 }
@@ -56,6 +57,7 @@ struct SongEditSnapshot: Equatable {
                 timeSignatureNumerator: song.timeSignatureNumerator,
                 timeSignatureDenominator: song.timeSignatureDenominator,
                 baseKeyRaw: song.baseKeyRaw,
+                keyModeRaw: song.keyModeRaw,
                 transposeSemitones: song.transposeSemitones,
                 smartGuideEnabled: song.smartGuideEnabled
             ),
@@ -91,6 +93,7 @@ struct SongEditSnapshot: Equatable {
         song.timeSignatureNumerator = songMetadata.timeSignatureNumerator
         song.timeSignatureDenominator = songMetadata.timeSignatureDenominator
         song.baseKeyRaw = songMetadata.baseKeyRaw
+        song.keyModeRaw = songMetadata.keyModeRaw
         song.transposeSemitones = songMetadata.transposeSemitones
         song.smartGuideEnabled = songMetadata.smartGuideEnabled
     }

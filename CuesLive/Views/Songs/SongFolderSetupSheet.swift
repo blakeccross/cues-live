@@ -19,7 +19,10 @@ struct SongFolderSetupSheet: View {
     @State private var songName: String
     @State private var bpmText: String
     @State private var selectedPreset: MeterPreset
-    @State private var keySelection: String
+    @State var keySelection: String
+    @State var keyMode: SongKeyMode = .major
+    @State var keyDetection: KeyDetectionState = .idle
+    @State var keyDetectionTask: Task<Void, Never>?
     @State private var confirmed: [SongFolderImporter.ImportRequest] = []
     @State private var didFinish = false
 
@@ -51,7 +54,9 @@ struct SongFolderSetupSheet: View {
         _keySelection = State(initialValue: "")
     }
 
-    private var currentPreview: SongFolderImporter.Preview {
+    private static let tempoFieldWidth: CGFloat = 72
+
+    var currentPreview: SongFolderImporter.Preview {
         previews[index]
     }
 
@@ -89,92 +94,77 @@ struct SongFolderSetupSheet: View {
     }
 
     var body: some View {
-        AppSheetContainer {
-            NavigationStack {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    if previews.count > 1 {
-                        Text("Song \(index + 1) of \(previews.count)")
-                            .font(AppTypography.captionEmphasized)
-                            .foregroundStyle(AppColors.textTertiary)
-                    }
-
-                    labeledField("Song name") {
-                        TextField("Song name", text: $songName)
-                            .textFieldStyle(.roundedBorder)
-                            .focused($songNameFocused)
-                    }
-
-                    labeledField("Tempo (BPM)") {
-                        TextField("120", text: $bpmText)
-                            .textFieldStyle(.roundedBorder)
-                            #if os(iOS)
-                            .keyboardType(.decimalPad)
-                            #endif
-                    }
-
-                    labeledField("Meter") {
-                        Picker("Meter", selection: $selectedPreset) {
-                            ForEach(meterPresets, id: \.self) { preset in
-                                Text(preset.label).tag(preset)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                    }
-
-                    labeledField("Key") {
-                        Picker("Key", selection: $keySelection) {
-                            Text("None").tag("")
-                            ForEach(SongMusicalKey.chromaticOrder, id: \.rawValue) { key in
-                                Text(key.displayName).tag(key.rawValue)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                    }
-
-                    if currentPreview.bpm != nil || currentPreview.timeSignatureNumerator != nil {
-                        Text("Tempo and meter were read from the Ableton set.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.textTertiary)
+        NavigationStack {
+            Form {
+                songSection
+                timingSection
+                keySection
+            }
+            .formStyle(.grouped)
+            .navigationTitle("Import Song")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", role: .cancel) {
+                        finish(includingCurrent: false)
                     }
                 }
-                .padding(AppSpacing.lg)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .formSheetFrame(minWidth: 380, minHeight: 360)
-                .navigationTitle("Import Song")
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-                #endif
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            finish(includingCurrent: false)
-                        }
-                        .foregroundStyle(AppColors.textSecondary)
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(isLastSong ? "Add" : "Next") {
+                        continueImport()
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(isLastSong ? "Add" : "Next") {
-                            continueImport()
-                        }
-                        .foregroundStyle(canContinue ? AppColors.accent : AppColors.textTertiary)
-                        .disabled(!canContinue)
-                    }
-                }
-                .onAppear {
-                    songNameFocused = true
+                    .disabled(!canContinue)
                 }
             }
+            .onAppear {
+                songNameFocused = true
+            }
         }
+        .standardDialogToolbar()
+        .formSheetFrame(minWidth: 420, minHeight: 440)
         .interactiveDismissDisabled(true)
+        .onDisappear(perform: cancelKeyDetection)
     }
 
-    private func labeledField<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(title)
-                .font(AppTypography.captionEmphasized)
-                .foregroundStyle(AppColors.textSecondary)
-            content()
+    private var songSection: some View {
+        Section {
+            TextField("Name", text: $songName, prompt: Text("Song name"))
+                .focused($songNameFocused)
+            LabeledContent("Folder", value: currentPreview.folderURL.lastPathComponent)
+        } header: {
+            if previews.count > 1 {
+                Text("Song \(index + 1) of \(previews.count)")
+            }
+        }
+    }
+
+    private var timingSection: some View {
+        Section {
+            LabeledContent("Tempo") {
+                HStack(spacing: AppSpacing.xs) {
+                    TextField("Tempo", text: $bpmText, prompt: Text("120"))
+                        .labelsHidden()
+                        .multilineTextAlignment(.trailing)
+                        .monospacedDigit()
+                        .frame(maxWidth: Self.tempoFieldWidth)
+                        #if os(iOS)
+                        .keyboardType(.decimalPad)
+                        #endif
+                    Text("BPM")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Picker("Time Signature", selection: $selectedPreset) {
+                ForEach(meterPresets, id: \.self) { preset in
+                    Text(preset.label).tag(preset)
+                }
+            }
+        } footer: {
+            if currentPreview.bpm != nil || currentPreview.timeSignatureNumerator != nil {
+                Text("Tempo and time signature were read from the Ableton set.")
+            }
         }
     }
 
@@ -185,7 +175,7 @@ struct SongFolderSetupSheet: View {
         } else {
             confirmed.append(request)
             index += 1
-            loadPreview(previews[index])
+            loadPreview(currentPreview)
             songNameFocused = true
         }
     }
@@ -201,7 +191,8 @@ struct SongFolderSetupSheet: View {
                 bpm: bpm,
                 timeSignatureNumerator: selectedPreset.numerator,
                 timeSignatureDenominator: selectedPreset.denominator,
-                baseKeyRaw: keySelection.isEmpty ? nil : keySelection
+                baseKeyRaw: keySelection.isEmpty ? nil : keySelection,
+                keyModeRaw: keySelection.isEmpty ? nil : keyMode.storedRaw
             )
         )
     }
@@ -209,6 +200,7 @@ struct SongFolderSetupSheet: View {
     private func finish(includingCurrent: Bool) {
         guard !didFinish else { return }
         didFinish = true
+        cancelKeyDetection()
         var requests = confirmed
         if includingCurrent, let request = currentRequest() {
             requests.append(request)
@@ -221,6 +213,8 @@ struct SongFolderSetupSheet: View {
         bpmText = Self.formatBPM(preview.bpm ?? TempoChange.defaultBPM)
         selectedPreset = Self.preset(for: preview)
         keySelection = ""
+        keyMode = .major
+        cancelKeyDetection()
     }
 
     private static func preset(for preview: SongFolderImporter.Preview) -> MeterPreset {

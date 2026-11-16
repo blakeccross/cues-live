@@ -6,6 +6,7 @@ struct SongProjectMetadata: Codable, Hashable {
     var timeSignatureNumerator: Int?
     var timeSignatureDenominator: Int?
     var baseKeyRaw: String?
+    var keyModeRaw: String?
     var transposeSemitones: Int
     var smartGuideEnabled: Bool
 
@@ -14,6 +15,7 @@ struct SongProjectMetadata: Codable, Hashable {
         case timeSignatureNumerator
         case timeSignatureDenominator
         case baseKeyRaw
+        case keyModeRaw
         case transposeSemitones
         case smartGuideEnabled
     }
@@ -23,6 +25,7 @@ struct SongProjectMetadata: Codable, Hashable {
         timeSignatureNumerator = song.timeSignatureNumerator
         timeSignatureDenominator = song.timeSignatureDenominator
         baseKeyRaw = song.baseKeyRaw
+        keyModeRaw = song.keyModeRaw
         transposeSemitones = song.transposeSemitones
         smartGuideEnabled = song.smartGuideEnabled
     }
@@ -33,6 +36,7 @@ struct SongProjectMetadata: Codable, Hashable {
         timeSignatureNumerator = try container.decodeIfPresent(Int.self, forKey: .timeSignatureNumerator)
         timeSignatureDenominator = try container.decodeIfPresent(Int.self, forKey: .timeSignatureDenominator)
         baseKeyRaw = try container.decodeIfPresent(String.self, forKey: .baseKeyRaw)
+        keyModeRaw = try container.decodeIfPresent(String.self, forKey: .keyModeRaw)
         transposeSemitones = try container.decodeIfPresent(Int.self, forKey: .transposeSemitones) ?? 0
         smartGuideEnabled = try container.decodeIfPresent(Bool.self, forKey: .smartGuideEnabled) ?? false
     }
@@ -43,6 +47,7 @@ struct SongProjectMetadata: Codable, Hashable {
         try container.encodeIfPresent(timeSignatureNumerator, forKey: .timeSignatureNumerator)
         try container.encodeIfPresent(timeSignatureDenominator, forKey: .timeSignatureDenominator)
         try container.encodeIfPresent(baseKeyRaw, forKey: .baseKeyRaw)
+        try container.encodeIfPresent(keyModeRaw, forKey: .keyModeRaw)
         try container.encode(transposeSemitones, forKey: .transposeSemitones)
         try container.encode(smartGuideEnabled, forKey: .smartGuideEnabled)
     }
@@ -52,6 +57,7 @@ struct SongProjectMetadata: Codable, Hashable {
         song.timeSignatureNumerator = timeSignatureNumerator
         song.timeSignatureDenominator = timeSignatureDenominator
         song.baseKeyRaw = baseKeyRaw
+        song.keyModeRaw = keyModeRaw
         song.transposeSemitones = transposeSemitones
         song.smartGuideEnabled = smartGuideEnabled
     }

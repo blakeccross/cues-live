@@ -117,9 +117,10 @@ struct ChangeKeyDialog: View {
 
     private var keyChangeLabel: String? {
         guard let raw = song.baseKeyRaw, let base = SongMusicalKey(rawValue: raw) else { return nil }
+        let mode = SongKeyMode(raw: song.keyModeRaw)
         let shifted = base.transposed(by: semitones)
-        guard shifted != base else { return base.displayName }
-        return "\(base.displayName) → \(shifted.displayName)"
+        guard shifted != base else { return base.label(mode: mode) }
+        return "\(base.label(mode: mode)) → \(shifted.label(mode: mode))"
     }
 
     private func inclusionBinding(for trackID: UUID) -> Binding<Bool> {

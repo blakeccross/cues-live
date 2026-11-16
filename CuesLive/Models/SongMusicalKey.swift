@@ -35,24 +35,29 @@ enum SongMusicalKey: String, CaseIterable, Codable, Hashable, Sendable {
         Self.from(semitoneIndex: semitoneIndex + semitones)
     }
 
+    /// Compact label such as `G` or `Am`.
+    func label(mode: SongKeyMode) -> String {
+        displayName + mode.symbolSuffix
+    }
+
     /// Key label for badges, or `nil` when no base key is set.
-    static func display(baseRaw: String?, transposeSemitones: Int = 0) -> String? {
+    static func display(baseRaw: String?, modeRaw: String? = nil, transposeSemitones: Int = 0) -> String? {
         guard let baseRaw, let base = SongMusicalKey(rawValue: baseRaw) else { return nil }
-        return base.transposed(by: transposeSemitones).displayName
+        return base.transposed(by: transposeSemitones).label(mode: SongKeyMode(raw: modeRaw))
     }
 
     /// Transport readout text (`—` when unset).
-    static func transportText(baseRaw: String?, transposeSemitones: Int = 0) -> String {
-        display(baseRaw: baseRaw, transposeSemitones: transposeSemitones) ?? "—"
+    static func transportText(baseRaw: String?, modeRaw: String? = nil, transposeSemitones: Int = 0) -> String {
+        display(baseRaw: baseRaw, modeRaw: modeRaw, transposeSemitones: transposeSemitones) ?? "—"
     }
 }
 
 extension Song {
     var displayedKeyText: String? {
-        SongMusicalKey.display(baseRaw: baseKeyRaw, transposeSemitones: transposeSemitones)
+        SongMusicalKey.display(baseRaw: baseKeyRaw, modeRaw: keyModeRaw, transposeSemitones: transposeSemitones)
     }
 
     var transportKeyText: String {
-        SongMusicalKey.transportText(baseRaw: baseKeyRaw, transposeSemitones: transposeSemitones)
+        SongMusicalKey.transportText(baseRaw: baseKeyRaw, modeRaw: keyModeRaw, transposeSemitones: transposeSemitones)
     }
 }

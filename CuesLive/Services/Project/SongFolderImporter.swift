@@ -16,6 +16,8 @@ enum SongFolderImporter {
         let bpm: Double?
         let timeSignatureNumerator: Int?
         let timeSignatureDenominator: Int?
+        /// Stems found in the folder, used for key detection before import.
+        let trackURLs: [URL]
     }
 
     struct ImportSettings: Equatable, Sendable {
@@ -24,6 +26,7 @@ enum SongFolderImporter {
         var timeSignatureNumerator: Int
         var timeSignatureDenominator: Int
         var baseKeyRaw: String?
+        var keyModeRaw: String?
     }
 
     struct ImportRequest: Equatable, Sendable {
@@ -109,7 +112,8 @@ enum SongFolderImporter {
             suggestedName: scan.suggestedName,
             bpm: bpm,
             timeSignatureNumerator: numerator,
-            timeSignatureDenominator: denominator
+            timeSignatureDenominator: denominator,
+            trackURLs: scan.trackURLs
         )
     }
 
@@ -200,12 +204,14 @@ enum SongFolderImporter {
             ? settings.timeSignatureDenominator
             : TimeSignatureChange.defaultDenominator
         let key = settings.baseKeyRaw.flatMap { SongMusicalKey(rawValue: $0)?.rawValue }
+        let mode = key == nil ? nil : SongKeyMode(raw: settings.keyModeRaw).storedRaw
         return ImportSettings(
             name: name,
             bpm: bpm,
             timeSignatureNumerator: numerator,
             timeSignatureDenominator: denominator,
-            baseKeyRaw: key
+            baseKeyRaw: key,
+            keyModeRaw: mode
         )
     }
 
@@ -220,6 +226,7 @@ enum SongFolderImporter {
         song.timeSignatureNumerator = settings.timeSignatureNumerator
         song.timeSignatureDenominator = settings.timeSignatureDenominator
         song.baseKeyRaw = settings.baseKeyRaw
+        song.keyModeRaw = settings.keyModeRaw
 
         let state = SongProjectBridge.projectStateOrDefaults(for: song)
         try SongProjectBridge.syncProjectFile(
