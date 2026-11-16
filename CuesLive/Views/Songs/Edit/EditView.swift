@@ -86,6 +86,7 @@ struct EditView: View {
     @State var laneResize: LaneResizeDrag?
     /// Snapped lane position Play starts from. A click places it; playback does not move it.
     @State var insertionTime: TimeInterval = 0
+    @State var playRangePreview = TimelinePlayRangePreview()
     @FocusState var isTimelineFocused: Bool
     @State var isTimelineReady = false
     @State var isAudioDropTargeted = false

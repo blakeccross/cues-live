@@ -111,6 +111,7 @@ extension RemoteSongDTO {
             songName: name,
             trackSources: [],
             fileDuration: fileDuration,
+            startTime: startTime,
             timelineDuration: timelineDuration,
             sections: sections.map { $0.asSection(loopSectionIDs: Set(loopSectionIDs)) },
             peakClips: peakSections.map(\.asClip),
@@ -167,6 +168,8 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
     var id: UUID
     var name: String
     var fileDuration: TimeInterval
+    /// The song's in point. Older hosts omit it and play from the start.
+    var startTime: TimeInterval
     var timelineDuration: TimeInterval
     var key: String
     var sections: [RemoteArrangementSectionDTO]
@@ -184,6 +187,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         case id
         case name
         case fileDuration
+        case startTime
         case timelineDuration
         case key
         case sections
@@ -200,6 +204,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         id: UUID,
         name: String,
         fileDuration: TimeInterval,
+        startTime: TimeInterval = 0,
         timelineDuration: TimeInterval,
         key: String,
         sections: [RemoteArrangementSectionDTO],
@@ -214,6 +219,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         self.id = id
         self.name = name
         self.fileDuration = fileDuration
+        self.startTime = startTime
         self.timelineDuration = timelineDuration
         self.key = key
         self.sections = sections
@@ -231,6 +237,7 @@ struct RemoteSongDTO: Codable, Hashable, Identifiable, Sendable {
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         fileDuration = try container.decode(TimeInterval.self, forKey: .fileDuration)
+        startTime = try container.decodeIfPresent(TimeInterval.self, forKey: .startTime) ?? 0
         timelineDuration = try container.decode(TimeInterval.self, forKey: .timelineDuration)
         key = try container.decode(String.self, forKey: .key)
         sections = try container.decode([RemoteArrangementSectionDTO].self, forKey: .sections)

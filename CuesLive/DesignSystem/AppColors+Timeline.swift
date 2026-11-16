@@ -31,6 +31,13 @@ extension AppColors {
         /// Section-marker tick, drawn over the tracks.
         static let sectionMarkerLine = Color(.timelineSectionMarkerLine)
 
+        /// In and out flags on the time ruler.
+        static let playRangeFlag = Color(.timelinePlayRangeFlag)
+        /// Wash over the timeline before the in point and after the out point.
+        static let outsidePlayRange = Color(.timelinePlayRangeOutside)
+        /// Shadow the played stretch casts past the out point, so it reads as raised.
+        static let playRangeEdgeShadow = Color(.timelinePlayRangeEdgeShadow)
+
         /// Edit-selection wash composited over the lanes.
         static let selection = Color(.timelineSelection)
 

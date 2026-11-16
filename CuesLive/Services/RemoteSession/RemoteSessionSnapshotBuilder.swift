@@ -193,6 +193,7 @@ enum RemoteSessionSnapshotBuilder {
             id: song.id,
             name: song.name,
             fileDuration: snapshot?.fileDuration ?? fallbackDuration,
+            startTime: snapshot?.startTime ?? 0,
             timelineDuration: duration,
             key: song.transportKeyText,
             sections: sections,

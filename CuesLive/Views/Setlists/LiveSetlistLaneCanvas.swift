@@ -9,7 +9,7 @@ struct LiveSetlistLaneCanvas: Equatable {
         /// Setlist position, matching the scroll model's lanes.
         let index: Int
         let source: LiveSetlistWaveformSource
-        let duration: TimeInterval
+        let window: LiveLaneWindow
         let sections: [SongSection]
         let tempoChanges: [TempoChange]
         let timeSignatureChanges: [TimeSignatureChange]
@@ -19,7 +19,7 @@ struct LiveSetlistLaneCanvas: Equatable {
         init(index: Int, snapshot: LiveSongWaveformSnapshot, isCurrent: Bool) {
             self.index = index
             source = LiveSetlistWaveformSource(snapshot)
-            duration = max(snapshot.timelineDuration, 0.001)
+            window = snapshot.window
             sections = snapshot.sections
             tempoChanges = snapshot.tempoChanges
             timeSignatureChanges = snapshot.timeSignatureChanges
@@ -42,7 +42,7 @@ struct LiveSetlistLaneCanvas: Equatable {
                 LiveSetlistLanePainter.Song(
                     index: song.index,
                     source: song.source,
-                    duration: song.duration,
+                    window: song.window,
                     bands: song.sections.enumerated().map { index, section in
                         let background = ArrangementSectionPalette.colors(for: index).background
                         return LiveSetlistLanePainter.Band(

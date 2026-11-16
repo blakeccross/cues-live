@@ -55,7 +55,7 @@ final class AudioEngineManager {
     private var suppressAutoStopOnPlaybackFinished = false
     private var playbackTimer: Timer?
     /// Nil until the song's timeline is applied; tracks then play their trimmed files linearly.
-    private var playbackLayout: SongPlaybackLayout?
+    private(set) var playbackLayout: SongPlaybackLayout?
     private var routingSnapshot: OutputRoutingSnapshot?
     private var groupMixSnapshot = GroupMixSnapshot.default
     private var tempoChanges: [TempoChange] = []
@@ -367,8 +367,9 @@ final class AudioEngineManager {
         cancelScheduledOverlapStart()
         didNotifyPlaybackFinished = false
         transport.stop()
+        transport.setPausedTimeline(startTime)
         isPlaying = false
-        currentTime = 0
+        currentTime = startTime
         stopTimer()
         midiScheduler.stop()
         setStreamingReadersActive(false)

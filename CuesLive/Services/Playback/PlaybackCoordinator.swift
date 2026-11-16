@@ -592,7 +592,7 @@ final class PlaybackCoordinator {
         let isClockMuted = clockEngine !== audioEngine
         let layout = songEngineLayout(for: song)
         let targetDuration = audioEngine.duration
-        let targetTime = preservedTime ?? 0
+        let targetTime = preservedTime ?? audioEngine.startTime
 
         clockEngine.setMasterVolume(isClockMuted ? 0 : 1)
         clockEngine.setSuppressAutoStopOnPlaybackFinished(isClockMuted)
@@ -671,9 +671,7 @@ final class PlaybackCoordinator {
                 isLoaded = true
                 loadError = nil
 
-                if let preservedTime {
-                    audioEngine.seek(to: preservedTime)
-                }
+                audioEngine.seek(to: preservedTime ?? audioEngine.startTime)
 
                 // Keep the shared UI clock timeline aligned with this song.
                 syncClockEngine(for: song, preservedTime: preservedTime)
@@ -792,6 +790,7 @@ final class PlaybackCoordinator {
             trackSources: trackSources,
             trackClips: trackClips,
             fileDuration: fileDuration,
+            startTime: playbackLayout.startTime,
             timelineDuration: playbackLayout.duration,
             sections: playbackLayout.sections,
             peakClips: playbackLayout.peakClips,
@@ -940,7 +939,7 @@ final class PlaybackCoordinator {
             // Outgoing stays alive but we suppress auto-stop at its end boundary.
             engine.setMasterVolume(0)
             engine.setSuppressAutoStopOnPlaybackFinished(true)
-            engine.seek(to: 0)
+            engine.seek(to: layout.playback.startTime)
 
             audioEngine.setSuppressAutoStopOnPlaybackFinished(true)
             audioEngine.setMasterVolume(1)

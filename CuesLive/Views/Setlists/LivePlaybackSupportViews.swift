@@ -141,14 +141,15 @@ final class SetlistRowMetricsCache {
         return missing
     }
 
-    func timelineDuration(for song: Song, snapshot: TimeInterval?) -> TimeInterval {
+    /// How long the song plays, from its in point to its out point.
+    func playedDuration(for song: Song, snapshot: TimeInterval?) -> TimeInterval {
         if let snapshot {
             return snapshot
         }
         if let cached = durationBySongID[song.id] {
             return cached
         }
-        let duration = TimecodePlaybackSupport.timelineDuration(for: song)
+        let duration = SongTrackLoader.playedDuration(for: song)
         durationBySongID[song.id] = duration
         return duration
     }

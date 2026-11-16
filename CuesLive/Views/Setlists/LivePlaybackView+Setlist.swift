@@ -84,7 +84,7 @@ extension LivePlaybackView {
                 id: entry.persistentModelID,
                 kind: .song(SetlistRowModel.Song(
                     title: song.name,
-                    durationText: LiveSetlistDurationFormat.clock(for: songTimelineDuration(for: song)),
+                    durationText: LiveSetlistDurationFormat.clock(for: songPlayedDuration(for: song)),
                     keyText: song.displayedKeyText,
                     bpmText: song.bpm.map { String(format: "%.0f BPM", $0.rounded()) },
                     playbackIndex: setlist.playbackIndex(for: entry) ?? 0,
@@ -176,10 +176,10 @@ extension LivePlaybackView {
         setlistRowMetrics.hasMissingMedia(song, revision: mediaHealthRevision)
     }
 
-    private func songTimelineDuration(for song: Song) -> TimeInterval {
-        setlistRowMetrics.timelineDuration(
+    private func songPlayedDuration(for song: Song) -> TimeInterval {
+        setlistRowMetrics.playedDuration(
             for: song,
-            snapshot: coordinator.waveformSnapshot(for: song)?.timelineDuration
+            snapshot: coordinator.waveformSnapshot(for: song)?.window.duration
         )
     }
 

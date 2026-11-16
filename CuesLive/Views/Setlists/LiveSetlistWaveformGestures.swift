@@ -12,7 +12,7 @@ struct WaveformSeekGestureModifier: ViewModifier {
 
     let isEnabled: Bool
     let contentWidth: CGFloat
-    let duration: TimeInterval
+    let window: LiveLaneWindow
     var sections: [SectionHitTarget] = []
     var onSectionTap: ((UUID) -> Void)? = nil
     let onSeek: (TimeInterval) -> Void
@@ -24,11 +24,7 @@ struct WaveformSeekGestureModifier: ViewModifier {
                 .simultaneousGesture(
                     SpatialTapGesture()
                         .onEnded { event in
-                            let time = TimelineLayout.time(
-                                at: event.location.x,
-                                duration: duration,
-                                contentWidth: contentWidth
-                            )
+                            let time = window.time(at: event.location.x, width: contentWidth)
                             if let onSectionTap, let sectionID = sectionID(containing: time) {
                                 onSectionTap(sectionID)
                             } else {

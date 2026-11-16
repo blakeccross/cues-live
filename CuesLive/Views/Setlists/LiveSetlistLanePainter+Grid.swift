@@ -23,28 +23,32 @@ extension LiveSetlistLanePainter {
     }
 
     func drawMeasureGrid(_ song: Song, in lane: CGRect, shown: CGRect, context: CGContext) {
-        guard !song.tempoChanges.isEmpty, song.duration > 0, lane.width > 0 else { return }
+        guard !song.tempoChanges.isEmpty, lane.width > 0 else { return }
+        let window = song.window
+        // The grid is laid out from time zero, which sits before the lane when the in point is
+        // later. This width keeps the lane's pixels per second across that whole span.
+        let timelineWidth = lane.width * CGFloat(window.end / window.duration)
 
         let padding: CGFloat = 40
         let visibleStart = time(at: shown.minX - lane.minX - padding, song: song, lane: lane)
         let visibleEnd = time(at: shown.maxX - lane.minX + padding, song: song, lane: lane)
         let visible = visibleStart...max(visibleStart, visibleEnd)
         let boundaries = MeasureTiming.visibleMeasureBoundaries(
-            duration: song.duration,
+            duration: window.end,
             tempoChanges: song.tempoChanges,
-            contentWidth: lane.width,
+            contentWidth: timelineWidth,
             timeSignatureChanges: song.timeSignatureChanges,
-            minimumPixelSpacing: song.duration > 30 * 60 ? 24 : 10,
+            minimumPixelSpacing: window.duration > 30 * 60 ? 24 : 10,
             visibleTimeRange: visible
         )
         let spacing = pixelsPerBeat(song, laneWidth: lane.width)
-        let showsBeats = song.duration <= LiveSetlistWaveformMetrics.beatGridMaximumDuration
+        let showsBeats = window.duration <= LiveSetlistWaveformMetrics.beatGridMaximumDuration
             && spacing >= LiveSetlistWaveformMetrics.minimumBeatTickSpacing
         let showsSubdivisions = showsBeats
             && spacing / 2 >= LiveSetlistWaveformMetrics.minimumSubdivisionTickSpacing
         let grid = showsBeats
             ? MeasureTiming.beatGridTimes(
-                duration: song.duration,
+                duration: window.end,
                 tempoChanges: song.tempoChanges,
                 timeSignatureChanges: song.timeSignatureChanges,
                 visibleTimeRange: visible
@@ -84,7 +88,8 @@ extension LiveSetlistLanePainter {
         context: CGContext
     ) {
         context.setFillColor(CGColor(gray: 1, alpha: alpha))
-        for time in times {
+        // Ticks outside the window would pin to the lane's ends.
+        for time in times where time >= song.window.start && time <= song.window.end {
             let x = lane.minX + x(for: time, song: song, lane: lane)
             guard x >= lines.shown.minX - 1, x <= lines.shown.maxX + 1 else { continue }
             let snapped = ((x - 0.5) * scale).rounded() / scale
@@ -105,14 +110,14 @@ extension LiveSetlistLanePainter {
             numerator: signature.numerator,
             denominator: signature.denominator
         ) / beatsInMeasure
-        return CGFloat(beatDuration) * laneWidth / CGFloat(song.duration)
+        return CGFloat(beatDuration) * laneWidth / CGFloat(song.window.duration)
     }
 
     private func x(for time: TimeInterval, song: Song, lane: CGRect) -> CGFloat {
-        TimelineLayout.xPosition(for: time, duration: song.duration, contentWidth: lane.width)
+        song.window.x(for: time, width: lane.width)
     }
 
     private func time(at x: CGFloat, song: Song, lane: CGRect) -> TimeInterval {
-        TimelineLayout.time(at: x, duration: song.duration, contentWidth: lane.width)
+        song.window.time(at: x, width: lane.width)
     }
 }

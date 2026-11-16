@@ -5,7 +5,8 @@ import SwiftUI
 /// behind it by `LiveSetlistLanePainter`, which reads this view's frame from the scroll model.
 struct LiveSongWaveformView: View {
     let contentWidth: CGFloat
-    let timelineDuration: TimeInterval
+    /// The in-to-out stretch the lane shows.
+    let window: LiveLaneWindow
     let sections: [SongSection]
     let loopSectionIDs: Set<UUID>
     var isInteractive = true
@@ -18,10 +19,6 @@ struct LiveSongWaveformView: View {
 
     @Environment(\.liveSetlistWaveformHeight) private var waveformHeight
     @Environment(InputMappingController.self) private var mapping
-
-    private var safeTimelineDuration: TimeInterval {
-        max(timelineDuration, 0.001)
-    }
 
     private var usesArrangementLayout: Bool {
         !sections.isEmpty
@@ -47,7 +44,7 @@ struct LiveSongWaveformView: View {
             .modifier(WaveformSeekGestureModifier(
                 isEnabled: isInteractive && !mapping.showsLiveHighlights,
                 contentWidth: contentWidth,
-                duration: safeTimelineDuration,
+                window: window,
                 sections: sections.map {
                     WaveformSeekGestureModifier.SectionHitTarget(
                         id: $0.id,
@@ -68,16 +65,8 @@ struct LiveSongWaveformView: View {
         if usesArrangementLayout {
             ZStack(alignment: .leading) {
                 ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
-                    let startX = TimelineLayout.xPosition(
-                        for: section.timelineStartSeconds,
-                        duration: safeTimelineDuration,
-                        contentWidth: contentWidth
-                    )
-                    let endX = TimelineLayout.xPosition(
-                        for: section.timelineEndSeconds,
-                        duration: safeTimelineDuration,
-                        contentWidth: contentWidth
-                    )
+                    let startX = window.x(for: section.timelineStartSeconds, width: contentWidth)
+                    let endX = window.x(for: section.timelineEndSeconds, width: contentWidth)
                     let segmentWidth = max(0, endX - startX)
                     let palette = ArrangementSectionPalette.colors(for: index)
                     let isLoopSection = loopSectionIDs.contains(section.id)
@@ -116,16 +105,8 @@ struct LiveSongWaveformView: View {
     private func sectionMappingTargets(playbackIndex: Int, contentWidth: CGFloat) -> some View {
         ZStack(alignment: .leading) {
             ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
-                let startX = TimelineLayout.xPosition(
-                    for: section.timelineStartSeconds,
-                    duration: safeTimelineDuration,
-                    contentWidth: contentWidth
-                )
-                let endX = TimelineLayout.xPosition(
-                    for: section.timelineEndSeconds,
-                    duration: safeTimelineDuration,
-                    contentWidth: contentWidth
-                )
+                let startX = window.x(for: section.timelineStartSeconds, width: contentWidth)
+                let endX = window.x(for: section.timelineEndSeconds, width: contentWidth)
                 let segmentWidth = max(0, endX - startX)
 
                 Color.clear
@@ -145,16 +126,8 @@ struct LiveSongWaveformView: View {
         if usesArrangementLayout {
             ZStack(alignment: .leading) {
                 ForEach(sections) { section in
-                    let startX = TimelineLayout.xPosition(
-                        for: section.timelineStartSeconds,
-                        duration: safeTimelineDuration,
-                        contentWidth: contentWidth
-                    )
-                    let endX = TimelineLayout.xPosition(
-                        for: section.timelineEndSeconds,
-                        duration: safeTimelineDuration,
-                        contentWidth: contentWidth
-                    )
+                    let startX = window.x(for: section.timelineStartSeconds, width: contentWidth)
+                    let endX = window.x(for: section.timelineEndSeconds, width: contentWidth)
                     let segmentWidth = max(0, endX - startX)
 
                     Color.clear

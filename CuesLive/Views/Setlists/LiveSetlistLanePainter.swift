@@ -21,7 +21,8 @@ final class LiveSetlistLanePainter {
         /// Setlist position, matching the scroll model's lanes.
         let index: Int
         let source: LiveSetlistWaveformSource
-        let duration: TimeInterval
+        /// The in-to-out stretch the lane shows.
+        let window: LiveLaneWindow
         let bands: [Band]
         let tempoChanges: [TempoChange]
         let timeSignatureChanges: [TimeSignatureChange]

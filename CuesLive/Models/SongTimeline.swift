@@ -1,13 +1,15 @@
 import Foundation
 
-/// Markers and clips for one song.
+/// Markers, clips, and the in and out points for one song.
 struct SongTimeline: Codable, Hashable {
     var markers: [ArrangementMarker]
     var clips: [TrackClip]
+    var playRange: SongPlayRange
 
-    init(markers: [ArrangementMarker] = [], clips: [TrackClip] = []) {
+    init(markers: [ArrangementMarker] = [], clips: [TrackClip] = [], playRange: SongPlayRange = SongPlayRange()) {
         self.markers = markers
         self.clips = clips
+        self.playRange = playRange
     }
 
     var sortedMarkers: [ArrangementMarker] {
@@ -35,6 +37,11 @@ struct SongTimeline: Codable, Hashable {
         max(contentEnd, markers.map(\.startSeconds).max() ?? 0)
     }
 
+    /// The stretch that plays: from the in point to the out point.
+    var playbackRange: ClosedRange<TimeInterval> {
+        playRange.resolved(songEnd: duration)
+    }
+
     func sections(songEnd: TimeInterval? = nil) -> [SongSection] {
         SongSection.derive(markers: markers, songEnd: songEnd ?? contentEnd)
     }
@@ -54,6 +61,23 @@ struct SongSection: Identifiable, Hashable, Sendable {
 
     func containsTimelineTime(_ time: TimeInterval) -> Bool {
         time >= timelineStartSeconds && time < timelineEndSeconds
+    }
+
+    /// Sections cut to the stretch that plays. Those wholly before the in point or after the out
+    /// point are dropped; one that straddles either point is cut at it.
+    static func derive(markers: [ArrangementMarker], within range: ClosedRange<TimeInterval>) -> [SongSection] {
+        // Markers past the out point would otherwise stretch the last section beyond it.
+        let playable = markers.filter { $0.startSeconds < range.upperBound }
+        return derive(markers: playable, songEnd: range.upperBound).compactMap { section in
+            guard section.timelineEndSeconds > range.lowerBound else { return nil }
+            return SongSection(
+                id: section.id,
+                name: section.name,
+                timelineStartSeconds: max(section.timelineStartSeconds, range.lowerBound),
+                timelineEndSeconds: section.timelineEndSeconds,
+                loops: section.loops
+            )
+        }
     }
 
     /// The last section ends at `songEnd`; sections that would start at or after it are dropped.
@@ -101,17 +125,28 @@ extension Array where Element == SongSection {
 struct SongPlaybackLayout: Equatable {
     let clipsByTrack: [UUID: [TrackClip]]
     let sections: [SongSection]
+    /// The in point. Stopping returns here and a song in a setlist starts here.
+    let startTime: TimeInterval
+    /// The out point: playback ends here.
     let duration: TimeInterval
 
     init(timeline: SongTimeline) {
         clipsByTrack = timeline.clipsByTrack
-        duration = timeline.duration
-        sections = timeline.sections(songEnd: duration)
+        let range = timeline.playbackRange
+        startTime = range.lowerBound
+        duration = range.upperBound
+        sections = SongSection.derive(markers: timeline.markers, within: range)
     }
 
-    init(clipsByTrack: [UUID: [TrackClip]] = [:], sections: [SongSection] = [], duration: TimeInterval? = nil) {
+    init(
+        clipsByTrack: [UUID: [TrackClip]] = [:],
+        sections: [SongSection] = [],
+        startTime: TimeInterval = 0,
+        duration: TimeInterval? = nil
+    ) {
         self.clipsByTrack = clipsByTrack
         self.sections = sections
+        self.startTime = startTime
         let clipEnd = clipsByTrack.values.flatMap { $0 }.map(\.timelineEndSeconds).max() ?? 0
         self.duration = duration ?? max(clipEnd, sections.last?.timelineEndSeconds ?? 0)
     }

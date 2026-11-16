@@ -49,7 +49,7 @@ extension EditView {
     }
 
     /// Fills the scroll viewport when song content is narrower than the editor area.
-    private var timelineDisplayWidth: CGFloat {
+    var timelineDisplayWidth: CGFloat {
         max(timelineContentWidth, timelineViewportWidth)
     }
 
@@ -162,6 +162,8 @@ extension EditView {
             timelineContentWidth: timelineContentWidth,
             timelineDisplayWidth: timelineDisplayWidth,
             sectionTimes: sectionMarkerTimes,
+            playRange: timeline.playbackRange,
+            playRangePreview: playRangePreview,
             laneHeights: laneFrames.rows.map(\.height),
             showsPlayhead: viewModel.isActiveSetlistSong,
             timelineViewportWidth: $timelineViewportWidth,
@@ -176,80 +178,6 @@ extension EditView {
             headers: { trackHeaderList }
         )
         .simultaneousGesture(timelinePinchGesture)
-    }
-
-    private var timelineRulerStack: some View {
-        timelineRulerSection
-            .background(AppColors.Timeline.stickyRulerBackground)
-            .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
-    }
-
-    private var timelineTimeRuler: some View {
-        TimelineTimeRulerView(
-            duration: timelineDuration,
-            contentWidth: timelineContentWidth,
-            displayWidth: timelineDisplayWidth,
-            height: TimelineLayout.rulerHeight
-        )
-        .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
-        .allowsHitTesting(false)
-    }
-
-    private var timelineRulerSection: some View {
-        TimelineRulerView(
-            duration: timelineDuration,
-            contentWidth: timelineContentWidth,
-            displayWidth: timelineDisplayWidth,
-            sections: displaySections,
-            tempoChanges: normalizedTempoChanges,
-            timeSignatureChanges: normalizedTimeSignatureChanges,
-            cuedSectionID: cuedSectionID,
-            cueFlashPhase: cueFlashPhase,
-            loopSectionIDs: loopSectionIDs,
-            sectionMarkerHeight: TimelineLayout.sectionMarkerHeight,
-            timeSignatureRulerHeight: TimelineLayout.timeSignatureRulerHeight,
-            tempoRulerHeight: TimelineLayout.tempoRulerHeight,
-            isPlaying: audioEngine.isPlaying,
-            onCueSection: cueSection,
-            onToggleLoopSection: toggleLoopSection,
-            onAddSection: addSection,
-            onRenameSection: beginRenameSection,
-            onRemoveMarker: removeMarker,
-            previewSections: previewSections(_:),
-            onEditSectionEdge: applySectionEdge(_:),
-            onTimeSignatureRulerTap: handleTimeSignatureRulerTap,
-            onEditTimeSignatureMarker: { marker in
-                activeSheet = .timeSignatureChange(TimeSignatureLanePrompt(
-                    measure: marker.startMeasure,
-                    numerator: marker.numerator,
-                    denominator: marker.denominator,
-                    markerID: marker.id
-                ))
-            },
-            onDeleteTimeSignatureMarker: deleteTimeSignatureMarker,
-            onMoveTimeSignatureMarker: moveTimeSignatureMarker,
-            onTempoRulerTap: handleTempoRulerTap,
-            onEditTempoMarker: { marker in
-                activeSheet = .tempoChange(TempoLanePrompt(
-                    measure: marker.startMeasure,
-                    bpm: marker.bpm,
-                    markerID: marker.id
-                ))
-            },
-            onDeleteTempoMarker: deleteTempoMarker,
-            onMoveTempoMarker: moveTempoMarker,
-            onTempoOperations: { showingTempoOperations = true }
-        )
-        .frame(height: TimelineLayout.topRulerHeight)
-        .id("\(displaySections.map(\.id))|\(timelineContentWidth)|\(normalizedTempoChanges.map(\.id))|\(normalizedTimeSignatureChanges.map(\.id))")
-        .popover(isPresented: $showingTempoOperations, arrowEdge: .bottom) {
-            TempoOperationsMenu(
-                tempoChanges: normalizedTempoChanges,
-                timeSignatureChanges: normalizedTimeSignatureChanges,
-                playhead: audioEngine.currentTime,
-                onApply: applyTempoOperation
-            )
-        }
     }
 
     private var trackTimelineScrollContent: some View {
@@ -434,123 +362,5 @@ extension EditView {
                 height: TimelineLayout.clipHeaderHeight
             )
         }
-    }
-
-    private var trackHeaderList: some View {
-        LazyVStack(spacing: TimelineLayout.laneSpacing) {
-            if let video = song.videoTrack {
-                videoTrackHeader(video)
-            }
-
-            ForEach(midiTracks, id: \.id) { track in
-                MIDITrackHeaderView(
-                    track: track,
-                    laneHeight: TrackLaneHeight.resolved(track.laneHeight),
-                    isSelected: selectedTrackIDs.contains(track.id),
-                    onSelect: { modifiers in
-                        selectedTrackIDs = TrackSelection.click(
-                            id: track.id,
-                            in: selectedTrackIDs,
-                            order: displayedTrackIDs,
-                            modifiers: modifiers
-                        )
-                    },
-                    onConfigChange: commitMIDIConfig,
-                    onSendTest: { sendMIDITest(for: track) },
-                    onEditDevice: { editDevice(for: track) },
-                    onDelete: { deleteMIDITrack(track) },
-                    onResize: { resizeLane(track.id, by: $0) },
-                    onResizeEnded: finishLaneResize
-                )
-            }
-
-            ForEach(song.sortedTracks, id: \.id) { track in
-                TrackLaneHeaderView(
-                    track: track,
-                    laneHeight: TrackLaneHeight.resolved(track.laneHeight),
-                    isSelected: selectedTrackIDs.contains(track.id),
-                    groups: trackGroups,
-                    onSelect: { modifiers in
-                        selectedTrackIDs = TrackSelection.click(
-                            id: track.id,
-                            in: selectedTrackIDs,
-                            order: displayedTrackIDs,
-                            modifiers: modifiers
-                        )
-                    },
-                    onMixChange: {
-                        performUndoableChange("Mix Track") {
-                            viewModel.updateMix(for: track, context: modelContext)
-                        }
-                    },
-                    onGroupChange: {
-                        performUndoableChange("Assign Group") {
-                            viewModel.updateGroup(for: track, context: modelContext)
-                        }
-                    },
-                    onManageGroups: {
-                        activeSheet = .groupEditor
-                    },
-                    onRename: {
-                        beginRenameTrack(track)
-                    },
-                    onDelete: {
-                        deleteAudioTrack(track)
-                    },
-                    onResize: { resizeLane(track.id, by: $0) },
-                    onResizeEnded: finishLaneResize
-                )
-            }
-        }
-        .frame(width: TimelineLayout.trackHeaderWidth)
-        .background(AppColors.Timeline.trackHeaderColumnBackground)
-        .onReceive(Timer.publish(every: 1.0 / 30.0, on: .main, in: .common).autoconnect()) { _ in
-            guard audioEngine.isPlaying || audioEngine.hasVisibleMeterLevel else { return }
-            audioEngine.refreshGroupMeters()
-        }
-        .overlay(alignment: .trailing) {
-            Rectangle()
-                .fill(AppColors.Timeline.divider)
-                .frame(width: 1)
-        }
-    }
-
-    private func rulerLaneLabel(_ title: String, height: CGFloat) -> some View {
-        Text(title)
-            .font(AppTypography.Compact.label)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-            .padding(.horizontal, AppSpacing.xs)
-            .frame(height: height)
-    }
-
-    private var rulerLaneDivider: some View {
-        Rectangle()
-            .fill(AppColors.Timeline.divider)
-            .frame(height: 1)
-            .allowsHitTesting(false)
-    }
-
-    private var trackHeaderRulerCorner: some View {
-        VStack(spacing: 0) {
-            rulerLaneLabel("Meter", height: TimelineLayout.timeSignatureRulerHeight)
-            rulerLaneLabel("Tempo", height: TimelineLayout.tempoRulerHeight)
-            rulerLaneLabel("Markers", height: TimelineLayout.sectionMarkerHeight)
-        }
-        .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.topRulerHeight)
-        .background(AppColors.Timeline.trackHeaderBackground)
-        .overlay(alignment: .bottom) { rulerLaneDivider }
-        .overlay(alignment: .trailing) {
-            Rectangle()
-                .fill(AppColors.Timeline.divider)
-                .frame(width: 1)
-        }
-    }
-
-    private var trackHeaderTimeRulerCorner: some View {
-        Rectangle()
-            .fill(AppColors.Timeline.stickyRulerBackground)
-            .frame(width: TimelineLayout.trackHeaderWidth, height: TimelineLayout.rulerHeight)
-            .allowsHitTesting(false)
     }
 }

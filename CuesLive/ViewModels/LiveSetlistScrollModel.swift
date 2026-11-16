@@ -15,7 +15,8 @@ final class LiveSetlistScrollModel {
     /// A song lane's waveform, in strip coordinates.
     struct Lane: Equatable, Sendable {
         var frame: CGRect
-        var duration: TimeInterval
+        /// The in-to-out stretch of the song the lane shows.
+        var window: LiveLaneWindow
     }
 
     private(set) var offset: CGFloat = 0
@@ -160,12 +161,7 @@ final class LiveSetlistScrollModel {
 
     private func contentX(at time: TimeInterval) -> CGFloat? {
         guard let lane = lanes[currentIndex] else { return nil }
-        let clampedTime = min(max(0, time), max(lane.duration, 0.001))
-        return lane.frame.minX + TimelineLayout.xPosition(
-            for: clampedTime,
-            duration: lane.duration,
-            contentWidth: lane.frame.width
-        )
+        return lane.frame.minX + lane.window.x(for: time, width: lane.frame.width)
     }
 
     /// Follows again once the playhead drifts, or is scrolled, back to the viewport center.

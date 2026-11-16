@@ -49,17 +49,24 @@ final class OverlapPreviewEngine {
         guard generation == loadGeneration else { return }
 
         let outgoingDuration = outgoingSnapshot.timelineDuration
+        let outgoingStart = outgoingSnapshot.startTime
         let clampedOffset = OverlapTransitionTiming.clampedStartOffset(
             startOffsetSeconds,
             windowDuration: windowDuration,
-            outgoingDuration: outgoingDuration
+            outgoingDuration: outgoingDuration,
+            outgoingStart: outgoingStart
         )
 
-        let outgoingWindowStart = max(0, outgoingDuration - windowDuration)
+        let outgoingWindowStart = OverlapTransitionTiming.outgoingWindowStart(
+            outgoingDuration: outgoingDuration,
+            windowDuration: windowDuration,
+            outgoingStart: outgoingStart
+        )
         let laneOffset = OverlapTransitionTiming.incomingLaneOffset(
             outgoingDuration: outgoingDuration,
             windowDuration: windowDuration,
-            startOffsetSeconds: clampedOffset
+            startOffsetSeconds: clampedOffset,
+            outgoingStart: outgoingStart
         )
 
         previewStartTime = outgoingWindowStart
@@ -94,7 +101,7 @@ final class OverlapPreviewEngine {
         guard isLoaded, !isPlaying else { return }
 
         outgoingEngine.seek(to: previewStartTime)
-        incomingEngine.seek(to: 0)
+        incomingEngine.seek(to: incomingEngine.startTime)
         incomingEngine.setMasterVolume(0)
         incomingStarted = false
 
@@ -145,8 +152,8 @@ final class OverlapPreviewEngine {
     private func stopPlayback() {
         outgoingEngine.pause()
         incomingEngine.pause()
-        outgoingEngine.seek(to: 0)
-        incomingEngine.seek(to: 0)
+        outgoingEngine.seek(to: outgoingEngine.startTime)
+        incomingEngine.seek(to: incomingEngine.startTime)
         incomingEngine.setMasterVolume(1)
         isPlaying = false
         currentTime = 0
@@ -190,7 +197,7 @@ final class OverlapPreviewEngine {
     private func syncIncomingAudibility() {
         guard !incomingStarted, currentTime >= incomingLaneOffset - (1.0 / 48_000) else { return }
 
-        incomingEngine.seek(to: 0)
+        incomingEngine.seek(to: incomingEngine.startTime)
         incomingEngine.setMasterVolume(1)
         if !incomingEngine.isPlaying {
             incomingEngine.play()

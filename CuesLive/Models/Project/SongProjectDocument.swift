@@ -224,25 +224,30 @@ struct ProjectMIDITrack: Codable, Hashable, Identifiable {
 struct SongProjectArrangement: Codable {
     var markers: [ArrangementMarker]
     var clips: [TrackClip]
+    /// Missing from files written before in and out points, which play the whole song.
+    var playRange: SongPlayRange
 
     init(timeline: SongTimeline) {
         markers = timeline.markers
         clips = timeline.clips
+        playRange = timeline.playRange
     }
 
     enum CodingKeys: String, CodingKey {
         case markers
         case clips
+        case playRange
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         markers = try container.decodeIfPresent([ArrangementMarker].self, forKey: .markers) ?? []
         clips = try container.decodeIfPresent([TrackClip].self, forKey: .clips) ?? []
+        playRange = try container.decodeIfPresent(SongPlayRange.self, forKey: .playRange) ?? SongPlayRange()
     }
 
     var timeline: SongTimeline {
-        SongTimeline(markers: markers, clips: clips)
+        SongTimeline(markers: markers, clips: clips, playRange: playRange)
     }
 }
 

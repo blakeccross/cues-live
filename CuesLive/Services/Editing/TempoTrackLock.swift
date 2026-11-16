@@ -5,7 +5,8 @@ import Foundation
 /// A locked track keeps every sound on the same beat. Each of its clips is cut wherever
 /// either tempo map changes, each piece moves to where its beats now fall, and its playback
 /// rate is set so the same stretch of file fills the new length. Unlocked tracks keep their
-/// timeline position and speed. Section markers and MIDI cues follow the locked audio.
+/// timeline position and speed. Section markers, the in and out points, and MIDI cues follow the
+/// locked audio.
 enum TempoTrackLock {
     /// Pieces shorter than this are rounding left over at a cut and are dropped.
     private static let minimumPieceSeconds: TimeInterval = 0.000_001
@@ -17,7 +18,7 @@ enum TempoTrackLock {
         var midiEvents: [MIDIEvent]
     }
 
-    /// Re-times the locked tracks, plus markers and MIDI cues, from `old` to `new`.
+    /// Re-times the locked tracks, plus markers, the in and out points, and MIDI cues, from `old` to `new`.
     /// Returns the input unchanged when no track is locked.
     static func retime(
         _ timeline: SongTimeline,
@@ -43,6 +44,8 @@ enum TempoTrackLock {
             moved.endSeconds = marker.endSeconds.map { position($0, from: old, to: new) }
             return moved
         }
+        result.playRange.startSeconds = position(timeline.playRange.startSeconds, from: old, to: new)
+        result.playRange.endSeconds = timeline.playRange.endSeconds.map { position($0, from: old, to: new) }
         let movedEvents = midiEvents.map { event in
             var moved = event
             moved.timelineSeconds = position(event.timelineSeconds, from: old, to: new)

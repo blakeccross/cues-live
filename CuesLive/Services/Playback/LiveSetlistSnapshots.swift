@@ -16,6 +16,9 @@ struct LiveSongWaveformSnapshot: Identifiable {
     /// combined waveform then maps every file through `peakClips` instead.
     let trackClips: [[TrackClip]]
     let fileDuration: TimeInterval
+    /// The song's in point. The lane starts here.
+    let startTime: TimeInterval
+    /// The song's out point, on its timeline. The lane ends here.
     let timelineDuration: TimeInterval
     /// Sections used for labels, cueing, and loop badges.
     let sections: [SongSection]
@@ -38,8 +41,13 @@ struct LiveSongWaveformSnapshot: Identifiable {
 
     var loopSectionIDs: Set<UUID> { sections.loopSectionIDs }
 
+    /// The in-to-out stretch the lane shows.
+    var window: LiveLaneWindow {
+        LiveLaneWindow(start: startTime, end: timelineDuration)
+    }
+
     var contentWidth: CGFloat {
-        TimelineLayout.contentWidth(for: timelineDuration, zoom: 1)
+        TimelineLayout.contentWidth(for: window.duration, zoom: 1)
     }
 
     init(
@@ -48,6 +56,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         trackSources: [(url: URL, duration: TimeInterval)],
         trackClips: [[TrackClip]] = [],
         fileDuration: TimeInterval,
+        startTime: TimeInterval = 0,
         timelineDuration: TimeInterval,
         sections: [SongSection],
         peakClips: [TrackClip],
@@ -63,6 +72,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
         self.trackSources = trackSources
         self.trackClips = trackClips
         self.fileDuration = fileDuration
+        self.startTime = startTime
         self.timelineDuration = timelineDuration
         self.sections = sections
         self.peakClips = peakClips
@@ -81,6 +91,7 @@ struct LiveSongWaveformSnapshot: Identifiable {
             trackSources: trackSources,
             trackClips: trackClips,
             fileDuration: fileDuration,
+            startTime: startTime,
             timelineDuration: timelineDuration,
             sections: sections,
             peakClips: peakClips,

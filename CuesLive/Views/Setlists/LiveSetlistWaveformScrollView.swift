@@ -147,7 +147,7 @@ struct LiveSetlistWaveformScrollView: View {
     }
 
     private func laneContentWidth(for snapshot: LiveSongWaveformSnapshot) -> CGFloat {
-        TimelineLayout.contentWidth(for: snapshot.timelineDuration, zoom: horizontalZoom)
+        TimelineLayout.contentWidth(for: snapshot.window.duration, zoom: horizontalZoom)
     }
 
     @ViewBuilder
@@ -169,7 +169,7 @@ struct LiveSetlistWaveformScrollView: View {
         .modifier(NonCurrentSongSelectTapModifier(
             isEnabled: !isCurrent && onSelectSong != nil && !mapping.showsLiveHighlights,
             contentWidth: laneSnapshot.map { laneContentWidth(for: $0) } ?? 0,
-            duration: laneSnapshot?.timelineDuration ?? 0,
+            window: laneSnapshot?.window,
             sections: laneSnapshot?.sections ?? [],
             onSelect: { onSelectSong?(playbackIndex, $0) }
         ))
@@ -186,7 +186,7 @@ struct LiveSetlistWaveformScrollView: View {
         VStack(alignment: .leading, spacing: LiveSetlistWaveformMetrics.midiLaneRowSpacing) {
             LiveSongWaveformView(
                 contentWidth: laneContentWidth,
-                timelineDuration: snapshot.timelineDuration,
+                window: snapshot.window,
                 sections: snapshot.sections,
                 loopSectionIDs: snapshot.loopSectionIDs,
                 isInteractive: isCurrent,
@@ -198,7 +198,7 @@ struct LiveSetlistWaveformScrollView: View {
             .onGeometryChange(for: LiveSetlistScrollModel.Lane.self) { proxy in
                 LiveSetlistScrollModel.Lane(
                     frame: proxy.frame(in: .named(LiveSetlistWaveformMetrics.scrollCoordinateSpaceName)),
-                    duration: snapshot.timelineDuration
+                    window: snapshot.window
                 )
             } action: { lane in
                 scrollModel.setLane(lane, at: playbackIndex)
@@ -207,7 +207,7 @@ struct LiveSetlistWaveformScrollView: View {
             ForEach(snapshot.midiLanes) { lane in
                 LiveMIDIEventLaneView(
                     contentWidth: laneContentWidth,
-                    timelineDuration: snapshot.timelineDuration,
+                    window: snapshot.window,
                     deviceName: lane.deviceName,
                     events: lane.events
                 )
@@ -242,7 +242,8 @@ private struct LiveSetlistWaveformLanePlaceholder: View {
 private struct NonCurrentSongSelectTapModifier: ViewModifier {
     let isEnabled: Bool
     let contentWidth: CGFloat
-    let duration: TimeInterval
+    /// Nil until the song's lane has a snapshot.
+    let window: LiveLaneWindow?
     let sections: [SongSection]
     let onSelect: (TimeInterval?) -> Void
 
@@ -261,8 +262,8 @@ private struct NonCurrentSongSelectTapModifier: ViewModifier {
     }
 
     private func sectionStart(atX x: CGFloat) -> TimeInterval? {
-        guard contentWidth > 0, duration > 0, !sections.isEmpty else { return nil }
-        let time = TimelineLayout.time(at: x, duration: duration, contentWidth: contentWidth)
+        guard contentWidth > 0, let window, !sections.isEmpty else { return nil }
+        let time = window.time(at: x, width: contentWidth)
         let hit = sections.first { time >= $0.timelineStartSeconds && time < $0.timelineEndSeconds }
             ?? sections.last.flatMap { time >= $0.timelineStartSeconds && time <= $0.timelineEndSeconds ? $0 : nil }
         return hit?.timelineStartSeconds

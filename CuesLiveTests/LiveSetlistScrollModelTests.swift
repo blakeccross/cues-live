@@ -14,7 +14,7 @@ final class LiveSetlistScrollModelTests: XCTestCase {
     }
 
     private func lane(minX: CGFloat, width: CGFloat) -> LiveSetlistScrollModel.Lane {
-        LiveSetlistScrollModel.Lane(frame: CGRect(x: minX, y: 4, width: width, height: 96), duration: 100)
+        LiveSetlistScrollModel.Lane(frame: CGRect(x: minX, y: 4, width: width, height: 96), window: LiveLaneWindow(end: 100))
     }
 
     /// Applies the model's target the way the host does.

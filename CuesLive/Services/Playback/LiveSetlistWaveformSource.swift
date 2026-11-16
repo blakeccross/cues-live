@@ -18,25 +18,31 @@ struct LiveSetlistWaveformSource: Equatable, Sendable {
     let precomputedPeaks: [Float]?
     let fileDuration: TimeInterval
     /// Clips that map the summed files onto the timeline when the tracks' own clips are unknown.
-    /// Empty when the waveform shows the files as they are: a song without sections or clips.
+    /// Empty when the waveform shows the files as they are: a song without sections whose in and
+    /// out points span the whole file.
     let clips: [TrackClip]
+    /// Length of the lane: from the in point to the out point.
     let timelineDuration: TimeInterval
     /// Identity of everything above, for caching the loaded waveform.
     let key: String
 
     init(_ snapshot: LiveSongWaveformSnapshot) {
+        // The lane shows only the in-to-out stretch, so clips are cut to it and the in point
+        // becomes time zero.
+        let window = snapshot.window
         let knowsTrackClips = snapshot.trackClips.count == snapshot.trackSources.count
         tracks = snapshot.trackSources.enumerated().map { index, source in
             Track(
                 url: source.url,
                 duration: source.duration,
-                clips: knowsTrackClips ? snapshot.trackClips[index] : nil
+                clips: knowsTrackClips ? window.laneClips(snapshot.trackClips[index]) : nil
             )
         }
         precomputedPeaks = snapshot.precomputedSourcePeaks
         fileDuration = snapshot.fileDuration
-        clips = snapshot.sections.isEmpty ? [] : snapshot.peakClips
-        timelineDuration = max(snapshot.timelineDuration, 0.001)
+        let isTrimmed = window.start > 0 || abs(window.end - snapshot.fileDuration) > 0.001
+        clips = snapshot.sections.isEmpty && !isTrimmed ? [] : window.laneClips(snapshot.peakClips)
+        timelineDuration = window.duration
 
         var hasher = Hasher()
         hasher.combine(snapshot.audioRevision)

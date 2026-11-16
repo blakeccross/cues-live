@@ -64,7 +64,14 @@ enum SongTrackLoader {
         }
     }
 
+    /// Where the song stops: its out point, on the timeline.
     static func timelineDuration(for song: Song) -> TimeInterval {
-        SongProjectBridge.projectStateOrDefaults(for: song).timeline.duration
+        SongProjectBridge.projectStateOrDefaults(for: song).timeline.playbackRange.upperBound
+    }
+
+    /// How long the song plays: from its in point to its out point.
+    static func playedDuration(for song: Song) -> TimeInterval {
+        let range = SongProjectBridge.projectStateOrDefaults(for: song).timeline.playbackRange
+        return range.upperBound - range.lowerBound
     }
 }

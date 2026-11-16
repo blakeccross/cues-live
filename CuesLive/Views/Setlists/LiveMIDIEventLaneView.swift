@@ -5,7 +5,7 @@ import SwiftUI
 /// editor's fully-interactive `MIDILaneView`.
 struct LiveMIDIEventLaneView: View {
     let contentWidth: CGFloat
-    let timelineDuration: TimeInterval
+    let window: LiveLaneWindow
     let deviceName: String
     let events: [MIDIEvent]
 
@@ -13,8 +13,9 @@ struct LiveMIDIEventLaneView: View {
     /// Keeps the device tag just inside the lane's rounded corner.
     private static let tagOffset = CGSize(width: 3, height: 1)
 
-    private var safeDuration: TimeInterval {
-        max(timelineDuration, 0.001)
+    /// Events between the in and out points; any others would pin to the lane's ends.
+    private var visibleEvents: [MIDIEvent] {
+        events.filter { $0.timelineSeconds >= window.start && $0.timelineSeconds <= window.end }
     }
 
     var body: some View {
@@ -22,16 +23,12 @@ struct LiveMIDIEventLaneView: View {
             RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                 .fill(AppColors.Live.midiLaneBackground)
 
-            ForEach(events) { event in
+            ForEach(visibleEvents) { event in
                 Circle()
                     .fill(AppColors.Live.midiEventDot)
                     .frame(width: Self.dotSize, height: Self.dotSize)
                     .position(
-                        x: TimelineLayout.xPosition(
-                            for: event.timelineSeconds,
-                            duration: safeDuration,
-                            contentWidth: contentWidth
-                        ),
+                        x: window.x(for: event.timelineSeconds, width: contentWidth),
                         y: LiveSetlistWaveformMetrics.midiLaneRowHeight / 2
                     )
             }

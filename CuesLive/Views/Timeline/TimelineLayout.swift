@@ -61,11 +61,11 @@ enum TimelineLayout {
     static let sectionMarkerHeight: CGFloat = 22
     static let timeSignatureRulerHeight: CGFloat = 24
     static let tempoRulerHeight: CGFloat = 24
-    /// Minutes-and-seconds ruler. Pinned below the tracks, above the transport.
+    /// Minutes-and-seconds ruler, the topmost row. It carries the song's in and out flags.
     static let rulerHeight: CGFloat = 22
     static let trackHeaderWidth: CGFloat = 204
 
-    /// Section, time-signature, and tempo rulers above the tracks.
+    /// Time-signature, tempo, and section rulers, below the time ruler and above the tracks.
     static var topRulerHeight: CGFloat {
         sectionMarkerHeight + timeSignatureRulerHeight + tempoRulerHeight
     }
