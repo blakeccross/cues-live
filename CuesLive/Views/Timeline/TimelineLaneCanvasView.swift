@@ -2,8 +2,9 @@
 import AppKit
 
 /// Viewport-wide surface the lane painter draws into, owned by the horizontal scroll view.
-final class TimelineLaneCanvasView: NSView {
+final class TimelineLaneCanvasView: NSView, TimelineClipHoverFollowing {
     private let painter = TimelineLanePainter()
+    private weak var hover: TimelineClipHoverModel?
 
     override var isFlipped: Bool { true }
 
@@ -30,6 +31,19 @@ final class TimelineLaneCanvasView: NSView {
     func timelineOffsetDidChange(_ offset: CGFloat) {
         guard painter.offset != offset else { return }
         painter.offset = offset
+        needsDisplay = true
+    }
+
+    func follow(_ model: TimelineClipHoverModel) {
+        guard model !== hover else { return }
+        hover = model
+        model.laneCanvas = self
+        hoveredClipDidChange(model.clipID)
+    }
+
+    func hoveredClipDidChange(_ clipID: UUID?) {
+        guard painter.hoveredClipID != clipID else { return }
+        painter.hoveredClipID = clipID
         needsDisplay = true
     }
 

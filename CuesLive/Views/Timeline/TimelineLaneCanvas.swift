@@ -19,7 +19,8 @@ struct TimelineCanvasClip: Equatable {
     let linearGain: Float
     let fadeIn: ClipFade
     let fadeOut: ClipFade
-    /// The fade curves are drawn as lines. The shading under them is always drawn.
+    /// The fade curves are drawn as lines. The painter also draws them on the hovered clip, and
+    /// always draws the shading under them.
     let showsFadeCurves: Bool
 
     init(_ clip: TrackClip, showsFadeCurves: Bool) {
@@ -54,11 +55,13 @@ struct TimelineCanvasClip: Equatable {
 ///
 /// The canvas is as wide as the viewport and does not scroll. On macOS the horizontal scroll
 /// view owns it; on iOS `TimelineLaneCanvasLayer` places it and the scroll model moves it.
-struct TimelineLaneCanvas: Equatable {
+struct TimelineLaneCanvas {
     let lanes: [TimelineCanvasLane]
     let duration: TimeInterval
     let contentWidth: CGFloat
     let loadsWaveforms: Bool
+    /// The clip under the pointer. On macOS the canvas follows it directly, outside SwiftUI updates.
+    let hover: TimelineClipHoverModel
 
     func scene(in environment: EnvironmentValues) -> TimelineLanePainter.Scene {
         TimelineLanePainter.Scene(

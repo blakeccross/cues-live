@@ -314,7 +314,7 @@ extension EditView {
                     sections: displaySections,
                     selection: clipSelection,
                     clipDrag: clipDrag,
-                    hoveredClipID: hoveredClipID,
+                    hover: clipHover,
                     actions: clipLaneActions,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
