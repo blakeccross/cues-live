@@ -91,7 +91,4 @@ enum AppColors {
     /// Editor section-marker blocks: the track palette's dark gray, lifting to its white when selected.
     static let sectionMarker = Color(.trackPaletteDarkGray)
     static let sectionMarkerSelected = Color(.trackPaletteWhite)
-
-    /// Setlist transition badge ring for an overlap transition.
-    static let transitionOverlap = Color(.transitionOverlap)
 }

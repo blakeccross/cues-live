@@ -67,7 +67,7 @@ struct SetlistSongRowView<MenuContent: View>: View {
         if let transition = song.transition {
             Image(systemName: transition.systemImage)
                 .font(AppTypography.captionEmphasized)
-                .foregroundStyle(transition.badgeColor)
+                .foregroundStyle(AppColors.textSecondary)
                 .accessibilityLabel("Transition to next: \(transition.label)")
                 .help("Transition to next: \(transition.label)")
         }

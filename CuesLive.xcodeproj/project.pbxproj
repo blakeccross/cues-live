@@ -753,8 +753,6 @@
 		EEA0EE53E5A5E7FE45FEA141 /* SetlistWaveformTransitionMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */; };
 		AE874D9A05E054F3DAB1BF4D /* SetlistWaveformHeaderMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */; };
 		40081ECBCC9B06A43C496994 /* SetlistWaveformHeaderMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */; };
-		E4F1035E72B803EA52AEBEF5 /* SetlistTransition+BadgeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */; };
-		9331A259A043A8FFE557801F /* SetlistTransition+BadgeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */; };
 		E09B7542791F22F73305D08C /* SetlistOverlapEditorContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */; };
 		51888869271C0FADD81C1AB3 /* SetlistOverlapEditorContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */; };
 		5B1EEF289B6EBBD1B6EB860A /* OverlapWaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */; };
@@ -1202,7 +1200,6 @@
 		56EA36D6E57D5C363D3AFFB3 /* PlaybackCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorTests.swift; sourceTree = "<group>"; };
 		54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistWaveformTransitionMarker.swift; sourceTree = "<group>"; };
 		1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistWaveformHeaderMarker.swift; sourceTree = "<group>"; };
-		3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistTransition+BadgeColor.swift"; sourceTree = "<group>"; };
 		CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistOverlapEditorContext.swift; sourceTree = "<group>"; };
 		932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapWaveformLaneView.swift; sourceTree = "<group>"; };
 		A197CFAF43876268300CD240 /* SetlistOverlapEditorView+Preview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistOverlapEditorView+Preview.swift"; sourceTree = "<group>"; };
@@ -1444,7 +1441,6 @@
 				A197CFAF43876268300CD240 /* SetlistOverlapEditorView+Preview.swift */,
 				932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */,
 				CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */,
-				3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */,
 				1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */,
 				54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */,
 				EF40B2AF19E607B46BFE3031 /* LivePlaybackView+SetlistDrop.swift */,
@@ -2090,7 +2086,6 @@
 				BE55B530DD06D4A4821EB8D0 /* SetlistOverlapEditorView+Preview.swift in Sources */,
 				5B1EEF289B6EBBD1B6EB860A /* OverlapWaveformLaneView.swift in Sources */,
 				E09B7542791F22F73305D08C /* SetlistOverlapEditorContext.swift in Sources */,
-				E4F1035E72B803EA52AEBEF5 /* SetlistTransition+BadgeColor.swift in Sources */,
 				AE874D9A05E054F3DAB1BF4D /* SetlistWaveformHeaderMarker.swift in Sources */,
 				F0E706E51092BAE6F3DE72F9 /* SetlistWaveformTransitionMarker.swift in Sources */,
 				8D7564AC88777BD8D1B0DD7F /* ClickScheduler.swift in Sources */,
@@ -2515,7 +2510,6 @@
 				F639527A999C6CD221B4EE38 /* SetlistOverlapEditorView+Preview.swift in Sources */,
 				FB4372582DB55460F55D9BC5 /* OverlapWaveformLaneView.swift in Sources */,
 				51888869271C0FADD81C1AB3 /* SetlistOverlapEditorContext.swift in Sources */,
-				9331A259A043A8FFE557801F /* SetlistTransition+BadgeColor.swift in Sources */,
 				40081ECBCC9B06A43C496994 /* SetlistWaveformHeaderMarker.swift in Sources */,
 				EEA0EE53E5A5E7FE45FEA141 /* SetlistWaveformTransitionMarker.swift in Sources */,
 				F61C5914308C87261BE1B009 /* ClickScheduler.swift in Sources */,
