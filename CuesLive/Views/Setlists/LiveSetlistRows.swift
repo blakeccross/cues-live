@@ -403,7 +403,7 @@ struct SmartGuideBadge: View {
     var body: some View {
         Image(systemName: "person.wave.2.fill")
             .font(AppTypography.caption)
-            .foregroundStyle(AppColors.accent)
+            .foregroundStyle(AppColors.textSecondary)
             .accessibilityLabel("Smart Guide on")
             .help("Smart Guide on")
     }
