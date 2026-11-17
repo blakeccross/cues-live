@@ -18,8 +18,13 @@ extension EditView {
         laneFrames.totalHeight
     }
 
+    /// Rows in `displayedTrackIDs` order. Heights are read straight from the tracks: looking each
+    /// ID up again is quadratic in SwiftData reads, and this runs several times per zoom step.
     var laneFrames: TrackLaneFrames {
-        TrackLaneFrames(heights: displayedTrackIDs.map { laneHeight(for: $0) })
+        var stored = song.videoTrack.map { [$0.laneHeight] } ?? []
+        stored += midiTracks.map(\.laneHeight)
+        stored += song.sortedTracks.map(\.laneHeight)
+        return TrackLaneFrames(heights: stored.map { TrackLaneHeight.resolved($0) })
     }
 
     func laneHeight(for id: UUID) -> CGFloat {

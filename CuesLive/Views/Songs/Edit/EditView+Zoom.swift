@@ -8,9 +8,13 @@ extension EditView {
         TimelineLayout.minZoom(duration: timelineDuration, viewportWidth: timelineViewportWidth)
     }
 
+    var timelineMaxZoom: CGFloat {
+        max(timelineMinZoom, TimelineLayout.maxZoom)
+    }
+
     var timelineZoomActions: TimelineZoomActions {
         TimelineZoomActions(
-            canZoomIn: timelineZoom < TimelineLayout.maxZoom,
+            canZoomIn: timelineZoom < timelineMaxZoom,
             canZoomOut: timelineZoom > timelineMinZoom,
             zoomIn: { zoomTimeline(by: Self.zoomCommandStep) },
             zoomOut: { zoomTimeline(by: 1 / Self.zoomCommandStep) }
@@ -24,7 +28,7 @@ extension EditView {
             timelineZoom = minZoom
             hasSetInitialTimelineZoom = true
         } else {
-            timelineZoom = min(TimelineLayout.maxZoom, max(minZoom, timelineZoom))
+            timelineZoom = min(timelineMaxZoom, max(minZoom, timelineZoom))
         }
     }
 
@@ -33,6 +37,8 @@ extension EditView {
         setTimelineZoom(timelineZoom * scale)
     }
 
+    #if os(iOS)
+    /// A pinch over the timeline. On macOS the horizontal scroll view zooms pinches itself.
     var timelinePinchGesture: some Gesture {
         MagnificationGesture()
             .onChanged { scale in
@@ -46,8 +52,10 @@ extension EditView {
                 pinchStartZoom = nil
             }
     }
+    #endif
 
-    private func setTimelineZoom(_ proposed: CGFloat) {
-        timelineZoom = min(TimelineLayout.maxZoom, max(timelineMinZoom, proposed))
+    /// Sets the zoom, within the fit-to-window and maximum levels.
+    func setTimelineZoom(_ proposed: CGFloat) {
+        timelineZoom = min(timelineMaxZoom, max(timelineMinZoom, proposed))
     }
 }

@@ -30,8 +30,65 @@ enum AudioTimelineMath {
 
 enum TimelineLayout {
     static let basePixelsPerSecond: CGFloat = 6
-    static let maxZoom: CGFloat = 8
+    /// 96,000 pt a second: two points a sample at 48 kHz, a quarter of a sample per device
+    /// pixel on a Retina display, as deep as SoundCraft goes. Past one sample a pixel the lanes
+    /// draw a line through the samples. Layer and Core Graphics positions stay exact far beyond
+    /// the widths this gives an hour-long song.
+    static let maxZoom: CGFloat = 16_000
     static let minimumContentWidth: CGFloat = 320
+
+    /// One step of a live zoom: the zoom, the width it maps the song to, and the offset that keeps
+    /// the content at viewport x `anchorX` in place.
+    struct LiveZoomStep: Equatable {
+        let zoom: CGFloat
+        let contentWidth: CGFloat
+        let offset: CGFloat
+    }
+
+    /// The live zoom after multiplying `current` by `scale`, or `nil` when the range stops it.
+    /// `committedWidth` is the width the editor's zoom, `committedZoom`, maps the song to.
+    static func liveZoomStep(
+        from current: CGFloat,
+        by scale: CGFloat,
+        range: ClosedRange<CGFloat>,
+        committedZoom: CGFloat,
+        committedWidth: CGFloat,
+        offset: CGFloat,
+        anchorX: CGFloat,
+        viewportWidth: CGFloat
+    ) -> LiveZoomStep? {
+        guard committedZoom > 0, committedWidth > 0 else { return nil }
+        let zoom = min(range.upperBound, max(range.lowerBound, current * scale))
+        guard zoom != current else { return nil }
+        let oldWidth = committedWidth * current / committedZoom
+        let newWidth = committedWidth * zoom / committedZoom
+        return LiveZoomStep(
+            zoom: zoom,
+            contentWidth: newWidth,
+            offset: zoomedOffset(
+                anchorX: anchorX,
+                offset: offset,
+                oldWidth: oldWidth,
+                newWidth: newWidth,
+                viewportWidth: viewportWidth
+            )
+        )
+    }
+
+    /// Scroll offset that keeps the content at viewport x `anchorX` in place when the content
+    /// width changes from `oldWidth` to `newWidth`, clamped to the scrollable range.
+    static func zoomedOffset(
+        anchorX: CGFloat,
+        offset: CGFloat,
+        oldWidth: CGFloat,
+        newWidth: CGFloat,
+        viewportWidth: CGFloat
+    ) -> CGFloat {
+        guard oldWidth > 0 else { return 0 }
+        let fraction = (offset + anchorX) / oldWidth
+        let target = fraction * newWidth - anchorX
+        return min(max(0, target), max(0, newWidth - viewportWidth))
+    }
 
     /// Most zoomed-out level: entire timeline fits in the visible viewport when possible.
     static func minZoom(duration: TimeInterval, viewportWidth: CGFloat) -> CGFloat {

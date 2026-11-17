@@ -58,8 +58,13 @@ struct EditView: View {
     @State var timelineZoom: CGFloat = 1
     @State var timelineViewportWidth: CGFloat = 0
     @State var hasSetInitialTimelineZoom = false
+    #if os(iOS)
     @State var pinchStartZoom: CGFloat?
+    #endif
     @State var cuedSectionID: UUID?
+    /// The section block selected on the marker ruler. Here rather than in the ruler so the live
+    /// ruler drawn during a zoom shows it too.
+    @State var selectedSectionMarkerID: UUID?
     @State var cueFireTime: TimeInterval?
     @State var cueFlashPhase = false
     @State var sectionLoop = SectionLoopController()

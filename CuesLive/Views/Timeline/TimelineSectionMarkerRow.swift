@@ -14,6 +14,7 @@ struct TimelineSectionMarkerRowView: View {
     let height: CGFloat
     let cuedSectionID: UUID?
     let cueFlashPhase: Bool
+    @Binding var selectedSectionID: UUID?
     let loopSectionIDs: Set<UUID>
     let isPlaying: Bool
     let onCueSection: (SongSection) -> Void
@@ -28,67 +29,87 @@ struct TimelineSectionMarkerRowView: View {
     let timeSignatureChanges: [TimeSignatureChange]
 
     @State private var pointerX: CGFloat = 0
-    @State private var selectedSectionID: UUID?
     @State private var pendingEdit: SectionEdgeEdit?
 
     private static let dragSpace = "sectionMarkerRow"
-    private static let blockInset: CGFloat = 2
+    static let blockInset: CGFloat = 2
     private static let handleWidth: CGFloat = 8
 
     private var safeDuration: TimeInterval {
         max(duration, 0.001)
     }
 
+    /// Set by the editor's ruler follower. Blocks and edge handles then cover only the painted
+    /// slice, so a zoom step redraws what is on screen instead of every section in the song.
+    @Environment(\.timelineScrollModel) private var scrollModel
+
+    /// Content x range drawn: the painted slice when scrolled, else everything.
+    private var paintedSlice: ClosedRange<CGFloat> {
+        guard let painted = scrollModel?.paintedRange else { return 0...displayWidth }
+        let lower = max(0, painted.lowerBound)
+        let upper = min(displayWidth, painted.upperBound)
+        return upper > lower ? lower...upper : 0...0
+    }
+
     var body: some View {
         let shown = pendingEdit.map(previewSections) ?? sections
-        ZStack(alignment: .topLeading) {
-            ForEach(shown) { section in
-                blockView(section)
+        let slice = paintedSlice
+        // One canvas for every block. A view per block, label and border made each zoom step
+        // lay out and redraw every section in the song.
+        Canvas { context, _ in
+            context.translateBy(x: -slice.lowerBound, y: 0)
+            for section in shown {
+                drawBlock(section, in: &context, slice: slice)
             }
         }
+        .frame(width: slice.upperBound - slice.lowerBound, height: height)
+        .offset(x: slice.lowerBound)
         .frame(width: displayWidth, height: height, alignment: .topLeading)
         .background(AppColors.Timeline.stickyRulerBackground)
+        .allowsHitTesting(false)
         .overlay { interactionSurface(sections: shown) }
         .overlay(alignment: .topLeading) {
-            ForEach(SectionEdge.edges(of: sections)) { edge in
+            ForEach(edges(in: slice)) { edge in
                 edgeHandle(edge)
             }
         }
         .coordinateSpace(name: Self.dragSpace)
     }
 
-    private func blockView(_ section: SongSection) -> some View {
+    private func edges(in slice: ClosedRange<CGFloat>) -> [SectionEdge] {
+        SectionEdge.edges(of: sections).filter { edge in
+            let x = xPosition(for: edge.time)
+            return x + Self.handleWidth >= slice.lowerBound && x - Self.handleWidth <= slice.upperBound
+        }
+    }
+
+    /// A block's fill, border and label, clipped to the block, when it reaches into `slice`.
+    private func drawBlock(_ section: SongSection, in context: inout GraphicsContext, slice: ClosedRange<CGFloat>) {
         let startX = xPosition(for: section.timelineStartSeconds)
         // One point wider so neighbouring blocks share a single border line.
         let width = max(0, xPosition(for: section.timelineEndSeconds) - startX) + 1
-        let blockHeight = max(0, height - Self.blockInset * 2)
+        guard startX <= slice.upperBound, startX + width >= slice.lowerBound else { return }
+        let block = CGRect(x: startX, y: Self.blockInset, width: width, height: max(0, height - Self.blockInset * 2))
         let isSelected = selectedSectionID == section.id
-        return Rectangle()
-            .fill(fillColor(for: section, isSelected: isSelected))
-            .overlay { Rectangle().strokeBorder(AppColors.paneDivider, lineWidth: 1) }
-            .overlay(alignment: .leading) { blockLabel(section, isSelected: isSelected) }
-            .frame(width: width, height: blockHeight)
-            .clipped()
-            .offset(x: startX, y: Self.blockInset)
-            .allowsHitTesting(false)
-    }
+        context.fill(Path(block), with: .color(fillColor(for: section, isSelected: isSelected)))
+        context.stroke(Path(block.insetBy(dx: 0.5, dy: 0.5)), with: .color(AppColors.paneDivider), lineWidth: 1)
 
-    private func blockLabel(_ section: SongSection, isSelected: Bool) -> some View {
-        let name = section.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return HStack(spacing: AppSpacing.tagGlyphGap) {
-            if loopSectionIDs.contains(section.id) {
-                Image(systemName: "repeat")
-                    .font(AppTypography.Compact.glyphEmphasized)
-            }
-            if !name.isEmpty {
-                Text(name)
-                    .font(AppTypography.Compact.sectionName)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-            }
+        var label = context
+        label.clip(to: Path(block))
+        let color = isSelected ? AppColors.backgroundSecondary : AppColors.textPrimary
+        var x = block.minX + AppSpacing.tagInsets.leading
+        if loopSectionIDs.contains(section.id) {
+            let glyph = label.resolve(
+                Text(Image(systemName: "repeat")).font(AppTypography.Compact.glyphEmphasized).foregroundStyle(color)
+            )
+            label.draw(glyph, at: CGPoint(x: x, y: block.midY), anchor: .leading)
+            x += glyph.measure(in: block.size).width + AppSpacing.tagGlyphGap
         }
-        .foregroundStyle(isSelected ? AppColors.backgroundSecondary : AppColors.textPrimary)
-        .padding(.horizontal, AppSpacing.tagInsets.leading)
+        let name = section.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty {
+            let text = label.resolve(Text(name).font(AppTypography.Compact.sectionName).foregroundStyle(color))
+            label.draw(text, at: CGPoint(x: x, y: block.midY), anchor: .leading)
+        }
     }
 
     /// A cued block pulses between its fill and a dimmer version of it.

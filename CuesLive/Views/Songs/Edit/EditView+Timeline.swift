@@ -160,49 +160,41 @@ extension EditView {
             timelineDuration: timelineDuration,
             timelineContentWidth: timelineContentWidth,
             timelineDisplayWidth: timelineDisplayWidth,
-            sectionTimes: sectionMarkerTimes,
-            playRange: timeline.playbackRange,
-            playRangePreview: playRangePreview,
+            timelineZoom: resolvedTimelineZoom,
+            timelineZoomRange: timelineMinZoom...timelineMaxZoom,
             laneHeights: laneFrames.rows.map(\.height),
             showsPlayhead: viewModel.isActiveSetlistSong,
             timelineViewportWidth: $timelineViewportWidth,
             isTimelineFocused: $isTimelineFocused,
-            onWheelZoom: zoomTimeline(by:),
-            ruler: { timelineRulerStack },
-            timeRuler: { timelineTimeRuler },
+            onCommitZoom: setTimelineZoom(_:),
+            ruler: { timelineRulerStack(contentWidth: $0, displayWidth: $1) },
+            timeRuler: { timelineTimeRuler(contentWidth: $0, displayWidth: $1) },
             laneCanvas: trackLaneCanvas,
+            liveRuler: timelineLiveRuler,
             lanes: { trackTimelineScrollContent },
             headerRulerCorner: { trackHeaderRulerCorner },
             timeRulerCorner: { trackHeaderTimeRulerCorner },
             headers: { trackHeaderList }
         )
+        #if os(iOS)
         .simultaneousGesture(timelinePinchGesture)
+        #endif
     }
 
     private var trackTimelineScrollContent: some View {
-        // Transparent: the lane canvas behind it draws the background, clip bodies and waveforms.
+        // Transparent: the lane canvas behind it draws the background, clips and waveforms, and
+        // the grid overlay above it draws the measure lines.
         ZStack(alignment: .topLeading) {
             trackLanesContent
                 .frame(width: timelineContentWidth, alignment: .topLeading)
-
-            TimelineMeasureGridOverlay(
-                duration: timelineDuration,
-                tempoChanges: normalizedTempoChanges,
-                timeSignatureChanges: normalizedTimeSignatureChanges,
-                contentWidth: timelineContentWidth,
-                displayWidth: timelineDisplayWidth,
-                rulerHeight: 0,
-                showsThroughContent: true,
-                headerBands: clipHeaderBands
-            )
 
             clipRangeSelectionOverlay
             insertionCursorOverlay
         }
         .frame(width: timelineDisplayWidth, height: trackAreaHeight, alignment: .topLeading)
-        // On macOS the lanes live in their own AppKit scroll view, which does not pass
-        // pinches up to the editor's gesture. Recognise them here as well.
+        #if os(iOS)
         .simultaneousGesture(timelinePinchGesture)
+        #endif
     }
 
     private var trackLanesContent: some View {
@@ -210,6 +202,9 @@ extension EditView {
         // body runs, so an index offset read then (a video or MIDI lane just added) could point
         // past the end of these frames.
         let rowByID = laneRowsByTrackID
+        // Read once: each read recomputes the song's measures, and the rows below run per track.
+        let duration = timelineDuration
+        let contentWidth = timelineContentWidth
         return LazyVStack(spacing: TimelineLayout.laneSpacing) {
             if let video = song.videoTrack, let row = rowByID[video.id] {
                 videoLane(video, height: row.height, originY: row.originY)
@@ -219,15 +214,15 @@ extension EditView {
                 MIDILaneView(
                     track: track,
                     device: track.device,
-                    timelineDuration: timelineDuration,
-                    timelineContentWidth: timelineContentWidth,
+                    timelineDuration: duration,
+                    timelineContentWidth: contentWidth,
                     laneHeight: rowByID[track.id]?.height ?? TrackLaneHeight.resolved(track.laneHeight),
                     events: $midiEvents,
                     tempoChanges: normalizedTempoChanges,
                     timeSignatureChanges: normalizedTimeSignatureChanges,
                     onCommit: commitMIDIEvents
                 )
-                .frame(width: timelineContentWidth, alignment: .leading)
+                .frame(width: contentWidth, alignment: .leading)
             }
 
             ForEach(song.sortedTracks, id: \.id) { track in
@@ -235,8 +230,8 @@ extension EditView {
                 WaveformLaneView(
                     track: track,
                     fileDuration: viewModel.fileDuration(for: track),
-                    timelineDuration: timelineDuration,
-                    timelineContentWidth: timelineContentWidth,
+                    timelineDuration: duration,
+                    timelineContentWidth: contentWidth,
                     clips: timeline.clips(forTrack: track.id),
                     sections: displaySections,
                     selection: clipSelection,
@@ -251,11 +246,11 @@ extension EditView {
                     loopSectionIDs: loopSectionIDs,
                     onToggleLoopSection: toggleLoopSection
                 )
-                .frame(width: timelineContentWidth, alignment: .leading)
+                .frame(width: contentWidth, alignment: .leading)
                 }
             }
         }
-        .frame(width: timelineContentWidth, alignment: .leading)
+        .frame(width: contentWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
         .coordinateSpace(name: TimelineLayout.trackLanesCoordinateSpace)
     }
@@ -332,34 +327,5 @@ extension EditView {
             clipIDs: clipSelection.clipIDs,
             sourceDuration: { durations[$0] ?? 0 }
         )
-    }
-
-    /// Name bars of the clips on screen. Measure lines stop here so the header stays opaque.
-    private var clipHeaderBands: [CGRect] {
-        let ids = displayedTrackIDs
-        guard !ids.isEmpty else { return [] }
-        let frames = laneFrames
-        let rowOf = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1, $0) })
-        return previewClips.compactMap { clip in
-            guard let row = rowOf[clip.trackID] else { return nil }
-            let x0 = TimelineLayout.xPosition(
-                for: clip.timelineStartSeconds,
-                duration: timelineDuration,
-                contentWidth: timelineContentWidth
-            )
-            let x1 = TimelineLayout.xPosition(
-                for: clip.timelineEndSeconds,
-                duration: timelineDuration,
-                contentWidth: timelineContentWidth
-            )
-            let width = x1 - x0
-            guard width > 0 else { return nil }
-            return CGRect(
-                x: x0,
-                y: frames.rows[row].originY,
-                width: width,
-                height: TimelineLayout.clipHeaderHeight
-            )
-        }
     }
 }

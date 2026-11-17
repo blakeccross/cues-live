@@ -5,7 +5,8 @@ extension AppTypography {
     /// too large. These do not scale with Dynamic Type, so use them only inside dense editor UI.
     enum Compact {
         /// Small labels and buttons: lane titles, clip names, "UP NEXT", ruler lane names.
-        static let label = Font.system(size: 9, weight: .semibold)
+        static let label = Font.system(size: labelSize, weight: .semibold)
+        static let labelSize: CGFloat = 9
         /// Tiny captions over a value, such as the tempo/key/meter labels under the editor's song title.
         static let microLabel = Font.system(size: 7, weight: .semibold)
         /// Secondary detail beside a `label`, such as a MIDI lane's routing.

@@ -78,11 +78,13 @@ final class Song {
         }
     }
 
+    /// Each `sortOrder` is read once: a SwiftData getter is slow enough that reading it in the
+    /// comparator, twice per comparison, showed up in the editor's zoom profile.
     var sortedTracks: [AudioTrack] {
-        tracks.sorted { $0.sortOrder < $1.sortOrder }
+        tracks.map { ($0.sortOrder, $0) }.sorted { $0.0 < $1.0 }.map(\.1)
     }
 
     var sortedMIDITracks: [MIDITrack] {
-        midiTracks.sorted { $0.sortOrder < $1.sortOrder }
+        midiTracks.map { ($0.sortOrder, $0) }.sorted { $0.0 < $1.0 }.map(\.1)
     }
 }

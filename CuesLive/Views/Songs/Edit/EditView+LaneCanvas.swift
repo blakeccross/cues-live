@@ -1,12 +1,18 @@
 import SwiftUI
 
 extension EditView {
-    /// Clip bodies and waveforms of the audio lanes, drawn behind the lane chrome.
+    /// Clip bodies and waveforms of the audio lanes, drawn behind the lane chrome, and the grid,
+    /// section lines and play-range shade drawn over it.
     var trackLaneCanvas: TimelineLaneCanvas {
         TimelineLaneCanvas(
             lanes: laneCanvasLanes,
             duration: timelineDuration,
             contentWidth: timelineContentWidth,
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges,
+            sectionTimes: sectionMarkerTimes,
+            playRange: timeline.playbackRange,
+            playRangePreview: playRangePreview,
             loadsWaveforms: viewModel.isLoaded,
             hover: clipHover
         )
@@ -21,13 +27,22 @@ extension EditView {
                   let fileURL = FileStore.cachedTrackURL(for: song, track: track) else {
                 return nil
             }
+            let paletteKey = track.group?.paletteKey
+            let palette = TrackGroupPalette.colors(forPaletteKey: paletteKey)
             return TimelineCanvasLane(
                 originY: row.originY,
                 height: row.height,
                 fileURL: fileURL,
-                bodyColor: TrackGroupPalette.colors(forPaletteKey: track.group?.paletteKey).body,
+                name: track.displayName,
+                bodyColor: palette.body,
+                headerColor: palette.header,
+                selectedHeaderColor: TrackGroupPalette.selectedHeaderColor(forPaletteKey: paletteKey),
                 clips: (clipsByTrack[track.id] ?? []).map { clip in
-                    TimelineCanvasClip(clip, showsFadeCurves: showsFadeCurves(on: clip))
+                    TimelineCanvasClip(
+                        clip,
+                        showsFadeCurves: showsFadeCurves(on: clip),
+                        isSelected: clipSelection.contains(clip.id)
+                    )
                 }
             )
         }

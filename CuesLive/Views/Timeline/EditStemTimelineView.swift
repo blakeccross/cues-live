@@ -6,34 +6,6 @@ import AppKit
 import UIKit
 #endif
 
-struct TimelineHorizontalFollower<Content: View>: View {
-    var model: TimelineHorizontalScrollModel
-    let contentWidth: CGFloat
-    let viewportWidth: CGFloat
-    private let content: Content
-
-    init(
-        model: TimelineHorizontalScrollModel,
-        contentWidth: CGFloat,
-        viewportWidth: CGFloat,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.model = model
-        self.contentWidth = contentWidth
-        self.viewportWidth = viewportWidth
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .frame(width: contentWidth, alignment: .leading)
-            .offset(x: -model.offset)
-            .frame(width: viewportWidth, alignment: .leading)
-            .clipped()
-            .animation(nil, value: model.offset)
-    }
-}
-
 struct EditStemTimelineView<
     Ruler: View,
     TimeRuler: View,
@@ -45,21 +17,23 @@ struct EditStemTimelineView<
     let timelineDuration: TimeInterval
     let timelineContentWidth: CGFloat
     let timelineDisplayWidth: CGFloat
-    let sectionTimes: [TimeInterval]
-    /// The in and out points, as committed. The shade follows `playRangePreview` mid-drag.
-    let playRange: ClosedRange<TimeInterval>
-    var playRangePreview: TimelinePlayRangePreview
+    let timelineZoom: CGFloat
+    let timelineZoomRange: ClosedRange<CGFloat>
     let laneHeights: [CGFloat]
     /// False hides the playing playhead, for a song the engine is not playing.
     var showsPlayhead = true
     @Binding var timelineViewportWidth: CGFloat
     @FocusState.Binding var isTimelineFocused: Bool
-    /// Command- or Option-scroll over the lanes, with the factor to multiply the zoom by.
-    let onWheelZoom: (CGFloat) -> Void
-    @ViewBuilder let ruler: () -> Ruler
-    @ViewBuilder let timeRuler: () -> TimeRuler
+    /// Sets the editor's zoom when a pinch or Command-scroll over the lanes pauses, on macOS.
+    let onCommitZoom: (CGFloat) -> Void
+    /// Built for a content width and a display width, so a live zoom can lay the rulers out
+    /// again without rebuilding the editor.
+    @ViewBuilder let ruler: (CGFloat, CGFloat) -> Ruler
+    @ViewBuilder let timeRuler: (CGFloat, CGFloat) -> TimeRuler
     /// Clip bodies and waveforms, drawn viewport-wide behind the lanes.
     let laneCanvas: TimelineLaneCanvas
+    /// What the rulers show, for the AppKit ruler drawn during a live zoom on macOS.
+    let liveRuler: TimelineLiveRuler
     /// Clip chrome and gestures, laid out across the whole timeline and scrolled.
     @ViewBuilder let lanes: () -> Lanes
     @ViewBuilder let headerRulerCorner: () -> HeaderCorner
@@ -86,37 +60,7 @@ struct EditStemTimelineView<
             let tracksViewportHeight = max(0, geometry.size.height - TimelineLayout.rulerTotalHeight)
 
             VStack(spacing: 0) {
-                HStack(alignment: .top, spacing: 0) {
-                    timeRulerCorner()
-
-                    TimelineHorizontalFollower(
-                        model: scrollModel,
-                        contentWidth: timelineDisplayWidth,
-                        viewportWidth: timelineColumnWidth
-                    ) {
-                        timeRuler()
-                            .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight)
-                    }
-                }
-                .overlay(alignment: .bottom) {
-                    Rectangle()
-                        .fill(AppColors.Timeline.divider)
-                        .frame(height: 1)
-                        .allowsHitTesting(false)
-                }
-
-                HStack(alignment: .top, spacing: 0) {
-                    headerRulerCorner()
-
-                    TimelineHorizontalFollower(
-                        model: scrollModel,
-                        contentWidth: timelineDisplayWidth,
-                        viewportWidth: timelineColumnWidth
-                    ) {
-                        ruler()
-                            .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight)
-                    }
-                }
+                rulerRows(width: timelineColumnWidth)
 
                 ScrollView(.vertical, showsIndicators: true) {
                     HStack(alignment: .top, spacing: 0) {
@@ -136,31 +80,6 @@ struct EditStemTimelineView<
                 .scrollBounceBehavior(.basedOnSize, axes: .vertical)
                 .contentMargins(0, for: .scrollContent)
                 .frame(height: tracksViewportHeight)
-                .overlay(alignment: .topLeading) {
-                    TimelinePlayRangeShade(
-                        model: scrollModel,
-                        preview: playRangePreview,
-                        range: playRange,
-                        duration: timelineDuration,
-                        contentWidth: timelineContentWidth,
-                        viewportWidth: timelineColumnWidth
-                    )
-                    .frame(height: tracksViewportHeight)
-                    .padding(.leading, TimelineLayout.trackHeaderWidth)
-                }
-                .overlay(alignment: .topLeading) {
-                    TimelineSectionMarkerFollower(
-                        model: scrollModel,
-                        times: sectionTimes,
-                        duration: timelineDuration,
-                        contentWidth: timelineContentWidth,
-                        viewportWidth: timelineColumnWidth
-                    )
-                    .frame(height: tracksViewportHeight)
-                    .padding(.leading, TimelineLayout.trackHeaderWidth)
-                    .allowsHitTesting(false)
-                }
-
             }
             .overlay(alignment: .topLeading) {
                 if showsPlayhead {
@@ -168,6 +87,7 @@ struct EditStemTimelineView<
                         model: scrollModel,
                         duration: timelineDuration,
                         contentWidth: timelineContentWidth,
+                        zoom: timelineZoom,
                         viewportWidth: timelineColumnWidth,
                         height: TimelineLayout.rulerTotalHeight + tracksViewportHeight
                     )
@@ -186,6 +106,52 @@ struct EditStemTimelineView<
             }
         }
         .frame(maxHeight: .infinity)
+    }
+
+    /// The time ruler, then the meter, tempo and marker rulers, each scrolling with the lanes. On
+    /// macOS the live ruler covers them during a live zoom, so they are not laid out every step.
+    private func rulerRows(width: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 0) {
+                timeRulerCorner()
+
+                TimelineHorizontalFollower(
+                    model: scrollModel,
+                    contentWidth: timelineContentWidth,
+                    viewportWidth: width
+                ) { contentWidth, displayWidth in
+                    timeRuler(contentWidth, displayWidth)
+                        .frame(width: displayWidth, height: TimelineLayout.rulerHeight)
+                }
+            }
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(AppColors.Timeline.divider)
+                    .frame(height: 1)
+                    .allowsHitTesting(false)
+            }
+
+            HStack(alignment: .top, spacing: 0) {
+                headerRulerCorner()
+
+                TimelineHorizontalFollower(
+                    model: scrollModel,
+                    contentWidth: timelineContentWidth,
+                    viewportWidth: width
+                ) { contentWidth, displayWidth in
+                    ruler(contentWidth, displayWidth)
+                        .frame(width: displayWidth, height: TimelineLayout.topRulerHeight)
+                }
+            }
+        }
+        #if os(macOS)
+        .overlay(alignment: .topLeading) {
+            TimelineLiveRulerLayer(ruler: liveRuler, scrollModel: scrollModel)
+                .frame(width: width, height: TimelineLayout.rulerTotalHeight)
+                .padding(.leading, TimelineLayout.trackHeaderWidth)
+                .allowsHitTesting(false)
+        }
+        #endif
     }
 
     /// One dark rule per track, spanning the name column and the visible waveform.
@@ -219,9 +185,12 @@ struct EditStemTimelineView<
         TimelineHorizontalScrollHost(
             contentWidth: timelineDisplayWidth,
             contentHeight: laneAreaHeight,
+            zoom: timelineZoom,
+            zoomRange: timelineZoomRange,
             canvas: laneCanvas,
             onScroll: { scrollModel.setOffset($0) },
-            onWheelZoom: onWheelZoom,
+            onLiveZoom: { scrollModel.setLiveZoom($0, laidOutAt: timelineZoom) },
+            onCommitZoom: onCommitZoom,
             onPointerDown: { isTimelineFocused = true }
         ) {
             laneContent
@@ -243,6 +212,9 @@ struct EditStemTimelineView<
             .contentMargins(0, for: .scrollContent)
             .coordinateSpace(name: timelineHorizontalScrollSpace)
             .applyTimelineHorizontalOffsetObserver { scrollModel.setOffset($0) }
+            TimelineGridOverlayLayer(canvas: laneCanvas, scrollModel: scrollModel)
+                .frame(width: width, height: laneAreaHeight)
+                .allowsHitTesting(false)
         }
         .frame(width: width, height: laneAreaHeight, alignment: .topLeading)
         #endif
@@ -284,38 +256,21 @@ extension View {
 }
 #endif
 
-/// Section-marker lines over the lane viewport. This view, not the container, reads the
-/// scroll offset, so a tick redraws these lines without rebuilding the lanes and headers.
-private struct TimelineSectionMarkerFollower: View {
-    var model: TimelineHorizontalScrollModel
-    let times: [TimeInterval]
-    let duration: TimeInterval
-    let contentWidth: CGFloat
-    let viewportWidth: CGFloat
-
-    var body: some View {
-        TimelineSectionMarkerLines(
-            times: times,
-            duration: duration,
-            contentWidth: contentWidth,
-            horizontalScrollOffset: model.offset,
-            viewportWidth: viewportWidth
-        )
-    }
-}
-
 /// Red playhead pinned to the viewport, drawn only while audio is playing.
 private struct TimelineFollowingPlayhead: View {
     @Bindable private var audioEngine = AudioEngineManager.shared
     var model: TimelineHorizontalScrollModel
     let duration: TimeInterval
     let contentWidth: CGFloat
+    /// The zoom `contentWidth` was laid out at.
+    let zoom: CGFloat
     let viewportWidth: CGFloat
     let height: CGFloat
 
     var body: some View {
         if audioEngine.isPlaying {
             let offset = model.offset
+            let contentWidth = model.liveWidth(contentWidth, laidOutAt: zoom)
             TimelinePlayheadTimeReader { playheadTime in
                 TimelinePlayheadOverlay(
                     playheadTime: playheadTime,

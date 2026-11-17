@@ -23,109 +23,87 @@ struct TimelineTimeRulerView: View {
         contentWidth / CGFloat(safeDuration)
     }
 
+    /// Set by the editor's ruler follower. The canvas then covers only the painted slice, so
+    /// a deep zoom does not draw, or allocate, the whole song's width.
+    @Environment(\.timelineScrollModel) private var scrollModel
+
+    /// Content x range the canvas occupies: the painted slice when scrolled, else everything.
+    private var paintedSlice: ClosedRange<CGFloat> {
+        let width = effectiveDisplayWidth
+        guard let painted = scrollModel?.paintedRange else { return 0...width }
+        let lower = max(0, painted.lowerBound)
+        let upper = min(width, painted.upperBound)
+        return upper > lower ? lower...upper : 0...0
+    }
+
     var body: some View {
+        let slice = paintedSlice
         Canvas { context, size in
-            let scale = TimeRulerScale(pixelsPerSecond: pixelsPerSecond)
-            let mark = GraphicsContext.Shading.color(AppColors.Timeline.timeRulerTick)
-            let end = extendedMaximumTime
-            guard scale.minor > 0, end >= 0 else { return }
-
-            let subdivisions = max(1, Int((scale.major / scale.minor).rounded()))
-            let stepCount = Int((end / scale.minor).rounded(.down))
-            let minorTickHeight = min(4, size.height)
-            let majorTickHeight = min(max(9, size.height * 0.46), size.height)
-
-            var minorPath = Path()
-            var majorPath = Path()
-            for step in 0...stepCount {
-                let time = Double(step) * scale.minor
-                let x = TimelineLayout.xPosition(
-                    for: time,
-                    duration: safeDuration,
-                    contentWidth: contentWidth
-                )
-                guard x <= size.width + 1 else { break }
-                let isMajor = step % subdivisions == 0
-                var tick = Path()
-                tick.move(to: CGPoint(x: x, y: size.height))
-                tick.addLine(to: CGPoint(x: x, y: size.height - (isMajor ? majorTickHeight : minorTickHeight)))
-                if isMajor {
-                    majorPath.addPath(tick)
-                } else {
-                    minorPath.addPath(tick)
-                }
-            }
-
-            context.stroke(minorPath, with: mark, lineWidth: 1)
-            context.stroke(majorPath, with: mark, lineWidth: 1)
-
-            for step in stride(from: 0, through: stepCount, by: subdivisions) {
-                let time = Double(step) * scale.minor
-                let x = TimelineLayout.xPosition(
-                    for: time,
-                    duration: safeDuration,
-                    contentWidth: contentWidth
-                )
-                guard x <= size.width - 8 else { break }
-                let label = context.resolve(
-                    Text(Self.formatRulerTime(time, showsFraction: scale.major < 1))
-                        .font(AppTypography.Compact.timecode)
-                        .foregroundStyle(.secondary)
-                )
-                context.draw(label, at: CGPoint(x: x + 4, y: Self.labelTop), anchor: .topLeading)
-            }
+            context.translateBy(x: -slice.lowerBound, y: 0)
+            drawTicks(in: &context, height: size.height, slice: slice)
         }
-        .frame(width: effectiveDisplayWidth, height: height)
+        .frame(width: slice.upperBound - slice.lowerBound, height: height)
+        .offset(x: slice.lowerBound)
+        .frame(width: effectiveDisplayWidth, height: height, alignment: .leading)
         .background(AppColors.Timeline.stickyRulerBackground)
         .allowsHitTesting(false)
+    }
+
+    /// Ticks and labels whose x falls in `slice`, in content coordinates.
+    private func drawTicks(in context: inout GraphicsContext, height: CGFloat, slice: ClosedRange<CGFloat>) {
+        let scale = TimelineTimeRulerScale(pixelsPerSecond: pixelsPerSecond)
+        guard scale.minor > 0, pixelsPerSecond > 0 else { return }
+        let mark = GraphicsContext.Shading.color(AppColors.Timeline.timeRulerTick)
+        let subdivisions = max(1, Int((scale.major / scale.minor).rounded()))
+        let lastStep = Int((extendedMaximumTime / scale.minor).rounded(.down))
+        // Start on a labeled tick left of the slice, so a label straddling its edge still draws.
+        let sliceStartStep = Int((Double(slice.lowerBound / pixelsPerSecond) / scale.minor).rounded(.down))
+        let firstStep = max(0, sliceStartStep - sliceStartStep % subdivisions - subdivisions)
+        let endStep = min(lastStep, Int((Double(slice.upperBound / pixelsPerSecond) / scale.minor).rounded(.up)))
+        guard firstStep <= endStep else { return }
+
+        let minorTickHeight = min(4, height)
+        let majorTickHeight = min(max(9, height * 0.46), height)
+        var minorPath = Path()
+        var majorPath = Path()
+        for step in firstStep...endStep {
+            let x = xPosition(forStep: step, scale: scale)
+            guard x <= effectiveDisplayWidth + 1 else { break }
+            if step % subdivisions == 0 {
+                majorPath.addPath(tick(at: x, height: height, length: majorTickHeight))
+            } else {
+                minorPath.addPath(tick(at: x, height: height, length: minorTickHeight))
+            }
+        }
+        context.stroke(minorPath, with: mark, lineWidth: 1)
+        context.stroke(majorPath, with: mark, lineWidth: 1)
+
+        let labelLimit = effectiveDisplayWidth - 8
+        for step in stride(from: firstStep, through: endStep, by: subdivisions) {
+            let x = xPosition(forStep: step, scale: scale)
+            guard x <= labelLimit else { break }
+            let label = context.resolve(
+                Text(scale.label(for: Double(step) * scale.minor))
+                    .font(AppTypography.Compact.timecode)
+                    .foregroundStyle(.secondary)
+            )
+            context.draw(label, at: CGPoint(x: x + 4, y: Self.labelTop), anchor: .topLeading)
+        }
+    }
+
+    private func xPosition(forStep step: Int, scale: TimelineTimeRulerScale) -> CGFloat {
+        TimelineLayout.xPosition(for: Double(step) * scale.minor, duration: safeDuration, contentWidth: contentWidth)
+    }
+
+    private func tick(at x: CGFloat, height: CGFloat, length: CGFloat) -> Path {
+        var tick = Path()
+        tick.move(to: CGPoint(x: x, y: height))
+        tick.addLine(to: CGPoint(x: x, y: height - length))
+        return tick
     }
 
     private var extendedMaximumTime: TimeInterval {
         guard contentWidth > 0, effectiveDisplayWidth > contentWidth else { return safeDuration }
         return safeDuration * TimeInterval(effectiveDisplayWidth / contentWidth)
-    }
-
-    private static func formatRulerTime(_ value: TimeInterval, showsFraction: Bool) -> String {
-        let clamped = max(0, value)
-        let minutes = Int(clamped) / 60
-        let seconds = clamped - Double(minutes * 60)
-        if showsFraction {
-            return String(format: "%d:%04.1f", minutes, seconds)
-        }
-        let wholeSeconds = Int((seconds + 0.000_1).rounded(.down))
-        return String(format: "%d:%02d", minutes, wholeSeconds)
-    }
-}
-
-/// Labeled spacing stays wide enough to read; unlabeled ticks subdivide it.
-private struct TimeRulerScale {
-    var major: TimeInterval
-    var minor: TimeInterval
-
-    init(pixelsPerSecond: CGFloat) {
-        let pps = max(pixelsPerSecond, 0.001)
-        let majors: [TimeInterval] = [0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600]
-        let raw = Double(140 / pps)
-        major = majors.first(where: { $0 >= raw - 0.000_1 }) ?? 600
-        let candidate = Self.preferredMinor(for: major)
-        minor = CGFloat(candidate) * pps >= 8 ? candidate : major
-    }
-
-    private static func preferredMinor(for major: TimeInterval) -> TimeInterval {
-        switch major {
-        case 0.1: return 0.02
-        case 0.2: return 0.05
-        case 0.5: return 0.1
-        case 1: return 0.2
-        case 2: return 0.5
-        case 5: return 1
-        case 10: return 2
-        case 15: return 5
-        case 30: return 5
-        case 60: return 10
-        case 120: return 30
-        case 300: return 60
-        default: return 120
-        }
     }
 }

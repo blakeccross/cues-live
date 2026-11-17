@@ -1,17 +1,35 @@
 import SwiftUI
 
 extension EditView {
-    var timelineRulerStack: some View {
-        timelineRulerSection
+    /// Meter, tempo and marker rulers at `contentWidth`, which a live zoom changes before the
+    /// editor's zoom does.
+    func timelineRulerStack(contentWidth: CGFloat, displayWidth: CGFloat) -> some View {
+        timelineRulerSection(contentWidth: contentWidth, displayWidth: displayWidth)
             .background(AppColors.Timeline.stickyRulerBackground)
-            .frame(width: timelineDisplayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
+            .frame(width: displayWidth, height: TimelineLayout.topRulerHeight, alignment: .leading)
     }
 
-    var timelineTimeRuler: some View {
-        TimelineTimeRulerView(
+    /// What the rulers show, for the AppKit ruler that covers them during a live zoom.
+    var timelineLiveRuler: TimelineLiveRuler {
+        TimelineLiveRuler(
             duration: timelineDuration,
             contentWidth: timelineContentWidth,
-            displayWidth: timelineDisplayWidth,
+            sections: displaySections,
+            selectedSectionID: selectedSectionMarkerID,
+            cuedSectionID: cuedSectionID,
+            cueFlashPhase: cueFlashPhase,
+            loopSectionIDs: loopSectionIDs,
+            tempoChanges: normalizedTempoChanges,
+            timeSignatureChanges: normalizedTimeSignatureChanges,
+            playRange: timeline.playRange.resolved(songEnd: timeline.duration)
+        )
+    }
+
+    func timelineTimeRuler(contentWidth: CGFloat, displayWidth: CGFloat) -> some View {
+        TimelineTimeRulerView(
+            duration: timelineDuration,
+            contentWidth: contentWidth,
+            displayWidth: displayWidth,
             height: TimelineLayout.rulerHeight
         )
         .overlay(alignment: .topLeading) {
@@ -19,8 +37,8 @@ extension EditView {
                 playRange: timeline.playRange,
                 songEnd: timeline.duration,
                 duration: timelineDuration,
-                contentWidth: timelineContentWidth,
-                displayWidth: timelineDisplayWidth,
+                contentWidth: contentWidth,
+                displayWidth: displayWidth,
                 height: TimelineLayout.rulerHeight,
                 tempoChanges: normalizedTempoChanges,
                 timeSignatureChanges: normalizedTimeSignatureChanges,
@@ -29,19 +47,20 @@ extension EditView {
                 onReset: resetPlayRange
             )
         }
-        .frame(width: timelineDisplayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
+        .frame(width: displayWidth, height: TimelineLayout.rulerHeight, alignment: .leading)
     }
 
-    private var timelineRulerSection: some View {
+    private func timelineRulerSection(contentWidth: CGFloat, displayWidth: CGFloat) -> some View {
         TimelineRulerView(
             duration: timelineDuration,
-            contentWidth: timelineContentWidth,
-            displayWidth: timelineDisplayWidth,
+            contentWidth: contentWidth,
+            displayWidth: displayWidth,
             sections: displaySections,
             tempoChanges: normalizedTempoChanges,
             timeSignatureChanges: normalizedTimeSignatureChanges,
             cuedSectionID: cuedSectionID,
             cueFlashPhase: cueFlashPhase,
+            selectedSectionID: $selectedSectionMarkerID,
             loopSectionIDs: loopSectionIDs,
             sectionMarkerHeight: TimelineLayout.sectionMarkerHeight,
             timeSignatureRulerHeight: TimelineLayout.timeSignatureRulerHeight,
@@ -78,7 +97,7 @@ extension EditView {
             onTempoOperations: { showingTempoOperations = true }
         )
         .frame(height: TimelineLayout.topRulerHeight)
-        .id("\(displaySections.map(\.id))|\(timelineContentWidth)|\(normalizedTempoChanges.map(\.id))|\(normalizedTimeSignatureChanges.map(\.id))")
+        .id("\(displaySections.map(\.id))|\(normalizedTempoChanges.map(\.id))|\(normalizedTimeSignatureChanges.map(\.id))")
         .popover(isPresented: $showingTempoOperations, arrowEdge: .bottom) {
             TempoOperationsMenu(
                 tempoChanges: normalizedTempoChanges,

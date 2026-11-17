@@ -14,10 +14,6 @@ extension AppColors {
         /// Hairline between edit-view track rows.
         static let laneDivider = Color(.timelineLaneDivider)
 
-        /// Ruler baseline, and the ticks drawn when the ruler sits above empty space.
-        static let measureGridLine = AppColors.separator.opacity(0.6)
-        static let rulerBarTick = measureGridLine.opacity(0.75)
-        static let rulerBeatTick = measureGridLine.opacity(0.4)
         /// Minor and major ticks on the seconds ruler.
         static let timeRulerTick = Color.secondary.opacity(0.5)
         /// Dot marking where a tempo or time signature change starts.

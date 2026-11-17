@@ -34,6 +34,12 @@ final class TimelineLaneCanvasView: NSView, TimelineClipHoverFollowing {
         needsDisplay = true
     }
 
+    func setLiveContentWidth(_ width: CGFloat?) {
+        guard painter.liveContentWidth != width else { return }
+        painter.liveContentWidth = width
+        needsDisplay = true
+    }
+
     func follow(_ model: TimelineClipHoverModel) {
         guard model !== hover else { return }
         hover = model

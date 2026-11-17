@@ -203,44 +203,19 @@ struct WaveformLaneView: View {
             .offset(x: startX)
     }
 
+    /// The clip's hit area and its interactive handles. The lane canvas draws the header bar, the
+    /// name and the border, so a live zoom does not have to lay this view out.
     private func clipChrome(clip: TrackClip, clipWidth: CGFloat) -> some View {
-        let paletteKey = track.group?.paletteKey
-        let palette = TrackGroupPalette.colors(forPaletteKey: paletteKey)
-        let selectedHeaderColor = TrackGroupPalette.selectedHeaderColor(forPaletteKey: paletteKey)
-        let isSelected = selection.contains(clip.id)
         let clipHeight = max(
             0,
             laneHeight - TimelineLayout.clipLaneInset * 2 - TimelineLayout.laneDividerHeight
         )
 
         return VStack(spacing: 0) {
-            clipHeader(
-                clip: clip,
-                headerColor: isSelected ? selectedHeaderColor : palette.header,
-                isSelected: isSelected,
-                clipWidth: clipWidth
-            )
-            .frame(width: clipWidth, height: TimelineLayout.clipHeaderHeight)
+            clipHeaderTrimHandles(clip: clip, isSelected: selection.contains(clip.id), clipWidth: clipWidth)
+                .frame(width: clipWidth, height: TimelineLayout.clipHeaderHeight)
 
             Color.clear
-        }
-        .overlay {
-            if isSelected {
-                // Left, right, and bottom edges in the header's light color; the header itself
-                // is the top edge, so the border and header read as one frame.
-                ClipEdgeBorder(
-                    color: selectedHeaderColor,
-                    width: TimelineLayout.clipSelectionBorderWidth,
-                    top: TimelineLayout.clipHeaderHeight
-                )
-            } else {
-                // Open at the top so the header stays flush with the track name.
-                ClipEdgeBorder(
-                    color: palette.header.opacity(0.6),
-                    width: TimelineLayout.clipBorderWidth,
-                    top: TimelineLayout.clipBorderWidth
-                )
-            }
         }
         .frame(width: clipWidth, height: clipHeight, alignment: .topLeading)
         .overlay(alignment: .topLeading) {
@@ -308,33 +283,17 @@ struct WaveformLaneView: View {
         }
     }
 
-    private func clipHeader(
-        clip: TrackClip,
-        headerColor: Color,
-        isSelected: Bool,
-        clipWidth: CGFloat
-    ) -> some View {
-        // Dark text on the light selected header, like Logic; muted white on the plain header.
+    /// The `[` and `]` trim handles at each end of the header, shown on hover.
+    private func clipHeaderTrimHandles(clip: TrackClip, isSelected: Bool, clipWidth: CGFloat) -> some View {
+        // Dark on the light selected header, like Logic; muted white on the plain header.
         let foregroundColor = isSelected
             ? AppColors.Timeline.clipHeaderTextSelected
             : AppColors.Timeline.clipHeaderText
 
-        return ZStack {
-            headerColor
-
-            Text(track.displayName)
-                .font(AppTypography.Compact.label)
-                .foregroundStyle(foregroundColor)
-                .lineLimit(1)
-                .padding(.horizontal, AppSpacing.md)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .allowsHitTesting(false)
-
-            HStack(spacing: 0) {
-                clipHeaderEdgeTrim(edge: .leading, clip: clip, foregroundColor: foregroundColor, clipWidth: clipWidth)
-                Spacer(minLength: 0)
-                clipHeaderEdgeTrim(edge: .trailing, clip: clip, foregroundColor: foregroundColor, clipWidth: clipWidth)
-            }
+        return HStack(spacing: 0) {
+            clipHeaderEdgeTrim(edge: .leading, clip: clip, foregroundColor: foregroundColor, clipWidth: clipWidth)
+            Spacer(minLength: 0)
+            clipHeaderEdgeTrim(edge: .trailing, clip: clip, foregroundColor: foregroundColor, clipWidth: clipWidth)
         }
     }
 
@@ -463,26 +422,6 @@ struct WaveformLaneView: View {
 ///
 /// Plain fills rather than a masked stroke: a mask renders offscreen at the clip's full width,
 /// and a zoomed-in clip is wider than the largest texture the GPU will allocate.
-private struct ClipEdgeBorder: View {
-    let color: Color
-    let width: CGFloat
-    let top: CGFloat
-
-    var body: some View {
-        Color.clear
-            .overlay(alignment: .leading) {
-                color.frame(width: width).padding(.top, top)
-            }
-            .overlay(alignment: .trailing) {
-                color.frame(width: width).padding(.top, top)
-            }
-            .overlay(alignment: .bottom) {
-                color.frame(height: width)
-            }
-            .allowsHitTesting(false)
-    }
-}
-
 private struct ClipHeaderEdgeTrimControl<G: Gesture>: View {
     let icon: String
     let isActive: Bool

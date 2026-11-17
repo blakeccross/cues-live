@@ -80,11 +80,11 @@ struct TimelinePlayRangeFlags: View {
     private func dragGesture(for point: SongPlayRange.Point) -> some Gesture {
         DragGesture(minimumDistance: 1, coordinateSpace: .named(Self.dragSpace))
             .onChanged { value in
-                preview.range = moved(point, toX: value.location.x).resolved(songEnd: songEnd)
+                preview.setRange(moved(point, toX: value.location.x).resolved(songEnd: songEnd))
             }
             .onEnded { value in
                 let range = moved(point, toX: value.location.x)
-                preview.range = nil
+                preview.setRange(nil)
                 onMove(range)
             }
     }

@@ -155,34 +155,42 @@ struct WaveformOverview: Equatable, Sendable {
             let right = samples[upper]
             return left + (right - left) * fraction
         }
+        // Runs for every device-pixel column of every channel on each frame of a live zoom, so it
+        // avoids allocating per column and reads the samples without bounds checks.
         var columns: [(Float, Float)?] = []
         columns.reserveCapacity(count)
-        for column in 0..<count {
-            let lower = windowStart + step * Double(column)
-            let upper = lower + step + overlap
-            let from = Int(floor(lower)) - origin
-            let to = Int(ceil(upper)) - origin
-            guard to > from, from < samples.count, to > 0 else {
-                columns.append(nil)
-                continue
-            }
-            var minValue = Float.infinity
-            var maxValue = -Float.infinity
-            for edge in [local(lower), local(upper)] {
-                if let edge, edge.isFinite {
+        samples.withUnsafeBufferPointer { buffer in
+            for column in 0..<count {
+                let lower = windowStart + step * Double(column)
+                let upper = lower + step + overlap
+                let from = Int(floor(lower)) - origin
+                let to = Int(ceil(upper)) - origin
+                guard to > from, from < buffer.count, to > 0 else {
+                    columns.append(nil)
+                    continue
+                }
+                var minValue = Float.infinity
+                var maxValue = -Float.infinity
+                if let edge = local(lower), edge.isFinite {
                     minValue = Swift.min(minValue, edge)
                     maxValue = Swift.max(maxValue, edge)
                 }
-            }
-            let startIndex = Swift.max(0, from)
-            let endIndex = Swift.min(samples.count - 1, to)
-            if startIndex <= endIndex {
-                for sample in samples[startIndex...endIndex] where sample.isFinite {
-                    minValue = Swift.min(minValue, sample)
-                    maxValue = Swift.max(maxValue, sample)
+                if let edge = local(upper), edge.isFinite {
+                    minValue = Swift.min(minValue, edge)
+                    maxValue = Swift.max(maxValue, edge)
                 }
+                let startIndex = Swift.max(0, from)
+                let endIndex = Swift.min(buffer.count - 1, to)
+                if startIndex <= endIndex {
+                    for index in startIndex...endIndex {
+                        let sample = buffer[index]
+                        guard sample.isFinite else { continue }
+                        minValue = Swift.min(minValue, sample)
+                        maxValue = Swift.max(maxValue, sample)
+                    }
+                }
+                columns.append(minValue <= maxValue ? (minValue, maxValue) : nil)
             }
-            columns.append(minValue <= maxValue ? (minValue, maxValue) : nil)
         }
         return columns
     }

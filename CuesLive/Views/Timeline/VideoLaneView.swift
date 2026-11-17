@@ -31,12 +31,13 @@ struct VideoLaneView: View {
     let onMoveStart: (TimeInterval) -> Void
 
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.timelineScrollModel) private var scrollModel
     @State private var thumbnails = VideoThumbnailStore()
     @State private var dragStart: TimeInterval?
     @State private var clipPointer: ClipPointer?
     @State private var isMarqueeDragging = false
 
-    /// More thumbnails than this are spread out with gaps instead of decoding every slot.
+    /// Most thumbnails drawn at once. The painted range holds far fewer at any zoom.
     private static let maximumThumbnails = 240
     /// Clip length drawn when the movie's length is not known yet.
     private static let unknownDuration: TimeInterval = 10
@@ -68,17 +69,24 @@ struct VideoLaneView: View {
         max(clipRect.height - TimelineLayout.clipHeaderHeight, 0)
     }
 
-    /// Movie times of the thumbnail slots, left to right, and the spacing between them.
-    private var thumbnailSlots: (times: [TimeInterval], step: CGFloat) {
-        guard durationSeconds != nil, fileURL != nil, thumbnailHeight >= 8 else { return ([], 0) }
+    /// Thumbnails across the painted part of the clip, one per thumbnail width from the clip's
+    /// start, so they hold still while the lane scrolls. Only that part has slots, so a deep zoom
+    /// decodes and draws what is on screen rather than spreading slots over the whole movie.
+    private var thumbnailSlots: ThumbnailSlots {
+        guard durationSeconds != nil, fileURL != nil, thumbnailHeight >= 8 else { return ThumbnailSlots() }
+        let rect = clipRect
         let width = max(thumbnailHeight * aspectRatio, 8)
-        let count = min(Int((clipRect.width / width).rounded(.up)), Self.maximumThumbnails)
-        guard count > 0 else { return ([], 0) }
-        let step = max(width, clipRect.width / CGFloat(count))
-        let times = (0..<count).map { index in
-            VideoThumbnailStore.gridSeconds(min(Double(CGFloat(index) * step / pointsPerSecond), movieDuration - 0.05))
+        let painted = scrollModel?.paintedRange ?? rect.minX...rect.maxX
+        let lower = max(0, painted.lowerBound - rect.minX)
+        let upper = min(rect.width, painted.upperBound - rect.minX)
+        guard upper > lower else { return ThumbnailSlots() }
+        let first = Int(floor(lower / width))
+        let end = min(Int(ceil(upper / width)), first + Self.maximumThumbnails)
+        let times = (first..<end).map { index in
+            VideoThumbnailStore.gridSeconds(min(Double(CGFloat(index) * width / pointsPerSecond), movieDuration - 0.05))
         }
-        return (times, step)
+        let originX = CGFloat(first) * width
+        return ThumbnailSlots(times: times, originX: originX, width: width, stripWidth: min(rect.width, CGFloat(end) * width) - originX)
     }
 
     var body: some View {
@@ -110,7 +118,8 @@ struct VideoLaneView: View {
     }
 
     private var thumbnailRequestKey: String {
-        "\(fileURL?.path ?? "")|\(timelineContentWidth)|\(laneHeight)|\(movieDuration)|\(aspectRatio)|\(displayScale)"
+        let times = thumbnailSlots.times
+        return "\(fileURL?.path ?? "")|\(times.first ?? -1)|\(times.last ?? -1)|\(times.count)|\(laneHeight)|\(displayScale)"
     }
 
     private func requestThumbnails() {
@@ -150,18 +159,19 @@ struct VideoLaneView: View {
         } else {
             let slots = thumbnailSlots
             let images = thumbnails.images
-            let width = thumbnailHeight * aspectRatio
+            // As wide as the painted thumbnails, not the clip: a SwiftUI canvas wider than
+            // 2^24 points draws nothing, and a deep zoom makes the clip far wider than that.
             Canvas { context, size in
                 for (index, time) in slots.times.enumerated() {
-                    let x = CGFloat(index) * slots.step
-                    let frame = CGRect(x: x, y: 0, width: min(width, size.width - x), height: size.height)
+                    let x = CGFloat(index) * slots.width
+                    let frame = CGRect(x: x, y: 0, width: min(slots.width, size.width - x), height: size.height)
                     guard frame.width > 0 else { continue }
                     if let image = images[VideoThumbnailStore.key(forSeconds: time)] {
                         context.drawLayer { layer in
                             layer.clip(to: Path(frame))
                             layer.draw(
                                 Image(decorative: image, scale: 1),
-                                in: CGRect(x: x, y: 0, width: width, height: size.height)
+                                in: CGRect(x: x, y: 0, width: slots.width, height: size.height)
                             )
                         }
                     } else {
@@ -173,6 +183,9 @@ struct VideoLaneView: View {
                     )
                 }
             }
+            .frame(width: max(slots.stripWidth, 0))
+            .offset(x: slots.originX)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 
@@ -295,4 +308,13 @@ struct VideoLaneView: View {
             timeSignatureChanges: timeSignatureChanges
         )
     }
+}
+
+/// The thumbnails a video lane draws: movie times left to right, starting `originX` into the clip.
+private struct ThumbnailSlots {
+    var times: [TimeInterval] = []
+    var originX: CGFloat = 0
+    var width: CGFloat = 0
+    /// From the first slot to the end of the last, or of the clip.
+    var stripWidth: CGFloat = 0
 }

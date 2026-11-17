@@ -22,10 +22,6 @@ struct TimelineTimeSignatureRulerView: View {
         max(contentWidth, displayWidth)
     }
 
-    private var sortedMarkers: [TimeSignatureChange] {
-        timeSignatureChanges.sortedByMeasure
-    }
-
     var body: some View {
         ZStack(alignment: .leading) {
             Rectangle()
@@ -46,7 +42,7 @@ struct TimelineTimeSignatureRulerView: View {
                     )
                 let segmentWidth = max(0, endX - startX)
 
-                Text(segment.displayName)
+                Text(segment.label)
                     .font(AppTypography.Compact.rulerValue)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
@@ -127,40 +123,12 @@ struct TimelineTimeSignatureRulerView: View {
         ).time
     }
 
-    private struct TimeSignatureSegment {
-        let marker: TimeSignatureChange
-        let startTime: TimeInterval
-        let endTime: TimeInterval
-        let displayName: String
-    }
-
-    private var timeSignatureSegments: [TimeSignatureSegment] {
-        let markers = sortedMarkers
-        guard !markers.isEmpty else { return [] }
-
-        return markers.enumerated().map { index, marker in
-            let startTime = MeasureTiming.timeAtStartOfMeasure(
-                marker.startMeasure,
-                tempoChanges: tempoChanges,
-                timeSignatureChanges: timeSignatureChanges
-            )
-            let endTime: TimeInterval
-            if index + 1 < markers.count {
-                endTime = MeasureTiming.timeAtStartOfMeasure(
-                    markers[index + 1].startMeasure,
-                    tempoChanges: tempoChanges,
-                    timeSignatureChanges: timeSignatureChanges
-                )
-            } else {
-                endTime = safeDuration
-            }
-            return TimeSignatureSegment(
-                marker: marker,
-                startTime: startTime,
-                endTime: endTime,
-                displayName: marker.displayName
-            )
-        }
+    private var timeSignatureSegments: [TimelineRulerSegment<TimeSignatureChange>] {
+        TimelineRulerSegment.segments(
+            timeSignatureChanges: timeSignatureChanges,
+            tempoChanges: tempoChanges,
+            duration: safeDuration
+        )
     }
 }
 
@@ -187,12 +155,7 @@ struct TimelineTempoRulerView: View {
         max(contentWidth, displayWidth)
     }
 
-    private var sortedMarkers: [TempoChange] {
-        tempoChanges.sortedByMeasure
-    }
-
     var body: some View {
-        let timeline = TempoTimeline(tempoChanges: tempoChanges, timeSignatureChanges: timeSignatureChanges)
         ZStack(alignment: .leading) {
             Rectangle()
                 .fill(AppColors.Timeline.stickyRulerBackground)
@@ -202,7 +165,11 @@ struct TimelineTempoRulerView: View {
                     }
                 }
 
-            let segments = tempoSegments(timeline: timeline)
+            let segments = TimelineRulerSegment.segments(
+                tempoChanges: tempoChanges,
+                timeSignatureChanges: timeSignatureChanges,
+                duration: safeDuration
+            )
             ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
                 let startX = TimelineLayout.xPosition(
                     for: segment.startTime,
@@ -218,8 +185,8 @@ struct TimelineTempoRulerView: View {
                     )
                 let segmentWidth = max(0, endX - startX)
 
-                if segmentWidth >= 28 {
-                    Text(String(format: "%.0f", segment.bpm))
+                if segmentWidth >= TimelineRulerSegment<TempoChange>.minimumLabeledWidth {
+                    Text(segment.label)
                         .font(AppTypography.Compact.rulerValue)
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
@@ -303,40 +270,6 @@ struct TimelineTempoRulerView: View {
             timeSignatureChanges: timeSignatureChanges
         )
     }
-
-    private struct TempoSegment {
-        let marker: TempoChange
-        let startTime: TimeInterval
-        let endTime: TimeInterval
-        let bpm: Double
-    }
-
-    private func tempoSegments(timeline: TempoTimeline) -> [TempoSegment] {
-        let markers = sortedMarkers
-        guard !markers.isEmpty else { return [] }
-
-        return markers.enumerated().map { index, marker in
-            let startTick = TempoTimeline.tick(
-                measure: marker.startMeasure,
-                beatOffset: marker.beatOffset,
-                timeSignatureChanges: timeSignatureChanges
-            )
-            let startTime = timeline.seconds(atTick: startTick)
-            let endTime: TimeInterval
-            if index + 1 < markers.count {
-                let next = markers[index + 1]
-                let nextTick = TempoTimeline.tick(
-                    measure: next.startMeasure,
-                    beatOffset: next.beatOffset,
-                    timeSignatureChanges: timeSignatureChanges
-                )
-                endTime = timeline.seconds(atTick: nextTick)
-            } else {
-                endTime = safeDuration
-            }
-            return TempoSegment(marker: marker, startTime: startTime, endTime: endTime, bpm: marker.bpm)
-        }
-    }
 }
 
 private struct RulerMarkerDrag {
@@ -345,7 +278,7 @@ private struct RulerMarkerDrag {
 }
 
 /// Gray dot marking where a tempo or time signature change starts.
-private struct RulerChangeDot: View {
+struct RulerChangeDot: View {
     static let diameter: CGFloat = 6
     static let hitExtent: CGFloat = 14
     /// Distance from the change to the label: the dot's radius plus a small gap.

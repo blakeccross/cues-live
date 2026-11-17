@@ -2,7 +2,8 @@ import CoreGraphics
 import Foundation
 
 /// Draws the visible part of the editor's audio lanes: the lane background, each clip's body,
-/// its waveform and its fade curves. Clip headers, borders and gestures stay in SwiftUI above it.
+/// header, border, waveform and fade curves. Gestures and hover-only handles stay in SwiftUI
+/// above it, so a live zoom only has to redraw this canvas.
 ///
 /// Like SoundCraft and other DAWs, every frame is drawn synchronously from the overview
 /// pyramid at the current offset and zoom, so scrolling or zooming never shows a blank or
@@ -13,7 +14,11 @@ final class TimelineLanePainter {
         let originY: CGFloat
         let height: CGFloat
         let fileURL: URL
+        let name: String
         let bodyColor: CGColor
+        let headerColor: CGColor
+        let selectedHeaderColor: CGColor
+        let borderColor: CGColor
         let clips: [TimelineCanvasClip]
     }
 
@@ -22,6 +27,8 @@ final class TimelineLanePainter {
         var duration: TimeInterval = 1
         var contentWidth: CGFloat = 1
         var backgroundColor = CGColor(gray: 0, alpha: 1)
+        var headerTextColor = CGColor(gray: 1, alpha: 0.65)
+        var selectedHeaderTextColor = CGColor(gray: 0, alpha: 0.72)
         /// `false` until the song has loaded, so opening the editor does not queue every file.
         var loadsWaveforms = false
     }
@@ -56,6 +63,8 @@ final class TimelineLanePainter {
     private(set) var scene = Scene()
     /// Horizontal scroll offset in content points. View x is content x minus the offset.
     var offset: CGFloat = 0
+    /// Content width during a live zoom, before SwiftUI has laid out the new zoom.
+    var liveContentWidth: CGFloat?
     /// The clip under the pointer, which shows its fade curves.
     var hoveredClipID: UUID?
     var scale: CGFloat = 2
@@ -96,8 +105,8 @@ final class TimelineLanePainter {
         sampleWindows.retain(drawn)
     }
 
-    private func x(for time: TimeInterval) -> CGFloat {
-        TimelineLayout.xPosition(for: time, duration: scene.duration, contentWidth: scene.contentWidth)
+    func x(for time: TimeInterval) -> CGFloat {
+        TimelineLayout.xPosition(for: time, duration: scene.duration, contentWidth: liveContentWidth ?? scene.contentWidth)
     }
 
     /// Body and waveform of one clip. Returns `false` when the clip is off screen.
@@ -118,6 +127,10 @@ final class TimelineLanePainter {
             height: clipHeight - TimelineLayout.clipHeaderHeight
         )
         let shown = band.intersection(rect)
+        defer {
+            drawHeader(clip, in: lane, body: body, rect: rect, context: context)
+            drawBorder(clip, in: lane, body: body, rect: rect, context: context)
+        }
         guard band.height > 2, !shown.isNull, shown.width > 0 else { return true }
 
         context.saveGState()
