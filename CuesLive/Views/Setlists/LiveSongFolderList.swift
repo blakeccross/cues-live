@@ -35,11 +35,11 @@ struct LiveSongFolderList: View {
     private var folderList: some View {
         List(selection: $selection) {
             Label("All Songs", systemImage: "music.note.house")
-                .badge(songs.count)
-                .tag(Item.allSongs)
-                .dropDestination(for: String.self) { payloads, _ in
+                .fullRowDropDestination { payloads in
                     moveDroppedSongs(payloads, to: nil)
                 }
+                .badge(songs.count)
+                .tag(Item.allSongs)
 
             ForEach(sortedFolders) { folder in
                 folderRow(folder)
@@ -78,11 +78,11 @@ struct LiveSongFolderList: View {
         } icon: {
             Image(systemName: "folder")
         }
-        .badge(folder.songs.count)
-        .tag(Item.folder(folder.id))
-        .dropDestination(for: String.self) { payloads, _ in
+        .fullRowDropDestination { payloads in
             moveDroppedSongs(payloads, to: folder)
         }
+        .badge(folder.songs.count)
+        .tag(Item.folder(folder.id))
         .contextMenu {
             Button("Rename", systemImage: "pencil") {
                 beginRename(of: folder.id)
@@ -148,7 +148,7 @@ struct LiveSongFolderList: View {
 
     /// Dropping on a folder moves songs into it; dropping on All Songs takes them out of folders.
     private func moveDroppedSongs(_ payloads: [String], to folder: SongFolder?) -> Bool {
-        let ids = Set(payloads.compactMap(SongDragPayload.songID(from:)))
+        let ids = Set(payloads.flatMap(SongDragPayload.songIDs(from:)))
         let dropped = songs.filter { ids.contains($0.id) }
         guard !dropped.isEmpty else { return false }
         do {
@@ -187,4 +187,16 @@ struct LiveSongFolderList: View {
             }
     }
 }
+
+private extension View {
+    /// Accepts a drop anywhere on the sidebar row, not just over its icon and title.
+    func fullRowDropDestination(perform: @escaping ([String]) -> Bool) -> some View {
+        frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .dropDestination(for: String.self) { payloads, _ in
+                perform(payloads)
+            }
+    }
+}
+
 #endif

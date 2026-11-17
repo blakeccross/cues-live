@@ -107,9 +107,9 @@ struct SongLibraryPanel: View {
                 onPerform: performFolderDrop
             ))
             #endif
-            .onChange(of: searchText) { _, _ in
-                // Never act on songs the search has hidden.
-                selection.formIntersection(filteredSongs.map(\.id))
+            .onChange(of: filteredSongs.map(\.id)) { _, visibleIDs in
+                // Never act on songs the search has hidden or a drop moved out of this folder.
+                selection.formIntersection(visibleIDs)
             }
             .onChange(of: scope.id) { _, _ in
                 selection.removeAll()
@@ -272,7 +272,9 @@ struct SongLibraryPanel: View {
             ForEach(filteredSongs) { song in
                 SongLibraryListRow(song: song)
                     .tag(song.id)
-                    .draggable(SongDragPayload.string(for: song.id))
+                    .draggable(SongDragPayload.string(for: draggedSongIDs(startingAt: song))) {
+                        SongDragPreview(title: song.name, count: draggedSongIDs(startingAt: song).count)
+                    }
             }
         }
         .listStyle(.plain)

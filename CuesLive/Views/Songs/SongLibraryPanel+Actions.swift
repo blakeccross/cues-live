@@ -71,6 +71,13 @@ extension SongLibraryPanel {
         }
     }
 
+    /// The songs a drag from `song` carries: the whole selection, in list order, when `song` is
+    /// part of it; otherwise just `song`, as in Finder.
+    func draggedSongIDs(startingAt song: Song) -> [UUID] {
+        guard selection.contains(song.id) else { return [song.id] }
+        return songs(for: selection).map(\.id)
+    }
+
     func addToSetlist(_ songs: [Song]) {
         songs.forEach(onAddToSetlist)
     }

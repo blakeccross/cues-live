@@ -59,38 +59,6 @@ struct SetlistSectionPlayback {
     var selectSection: (_ playbackIndex: Int, _ section: SongSection) -> Void
 }
 
-// MARK: - Song drag payload
-
-/// Carries a library song across a drag from the song library into the setlist. A tagged string keeps
-/// it a plain `Transferable` without needing a custom exported UTType.
-enum SongDragPayload {
-    private static let prefix = "cueslive-song:"
-
-    static func string(for songID: UUID) -> String {
-        prefix + songID.uuidString
-    }
-
-    static func songID(from string: String) -> UUID? {
-        guard string.hasPrefix(prefix) else { return nil }
-        return UUID(uuidString: String(string.dropFirst(prefix.count)))
-    }
-
-    static func songIDs(from providers: [NSItemProvider]) async -> [UUID] {
-        var ids: [UUID] = []
-        for provider in providers where provider.canLoadObject(ofClass: String.self) {
-            let string: String? = await withCheckedContinuation { continuation in
-                _ = provider.loadObject(ofClass: String.self) { value, _ in
-                    continuation.resume(returning: value)
-                }
-            }
-            if let string, let id = songID(from: string) {
-                ids.append(id)
-            }
-        }
-        return ids
-    }
-}
-
 // MARK: - List
 
 /// A plain native list: tap to play, drag to reorder (Edit mode on iOS), and one shared set of
