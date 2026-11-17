@@ -53,6 +53,9 @@ struct LivePlaybackView: View {
     @State var showingShowFileExporter = false
     @State var showFileDocument: ShowFileDocument?
     @State var songImportFeedback: SongImportFeedback?
+    @State var isRenamingSetlist = false
+    @State var setlistRenameText = ""
+    @State var isConfirmingSetlistDelete = false
     @State var isImportingSongFolder = false
     @State var setlistFolderSetupSession: SongFolderSetupSession?
     @State var mixerDetent: LiveGroupMixerDetent = .hidden
@@ -163,13 +166,13 @@ struct LivePlaybackView: View {
     }
 
     private func playbackBody(for setlist: Setlist) -> some View {
-        playbackBodyLifecycle(
+        setlistLibraryDialogs(on: playbackBodyLifecycle(
             for: setlist,
             content: playbackBodyPresentations(
                 for: setlist,
                 content: playbackBodyChrome(for: setlist)
             )
-        )
+        ))
     }
 
     private func playbackBodyChrome(for setlist: Setlist) -> some View {

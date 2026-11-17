@@ -773,6 +773,8 @@
 		71428BE0E7DF63B6C5B8CC09 /* OverlapPreviewEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941D6C7857A62A74672560F5 /* OverlapPreviewEngineTests.swift */; };
 		6D4A74DB46AC9AE001CAD2A3 /* WaveformColumnGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */; };
 		CD7C8E0346FC914F706879DA /* WaveformColumnGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */; };
+		F5952E276BFDC3C8408A486B /* LivePlaybackView+SetlistLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */; };
+		FB2A8DD75DFEB1799FB889E9 /* LivePlaybackView+SetlistLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1211,6 +1213,7 @@
 		2114F45E7EDF8BCBA7E2528A /* AppScrubber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScrubber.swift; sourceTree = "<group>"; };
 		941D6C7857A62A74672560F5 /* OverlapPreviewEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapPreviewEngineTests.swift; sourceTree = "<group>"; };
 		54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformColumnGeometry.swift; sourceTree = "<group>"; };
+		C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+SetlistLibrary.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1435,6 +1438,7 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */,
 				CCA32C93D564C1205D5C1930 /* LiveSectionRibbonLabels.swift */,
 				86D83122963D86A28C30E30A /* OverlapLaneCanvas.swift */,
 				C5EB08C2DC6A98350E7A1FEC /* SetlistOverlapEditorView+Waveforms.swift */,
@@ -2077,6 +2081,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5952E276BFDC3C8408A486B /* LivePlaybackView+SetlistLibrary.swift in Sources */,
 				6D4A74DB46AC9AE001CAD2A3 /* WaveformColumnGeometry.swift in Sources */,
 				83F55B746260FDE3F76D12D0 /* AppScrubber.swift in Sources */,
 				8C804B45EF1D7180D0368892 /* OverlapEditorTimeline.swift in Sources */,
@@ -2501,6 +2506,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB2A8DD75DFEB1799FB889E9 /* LivePlaybackView+SetlistLibrary.swift in Sources */,
 				CD7C8E0346FC914F706879DA /* WaveformColumnGeometry.swift in Sources */,
 				928AFC9EF859839EEC0D36C8 /* AppScrubber.swift in Sources */,
 				B351A9F6206748814BB7204B /* OverlapEditorTimeline.swift in Sources */,

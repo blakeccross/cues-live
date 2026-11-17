@@ -32,6 +32,22 @@ extension LivePlaybackView {
             Label("New Setlist", systemImage: "plus")
         }
 
+        Button(action: beginRenamingActiveSetlist) {
+            Label("Rename…", systemImage: "pencil")
+        }
+
+        Button(action: duplicateActiveSetlist) {
+            Label("Duplicate", systemImage: "plus.square.on.square")
+        }
+
+        Button(role: .destructive) {
+            isConfirmingSetlistDelete = true
+        } label: {
+            Label("Delete Setlist…", systemImage: "trash")
+        }
+
+        Divider()
+
         Button {
             presentOpen()
         } label: {
