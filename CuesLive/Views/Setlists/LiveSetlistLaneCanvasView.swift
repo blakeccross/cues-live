@@ -34,6 +34,13 @@ final class LiveSetlistLaneCanvasView: NSView {
         }
     }
 
+    /// Redraws when lanes placed without the scroll model moved on screen.
+    func refresh(_ layout: LiveSetlistLanePainter.Layout) {
+        if painter.update(layout: layout) {
+            needsDisplay = true
+        }
+    }
+
     override func hitTest(_ point: NSPoint) -> NSView? {
         nil
     }
@@ -97,6 +104,13 @@ final class LiveSetlistLaneCanvasView: UIView {
     /// Redraws when a lane, the scroll offset or the playhead moved on screen.
     func refresh(from model: LiveSetlistScrollModel, origin: CGPoint) {
         if painter.update(from: model, origin: origin) {
+            setNeedsDisplay()
+        }
+    }
+
+    /// Redraws when lanes placed without the scroll model moved on screen.
+    func refresh(_ layout: LiveSetlistLanePainter.Layout) {
+        if painter.update(layout: layout) {
             setNeedsDisplay()
         }
     }

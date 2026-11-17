@@ -88,11 +88,14 @@ final class LiveSetlistLanePainter {
         for song in scene.songs {
             lanes[song.index] = model.lane(at: song.index)?.frame
         }
-        let layout = Layout(
-            origin: origin,
-            lanes: lanes,
-            playheadX: model.playheadX.map { ($0 * scale).rounded() / scale }
-        )
+        return update(layout: Layout(origin: origin, lanes: lanes, playheadX: model.playheadX))
+    }
+
+    /// Places the lanes directly, for a canvas the setlist scroll model does not drive. Returns
+    /// `true` when anything moved on screen.
+    func update(layout: Layout) -> Bool {
+        var layout = layout
+        layout.playheadX = layout.playheadX.map { ($0 * scale).rounded() / scale }
         guard layout != self.layout else { return false }
         self.layout = layout
         return true

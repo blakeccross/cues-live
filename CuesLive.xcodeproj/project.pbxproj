@@ -33,7 +33,6 @@
 		235CFEF4F109F8A33310A3AD /* AudioOutputDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000031 /* AudioOutputDeviceService.swift */; };
 		24D870479A431B3965428D2E /* SectionAnnouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000F2 /* SectionAnnouncer.swift */; };
 		27D2A245DFF5C591D697AC21 /* SectionLoopController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004C /* SectionLoopController.swift */; };
-		286CB25439511310D21D5039 /* WaveformBarsCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004D /* WaveformBarsCanvas.swift */; };
 		2E2CAAA36957618AF72A8A34 /* MappableControlModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000326 /* MappableControlModifier.swift */; };
 		3048121C0B3EE1404EE0187A /* AbletonProjectImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001A /* AbletonProjectImporter.swift */; };
 		33B1D1D0F78066D7DC4F76F9 /* AddTrackTypeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000ED001 /* AddTrackTypeSheet.swift */; };
@@ -164,7 +163,6 @@
 		AA0000010000000000000044 /* click-accent.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000044 /* click-accent.wav */; };
 		AA0000010000000000000045 /* click-normal.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000045 /* click-normal.wav */; };
 		AA000001000000000000004C /* SectionLoopController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004C /* SectionLoopController.swift */; };
-		AA000001000000000000004D /* WaveformBarsCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004D /* WaveformBarsCanvas.swift */; };
 		AA0000010000000000000060 /* MIDITrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000060 /* MIDITrack.swift */; };
 		AA0000010000000000000061 /* MIDIEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000061 /* MIDIEvent.swift */; };
 		AA0000010000000000000063 /* MIDIOutputService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000063 /* MIDIOutputService.swift */; };
@@ -761,6 +759,26 @@
 		40081ECBCC9B06A43C496994 /* SetlistWaveformHeaderMarker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */; };
 		E4F1035E72B803EA52AEBEF5 /* SetlistTransition+BadgeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */; };
 		9331A259A043A8FFE557801F /* SetlistTransition+BadgeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */; };
+		E09B7542791F22F73305D08C /* SetlistOverlapEditorContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */; };
+		51888869271C0FADD81C1AB3 /* SetlistOverlapEditorContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */; };
+		5B1EEF289B6EBBD1B6EB860A /* OverlapWaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */; };
+		FB4372582DB55460F55D9BC5 /* OverlapWaveformLaneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */; };
+		BE55B530DD06D4A4821EB8D0 /* SetlistOverlapEditorView+Preview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A197CFAF43876268300CD240 /* SetlistOverlapEditorView+Preview.swift */; };
+		F639527A999C6CD221B4EE38 /* SetlistOverlapEditorView+Preview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A197CFAF43876268300CD240 /* SetlistOverlapEditorView+Preview.swift */; };
+		F139013C0EB8BA91ED8A5ACA /* SetlistOverlapEditorView+Waveforms.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EB08C2DC6A98350E7A1FEC /* SetlistOverlapEditorView+Waveforms.swift */; };
+		EC6EFE2338FF666C5BDF2579 /* SetlistOverlapEditorView+Waveforms.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EB08C2DC6A98350E7A1FEC /* SetlistOverlapEditorView+Waveforms.swift */; };
+		9D4A2BFE89FDDDC160B1942C /* OverlapLaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D83122963D86A28C30E30A /* OverlapLaneCanvas.swift */; };
+		B123DC3FE8CE09035C24F2D1 /* OverlapLaneCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86D83122963D86A28C30E30A /* OverlapLaneCanvas.swift */; };
+		48C227F93DCF8E00431A79F9 /* LiveSectionRibbonLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA32C93D564C1205D5C1930 /* LiveSectionRibbonLabels.swift */; };
+		E23EDDF822A70FBF653FF864 /* LiveSectionRibbonLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA32C93D564C1205D5C1930 /* LiveSectionRibbonLabels.swift */; };
+		8C804B45EF1D7180D0368892 /* OverlapEditorTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1A6BE330F333F53D3EC8AC /* OverlapEditorTimeline.swift */; };
+		B351A9F6206748814BB7204B /* OverlapEditorTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1A6BE330F333F53D3EC8AC /* OverlapEditorTimeline.swift */; };
+		367CD72347123B2B6F6D1EB9 /* OverlapEditorTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4707FC71121EA7CC998B27AE /* OverlapEditorTimelineTests.swift */; };
+		83F55B746260FDE3F76D12D0 /* AppScrubber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2114F45E7EDF8BCBA7E2528A /* AppScrubber.swift */; };
+		928AFC9EF859839EEC0D36C8 /* AppScrubber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2114F45E7EDF8BCBA7E2528A /* AppScrubber.swift */; };
+		71428BE0E7DF63B6C5B8CC09 /* OverlapPreviewEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 941D6C7857A62A74672560F5 /* OverlapPreviewEngineTests.swift */; };
+		6D4A74DB46AC9AE001CAD2A3 /* WaveformColumnGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */; };
+		CD7C8E0346FC914F706879DA /* WaveformColumnGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -831,7 +849,6 @@
 		AA0000020000000000000044 /* click-accent.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "click-accent.wav"; sourceTree = "<group>"; };
 		AA0000020000000000000045 /* click-normal.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "click-normal.wav"; sourceTree = "<group>"; };
 		AA000002000000000000004C /* SectionLoopController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionLoopController.swift; sourceTree = "<group>"; };
-		AA000002000000000000004D /* WaveformBarsCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformBarsCanvas.swift; sourceTree = "<group>"; };
 		AA0000020000000000000060 /* MIDITrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDITrack.swift; sourceTree = "<group>"; };
 		AA0000020000000000000061 /* MIDIEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIEvent.swift; sourceTree = "<group>"; };
 		AA0000020000000000000063 /* MIDIOutputService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIOutputService.swift; sourceTree = "<group>"; };
@@ -1192,6 +1209,17 @@
 		54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistWaveformTransitionMarker.swift; sourceTree = "<group>"; };
 		1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistWaveformHeaderMarker.swift; sourceTree = "<group>"; };
 		3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistTransition+BadgeColor.swift"; sourceTree = "<group>"; };
+		CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistOverlapEditorContext.swift; sourceTree = "<group>"; };
+		932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapWaveformLaneView.swift; sourceTree = "<group>"; };
+		A197CFAF43876268300CD240 /* SetlistOverlapEditorView+Preview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistOverlapEditorView+Preview.swift"; sourceTree = "<group>"; };
+		C5EB08C2DC6A98350E7A1FEC /* SetlistOverlapEditorView+Waveforms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistOverlapEditorView+Waveforms.swift"; sourceTree = "<group>"; };
+		86D83122963D86A28C30E30A /* OverlapLaneCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapLaneCanvas.swift; sourceTree = "<group>"; };
+		CCA32C93D564C1205D5C1930 /* LiveSectionRibbonLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSectionRibbonLabels.swift; sourceTree = "<group>"; };
+		BE1A6BE330F333F53D3EC8AC /* OverlapEditorTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapEditorTimeline.swift; sourceTree = "<group>"; };
+		4707FC71121EA7CC998B27AE /* OverlapEditorTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapEditorTimelineTests.swift; sourceTree = "<group>"; };
+		2114F45E7EDF8BCBA7E2528A /* AppScrubber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScrubber.swift; sourceTree = "<group>"; };
+		941D6C7857A62A74672560F5 /* OverlapPreviewEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlapPreviewEngineTests.swift; sourceTree = "<group>"; };
+		54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformColumnGeometry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1299,6 +1327,7 @@
 		AA0000050000000000000004 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				BE1A6BE330F333F53D3EC8AC /* OverlapEditorTimeline.swift */,
 				0A7814A8135DD33FC680F6EC /* ClickRhythm.swift */,
 				4749514E70DA5A2C9EDAAB27 /* ClickSettings.swift */,
 				45301C3D6553506A02E27DB6 /* ClickSound.swift */,
@@ -1415,6 +1444,12 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				CCA32C93D564C1205D5C1930 /* LiveSectionRibbonLabels.swift */,
+				86D83122963D86A28C30E30A /* OverlapLaneCanvas.swift */,
+				C5EB08C2DC6A98350E7A1FEC /* SetlistOverlapEditorView+Waveforms.swift */,
+				A197CFAF43876268300CD240 /* SetlistOverlapEditorView+Preview.swift */,
+				932637312396627EA859B3C3 /* OverlapWaveformLaneView.swift */,
+				CF162148C587F331C843F631 /* SetlistOverlapEditorContext.swift */,
 				3D90B0D21C29F166CF581D20 /* SetlistTransition+BadgeColor.swift */,
 				1E902263B6B052F70617C5A5 /* SetlistWaveformHeaderMarker.swift */,
 				54FA1BBE5C850954B355B056 /* SetlistWaveformTransitionMarker.swift */,
@@ -1514,6 +1549,8 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				941D6C7857A62A74672560F5 /* OverlapPreviewEngineTests.swift */,
+				4707FC71121EA7CC998B27AE /* OverlapEditorTimelineTests.swift */,
 				56EA36D6E57D5C363D3AFFB3 /* PlaybackCoordinatorTests.swift */,
 				61D63E0040BD9E28899BD348 /* ClickSchedulerTests.swift */,
 				70346C78EADD8BD0182B1D66 /* ClickSettingsTests.swift */,
@@ -1622,6 +1659,7 @@
 		AA00000500000000000000A3 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				2114F45E7EDF8BCBA7E2528A /* AppScrubber.swift */,
 				B26521F80D7EDA0426AF224F /* AppHairline.swift */,
 				5D35AB082F8D64BD945D19B5 /* AppTag.swift */,
 				61E758B74E47E3A66760EECE /* AppSegmentedPicker.swift */,
@@ -1841,6 +1879,7 @@
 		AA00000500000000000BB00A /* Timeline */ = {
 			isa = PBXGroup;
 			children = (
+				54F84DF928933E718043F770 /* WaveformColumnGeometry.swift */,
 				907D3D32BD203EC40DB0AB81 /* TimelinePlayRangeEdgeShadow.swift */,
 				E6777432B38CBC780DCB0A90 /* TimelineClipHoverModel.swift */,
 				C3E9441AA46DEBA95770A536 /* TimelinePlayRangeShade.swift */,
@@ -1871,7 +1910,6 @@
 				AA000002000000000000001D /* TimelineLayout.swift */,
 				AA0000020000000000000017 /* WaveformLaneView.swift */,
 				AA0000020000000000000065 /* MIDILaneView.swift */,
-				AA000002000000000000004D /* WaveformBarsCanvas.swift */,
 				AA0000020000000000000024 /* TimelinePlayheadOverlay.swift */,
 				AA00000200000000000ED007 /* TimelineRulerView.swift */,
 				AA00000200000000000ED008 /* TimelineSectionMarkerRow.swift */,
@@ -2051,6 +2089,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D4A74DB46AC9AE001CAD2A3 /* WaveformColumnGeometry.swift in Sources */,
+				83F55B746260FDE3F76D12D0 /* AppScrubber.swift in Sources */,
+				8C804B45EF1D7180D0368892 /* OverlapEditorTimeline.swift in Sources */,
+				48C227F93DCF8E00431A79F9 /* LiveSectionRibbonLabels.swift in Sources */,
+				9D4A2BFE89FDDDC160B1942C /* OverlapLaneCanvas.swift in Sources */,
+				F139013C0EB8BA91ED8A5ACA /* SetlistOverlapEditorView+Waveforms.swift in Sources */,
+				BE55B530DD06D4A4821EB8D0 /* SetlistOverlapEditorView+Preview.swift in Sources */,
+				5B1EEF289B6EBBD1B6EB860A /* OverlapWaveformLaneView.swift in Sources */,
+				E09B7542791F22F73305D08C /* SetlistOverlapEditorContext.swift in Sources */,
 				E4F1035E72B803EA52AEBEF5 /* SetlistTransition+BadgeColor.swift in Sources */,
 				AE874D9A05E054F3DAB1BF4D /* SetlistWaveformHeaderMarker.swift in Sources */,
 				F0E706E51092BAE6F3DE72F9 /* SetlistWaveformTransitionMarker.swift in Sources */,
@@ -2272,7 +2319,6 @@
 				AA0000010000000000000015 /* WaveformLoader.swift in Sources */,
 				AA0000010000000000000C21 /* WaveformOverview.swift in Sources */,
 				AA0000010000000000000016 /* WaveformLaneView.swift in Sources */,
-				AA000001000000000000004D /* WaveformBarsCanvas.swift in Sources */,
 				AA0000010000000000000018 /* ArrangementMarker.swift in Sources */,
 				AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */,
 				AA0000010000000000000B02 /* MeasureAnchoredChange.swift in Sources */,
@@ -2394,6 +2440,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71428BE0E7DF63B6C5B8CC09 /* OverlapPreviewEngineTests.swift in Sources */,
+				367CD72347123B2B6F6D1EB9 /* OverlapEditorTimelineTests.swift in Sources */,
 				9CC0F101F16D6A8B4262B2EC /* PlaybackCoordinatorTests.swift in Sources */,
 				9C21A7661F02F69FD520F5DA /* ClickSchedulerTests.swift in Sources */,
 				F312E9D035555008C0B8C8EC /* ClickSettingsTests.swift in Sources */,
@@ -2468,6 +2516,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD7C8E0346FC914F706879DA /* WaveformColumnGeometry.swift in Sources */,
+				928AFC9EF859839EEC0D36C8 /* AppScrubber.swift in Sources */,
+				B351A9F6206748814BB7204B /* OverlapEditorTimeline.swift in Sources */,
+				E23EDDF822A70FBF653FF864 /* LiveSectionRibbonLabels.swift in Sources */,
+				B123DC3FE8CE09035C24F2D1 /* OverlapLaneCanvas.swift in Sources */,
+				EC6EFE2338FF666C5BDF2579 /* SetlistOverlapEditorView+Waveforms.swift in Sources */,
+				F639527A999C6CD221B4EE38 /* SetlistOverlapEditorView+Preview.swift in Sources */,
+				FB4372582DB55460F55D9BC5 /* OverlapWaveformLaneView.swift in Sources */,
+				51888869271C0FADD81C1AB3 /* SetlistOverlapEditorContext.swift in Sources */,
 				9331A259A043A8FFE557801F /* SetlistTransition+BadgeColor.swift in Sources */,
 				40081ECBCC9B06A43C496994 /* SetlistWaveformHeaderMarker.swift in Sources */,
 				EEA0EE53E5A5E7FE45FEA141 /* SetlistWaveformTransitionMarker.swift in Sources */,
@@ -2689,7 +2746,6 @@
 				8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */,
 				8AF480949E8482DC31933EC2 /* WaveformOverview.swift in Sources */,
 				F61F8D583DD0B65FE15C8F39 /* WaveformLaneView.swift in Sources */,
-				286CB25439511310D21D5039 /* WaveformBarsCanvas.swift in Sources */,
 				3CB305E965C2989FEBD4EB18 /* ArrangementMarker.swift in Sources */,
 				C768AFEEFAD4C2989E94B51D /* TimeSignatureChange.swift in Sources */,
 				376CE795C5085A6296C2E115 /* MeasureAnchoredChange.swift in Sources */,

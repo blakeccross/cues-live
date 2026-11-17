@@ -63,47 +63,15 @@ struct LiveSongWaveformView: View {
     @ViewBuilder
     private var sectionMarkers: some View {
         if usesArrangementLayout {
-            ZStack(alignment: .topLeading) {
-                ForEach(sections) { section in
-                    let startX = window.x(for: section.timelineStartSeconds, width: contentWidth)
-                    let endX = window.x(for: section.timelineEndSeconds, width: contentWidth)
-                    let segmentWidth = max(0, endX - startX)
-
-                    sectionLabel(section, width: segmentWidth)
-                        .offset(x: startX)
-
-                    if showsMissingMediaWarning {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(AppTypography.Compact.overlayGlyph)
-                            .foregroundStyle(AppColors.warning)
-                            .frame(width: segmentWidth, height: waveformHeight - ribbonHeight)
-                            .offset(x: startX, y: ribbonHeight)
-                    }
-                }
-            }
-            .allowsHitTesting(false)
+            LiveSectionRibbonLabels(
+                window: window,
+                sections: sections,
+                loopSectionIDs: loopSectionIDs,
+                contentWidth: contentWidth,
+                height: waveformHeight,
+                showsMissingMediaWarning: showsMissingMediaWarning
+            )
         }
-    }
-
-    private var ribbonHeight: CGFloat {
-        LiveSetlistWaveformMetrics.sectionRibbonHeight
-    }
-
-    /// The section's name inside its marker in the ribbon the lane painter draws.
-    private func sectionLabel(_ section: SongSection, width: CGFloat) -> some View {
-        HStack(spacing: AppSpacing.tagGlyphGap) {
-            if loopSectionIDs.contains(section.id) {
-                Image(systemName: "repeat")
-                    .font(AppTypography.Compact.glyphEmphasized)
-            }
-            Text(section.name)
-                .font(AppTypography.Compact.sectionName)
-                .lineLimit(1)
-        }
-        .foregroundStyle(AppColors.LiveWaveform.sectionLabel)
-        .padding(.horizontal, AppSpacing.xs)
-        .frame(width: width, height: ribbonHeight, alignment: .leading)
-        .clipped()
     }
 
     @ViewBuilder

@@ -13,12 +13,14 @@ final class OverlapPreviewEngine {
     private var loadGeneration = 0
     private var incomingStarted = false
 
-    private var previewStartTime: TimeInterval = 0
-    private var incomingLaneOffset: TimeInterval = 0
-    private var previewDuration: TimeInterval = 0
+    private var timeline: OverlapEditorTimeline?
+    /// Editor time where the running preview stops.
+    private var previewEnd: TimeInterval = 0
 
     private(set) var isPlaying = false
-    private(set) var currentTime: TimeInterval = 0
+    /// Editor time the preview has reached, on `OverlapEditorTimeline`'s axis. `nil` until it
+    /// plays, and again once it is stopped or reconfigured.
+    private(set) var playheadTime: TimeInterval?
     private(set) var isLoaded = false
     private(set) var loadError: String?
 
@@ -29,8 +31,7 @@ final class OverlapPreviewEngine {
     func load(
         outgoingSong: Song,
         incomingSong: Song,
-        startOffsetSeconds: TimeInterval,
-        windowDuration: TimeInterval
+        startOffsetSeconds: TimeInterval
     ) async {
         loadGeneration += 1
         let generation = loadGeneration
@@ -41,37 +42,18 @@ final class OverlapPreviewEngine {
 
         let outgoingSnapshot = PlaybackCoordinator.makeWaveformSnapshot(for: outgoingSong)
         let incomingSnapshot = PlaybackCoordinator.makeWaveformSnapshot(for: incomingSong)
-        guard let outgoingSnapshot, incomingSnapshot != nil else {
+        guard let outgoingSnapshot, let incomingSnapshot else {
             loadError = "Unable to load song waveforms."
             return
         }
 
         guard generation == loadGeneration else { return }
 
-        let outgoingDuration = outgoingSnapshot.timelineDuration
-        let outgoingStart = outgoingSnapshot.startTime
-        let clampedOffset = OverlapTransitionTiming.clampedStartOffset(
-            startOffsetSeconds,
-            windowDuration: windowDuration,
-            outgoingDuration: outgoingDuration,
-            outgoingStart: outgoingStart
+        timeline = OverlapEditorTimeline(
+            outgoingRange: outgoingSnapshot.window.start...outgoingSnapshot.window.end,
+            incomingRange: incomingSnapshot.window.start...incomingSnapshot.window.end,
+            startOffsetSeconds: startOffsetSeconds
         )
-
-        let outgoingWindowStart = OverlapTransitionTiming.outgoingWindowStart(
-            outgoingDuration: outgoingDuration,
-            windowDuration: windowDuration,
-            outgoingStart: outgoingStart
-        )
-        let laneOffset = OverlapTransitionTiming.incomingLaneOffset(
-            outgoingDuration: outgoingDuration,
-            windowDuration: windowDuration,
-            startOffsetSeconds: clampedOffset,
-            outgoingStart: outgoingStart
-        )
-
-        previewStartTime = outgoingWindowStart
-        incomingLaneOffset = laneOffset
-        previewDuration = windowDuration
 
         do {
             try loadSong(outgoingSong, into: outgoingEngine)
@@ -97,25 +79,48 @@ final class OverlapPreviewEngine {
         isLoaded = false
     }
 
-    func play() {
-        guard isLoaded, !isPlaying else { return }
+    /// Plays both songs from `editorTime` on the timeline until `endTime`: the outgoing song if
+    /// it is still playing there, and the incoming song once it has entered.
+    func play(from editorTime: TimeInterval, until endTime: TimeInterval) {
+        guard isLoaded, !isPlaying, let timeline else { return }
+        previewEnd = min(max(0, endTime), timeline.duration)
+        let start = min(max(0, editorTime), previewEnd)
 
-        outgoingEngine.seek(to: previewStartTime)
-        incomingEngine.seek(to: incomingEngine.startTime)
-        incomingEngine.setMasterVolume(0)
         incomingStarted = false
+        incomingEngine.setMasterVolume(0)
+        if let incomingTime = timeline.incomingTime(at: start) {
+            incomingEngine.seek(to: incomingTime)
+            incomingEngine.setMasterVolume(1)
+            incomingEngine.play()
+            incomingStarted = true
+        } else {
+            incomingEngine.seek(to: timeline.incomingRange.lowerBound)
+        }
+        if let outgoingTime = timeline.outgoingTime(at: start) {
+            outgoingEngine.seek(to: outgoingTime)
+            outgoingEngine.play()
+        }
 
-        outgoingEngine.play()
-        guard outgoingEngine.isPlaying else {
+        guard outgoingEngine.isPlaying || incomingEngine.isPlaying else {
             loadError = "Unable to start overlap preview."
             return
         }
 
         isPlaying = true
-        currentTime = 0
+        playheadTime = start
         startTimer()
-        // Incoming may need to start immediately when the overlap begins at the window start.
+        // Incoming may need to start immediately when the overlap begins at the preview start.
         syncIncomingAudibility()
+    }
+
+    /// Moves a running preview to `editorTime` and keeps playing. Does nothing while stopped.
+    func seek(to editorTime: TimeInterval) {
+        guard isPlaying else { return }
+        outgoingEngine.pause()
+        incomingEngine.pause()
+        stopTimer()
+        isPlaying = false
+        play(from: editorTime, until: previewEnd)
     }
 
     func pause() {
@@ -125,10 +130,6 @@ final class OverlapPreviewEngine {
         incomingEngine.pause()
         isPlaying = false
         stopTimer()
-    }
-
-    func stop() {
-        stopPlayback()
     }
 
     func teardown() {
@@ -156,7 +157,7 @@ final class OverlapPreviewEngine {
         incomingEngine.seek(to: incomingEngine.startTime)
         incomingEngine.setMasterVolume(1)
         isPlaying = false
-        currentTime = 0
+        playheadTime = nil
         incomingStarted = false
         stopTimer()
     }
@@ -175,9 +176,9 @@ final class OverlapPreviewEngine {
             self.refreshCurrentTime()
             self.syncIncomingAudibility()
 
-            if self.currentTime >= self.previewDuration - (1.0 / 48_000) {
+            if let playheadTime = self.playheadTime, playheadTime >= self.previewEnd - (1.0 / 48_000) {
                 self.pause()
-                self.currentTime = self.previewDuration
+                self.playheadTime = self.previewEnd
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -189,15 +190,26 @@ final class OverlapPreviewEngine {
         playbackTimer = nil
     }
 
+    /// Follows the outgoing song until it ends, then the incoming song.
     private func refreshCurrentTime() {
-        let timeline = outgoingEngine.livePlayheadTime()
-        currentTime = max(0, min(timeline - previewStartTime, previewDuration))
+        guard let timeline else { return }
+        let outgoingTime = outgoingEngine.livePlayheadTime()
+        let time: TimeInterval
+        if outgoingEngine.isPlaying, outgoingTime < timeline.outgoingRange.upperBound || !incomingStarted {
+            time = timeline.editorTime(outgoingTime: outgoingTime)
+        } else {
+            time = timeline.editorTime(incomingTime: incomingEngine.livePlayheadTime())
+        }
+        playheadTime = min(max(0, time), timeline.duration)
     }
 
     private func syncIncomingAudibility() {
-        guard !incomingStarted, currentTime >= incomingLaneOffset - (1.0 / 48_000) else { return }
+        guard !incomingStarted,
+              let timeline,
+              let playheadTime,
+              playheadTime >= timeline.incomingEntry - (1.0 / 48_000) else { return }
 
-        incomingEngine.seek(to: incomingEngine.startTime)
+        incomingEngine.seek(to: timeline.incomingRange.lowerBound)
         incomingEngine.setMasterVolume(1)
         if !incomingEngine.isPlaying {
             incomingEngine.play()

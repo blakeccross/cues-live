@@ -69,6 +69,11 @@ enum AppColors {
     static let transportStripBackground = Color.black.opacity(0.30)
     static let transportStripBorder = Color.white.opacity(0.055)
 
+    /// Unfilled track of a playback scrubber.
+    static let scrubberTrack = textPrimary.opacity(0.15)
+    /// Elapsed part of a playback scrubber at rest. It brightens to `textPrimary` while dragged.
+    static let scrubberFill = textPrimary.opacity(0.55)
+
     /// Resting glyph color for bare icon buttons.
     static let iconNeutral = Color(.iconNeutral)
 
