@@ -535,8 +535,6 @@
 		6148A2CFDE310E2EAFE544F3 /* SetlistSongRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E17B0BF4C31FF46C40BCF10F /* SetlistSongRowView.swift */; };
 		4284F1D59F8D0A8E7155B94C /* AppResizableDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */; };
 		53CE2F1AEDBA5966DA4823A9 /* AppResizableDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */; };
-		B5EC1EACDA038D9B405726C6 /* LiveLibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */; };
-		FB5A7EE29B68770939FE8E18 /* LiveLibrarySidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */; };
 		BCF2D1DEF6E920B220357803 /* LivePlaybackView+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */; };
 		A334C4A6932A68F6EE41487C /* LivePlaybackView+Sidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */; };
 		D4015C81B9E5B887CEE21102 /* SongFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */; };
@@ -553,8 +551,6 @@
 		E6152CB5351DA5B9D53EE36E /* SetlistLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */; };
 		C8451C1A648BDD395774369D /* SetlistLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */; };
 		C2168D62A6C3F6654D4516C2 /* SetlistLibraryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5240158AA03DFF00891BE0 /* SetlistLibraryStoreTests.swift */; };
-		4F01C8AF7A76CBC8BD715264 /* LiveLibrarySidebar+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */; };
-		A4A5162C7C0BF45DF919B46D /* LiveLibrarySidebar+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */; };
 		146EDF39F4DBC23191CC93C7 /* AppIconButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */; };
 		C6D0FD7FFA0EFD4E88B03738 /* AppIconButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */; };
 		41F4C96874FD18E82A50C7F7 /* AppIconToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */; };
@@ -1086,7 +1082,6 @@
 		0EFCF3E3F560C66724E83AEA /* ScrollWheelZoomTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollWheelZoomTests.swift; sourceTree = "<group>"; };
 		E17B0BF4C31FF46C40BCF10F /* SetlistSongRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSongRowView.swift; sourceTree = "<group>"; };
 		4C11DA312C18DE9BAC326AFA /* AppResizableDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppResizableDivider.swift; sourceTree = "<group>"; };
-		01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveLibrarySidebar.swift; sourceTree = "<group>"; };
 		E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LivePlaybackView+Sidebar.swift"; sourceTree = "<group>"; };
 		0D45B1D3A638E7CEE59A5303 /* SongFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolder.swift; sourceTree = "<group>"; };
 		7D86991441CF2FD749424866 /* SongFolderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderStore.swift; sourceTree = "<group>"; };
@@ -1096,7 +1091,6 @@
 		F577A5573101FE058A5B9300 /* SongLibraryListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongLibraryListRow.swift; sourceTree = "<group>"; };
 		30CA041616C481DA95A3914E /* SetlistLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistLibraryStore.swift; sourceTree = "<group>"; };
 		4F5240158AA03DFF00891BE0 /* SetlistLibraryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistLibraryStoreTests.swift; sourceTree = "<group>"; };
-		140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveLibrarySidebar+Actions.swift"; sourceTree = "<group>"; };
 		9F76F1E7B6160E946B266D9A /* AppIconButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconButtonStyle.swift; sourceTree = "<group>"; };
 		C060BEFEB2367BFFF59BDF3C /* AppIconToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconToggle.swift; sourceTree = "<group>"; };
 		1621402BAEE5B87FCA231B0F /* ScreenPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenPresence.swift; sourceTree = "<group>"; };
@@ -1463,9 +1457,7 @@
 				AD35A240E0BBF7348C7341E9 /* LiveToolbarSongTitle.swift */,
 				A437BCAD58395DFD904358E9 /* LiveSetlistWaveformLoadingPlaceholder.swift */,
 				2FD5F935B1189DAC36279C9D /* LivePlaybackView+SetlistSwitcher.swift */,
-				140510473AE3946637127BD0 /* LiveLibrarySidebar+Actions.swift */,
 				E9E15F7338AF53491B20E34A /* LivePlaybackView+Sidebar.swift */,
-				01CDCAB82804D4B9F3396EF6 /* LiveLibrarySidebar.swift */,
 				E17B0BF4C31FF46C40BCF10F /* SetlistSongRowView.swift */,
 				FC26A08F49F4BA2E51FBBC47 /* LiveSetlistWaveformScrollView+Zoom.swift */,
 				5EE9B65DFA5931587B1128A4 /* LiveSongLibrarySplitLayout.swift */,
@@ -2190,7 +2182,6 @@
 				39348FDBC606FE01A6EA2832 /* ScreenPresence.swift in Sources */,
 				41F4C96874FD18E82A50C7F7 /* AppIconToggle.swift in Sources */,
 				146EDF39F4DBC23191CC93C7 /* AppIconButtonStyle.swift in Sources */,
-				4F01C8AF7A76CBC8BD715264 /* LiveLibrarySidebar+Actions.swift in Sources */,
 				E6152CB5351DA5B9D53EE36E /* SetlistLibraryStore.swift in Sources */,
 				DB598A6E20CCD40CC3918AB0 /* SongLibraryListRow.swift in Sources */,
 				F72CF9AF25EA070EB0AFD64E /* SongLibraryPanel+EmptyState.swift in Sources */,
@@ -2198,7 +2189,6 @@
 				1F4C135D9C8BFCF09E990CB9 /* SongFolderStore.swift in Sources */,
 				D4015C81B9E5B887CEE21102 /* SongFolder.swift in Sources */,
 				BCF2D1DEF6E920B220357803 /* LivePlaybackView+Sidebar.swift in Sources */,
-				B5EC1EACDA038D9B405726C6 /* LiveLibrarySidebar.swift in Sources */,
 				4284F1D59F8D0A8E7155B94C /* AppResizableDivider.swift in Sources */,
 				182C06EED0DED27132DF7F85 /* SetlistSongRowView.swift in Sources */,
 				3691F00863684B04955D22F2 /* LiveSetlistWaveformScrollView+Zoom.swift in Sources */,
@@ -2617,7 +2607,6 @@
 				45C44A12A67FA79A175AA7E6 /* ScreenPresence.swift in Sources */,
 				50F21A4963D344F2B9560AA9 /* AppIconToggle.swift in Sources */,
 				C6D0FD7FFA0EFD4E88B03738 /* AppIconButtonStyle.swift in Sources */,
-				A4A5162C7C0BF45DF919B46D /* LiveLibrarySidebar+Actions.swift in Sources */,
 				C8451C1A648BDD395774369D /* SetlistLibraryStore.swift in Sources */,
 				276B4E574925764F7BF9D4C2 /* SongLibraryListRow.swift in Sources */,
 				9D961FF5ACC398A297C9B9D1 /* SongLibraryPanel+EmptyState.swift in Sources */,
@@ -2625,7 +2614,6 @@
 				FBDE448420AE8D27ADD6090B /* SongFolderStore.swift in Sources */,
 				56B666073C024775AB16C365 /* SongFolder.swift in Sources */,
 				A334C4A6932A68F6EE41487C /* LivePlaybackView+Sidebar.swift in Sources */,
-				FB5A7EE29B68770939FE8E18 /* LiveLibrarySidebar.swift in Sources */,
 				53CE2F1AEDBA5966DA4823A9 /* AppResizableDivider.swift in Sources */,
 				6148A2CFDE310E2EAFE544F3 /* SetlistSongRowView.swift in Sources */,
 				FBA425C3852EE6CE932CFBFB /* LiveSetlistWaveformScrollView+Zoom.swift in Sources */,

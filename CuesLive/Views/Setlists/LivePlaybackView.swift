@@ -85,15 +85,9 @@ struct LivePlaybackView: View {
 
     var body: some View {
         #if os(macOS)
-        NavigationSplitView {
-            librarySidebar
-        } detail: {
-            NavigationStack {
-                playbackRoot
-            }
+        NavigationStack {
+            playbackRoot
         }
-        // Outside the detail column, which SwiftUI can show twice at once; a stale copy's
-        // onDisappear would otherwise reset the File menu after the new copy enabled it.
         .onAppear {
             syncLiveSetlistMenuController()
         }
@@ -217,6 +211,7 @@ struct LivePlaybackView: View {
             playbackToolbar(for: setlist)
         }
         #if os(macOS)
+        .toolbar(removing: .sidebarToggle)
         .appLockToolbarDisplayMode()
         #endif
         .appBackground(.primary)

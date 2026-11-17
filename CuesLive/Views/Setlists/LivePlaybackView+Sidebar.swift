@@ -2,46 +2,6 @@
 import SwiftUI
 
 extension LivePlaybackView {
-    var librarySidebar: some View {
-        LiveLibrarySidebar(
-            selection: sidebarSelectionBinding,
-            onNewSetlist: {
-                createUntitledSetlist()
-                return activeSetlistID
-            },
-            onDeleteSetlist: deleteSetlist
-        )
-    }
-
-    /// Moves playback to another setlist before deleting the active one, creating an
-    /// untitled setlist when it was the last.
-    private func deleteSetlist(_ setlist: Setlist) {
-        if setlist.id == activeSetlist?.id {
-            if let replacement = allSetlists.first(where: { $0.id != setlist.id }) {
-                switchToSetlist(replacement)
-            } else {
-                createUntitledSetlist()
-            }
-        }
-        do {
-            try SetlistLibraryStore.delete(setlist, context: modelContext)
-        } catch {
-            songImportFeedback = .failure(error.localizedDescription)
-        }
-    }
-
-    /// Follows the active setlist, so switching from the title menu or File ▸ Open moves the
-    /// selection too. Selecting a row makes that setlist the one playing.
-    private var sidebarSelectionBinding: Binding<UUID?> {
-        Binding(
-            get: { activeSetlist?.id },
-            set: { id in
-                guard let setlist = allSetlists.first(where: { $0.id == id }) else { return }
-                switchToSetlist(setlist)
-            }
-        )
-    }
-
     /// The leading pane: song folders beside the selected folder's songs.
     var songBrowser: some View {
         LiveSongBrowser(folderSelection: $songBrowserFolder) {
