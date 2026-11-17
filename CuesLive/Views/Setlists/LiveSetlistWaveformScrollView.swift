@@ -114,7 +114,6 @@ struct LiveSetlistWaveformScrollView: View {
                 timelineItemView(item)
             }
         }
-        .padding(.leading, AppSpacing.md)
         .fixedSize(horizontal: true, vertical: false)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
