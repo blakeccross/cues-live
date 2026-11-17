@@ -103,7 +103,8 @@ extension SetlistOverlapEditorView {
                 playheadTime: playheadPosition - scrolledTime,
                 duration: max(windowDuration, 0.001),
                 contentWidth: viewportWidth,
-                height: waveformEditorHeight
+                height: waveformEditorHeight,
+                style: .line
             )
             .allowsHitTesting(false)
         }

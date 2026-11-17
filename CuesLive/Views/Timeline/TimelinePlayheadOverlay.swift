@@ -34,12 +34,15 @@ struct TimelinePlayheadTimeReader<Content: View>: View {
 enum TimelinePlayheadStyle {
     /// Triangle handle and gray line.
     case handle
-    /// Full-height red line, drawn only while playing.
+    /// Full-height red line, as the edit view shows while playing.
     case line
 }
 
 /// Playhead drawn in one canvas pass with a shared pixel-aligned center.
 struct TimelinePlayheadOverlay: View {
+    /// Width of the `.line` style. The live waveform's playhead matches it.
+    static let lineWidth: CGFloat = 1.5
+
     @Environment(\.displayScale) private var displayScale
 
     let playheadTime: TimeInterval
@@ -88,7 +91,7 @@ struct TimelinePlayheadOverlay: View {
             context.stroke(
                 path,
                 with: .color(AppColors.Timeline.playhead),
-                style: StrokeStyle(lineWidth: 1.5)
+                style: StrokeStyle(lineWidth: Self.lineWidth)
             )
         }
     }

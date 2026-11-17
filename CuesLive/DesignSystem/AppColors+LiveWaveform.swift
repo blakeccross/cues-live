@@ -12,9 +12,7 @@ extension AppColors {
         static let sectionMarkerUnplayed = AppColors.accent.darkened(sRGBBy: 0.45)
         static let sectionLabel = AppColors.textOnFill
 
-        /// Playhead line drawn by the native scroll views.
-        static let playhead = Color(.liveWaveformPlayhead)
-        static let playheadShadow = Color.black
-        static let playheadShadowOpacity: Float = 0.35
+        /// Playhead line drawn by the native scroll views, the same red as the edit view's.
+        static let playhead = AppColors.Timeline.playhead
     }
 }

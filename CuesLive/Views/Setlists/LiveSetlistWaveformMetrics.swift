@@ -22,7 +22,7 @@ enum LiveSetlistWaveformMetrics {
 
     /// Named coordinate space of the strip's content, where lane frames are measured.
     static let scrollCoordinateSpaceName = "live-waveform-scroll"
-    static let playheadWidth: CGFloat = 2
+    static let playheadWidth = TimelinePlayheadOverlay.lineWidth
     /// Re-enable follow when the playhead is this close to the viewport center.
     static let followRelatchDistance: CGFloat = 64
 

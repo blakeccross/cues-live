@@ -34,10 +34,6 @@ final class LiveSetlistUIScrollView: UIScrollView, UIScrollViewDelegate {
 
         playheadView.isUserInteractionEnabled = false
         playheadView.backgroundColor = UIColor(AppColors.LiveWaveform.playhead)
-        playheadView.layer.shadowColor = UIColor(AppColors.LiveWaveform.playheadShadow).cgColor
-        playheadView.layer.shadowOpacity = AppColors.LiveWaveform.playheadShadowOpacity
-        playheadView.layer.shadowRadius = 1
-        playheadView.layer.shadowOffset = .zero
         addSubview(playheadView)
 
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinched))
