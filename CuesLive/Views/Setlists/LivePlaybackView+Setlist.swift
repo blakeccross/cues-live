@@ -44,7 +44,6 @@ extension LivePlaybackView {
                     rowHorizontalPadding: AppSpacing.xl
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, AppSpacing.sm)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

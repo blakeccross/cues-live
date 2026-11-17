@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Trailing setlist actions in the live window toolbar. Transport, the playing song, and
+/// Setlist actions in the live window toolbar: the song browser toggle leads, the rest trail. Transport, the playing song, and
 /// the mixer and editor toggles come from `LiveSetlistTransportToolbarContent`.
 struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ViewBuilder let setlistSwitcher: Switcher
@@ -20,12 +20,13 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
     @ToolbarContentBuilder
     var body: some ToolbarContent {
         #if os(macOS)
-        ToolbarItem(placement: .automatic) {
-            addMenu
+        // Leads the toolbar, on the same edge as the pane it reveals.
+        ToolbarItem(placement: .navigation) {
+            songBrowserToggle
         }
 
         ToolbarItem(placement: .automatic) {
-            songBrowserToggle
+            addMenu
         }
 
         ToolbarItem(placement: .automatic) {
