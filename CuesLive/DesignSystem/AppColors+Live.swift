@@ -20,7 +20,5 @@ extension AppColors {
         static let transitionStopRibbon = Color(.liveTransitionStop)
         /// Shade along a transition block's edges where it meets a song.
         static let transitionEdgeShadow = Color.black.opacity(0.4)
-        /// Block for an overlap between songs, dark enough to carry white text.
-        static let transitionOverlapRibbon = AppColors.transitionOverlap.darkened(sRGBBy: 0.55)
     }
 }

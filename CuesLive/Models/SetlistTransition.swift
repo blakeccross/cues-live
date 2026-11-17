@@ -25,7 +25,7 @@ enum SetlistTransition: String, CaseIterable, Identifiable {
         case .stop:
             return "stop"
         case .overlap:
-            return "arrow.triangle.merge"
+            return "circle.dotted.and.circle"
         }
     }
 

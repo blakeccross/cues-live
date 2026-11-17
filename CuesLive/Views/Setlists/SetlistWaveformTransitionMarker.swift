@@ -2,10 +2,11 @@ import SwiftUI
 
 /// How one song hands off to the next in the setlist strip: a block the height of a song lane
 /// between the two songs, with its symbol and caption centered. A continue is green, a stop is red and
-/// says so, and an overlap shows its length and opens its editor. It sits flush against the songs
+/// says so, and an overlap is green and opens its editor. It sits flush against the songs
 /// beside it, shaded along those edges as if tucked under them.
 struct SetlistWaveformTransitionMarker: View {
     let transition: SetlistTransition
+    /// Read out to VoiceOver only; the block shows just the overlap symbol.
     var overlapSeconds: TimeInterval?
     /// False when a header comes next, so the trailing edge has no song to sit under.
     var isFollowedBySong = true
@@ -99,28 +100,20 @@ struct SetlistWaveformTransitionMarker: View {
 
     private var fill: Color {
         switch transition {
-        case .continue: AppColors.Live.transitionContinueRibbon
+        case .continue, .overlap: AppColors.Live.transitionContinueRibbon
         case .stop: AppColors.Live.transitionStopRibbon
-        case .overlap: AppColors.Live.transitionOverlapRibbon
         }
     }
 
-    /// Text beside the symbol: the word for a stop, the length of an overlap.
+    /// Text beside the symbol: the word for a stop.
     private var caption: String? {
-        switch transition {
-        case .continue:
-            return nil
-        case .stop:
-            return transition.label
-        case .overlap:
-            guard let overlapSeconds, overlapSeconds > 0 else { return nil }
-            return Duration.seconds(overlapSeconds)
-                .formatted(.units(allowed: [.minutes, .seconds], width: .narrow))
-        }
+        transition == .stop ? transition.label : nil
     }
 
     private var accessibilityText: String {
-        guard transition == .overlap, let caption else { return transition.label }
-        return "\(transition.label), \(caption)"
+        guard transition == .overlap, let overlapSeconds, overlapSeconds > 0 else { return transition.label }
+        let length = Duration.seconds(overlapSeconds)
+            .formatted(.units(allowed: [.minutes, .seconds], width: .wide))
+        return "\(transition.label), \(length)"
     }
 }
