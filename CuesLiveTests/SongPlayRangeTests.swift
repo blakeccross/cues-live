@@ -107,7 +107,7 @@ final class SongPlayRangeTests: XCTestCase {
     }
 
     func testStoppingRewindsToTheInPoint() {
-        let engine = AudioEngineManager()
+        let engine = AudioEngineManager(sampleRate: DecodedStemBuffer.engineSampleRate)
         engine.setArrangement(SongPlaybackLayout(timeline: timeline(contentEnd: 30, playRange: SongPlayRange(startSeconds: 4))))
         engine.seek(to: 12)
 

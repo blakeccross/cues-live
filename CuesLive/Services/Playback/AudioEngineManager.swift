@@ -43,6 +43,11 @@ final class AudioEngineManager {
     let announcementSource = AnnouncementSource()
     /// Output channels the mixer is connected with.
     @ObservationIgnored var mixerOutputChannelCount = 2
+    /// The rate the mixer and tracks render at; follows `targetSampleRate` when rewired.
+    @ObservationIgnored var outputSampleRate: Double
+    /// Pins the rate instead of following the user's setting (tests and fixtures). Takes
+    /// effect the next time the output is wired.
+    @ObservationIgnored var pinnedSampleRate: Double?
     let transport = AudioPlaybackTransport()
     private let midiScheduler: MIDIScheduler
     var tracks: [UUID: TrackState] = [:]
@@ -74,7 +79,12 @@ final class AudioEngineManager {
     private(set) var trackMeterLevels: [UUID: Float] = [:]
 
     var referenceSampleRate: Double {
-        DecodedStemBuffer.engineSampleRate
+        outputSampleRate
+    }
+
+    /// The rate the engine moves to the next time it wires its output.
+    var targetSampleRate: Double {
+        pinnedSampleRate ?? OutputSampleRate.selected()
     }
 
     private(set) var isPlaying = false
@@ -92,9 +102,13 @@ final class AudioEngineManager {
     /// Return `true` to keep playing (for example after a section-loop wrap); `false` to finish normally.
     var onWillReachEnd: (() -> Bool)?
 
-    init() {
+    /// `sampleRate` pins the mixer's rate; nil follows the user's Sample Rate setting.
+    init(sampleRate: Double? = nil) {
+        pinnedSampleRate = sampleRate
+        outputSampleRate = sampleRate ?? OutputSampleRate.selected()
         midiScheduler = MIDIScheduler(transport: transport)
-        let mixer = StemMixer()
+        transport.setSampleRate(outputSampleRate)
+        let mixer = StemMixer(sampleRate: outputSampleRate)
         stemMixer = mixer
         mixerNode = mixer.makeSourceNode()
         engine.attach(mixerNode)
@@ -141,7 +155,7 @@ final class AudioEngineManager {
     private func configureAudioSession() {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .default)
-        try? session.setPreferredSampleRate(DecodedStemBuffer.engineSampleRate)
+        try? session.setPreferredSampleRate(targetSampleRate)
         AudioOutputDeviceService.applyStableBufferSize()
         try? session.setActive(true)
     }
@@ -224,7 +238,7 @@ final class AudioEngineManager {
         settings: TrackSettings,
         groupID: UUID?
     ) throws -> PreparedTrackPayload {
-        let decodedBuffer = try DecodedStemBuffer.decode(from: url)
+        let decodedBuffer = try DecodedStemBuffer.decode(from: url, targetSampleRate: OutputSampleRate.selected())
         return try prepareTrackPayload(
             id: id,
             decodedBuffer: decodedBuffer,
@@ -250,7 +264,8 @@ final class AudioEngineManager {
             trackID: payload.id,
             buffer: playbackBuffer,
             transport: transport,
-            mapper: mapper
+            mapper: mapper,
+            outputSampleRate: outputSampleRate
         )
         memoryPlayer.setTransposeSemitones(settings.transposeSemitones)
 

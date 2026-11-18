@@ -358,4 +358,29 @@ final class AudioPlaybackTransportTests: XCTestCase {
         hammerFinished.wait()
         return timeline
     }
+
+    // MARK: - Sample rate
+
+    func testLoopBoundsSnapToTheMixersFrameGrid() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(32)
+        transport.setSampleRate(44_100)
+
+        transport.setLoopRegion(start: 4.00001, end: 8)
+
+        let start = try? XCTUnwrap(transport.currentLoopRegion()).start
+        XCTAssertEqual(start, Double(176_400) / 44_100, "4.00001 s is frame 176,400 at 44.1 kHz")
+    }
+
+    func testChangingTheRateResnapsAnArmedLoop() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(32)
+        transport.setLoopRegion(start: 4.00001, end: 8)
+
+        transport.setSampleRate(44_100)
+
+        let loop = transport.currentLoopRegion()
+        XCTAssertEqual(loop.map { $0.start * 44_100 }, 176_400)
+        XCTAssertEqual(loop.map { $0.end * 44_100 }, 352_800)
+    }
 }

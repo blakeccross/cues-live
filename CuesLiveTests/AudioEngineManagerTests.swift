@@ -59,6 +59,49 @@ final class AudioEngineManagerTests: XCTestCase {
         XCTAssertTrue(jumps.isEmpty, "\(jumps.count) discontinuities, first: \(jumps.prefix(8))")
     }
 
+    func testSwitchingTheRateRebuildsTheMixerAndKeepsPlaybackContinuous() throws {
+        let engine = AudioEngineManager(sampleRate: 48_000)
+        let seconds = 4.0
+        let settings = AudioEngineManager.TrackSettings(
+            volume: 1, isMuted: false, isSolo: false, trimStart: 0, trimEnd: seconds
+        )
+        let routing = OutputRoutingSnapshot(
+            deviceUID: nil, routesByGroupID: [:], ungroupedDestination: .defaultDestination, channelCount: 2
+        )
+        try engine.loadPreparedTracks(
+            [AudioEngineManager.PreparedTrackPayload(id: UUID(), buffer: makeRampStem(seconds: seconds), settings: settings, groupID: nil)],
+            routing: routing
+        )
+        defer { engine.shutdown() }
+
+        engine.pinnedSampleRate = 44_100
+        engine.applyOutputRoutingKeepingTracks(routing)
+        XCTAssertEqual(engine.referenceSampleRate, 44_100)
+
+        let captured = OSAllocatedUnfairLock(initialState: (rate: 0.0, samples: [Float]()))
+        engine.installCaptureTapForTesting(silenceSpeakers: true) { buffer, _ in
+            guard let left = buffer.floatChannelData?[0] else { return }
+            let block = Array(UnsafeBufferPointer(start: left, count: Int(buffer.frameLength)))
+            captured.withLock { $0.rate = buffer.format.sampleRate; $0.samples += block }
+        }
+        defer { engine.removeCaptureTapForTesting() }
+        engine.play()
+        try XCTSkipUnless(engine.isPlaying, "needs a working audio output device")
+        RunLoop.current.run(until: Date().addingTimeInterval(1))
+
+        let result = captured.withLock { $0 }
+        XCTAssertEqual(result.rate, 44_100, "the mixer renders at the new rate")
+        let samples = result.samples.drop { $0 == 0 }
+        XCTAssertGreaterThan(samples.count, 22_050)
+        // A 48 kHz stem advances 48/44.1 of a source frame per output frame.
+        let step = Float(48_000.0 / 44_100) / Float(rampPeriod)
+        let jumps = zip(samples, samples.dropFirst()).filter { pair in
+            let nearWrap = [pair.0, pair.1].contains { $0 > 0.999 || $0 < 0.001 }
+            return !nearWrap && abs((pair.1 - pair.0) - step) > step * 1.5
+        }
+        XCTAssertTrue(jumps.isEmpty, "\(jumps.count) discontinuities after switching rate")
+    }
+
     /// Plays identical ramp stems through the real engine and lists every place the
     /// captured output does not advance by exactly one frame.
     private func discontinuities(
@@ -67,7 +110,7 @@ final class AudioEngineManagerTests: XCTestCase {
         streamed: Bool = false,
         sourceRate: Double = DecodedStemBuffer.engineSampleRate
     ) throws -> [String] {
-        let engine = AudioEngineManager()
+        let engine = AudioEngineManager(sampleRate: DecodedStemBuffer.engineSampleRate)
         let seconds = 4.0
         let settings = AudioEngineManager.TrackSettings(
             volume: 1, isMuted: false, isSolo: false, trimStart: 0, trimEnd: seconds
@@ -146,7 +189,7 @@ final class AudioEngineManagerTests: XCTestCase {
 
     /// Plays a constant mono stem for a moment and returns the peak on each mixer output.
     private func capturedPeaks(routing: OutputRoutingSnapshot?) throws -> [Float] {
-        let engine = AudioEngineManager()
+        let engine = AudioEngineManager(sampleRate: DecodedStemBuffer.engineSampleRate)
         let seconds = 2.0
         let settings = AudioEngineManager.TrackSettings(
             volume: 1, isMuted: false, isSolo: false, trimStart: 0, trimEnd: seconds

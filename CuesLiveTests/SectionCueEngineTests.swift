@@ -247,7 +247,7 @@ final class SectionCueEngineTests: XCTestCase {
         bypassArrangement: Bool,
         cues: [Cue]
     ) throws -> (samples: [Float], log: [String], gapFrames: Int, cueRecords: [(inSection: Int, target: Int)]) {
-        let engine = AudioEngineManager()
+        let engine = AudioEngineManager(sampleRate: DecodedStemBuffer.engineSampleRate)
         let stream = try StreamingStemBuffer(url: fixture.url)
         let settings = AudioEngineManager.TrackSettings(
             volume: 1, isMuted: false, isSolo: false,

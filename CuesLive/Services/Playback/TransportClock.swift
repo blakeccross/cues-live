@@ -11,6 +11,8 @@ struct TransportClock: Equatable {
     var hasAnchor = false
     var pendingTransition: AudioPlaybackTransport.PendingTransition?
     var loopRegion: AudioPlaybackTransport.LoopRegion?
+    /// The mixer's rate; loop bounds snap to whole frames at this rate.
+    var sampleRate = DecodedStemBuffer.engineSampleRate
     /// Read once at creation rather than from a lazy static, whose first access on the
     /// render thread would go through a one-time initialization lock.
     private let timebaseNumer: UInt32
@@ -77,7 +79,7 @@ struct TransportClock: Equatable {
         let raw = hostTime.map { reading.render(atHostTime: $0, captureAnchor: false).timelineSeconds }
             ?? pausedTimeline
         if let loopRegion, loopRegion.isValid {
-            return AudioPlaybackTransport.wrappedTimeline(raw, loop: loopRegion)
+            return AudioPlaybackTransport.wrappedTimeline(raw, loop: loopRegion, sampleRate: sampleRate)
         }
         return raw
     }

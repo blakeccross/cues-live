@@ -39,6 +39,16 @@ final class AudioPlaybackTransport: @unchecked Sendable {
     var isPlaying: Bool { clock.load().isPlaying }
     var duration: TimeInterval { clock.load().duration }
 
+    /// Sets the frame grid loop bounds snap to. Re-snaps an armed loop to the new grid.
+    func setSampleRate(_ sampleRate: Double) {
+        guard sampleRate > 0 else { return }
+        let loop = clock.load().loopRegion
+        clock.update { $0.sampleRate = sampleRate }
+        if let loop {
+            setLoopRegion(start: loop.start, end: loop.end)
+        }
+    }
+
     func setDuration(_ duration: TimeInterval) {
         clock.update { $0.duration = max(0, duration) }
     }
@@ -101,10 +111,10 @@ final class AudioPlaybackTransport: @unchecked Sendable {
     }
 
     /// Enables sample-accurate section looping on the audio thread.
-    /// Loop bounds are quantized to whole sample frames at the engine sample rate.
+    /// Loop bounds are quantized to whole sample frames at the mixer's rate (`setSampleRate`).
     func setLoopRegion(start: TimeInterval, end: TimeInterval) {
-        let sampleRate = DecodedStemBuffer.engineSampleRate
         clock.update { state in
+            let sampleRate = state.sampleRate
             let startFrame = Self.frameIndex(for: max(0, start), sampleRate: sampleRate)
             let endFrame = Self.frameIndex(for: max(0, end), sampleRate: sampleRate)
             let maxFrame = Self.frameIndex(for: state.duration, sampleRate: sampleRate)
