@@ -815,6 +815,15 @@
 		9DF40F5EDFBEE84668EEB95E /* TransportClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAB814F7C397BE2200E1D78 /* TransportClock.swift */; };
 		9D684191BCC074C4B28FBDA5 /* TransportClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAB814F7C397BE2200E1D78 /* TransportClock.swift */; };
 		77FC097575F8137BFE46B7EC /* RealtimeSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1555397AD1F243733D4B9B5A /* RealtimeSnapshotTests.swift */; };
+		54E915D590520B6D714A6185 /* RealtimeReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D987E47742EF85C6B8EAA767 /* RealtimeReference.swift */; };
+		AD211A69B8CF08AAD078877B /* RealtimeReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D987E47742EF85C6B8EAA767 /* RealtimeReference.swift */; };
+		5C98BD9332A6CEA8D0C58DF9 /* TrackRenderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4C3FEA1FAB000D1E4735DF /* TrackRenderContext.swift */; };
+		29C97132FDB3A9BC566E6327 /* TrackRenderContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4C3FEA1FAB000D1E4735DF /* TrackRenderContext.swift */; };
+		92BC4B48BF5B5C6C0BEB72B4 /* TrackRenderContext+Rendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6373A0B3C21FBDE3920720 /* TrackRenderContext+Rendering.swift */; };
+		E5357A74F05DB12E7A3EFB3F /* TrackRenderContext+Rendering.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6373A0B3C21FBDE3920720 /* TrackRenderContext+Rendering.swift */; };
+		C74DAA7CD67F2E49E1B2B74A /* RealtimeReferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375D9113CEEC498ECEE2B9AC /* RealtimeReferenceTests.swift */; };
+		4B9F039E49E1614CD6FB5C82 /* PeakMeterHolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B29170FD9B60909A860C40 /* PeakMeterHolderTests.swift */; };
+		611009242140211103408A6D /* TrackMemoryPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53F8D81D28EE77DC5594459 /* TrackMemoryPlayerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1279,6 +1288,12 @@
 		F67E97EB5E4FFB31472232C4 /* RealtimeSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeSnapshot.swift; sourceTree = "<group>"; };
 		EFAB814F7C397BE2200E1D78 /* TransportClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportClock.swift; sourceTree = "<group>"; };
 		1555397AD1F243733D4B9B5A /* RealtimeSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeSnapshotTests.swift; sourceTree = "<group>"; };
+		D987E47742EF85C6B8EAA767 /* RealtimeReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeReference.swift; sourceTree = "<group>"; };
+		BA4C3FEA1FAB000D1E4735DF /* TrackRenderContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackRenderContext.swift; sourceTree = "<group>"; };
+		4E6373A0B3C21FBDE3920720 /* TrackRenderContext+Rendering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackRenderContext+Rendering.swift"; sourceTree = "<group>"; };
+		375D9113CEEC498ECEE2B9AC /* RealtimeReferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeReferenceTests.swift; sourceTree = "<group>"; };
+		D4B29170FD9B60909A860C40 /* PeakMeterHolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeakMeterHolderTests.swift; sourceTree = "<group>"; };
+		A53F8D81D28EE77DC5594459 /* TrackMemoryPlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMemoryPlayerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1609,6 +1624,9 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				A53F8D81D28EE77DC5594459 /* TrackMemoryPlayerTests.swift */,
+				D4B29170FD9B60909A860C40 /* PeakMeterHolderTests.swift */,
+				375D9113CEEC498ECEE2B9AC /* RealtimeReferenceTests.swift */,
 				1555397AD1F243733D4B9B5A /* RealtimeSnapshotTests.swift */,
 				8162BEF63030F428C0701D36 /* SongDragPayloadTests.swift */,
 				9D36597444DBE5BA79FD6A96 /* MeasureGridSpansTests.swift */,
@@ -1803,6 +1821,9 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				4E6373A0B3C21FBDE3920720 /* TrackRenderContext+Rendering.swift */,
+				BA4C3FEA1FAB000D1E4735DF /* TrackRenderContext.swift */,
+				D987E47742EF85C6B8EAA767 /* RealtimeReference.swift */,
 				EFAB814F7C397BE2200E1D78 /* TransportClock.swift */,
 				F67E97EB5E4FFB31472232C4 /* RealtimeSnapshot.swift */,
 				E78DC1BE7EFE5F9DBB5AFDA8 /* PlaybackCoordinator+GeneratedPayloads.swift */,
@@ -2171,6 +2192,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				92BC4B48BF5B5C6C0BEB72B4 /* TrackRenderContext+Rendering.swift in Sources */,
+				5C98BD9332A6CEA8D0C58DF9 /* TrackRenderContext.swift in Sources */,
+				54E915D590520B6D714A6185 /* RealtimeReference.swift in Sources */,
 				9DF40F5EDFBEE84668EEB95E /* TransportClock.swift in Sources */,
 				5FC9BC3F382F79F9C53C9815 /* RealtimeSnapshot.swift in Sources */,
 				581A5A9153B27167B112B94E /* SongDragPreview.swift in Sources */,
@@ -2536,6 +2560,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				611009242140211103408A6D /* TrackMemoryPlayerTests.swift in Sources */,
+				4B9F039E49E1614CD6FB5C82 /* PeakMeterHolderTests.swift in Sources */,
+				C74DAA7CD67F2E49E1B2B74A /* RealtimeReferenceTests.swift in Sources */,
 				77FC097575F8137BFE46B7EC /* RealtimeSnapshotTests.swift in Sources */,
 				2349CC10D8698BA82B9759A0 /* SongDragPayloadTests.swift in Sources */,
 				A81251877119FDFAE5C59F4F /* MeasureGridSpansTests.swift in Sources */,
@@ -2620,6 +2647,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E5357A74F05DB12E7A3EFB3F /* TrackRenderContext+Rendering.swift in Sources */,
+				29C97132FDB3A9BC566E6327 /* TrackRenderContext.swift in Sources */,
+				AD211A69B8CF08AAD078877B /* RealtimeReference.swift in Sources */,
 				9D684191BCC074C4B28FBDA5 /* TransportClock.swift in Sources */,
 				0CDBA10A7C7A68D8473F19D7 /* RealtimeSnapshot.swift in Sources */,
 				72DA8D514D6926DBE89680A3 /* SongDragPreview.swift in Sources */,

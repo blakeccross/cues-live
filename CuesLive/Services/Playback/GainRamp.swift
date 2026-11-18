@@ -11,7 +11,7 @@ import Foundation
 /// hold the target. The ramp always finishes inside the block it starts in, so
 /// there is no state to carry across blocks beyond `current`.
 ///
-/// Not thread-safe: the owner must serialise access (the render context's lock).
+/// Not thread-safe: only the render thread that owns it may touch it.
 struct GainRamp {
     /// Long enough to avoid a click, short enough that a mute still feels immediate.
     static let defaultRampSeconds: Double = 0.005

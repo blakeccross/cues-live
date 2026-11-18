@@ -20,6 +20,16 @@ static inline void realtime_atomic_store_release(uint64_t *value, uint64_t desir
     __atomic_store_n(value, desired, __ATOMIC_RELEASE);
 }
 
+/// Sequentially consistent load and store, for handshakes where one thread stores and then
+/// loads a different variable and must not have the two reordered.
+static inline uint64_t realtime_atomic_load_seq_cst(const uint64_t *value) {
+    return __atomic_load_n(value, __ATOMIC_SEQ_CST);
+}
+
+static inline void realtime_atomic_store_seq_cst(uint64_t *value, uint64_t desired) {
+    __atomic_store_n(value, desired, __ATOMIC_SEQ_CST);
+}
+
 /// Adds `delta` and returns the new value.
 static inline uint64_t realtime_atomic_add(uint64_t *value, uint64_t delta) {
     return __atomic_add_fetch(value, delta, __ATOMIC_ACQ_REL);
