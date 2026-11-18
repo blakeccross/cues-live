@@ -144,7 +144,7 @@ which makes replication bugs visible in rehearsal instead of at a show.
 ## Pilot tone
 
 A device-local output setting: "Redundancy pilot tone" with a channel picker in output routing.
-It is a continuous low-level sine generated in a source node, routed through `OutputRoutingManager`,
+It is a continuous low-level sine generated in a source node, routed through `StemMixer`,
 running whenever the app is open (not only during playback) so the switcher stays armed. The tone
 must stop if the render path stalls; generating it in the same engine as the stems guarantees this.
 

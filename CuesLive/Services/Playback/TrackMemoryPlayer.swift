@@ -1,14 +1,13 @@
 import AVFoundation
 import Foundation
 
-/// Pull-based memory playback for one track via `AVAudioSourceNode`.
+/// One loaded track: the main thread's handle on what it plays, mixed by `StemMixer`.
 final class TrackMemoryPlayer {
     /// Head of a loop kept resident by streaming sources. The reader polls every
     /// 40ms, so this only has to cover its catch-up latency after a wrap.
     static let loopPrefetchSeconds: TimeInterval = 2
 
     let trackID: UUID
-    let sourceNode: AVAudioSourceNode
     let sampleSource: any StemSampleSource
     private let renderContext: TrackRenderContext
 
@@ -16,33 +15,23 @@ final class TrackMemoryPlayer {
         trackID: UUID,
         buffer: any StemSampleSource,
         transport: AudioPlaybackTransport,
-        mapper: ArrangementTimelineMapper
+        mapper: ArrangementTimelineMapper,
+        outputSampleRate: Double = DecodedStemBuffer.engineSampleRate
     ) {
         self.trackID = trackID
         self.sampleSource = buffer
         self.renderContext = TrackRenderContext(
             transport: transport,
             buffer: buffer,
-            mapper: mapper
+            mapper: mapper,
+            outputSampleRate: outputSampleRate
         )
-
-        let format = buffer.audioFormat
-        // Unretained so the render thread never touches the context's reference count and
-        // so can never be the one to free it. The engine stops before it releases a player.
-        let context = Unmanaged.passUnretained(renderContext)
-
-        sourceNode = AVAudioSourceNode(format: format) { _, timestamp, frameCount, outputData in
-            let stamp = timestamp.pointee
-            let hostTime = stamp.mFlags.contains(.hostTimeValid) ? stamp.mHostTime : mach_absolute_time()
-
-            context._withUnsafeGuaranteedRef { renderContext in
-                renderContext.render(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputData)
-            }
-            return noErr
-        }
     }
 
-    /// Renders one block exactly as the source node does; lets tests drive the render path
+    /// What `StemMixer` renders for this track.
+    var mixerVoice: any MixerVoice { renderContext }
+
+    /// Renders one block exactly as the mixer does; lets tests drive the render path
     /// with a deterministic clock.
     func renderBlock(
         frameCount: AVAudioFrameCount,
@@ -52,7 +41,7 @@ final class TrackMemoryPlayer {
         renderContext.render(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputBuffer)
     }
 
-    /// Stops reading sample data on the audio thread. Call before detaching the node.
+    /// Stops reading sample data on the audio thread.
     func invalidateRendering() {
         renderContext.invalidate()
     }

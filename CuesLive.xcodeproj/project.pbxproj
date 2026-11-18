@@ -80,7 +80,6 @@
 		807B849149E5ACF19C2AF34E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000014 /* Assets.xcassets */; };
 		80C395D6D9A696ACC64D7761 /* ProjectFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000076 /* ProjectFileStore.swift */; };
 		85637C1DE835C41B3E08A91F /* SongMediaHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E1 /* SongMediaHealth.swift */; };
-		87AA3E173DC3F3A03F5EB998 /* OutputRoutingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000032 /* OutputRoutingManager.swift */; };
 		88CF0E142B71D61032550EC0 /* SongMusicalKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012A /* SongMusicalKey.swift */; };
 		8A026E5598BE80B727B652AB /* RemoteHostSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000308 /* RemoteHostSessionController.swift */; };
 		8AF480949E8482DC31933ED5 /* WaveformLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000016 /* WaveformLoader.swift */; };
@@ -150,7 +149,6 @@
 		AA000001000000000000002F /* GroupOutputRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002F /* GroupOutputRoute.swift */; };
 		AA0000010000000000000030 /* OutputRoutingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000030 /* OutputRoutingStore.swift */; };
 		AA0000010000000000000031 /* AudioOutputDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000031 /* AudioOutputDeviceService.swift */; };
-		AA0000010000000000000032 /* OutputRoutingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000032 /* OutputRoutingManager.swift */; };
 		AA0000010000000000000034 /* SongFolderImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000034 /* SongFolderImporter.swift */; };
 		AA0000010000000000000035 /* TimeSignatureChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000035 /* TimeSignatureChange.swift */; };
 		AA000001000000000000003C /* TempoChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003E /* TempoChange.swift */; };
@@ -232,7 +230,6 @@
 		AA0000010000000000000116 /* TimecodeStartCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000116 /* TimecodeStartCalculatorTests.swift */; };
 		AA0000010000000000000117 /* LTCFrameEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000117 /* LTCFrameEncoderTests.swift */; };
 		AA0000010000000000000118 /* LTCGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000118 /* LTCGeneratorTests.swift */; };
-		AA0000010000000000000119 /* OutputRoutingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000119 /* OutputRoutingManagerTests.swift */; };
 		AA000001000000000000012A /* SongMusicalKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012A /* SongMusicalKey.swift */; };
 		AA000001000000000000012B /* SongMusicalKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012B /* SongMusicalKeyTests.swift */; };
 		AA000001000000000000012E /* TrackGroupStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000012E /* TrackGroupStoreTests.swift */; };
@@ -824,6 +821,20 @@
 		C74DAA7CD67F2E49E1B2B74A /* RealtimeReferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375D9113CEEC498ECEE2B9AC /* RealtimeReferenceTests.swift */; };
 		4B9F039E49E1614CD6FB5C82 /* PeakMeterHolderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B29170FD9B60909A860C40 /* PeakMeterHolderTests.swift */; };
 		611009242140211103408A6D /* TrackMemoryPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53F8D81D28EE77DC5594459 /* TrackMemoryPlayerTests.swift */; };
+		82B984B484134770DC674A82 /* MixerRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2688355E5860E41FFFA047A0 /* MixerRoute.swift */; };
+		D13D95B0A6BD6E76A5001D67 /* MixerRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2688355E5860E41FFFA047A0 /* MixerRoute.swift */; };
+		3EB39471CAA43BD37A1FA482 /* MixerVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D0482100379DD90A464289 /* MixerVoice.swift */; };
+		3B3EBBD5CEF2BA28E02ACFCA /* MixerVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D0482100379DD90A464289 /* MixerVoice.swift */; };
+		1D9014F7B9BE2758326E43C3 /* StemMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75130DC8808701A83440973 /* StemMixer.swift */; };
+		8ED74AE09358C21035B36889 /* StemMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75130DC8808701A83440973 /* StemMixer.swift */; };
+		B5598006D0A7262EBAF83551 /* MixerRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBBAEC2B4DEA10ABC926BB56 /* MixerRouteTests.swift */; };
+		A83C42CE8993842CC7E1BB2C /* StemMixerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B132DA3C0B09EC647ECAEF2 /* StemMixerTests.swift */; };
+		751E09327425F8E96F8F6208 /* AudioEngineManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB49D3801C05EB5121EA5107 /* AudioEngineManagerTests.swift */; };
+		E625E2D3F53BC419F59CBDFC /* OutputRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5900BA88154E1A19A15F385 /* OutputRoutingTests.swift */; };
+		56F98B48D75A33F16A6136F6 /* TrackRenderContext+Resampling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83FDD097C3805631A74D54E4 /* TrackRenderContext+Resampling.swift */; };
+		82DA16870281F6B7924D5498 /* TrackRenderContext+Resampling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83FDD097C3805631A74D54E4 /* TrackRenderContext+Resampling.swift */; };
+		067B5A75B4C98E4B41DEF9F8 /* AudioEngineManager+Output.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */; };
+		BE0ABF48123D5B6F57549009 /* AudioEngineManager+Output.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -883,7 +894,6 @@
 		AA000002000000000000002F /* GroupOutputRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupOutputRoute.swift; sourceTree = "<group>"; };
 		AA0000020000000000000030 /* OutputRoutingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingStore.swift; sourceTree = "<group>"; };
 		AA0000020000000000000031 /* AudioOutputDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioOutputDeviceService.swift; sourceTree = "<group>"; };
-		AA0000020000000000000032 /* OutputRoutingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingManager.swift; sourceTree = "<group>"; };
 		AA0000020000000000000034 /* SongFolderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFolderImporter.swift; sourceTree = "<group>"; };
 		AA0000020000000000000035 /* TimeSignatureChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSignatureChange.swift; sourceTree = "<group>"; };
 		AA000002000000000000003E /* TempoChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempoChange.swift; sourceTree = "<group>"; };
@@ -963,7 +973,6 @@
 		AA0000020000000000000116 /* TimecodeStartCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimecodeStartCalculatorTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000117 /* LTCFrameEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LTCFrameEncoderTests.swift; sourceTree = "<group>"; };
 		AA0000020000000000000118 /* LTCGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LTCGeneratorTests.swift; sourceTree = "<group>"; };
-		AA0000020000000000000119 /* OutputRoutingManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingManagerTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000012A /* SongMusicalKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMusicalKey.swift; sourceTree = "<group>"; };
 		AA000002000000000000012B /* SongMusicalKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongMusicalKeyTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000012E /* TrackGroupStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackGroupStoreTests.swift; sourceTree = "<group>"; };
@@ -1294,6 +1303,15 @@
 		375D9113CEEC498ECEE2B9AC /* RealtimeReferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeReferenceTests.swift; sourceTree = "<group>"; };
 		D4B29170FD9B60909A860C40 /* PeakMeterHolderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeakMeterHolderTests.swift; sourceTree = "<group>"; };
 		A53F8D81D28EE77DC5594459 /* TrackMemoryPlayerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackMemoryPlayerTests.swift; sourceTree = "<group>"; };
+		2688355E5860E41FFFA047A0 /* MixerRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerRoute.swift; sourceTree = "<group>"; };
+		F5D0482100379DD90A464289 /* MixerVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerVoice.swift; sourceTree = "<group>"; };
+		F75130DC8808701A83440973 /* StemMixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemMixer.swift; sourceTree = "<group>"; };
+		CBBAEC2B4DEA10ABC926BB56 /* MixerRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerRouteTests.swift; sourceTree = "<group>"; };
+		8B132DA3C0B09EC647ECAEF2 /* StemMixerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StemMixerTests.swift; sourceTree = "<group>"; };
+		FB49D3801C05EB5121EA5107 /* AudioEngineManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEngineManagerTests.swift; sourceTree = "<group>"; };
+		E5900BA88154E1A19A15F385 /* OutputRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputRoutingTests.swift; sourceTree = "<group>"; };
+		83FDD097C3805631A74D54E4 /* TrackRenderContext+Resampling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TrackRenderContext+Resampling.swift"; sourceTree = "<group>"; };
+		F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudioEngineManager+Output.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1624,6 +1642,10 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				E5900BA88154E1A19A15F385 /* OutputRoutingTests.swift */,
+				FB49D3801C05EB5121EA5107 /* AudioEngineManagerTests.swift */,
+				8B132DA3C0B09EC647ECAEF2 /* StemMixerTests.swift */,
+				CBBAEC2B4DEA10ABC926BB56 /* MixerRouteTests.swift */,
 				A53F8D81D28EE77DC5594459 /* TrackMemoryPlayerTests.swift */,
 				D4B29170FD9B60909A860C40 /* PeakMeterHolderTests.swift */,
 				375D9113CEEC498ECEE2B9AC /* RealtimeReferenceTests.swift */,
@@ -1673,7 +1695,6 @@
 				AA0000020000000000000116 /* TimecodeStartCalculatorTests.swift */,
 				AA0000020000000000000117 /* LTCFrameEncoderTests.swift */,
 				AA0000020000000000000118 /* LTCGeneratorTests.swift */,
-				AA0000020000000000000119 /* OutputRoutingManagerTests.swift */,
 				AA00000200000000000000FE /* ClickSongCreatorTests.swift */,
 				AA0000020000000000000103 /* SectionLoopTimingTests.swift */,
 				AA00000200000000000001FF /* SectionTransitionRenderTests.swift */,
@@ -1821,6 +1842,11 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */,
+				83FDD097C3805631A74D54E4 /* TrackRenderContext+Resampling.swift */,
+				F75130DC8808701A83440973 /* StemMixer.swift */,
+				F5D0482100379DD90A464289 /* MixerVoice.swift */,
+				2688355E5860E41FFFA047A0 /* MixerRoute.swift */,
 				4E6373A0B3C21FBDE3920720 /* TrackRenderContext+Rendering.swift */,
 				BA4C3FEA1FAB000D1E4735DF /* TrackRenderContext.swift */,
 				D987E47742EF85C6B8EAA767 /* RealtimeReference.swift */,
@@ -1868,7 +1894,6 @@
 				AA0000020000000000000031 /* AudioOutputDeviceService.swift */,
 				AA00000200000000000003B2 /* OutputChannelTestPlayer.swift */,
 				AA00000200000000000004A3 /* OutputRecoveryBackoff.swift */,
-				AA0000020000000000000032 /* OutputRoutingManager.swift */,
 				AA0000020000000000000030 /* OutputRoutingStore.swift */,
 			);
 			path = Output;
@@ -2192,6 +2217,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				067B5A75B4C98E4B41DEF9F8 /* AudioEngineManager+Output.swift in Sources */,
+				56F98B48D75A33F16A6136F6 /* TrackRenderContext+Resampling.swift in Sources */,
+				1D9014F7B9BE2758326E43C3 /* StemMixer.swift in Sources */,
+				3EB39471CAA43BD37A1FA482 /* MixerVoice.swift in Sources */,
+				82B984B484134770DC674A82 /* MixerRoute.swift in Sources */,
 				92BC4B48BF5B5C6C0BEB72B4 /* TrackRenderContext+Rendering.swift in Sources */,
 				5C98BD9332A6CEA8D0C58DF9 /* TrackRenderContext.swift in Sources */,
 				54E915D590520B6D714A6185 /* RealtimeReference.swift in Sources */,
@@ -2518,7 +2548,6 @@
 				AA000001000000000000002F /* GroupOutputRoute.swift in Sources */,
 				AA0000010000000000000030 /* OutputRoutingStore.swift in Sources */,
 				AA0000010000000000000031 /* AudioOutputDeviceService.swift in Sources */,
-				AA0000010000000000000032 /* OutputRoutingManager.swift in Sources */,
 				AA00000100000000000003B2 /* OutputChannelTestPlayer.swift in Sources */,
 				AA0000010000000000000034 /* SongFolderImporter.swift in Sources */,
 				AA0000010000000000000210 /* OutputRoutingSettingsForm.swift in Sources */,
@@ -2560,6 +2589,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E625E2D3F53BC419F59CBDFC /* OutputRoutingTests.swift in Sources */,
+				751E09327425F8E96F8F6208 /* AudioEngineManagerTests.swift in Sources */,
+				A83C42CE8993842CC7E1BB2C /* StemMixerTests.swift in Sources */,
+				B5598006D0A7262EBAF83551 /* MixerRouteTests.swift in Sources */,
 				611009242140211103408A6D /* TrackMemoryPlayerTests.swift in Sources */,
 				4B9F039E49E1614CD6FB5C82 /* PeakMeterHolderTests.swift in Sources */,
 				C74DAA7CD67F2E49E1B2B74A /* RealtimeReferenceTests.swift in Sources */,
@@ -2609,7 +2642,6 @@
 				AA0000010000000000000116 /* TimecodeStartCalculatorTests.swift in Sources */,
 				AA0000010000000000000117 /* LTCFrameEncoderTests.swift in Sources */,
 				AA0000010000000000000118 /* LTCGeneratorTests.swift in Sources */,
-				AA0000010000000000000119 /* OutputRoutingManagerTests.swift in Sources */,
 				AA00000100000000000000FE /* ClickSongCreatorTests.swift in Sources */,
 				AA0000010000000000000103 /* SectionLoopTimingTests.swift in Sources */,
 				AA00000100000000000001FF /* SectionTransitionRenderTests.swift in Sources */,
@@ -2647,6 +2679,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BE0ABF48123D5B6F57549009 /* AudioEngineManager+Output.swift in Sources */,
+				82DA16870281F6B7924D5498 /* TrackRenderContext+Resampling.swift in Sources */,
+				8ED74AE09358C21035B36889 /* StemMixer.swift in Sources */,
+				3B3EBBD5CEF2BA28E02ACFCA /* MixerVoice.swift in Sources */,
+				D13D95B0A6BD6E76A5001D67 /* MixerRoute.swift in Sources */,
 				E5357A74F05DB12E7A3EFB3F /* TrackRenderContext+Rendering.swift in Sources */,
 				29C97132FDB3A9BC566E6327 /* TrackRenderContext.swift in Sources */,
 				AD211A69B8CF08AAD078877B /* RealtimeReference.swift in Sources */,
@@ -2973,7 +3010,6 @@
 				A471859ECA9875C2DABDAA29 /* GroupOutputRoute.swift in Sources */,
 				569BF8338FB832C2C8F55120 /* OutputRoutingStore.swift in Sources */,
 				235CFEF4F109F8A33310A3AD /* AudioOutputDeviceService.swift in Sources */,
-				87AA3E173DC3F3A03F5EB998 /* OutputRoutingManager.swift in Sources */,
 				3E2D3C9A0AAFA9A7030E4B84 /* OutputChannelTestPlayer.swift in Sources */,
 				060975E7911FF7D5A6DFA990 /* SongFolderImporter.swift in Sources */,
 				BF3CA00EFDBA79C04ED897BB /* OutputRoutingSettingsForm.swift in Sources */,

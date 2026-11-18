@@ -180,18 +180,27 @@ extension TrackRenderContext {
                         source: buffer,
                         timelineFrame: playbackMasterFrame,
                         sourceSeconds: sourceStart,
-                        rate: settings.mapper.playbackRate(atMasterTimeline: playbackMasterTime),
-                        semitones: settings.transposeSemitones,
+                        // Source frames per output frame, so a stem at another rate keeps its speed.
+                        rate: settings.mapper.playbackRate(atMasterTimeline: playbackMasterTime) * sourceStep,
+                        semitones: settings.transposeSemitones + sourcePitchCorrection,
                         frameCount: runFrames,
                         into: UnsafeMutableAudioBufferListPointer(outputBuffer),
                         outputOffset: renderedFrames,
+                        gain: gain
+                    )
+                } else if resampleWindow != nil {
+                    mixResampled(
+                        fromSourceFrame: sourceStart * buffer.sampleRate,
+                        frameCount: runFrames,
+                        into: outputBuffer,
+                        outputFrameOffset: renderedFrames,
                         gain: gain
                     )
                 } else {
                     mixFromMemory(
                         startingFrame: AudioPlaybackTransport.frameIndex(
                             for: sourceStart,
-                            sampleRate: sampleRate
+                            sampleRate: buffer.sampleRate
                         ),
                         frameCount: runFrames,
                         into: outputBuffer,
@@ -227,9 +236,8 @@ extension TrackRenderContext {
         let outputChannelCount = outputBuffers.count
         guard outputChannelCount > 0, frameCount > 0 else { return }
 
-        // fill ch0; if the multi-channel connection hands us a wider ABL,
-        // duplicate mono into additional channels so channel maps that
-        // dual-route ch0 stay valid without reading missing inputs.
+        // A mono stem fills every channel of a wider bus, so it plays on both sides of
+        // the mixer's stereo bus at full level and pans like a stereo stem.
         if buffer.channelCount == 1 {
             guard let outputData = outputBuffers[0].mData?.assumingMemoryBound(to: Float.self) else { return }
             _ = buffer.copy(

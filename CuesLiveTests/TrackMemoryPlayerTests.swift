@@ -54,6 +54,73 @@ final class TrackMemoryPlayerTests: XCTestCase {
         XCTAssertEqual(republished, undisturbed, "republishing identical settings must not change a sample")
     }
 
+    func testStemAtAnotherSampleRatePlaysContinuouslyAtItsOwnSpeed() throws {
+        let sourceRate = 44_100.0
+        let period = 44_100
+        let frames = Int(seconds * sourceRate)
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: sourceRate, channels: 1))
+        let pcm = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames)))
+        pcm.frameLength = AVAudioFrameCount(frames)
+        let data = try XCTUnwrap(pcm.floatChannelData)[0]
+        for index in 0..<frames { data[index] = Float(index % period) / Float(period) }
+        let stem = try DecodedStemBuffer.monoStem(from: pcm, targetSampleRate: sourceRate)
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(seconds)
+        let player = TrackMemoryPlayer(
+            trackID: UUID(),
+            buffer: stem,
+            transport: transport,
+            mapper: .linear(trimStart: 0, trimEnd: seconds)
+        )
+        transport.beginPlayback(from: 0)
+
+        let origin = hostTicks(seconds: 100)
+        var output: [Float] = []
+        for block in 0..<40 {
+            output += try renderBlock(player, hostTime: origin + hostTicks(seconds: Double(block) * blockSeconds))
+        }
+
+        // One output frame at 48 kHz moves 44.1/48 of a source frame through the ramp.
+        let step = Float(sourceRate / sampleRate) / Float(period)
+        let jumps = zip(output, output.dropFirst()).enumerated().filter { _, pair in
+            abs((pair.1 - pair.0) - step) > step * 0.25
+        }
+        XCTAssertTrue(jumps.isEmpty, "\(jumps.count) discontinuities, first at frames \(jumps.prefix(6).map(\.offset))")
+        XCTAssertEqual(output[48_000 / 4], Float(0.25 * sourceRate) / Float(period), accuracy: step * 2, "a quarter second in")
+    }
+
+    func testTransposedStemAtAnotherSampleRateLandsOnTheRequestedPitch() throws {
+        let sourceRate = 44_100.0
+        let frequency = 441.0
+        let frames = Int(seconds * sourceRate)
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: sourceRate, channels: 1))
+        let pcm = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames)))
+        pcm.frameLength = AVAudioFrameCount(frames)
+        let data = try XCTUnwrap(pcm.floatChannelData)[0]
+        for index in 0..<frames { data[index] = Float(sin(2 * .pi * frequency * Double(index) / sourceRate)) * 0.5 }
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(seconds)
+        let player = TrackMemoryPlayer(
+            trackID: UUID(),
+            buffer: try DecodedStemBuffer.monoStem(from: pcm, targetSampleRate: sourceRate),
+            transport: transport,
+            mapper: .linear(trimStart: 0, trimEnd: seconds)
+        )
+        player.setTransposeSemitones(12)
+        transport.beginPlayback(from: 0)
+
+        let origin = hostTicks(seconds: 100)
+        var output: [Float] = []
+        for block in 0..<120 {
+            output += try renderBlock(player, hostTime: origin + hostTicks(seconds: Double(block) * blockSeconds))
+        }
+
+        // Count rising zero crossings over the last second, past the stretcher's start-up.
+        let lastSecond = output.suffix(Int(sampleRate))
+        let crossings = zip(lastSecond, lastSecond.dropFirst()).filter { $0.0 < 0 && $0.1 >= 0 }.count
+        XCTAssertEqual(Double(crossings), frequency * 2, accuracy: 10, "an octave up, with no extra shift from the rate")
+    }
+
     /// Renders the first three seconds on a background thread, the way the audio thread
     /// does. Optionally the calling thread keeps republishing the same settings meanwhile.
     private func renderSeconds(whileRepublishingSettings republishes: Bool) throws -> [Float] {

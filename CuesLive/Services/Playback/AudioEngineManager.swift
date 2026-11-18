@@ -31,24 +31,21 @@ final class AudioEngineManager {
     struct TrackState {
         let trackID: UUID
         let memoryPlayer: TrackMemoryPlayer
-        let timePitchNode: AVAudioUnitTimePitch
         var settings: TrackSettings
         let fileDuration: TimeInterval
         var groupID: UUID?
-        let sourceFormat: AVAudioFormat
-
-        var playbackOutputNode: AVAudioNode {
-            timePitchNode
-        }
     }
 
-    private let engine = AVAudioEngine()
-    private let masterMixer = AVAudioMixerNode()
-    private let announcementSource = AnnouncementSource()
-    private var isAnnouncementPlayerWired = false
-    private let transport = AudioPlaybackTransport()
+    let engine = AVAudioEngine()
+    /// Renders every track and the Smart Guide voice; `mixerNode` plays it into the engine.
+    @ObservationIgnored var stemMixer: StemMixer
+    @ObservationIgnored var mixerNode: AVAudioSourceNode
+    let announcementSource = AnnouncementSource()
+    /// Output channels the mixer is connected with.
+    @ObservationIgnored var mixerOutputChannelCount = 2
+    let transport = AudioPlaybackTransport()
     private let midiScheduler: MIDIScheduler
-    private(set) var tracks: [UUID: TrackState] = [:]
+    var tracks: [UUID: TrackState] = [:]
     private var scheduledOverlapStartTime: TimeInterval?
     private var overlapStartHandler: (() -> Void)?
     private var didNotifyPlaybackFinished = false
@@ -56,7 +53,7 @@ final class AudioEngineManager {
     private var playbackTimer: Timer?
     /// Nil until the song's timeline is applied; tracks then play their trimmed files linearly.
     private(set) var playbackLayout: SongPlaybackLayout?
-    private var routingSnapshot: OutputRoutingSnapshot?
+    var routingSnapshot: OutputRoutingSnapshot?
     private var groupMixSnapshot = GroupMixSnapshot.default
     private var tempoChanges: [TempoChange] = []
     private var timeSignatureChanges: [TimeSignatureChange] = []
@@ -97,9 +94,11 @@ final class AudioEngineManager {
 
     init() {
         midiScheduler = MIDIScheduler(transport: transport)
-        engine.attach(masterMixer)
-        engine.connect(masterMixer, to: engine.mainMixerNode, format: nil)
-        wireAnnouncementPlayerIfNeeded()
+        let mixer = StemMixer()
+        stemMixer = mixer
+        mixerNode = mixer.makeSourceNode()
+        engine.attach(mixerNode)
+        connectMixer(outputChannelCount: 2, routing: nil)
         #if os(iOS)
         configureAudioSession()
         #endif
@@ -121,27 +120,14 @@ final class AudioEngineManager {
 
     /// Speaks a Smart Guide callout. It follows the Cues group's output routing and fader.
     func playAnnouncement(_ stem: DecodedStemBuffer) {
-        guard !isOutputLost, let announcementSource else { return }
-        wireAnnouncementPlayerIfNeeded()
+        guard !isOutputLost else { return }
         try? startEngineIfNeeded()
         applyAnnouncementGain()
         announcementSource.play(stem)
     }
 
-    private func wireAnnouncementPlayerIfNeeded() {
-        guard !isAnnouncementPlayerWired, let announcementSource else { return }
-        if announcementSource.sourceNode.engine == nil {
-            engine.attach(announcementSource.sourceNode)
-        }
-        engine.disconnectNodeOutput(announcementSource.sourceNode)
-        OutputRoutingManager.clearChannelMap(on: announcementSource.sourceNode)
-        engine.connect(announcementSource.sourceNode, to: masterMixer, format: announcementSource.format)
-        isAnnouncementPlayerWired = true
-    }
-
     /// Smart Guide shares the Cues group's fader and mute with the Cues track group.
     private func applyAnnouncementGain() {
-        guard let announcementSource else { return }
         let snapshot = groupMixSnapshot
         guard let guideGroupID = routingSnapshot?.guideGroupID else {
             announcementSource.setGain(1)
@@ -161,7 +147,7 @@ final class AudioEngineManager {
     }
     #endif
 
-    private func applyStableMaximumFramesToRender() {
+    func applyStableMaximumFramesToRender() {
         engine.outputNode.auAudioUnit.maximumFramesToRender = AudioOutputDeviceService.stableBufferFrameSize
     }
 
@@ -191,34 +177,26 @@ final class AudioEngineManager {
         playbackLayout = nil
         routingSnapshot = routing
 
-        var loadedTracks: [UUID: TrackState] = [:]
-        do {
-            for payload in payloads {
-                loadedTracks[payload.id] = try buildTrackState(for: payload)
-            }
-            tracks = loadedTracks
-
-            // A missing device must not fail the load; recovery waits for the output.
-            do {
-                if let routing {
-                    try wireTrackOutputs(routing: routing)
-                } else {
-                    connectTracksToMasterMixer()
-                    try startEngineIfNeeded()
-                }
-            } catch {
-                Self.outputLogger.error("Engine failed to start while loading: \(error.localizedDescription, privacy: .public)")
-                beginOutputRecoveryIfNeeded()
-            }
-
-            applyAllMixSettings()
-            duration = calculateEffectiveDuration()
-            transport.setDuration(duration)
-        } catch {
-            tracks = loadedTracks
-            teardownTracks()
-            throw error
+        for payload in payloads {
+            tracks[payload.id] = buildTrackState(for: payload)
         }
+
+        // A missing device must not fail the load; recovery waits for the output.
+        do {
+            if let routing {
+                try wireTrackOutputs(routing: routing)
+            } else {
+                connectMixer(outputChannelCount: 2, routing: nil)
+                try startEngineIfNeeded()
+            }
+        } catch {
+            Self.outputLogger.error("Engine failed to start while loading: \(error.localizedDescription, privacy: .public)")
+            beginOutputRecoveryIfNeeded()
+        }
+
+        applyAllMixSettings()
+        duration = calculateEffectiveDuration()
+        transport.setDuration(duration)
     }
 
     static func prepareTrackPayload(
@@ -255,7 +233,7 @@ final class AudioEngineManager {
         )
     }
 
-    private func buildTrackState(for payload: PreparedTrackPayload) throws -> TrackState {
+    func buildTrackState(for payload: PreparedTrackPayload) -> TrackState {
         var settings = payload.settings
         let playbackBuffer = payload.buffer
         let fileDuration = Double(playbackBuffer.frameCount) / playbackBuffer.sampleRate
@@ -276,24 +254,12 @@ final class AudioEngineManager {
         )
         memoryPlayer.setTransposeSemitones(settings.transposeSemitones)
 
-        let timePitchNode = AVAudioUnitTimePitch()
-        timePitchNode.pitch = 0
-        timePitchNode.rate = 1.0
-        timePitchNode.auAudioUnit.shouldBypassEffect = true
-
-        let format = playbackBuffer.audioFormat
-        engine.attach(memoryPlayer.sourceNode)
-        engine.attach(timePitchNode)
-        engine.connect(memoryPlayer.sourceNode, to: timePitchNode, format: format)
-
         return TrackState(
             trackID: payload.id,
             memoryPlayer: memoryPlayer,
-            timePitchNode: timePitchNode,
             settings: settings,
             fileDuration: fileDuration,
-            groupID: payload.groupID,
-            sourceFormat: format
+            groupID: payload.groupID
         )
     }
 
@@ -399,7 +365,7 @@ final class AudioEngineManager {
         silenceMeters()
         stopEngineForGraphChanges()
         invalidateAllPlayers()
-        detachAllTracks()
+        removeAllTracks()
         routingSnapshot = nil
     }
 
@@ -435,20 +401,18 @@ final class AudioEngineManager {
     #if DEBUG
     private var captureTapNode: AVAudioNode?
 
-    /// Records what one track renders (before routing and the speakers) so tests can inspect
+    /// Records the mixer's output (every track, before the speakers) so tests can inspect
     /// the real signal path. `silenceSpeakers` mutes the hardware output without touching the tap.
     func installCaptureTapForTesting(
-        trackID: UUID? = nil,
         silenceSpeakers: Bool,
         handler: @escaping (AVAudioPCMBuffer, AVAudioTime) -> Void
     ) {
         removeCaptureTapForTesting()
-        // Tapping the track output keeps the capture at the stem's own sample rate.
-        guard let node = (trackID.flatMap { tracks[$0] } ?? tracks.values.first)?.playbackOutputNode else { return }
-        node.installTap(onBus: 0, bufferSize: 1024, format: nil) { buffer, time in
+        // Tapping the mixer keeps the capture at the engine rate, ahead of any device conversion.
+        mixerNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { buffer, time in
             handler(buffer, time)
         }
-        captureTapNode = node
+        captureTapNode = mixerNode
         if silenceSpeakers {
             engine.mainMixerNode.outputVolume = 0
         }
@@ -463,8 +427,6 @@ final class AudioEngineManager {
     /// Sets a master output gain for this engine. This is used for crossfades
     /// between two engines.
     func setMasterVolume(_ volume: Float) {
-        masterMixer.outputVolume = volume
-        // Multi-channel routing bypasses `masterMixer`; keep main mixer in sync.
         engine.mainMixerNode.outputVolume = volume
     }
 
@@ -625,7 +587,7 @@ final class AudioEngineManager {
     /// loop start (or a cued section's start) has to be pinned before playback lands on it.
     /// The live view re-applies this on every playback tick, so anything that must stay
     /// pinned has to be reflected here and not only set once.
-    private func applyLoopPrefetch() {
+    func applyLoopPrefetch() {
         let pinned = pinnedPrefetchTimeline
         for track in tracks.values {
             track.memoryPlayer.prepareLoopPrefetch(atMasterTimeline: pinned)
@@ -715,7 +677,7 @@ final class AudioEngineManager {
             try wireTrackOutputs(routing: routing)
         } catch {
             routingSnapshot = nil
-            connectTracksToMasterMixer()
+            connectMixer(outputChannelCount: 2, routing: nil)
             try? startEngineIfNeeded()
         }
         applyAllMixSettings()
@@ -872,33 +834,22 @@ final class AudioEngineManager {
     private func teardownTracks() {
         stopEngineForGraphChanges()
         invalidateAllPlayers()
-        detachAllTracks()
+        removeAllTracks()
         routingSnapshot = nil
     }
 
-    /// Track render blocks read their player without retaining it, so a player may only be
-    /// released once the render thread has stopped.
-    private func detachAllTracks() {
-        assert(!engine.isRunning, "Stop the engine before releasing track players")
-        for track in tracks.values {
-            engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
-            engine.disconnectNodeInput(track.timePitchNode)
-            engine.disconnectNodeOutput(track.timePitchNode)
-            engine.detach(track.memoryPlayer.sourceNode)
-            engine.detach(track.timePitchNode)
-        }
+    private func removeAllTracks() {
         tracks.removeAll()
+        publishMixerLayout()
     }
 
-    private func stopEngineForGraphChanges() {
+    func stopEngineForGraphChanges() {
         if engine.isRunning {
             engine.stop()
         }
-        // Graph edits can invalidate player connections; rewire on next use.
-        isAnnouncementPlayerWired = false
     }
 
-    private func startEngineIfNeeded() throws {
+    func startEngineIfNeeded() throws {
         isHardwareSuspended = false
         applyStableMaximumFramesToRender()
         if !engine.isRunning {
@@ -1003,7 +954,7 @@ final class AudioEngineManager {
                 try wireTrackOutputs(routing: routing)
             } else {
                 stopEngineForGraphChanges()
-                connectTracksToMasterMixer()
+                connectMixer(outputChannelCount: 2, routing: nil)
                 try startEngineIfNeeded()
             }
         } catch {
@@ -1025,112 +976,6 @@ final class AudioEngineManager {
         failedOutputRecoveryAttempts = 0
         outputRecoveryGeneration += 1
         isOutputLost = false
-    }
-
-    private func wireTrackOutputs(routing: OutputRoutingSnapshot) throws {
-        stopEngineForGraphChanges()
-        let boundRequestedDevice = adoptOutputDevice(routing.deviceUID)
-        // A stale/missing device UID must not force multi-channel maps onto whatever
-        // output the engine actually opened — that leaves the graph silent.
-        let channelCount = (routing.deviceUID != nil && !boundRequestedDevice)
-            ? 2
-            : outputChannelCount(for: routing)
-        disconnectTrackOutputs()
-        connectTrackOutputs(routing: routing, channelCount: channelCount)
-        try startEngineIfNeeded()
-    }
-
-    private func adoptOutputDevice(_ deviceUID: String?) -> Bool {
-        guard let deviceUID else { return true }
-        // Bind only this engine's output unit — do not change the system default.
-        let bound = AudioOutputDeviceService.bindOutputDevice(uid: deviceUID, to: engine)
-        applyStableMaximumFramesToRender()
-        return bound
-    }
-
-    private func disconnectTrackOutputs() {
-        for track in tracks.values {
-            engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
-            engine.disconnectNodeOutput(track.timePitchNode)
-        }
-    }
-
-    private func connectTrackOutputs(routing: OutputRoutingSnapshot, channelCount: Int) {
-        restoreFullOutputGain()
-
-        // Channel-map routing is also needed on a stereo-only (2-channel) device
-        // whenever a group is pinned to a single mono channel instead of the
-        // default full stereo pair — otherwise every group would always spread
-        // across both channels regardless of its configured destination.
-        if channelCount > 2 || routing.hasNonDefaultRouting {
-            let routeTracks = tracks.values.map { track in
-                (
-                    // Channel maps must be applied on the source node after a
-                    // multi-channel connection. TimePitch stays mono and cannot
-                    // carry a device-width channel map.
-                    node: track.memoryPlayer.sourceNode as AVAudioNode,
-                    format: track.sourceFormat,
-                    destination: OutputRoutingStore.destination(for: track.groupID, snapshot: routing)
-                )
-            }
-
-            var allRoutes = routeTracks
-            if !routeTracks.isEmpty, let announcementSource {
-                if announcementSource.sourceNode.engine == nil {
-                    engine.attach(announcementSource.sourceNode)
-                }
-                allRoutes.append((
-                    node: announcementSource.sourceNode as AVAudioNode,
-                    format: announcementSource.format,
-                    destination: OutputRoutingStore.guideDestination(snapshot: routing)
-                ))
-            }
-
-            if OutputRoutingManager.applyChannelMapRouting(
-                engine: engine,
-                tracks: allRoutes,
-                outputChannelCount: max(channelCount, 2)
-            ) {
-                // The callout node is now routed directly with the track nodes.
-                isAnnouncementPlayerWired = true
-                return
-            }
-        }
-
-        connectTracksToMasterMixer()
-    }
-
-    private func connectTracksToMasterMixer() {
-        restoreFullOutputGain()
-
-        engine.disconnectNodeOutput(engine.mainMixerNode)
-        let outputFormat = engine.outputNode.outputFormat(forBus: 0)
-        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: outputFormat)
-
-        for track in tracks.values {
-            connectTrackToMasterMixer(track)
-        }
-        isAnnouncementPlayerWired = false
-        wireAnnouncementPlayerIfNeeded()
-    }
-
-    private func connectTrackToMasterMixer(_ track: TrackState) {
-        engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
-        engine.disconnectNodeOutput(track.timePitchNode)
-        OutputRoutingManager.clearChannelMap(on: track.memoryPlayer.sourceNode)
-        OutputRoutingManager.clearChannelMap(on: track.timePitchNode)
-        engine.connect(track.memoryPlayer.sourceNode, to: track.timePitchNode, format: track.sourceFormat)
-        engine.connect(track.timePitchNode, to: masterMixer, format: track.sourceFormat)
-    }
-
-    private func restoreFullOutputGain() {
-        masterMixer.outputVolume = 1
-        engine.mainMixerNode.outputVolume = 1
-    }
-
-    private func outputChannelCount(for routing: OutputRoutingSnapshot) -> Int {
-        let deviceCount = AudioOutputDeviceService.channelCount(for: routing.deviceUID)
-        return max(routing.channelCount, deviceCount, 2)
     }
 
     private func quantizeTimelineTime(_ time: TimeInterval) -> TimeInterval {

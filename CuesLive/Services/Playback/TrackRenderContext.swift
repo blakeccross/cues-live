@@ -7,7 +7,7 @@ import Foundation
 /// by publishing a new immutable `Settings` snapshot. The render thread reads the latest
 /// snapshot without locking, so a fader drag or an edit never makes it wait. Replaced
 /// snapshots, and any stretcher they alone held, are freed on the main thread.
-final class TrackRenderContext: @unchecked Sendable {
+final class TrackRenderContext: MixerVoice, @unchecked Sendable {
     struct MixState: Sendable {
         var volume: Float = 1
         var pan: Float = 0
@@ -38,8 +38,20 @@ final class TrackRenderContext: @unchecked Sendable {
 
     let transport: AudioPlaybackTransport
     let buffer: any StemSampleSource
+    /// The mixer's rate. The timeline and the rendered output count frames at this rate.
     let sampleRate: Double
+    /// Source frames per output frame: 1 unless the stem's file rate differs from the mixer's.
+    let sourceStep: Double
+    /// Pitch shift that undoes the stretcher reading a stem at another rate as if it were
+    /// at the mixer's rate.
+    let sourcePitchCorrection: Float
     let peakMeter = PeakMeterHolder()
+
+    /// Source frames for one resampled run, `resampleCapacity` per channel. Nil when the
+    /// stem is already at the mixer's rate.
+    let resampleWindow: UnsafeMutablePointer<Float>?
+    let resampleCapacity: Int
+    let resampleChannelCount: Int
 
     /// The main thread's copy of the latest published settings.
     private var settings: Settings
@@ -54,16 +66,35 @@ final class TrackRenderContext: @unchecked Sendable {
     init(
         transport: AudioPlaybackTransport,
         buffer: any StemSampleSource,
-        mapper: ArrangementTimelineMapper
+        mapper: ArrangementTimelineMapper,
+        outputSampleRate: Double = DecodedStemBuffer.engineSampleRate
     ) {
         self.transport = transport
         self.buffer = buffer
-        self.sampleRate = buffer.sampleRate
-        self.gainRampFrames = max(1, Int(buffer.sampleRate * GainRamp.defaultRampSeconds))
+        sampleRate = outputSampleRate
+        sourceStep = outputSampleRate > 0 ? buffer.sampleRate / outputSampleRate : 1
+        sourcePitchCorrection = sourceStep > 0 ? Float(12 * log2(sourceStep)) : 0
+        gainRampFrames = max(1, Int(outputSampleRate * GainRamp.defaultRampSeconds))
+
+        resampleChannelCount = max(1, min(buffer.channelCount, 2))
+        if sourceStep != 1, sourceStep > 0 {
+            resampleCapacity = Int((Double(StemMixer.maximumBusFrames) * sourceStep).rounded(.up)) + 4
+            let window = UnsafeMutablePointer<Float>.allocate(capacity: resampleCapacity * resampleChannelCount)
+            window.initialize(repeating: 0, count: resampleCapacity * resampleChannelCount)
+            resampleWindow = window
+        } else {
+            resampleCapacity = 0
+            resampleWindow = nil
+        }
+
         var settings = Settings(mapper: mapper)
         Self.refreshStretcher(in: &settings, buffer: buffer)
         self.settings = settings
         self.published = RealtimeReference(SettingsSnapshot(settings))
+    }
+
+    deinit {
+        resampleWindow?.deallocate()
     }
 
     // MARK: - Main thread
@@ -119,8 +150,8 @@ final class TrackRenderContext: @unchecked Sendable {
             return
         }
 
-        let startFrame = AudioPlaybackTransport.frameIndex(for: sourceSeconds, sampleRate: sampleRate)
-        let length = max(1, Int(TrackMemoryPlayer.loopPrefetchSeconds * sampleRate))
+        let startFrame = AudioPlaybackTransport.frameIndex(for: sourceSeconds, sampleRate: buffer.sampleRate)
+        let length = max(1, Int(TrackMemoryPlayer.loopPrefetchSeconds * buffer.sampleRate))
         buffer.setPinnedRegion(sourceFrames: startFrame..<(startFrame + length))
     }
 
@@ -130,7 +161,7 @@ final class TrackRenderContext: @unchecked Sendable {
         let effectiveTimeline = timeline - settings.playbackTimelineOffset
         guard effectiveTimeline >= 0 else { return }
         let sourceSeconds = settings.mapper.sourceSeconds(atMasterTimeline: effectiveTimeline) ?? 0
-        buffer.prewarm(aroundSourceFrame: Int(sourceSeconds * sampleRate))
+        buffer.prewarm(aroundSourceFrame: Int(sourceSeconds * buffer.sampleRate))
     }
 
     private func change(_ edit: (inout Settings) -> Void) {
@@ -151,14 +182,15 @@ final class TrackRenderContext: @unchecked Sendable {
 
     // MARK: - Render thread
 
+    @discardableResult
     func render(
         frameCount: AVAudioFrameCount,
         hostTime: UInt64,
         outputBuffer: UnsafeMutablePointer<AudioBufferList>
-    ) {
-        guard frameCount > 0, sampleRate > 0 else { return }
+    ) -> Bool {
         Self.clearOutput(outputBuffer)
-        published.withCurrent { snapshot in
+        guard frameCount > 0, sampleRate > 0 else { return false }
+        return published.withCurrent { snapshot in
             render(with: snapshot.settings, frameCount: frameCount, hostTime: hostTime, outputBuffer: outputBuffer)
         }
     }
@@ -168,8 +200,8 @@ final class TrackRenderContext: @unchecked Sendable {
         frameCount: AVAudioFrameCount,
         hostTime: UInt64,
         outputBuffer: UnsafeMutablePointer<AudioBufferList>
-    ) {
-        guard !settings.isInvalidated else { return }
+    ) -> Bool {
+        guard !settings.isInvalidated else { return false }
 
         let targetGain = Self.targetGain(for: settings.mix)
         if settings.rampSnapRequest != appliedRampSnapRequest {
@@ -178,7 +210,7 @@ final class TrackRenderContext: @unchecked Sendable {
             panRamp.snap(to: settings.mix.pan)
         }
         // A muted track that has finished ramping out renders nothing.
-        guard targetGain > 0 || gainRamp.current > 0 else { return }
+        guard targetGain > 0 || gainRamp.current > 0 else { return false }
 
         let rendered = renderPlayback(
             settings: settings,
@@ -192,7 +224,7 @@ final class TrackRenderContext: @unchecked Sendable {
             settings.stretcher?.invalidatePosition()
             gainRamp.snap(to: targetGain)
             panRamp.snap(to: settings.mix.pan)
-            return
+            return false
         }
 
         // Stems render at unity and the ramp is applied once over the block, so a
@@ -201,6 +233,7 @@ final class TrackRenderContext: @unchecked Sendable {
         gainRamp.apply(target: targetGain, to: buffers, frameCount: Int(frameCount), rampFrames: gainRampFrames)
         panRamp.apply(target: settings.mix.pan, to: buffers, frameCount: Int(frameCount), rampFrames: gainRampFrames)
         peakMeter.report(Self.peakAmplitude(in: outputBuffer, frameCount: frameCount))
+        return true
     }
 
     private static func targetGain(for mix: MixState) -> Float {
