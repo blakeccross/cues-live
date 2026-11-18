@@ -519,25 +519,17 @@ final class TrackMemoryPlayer {
         )
 
         let format = buffer.audioFormat
-        let context = renderContext
+        // Unretained so the render thread never touches the context's reference count and
+        // so can never be the one to free it. The engine stops before it releases a player.
+        let context = Unmanaged.passUnretained(renderContext)
 
-        sourceNode = AVAudioSourceNode(format: format) { [weak context] _, timestamp, frameCount, outputData in
-            guard let context else {
-                let buffers = UnsafeMutableAudioBufferListPointer(outputData)
-                for buffer in buffers {
-                    guard let data = buffer.mData else { continue }
-                    memset(data, 0, Int(buffer.mDataByteSize))
-                }
-                return noErr
-            }
+        sourceNode = AVAudioSourceNode(format: format) { _, timestamp, frameCount, outputData in
             let stamp = timestamp.pointee
             let hostTime = stamp.mFlags.contains(.hostTimeValid) ? stamp.mHostTime : mach_absolute_time()
 
-            context.render(
-                frameCount: frameCount,
-                hostTime: hostTime,
-                outputBuffer: outputData
-            )
+            context._withUnsafeGuaranteedRef { renderContext in
+                renderContext.render(frameCount: frameCount, hostTime: hostTime, outputBuffer: outputData)
+            }
             return noErr
         }
     }

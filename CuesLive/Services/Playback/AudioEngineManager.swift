@@ -869,25 +869,6 @@ final class AudioEngineManager {
         }.max() ?? 0
     }
 
-    private func teardownTracks(withIDs ids: Set<UUID>, stopEngine: Bool = true) {
-        guard !ids.isEmpty else { return }
-        if stopEngine {
-            stopEngineForGraphChanges()
-        }
-        for id in ids {
-            tracks[id]?.memoryPlayer.invalidateRendering()
-        }
-        for id in ids {
-            guard let track = tracks[id] else { continue }
-            engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
-            engine.disconnectNodeInput(track.timePitchNode)
-            engine.disconnectNodeOutput(track.timePitchNode)
-            engine.detach(track.memoryPlayer.sourceNode)
-            engine.detach(track.timePitchNode)
-            tracks.removeValue(forKey: id)
-        }
-    }
-
     private func teardownTracks() {
         stopEngineForGraphChanges()
         invalidateAllPlayers()
@@ -895,7 +876,10 @@ final class AudioEngineManager {
         routingSnapshot = nil
     }
 
+    /// Track render blocks read their player without retaining it, so a player may only be
+    /// released once the render thread has stopped.
     private func detachAllTracks() {
+        assert(!engine.isRunning, "Stop the engine before releasing track players")
         for track in tracks.values {
             engine.disconnectNodeOutput(track.memoryPlayer.sourceNode)
             engine.disconnectNodeInput(track.timePitchNode)
