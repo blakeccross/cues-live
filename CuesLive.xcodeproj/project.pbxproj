@@ -810,6 +810,11 @@
 		581A5A9153B27167B112B94E /* SongDragPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCCDCC4154949550733108DD /* SongDragPreview.swift */; };
 		72DA8D514D6926DBE89680A3 /* SongDragPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCCDCC4154949550733108DD /* SongDragPreview.swift */; };
 		2349CC10D8698BA82B9759A0 /* SongDragPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8162BEF63030F428C0701D36 /* SongDragPayloadTests.swift */; };
+		5FC9BC3F382F79F9C53C9815 /* RealtimeSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67E97EB5E4FFB31472232C4 /* RealtimeSnapshot.swift */; };
+		0CDBA10A7C7A68D8473F19D7 /* RealtimeSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67E97EB5E4FFB31472232C4 /* RealtimeSnapshot.swift */; };
+		9DF40F5EDFBEE84668EEB95E /* TransportClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAB814F7C397BE2200E1D78 /* TransportClock.swift */; };
+		9D684191BCC074C4B28FBDA5 /* TransportClock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFAB814F7C397BE2200E1D78 /* TransportClock.swift */; };
+		77FC097575F8137BFE46B7EC /* RealtimeSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1555397AD1F243733D4B9B5A /* RealtimeSnapshotTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1023,6 +1028,7 @@
 		AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistSnapshots.swift; sourceTree = "<group>"; };
 		AA00000200000000000F1002 /* PlaybackCoordinatorError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackCoordinatorError.swift; sourceTree = "<group>"; };
 		AA0000020000000000000A10 /* PitchShiftBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PitchShiftBridge.h; sourceTree = "<group>"; };
+		AA0000020000000000000A12 /* RealtimeAtomics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RealtimeAtomics.h; sourceTree = "<group>"; };
 		AA0000020000000000000A11 /* PitchShiftBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PitchShiftBridge.mm; sourceTree = "<group>"; };
 		AA0000020000000000000A14 /* KeyChangeTrackSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyChangeTrackSelection.swift; sourceTree = "<group>"; };
 		AA0000020000000000000A15 /* ChangeKeyDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeKeyDialog.swift; sourceTree = "<group>"; };
@@ -1270,6 +1276,9 @@
 		FC3FABAEEE0EB8C1E380F465 /* SongDragPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDragPayload.swift; sourceTree = "<group>"; };
 		BCCDCC4154949550733108DD /* SongDragPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDragPreview.swift; sourceTree = "<group>"; };
 		8162BEF63030F428C0701D36 /* SongDragPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDragPayloadTests.swift; sourceTree = "<group>"; };
+		F67E97EB5E4FFB31472232C4 /* RealtimeSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeSnapshot.swift; sourceTree = "<group>"; };
+		EFAB814F7C397BE2200E1D78 /* TransportClock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransportClock.swift; sourceTree = "<group>"; };
+		1555397AD1F243733D4B9B5A /* RealtimeSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeSnapshotTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1328,6 +1337,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000020000000000000A10 /* PitchShiftBridge.h */,
+				AA0000020000000000000A12 /* RealtimeAtomics.h */,
 				AA0000020000000000000A11 /* PitchShiftBridge.mm */,
 			);
 			path = Audio;
@@ -1599,6 +1609,7 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				1555397AD1F243733D4B9B5A /* RealtimeSnapshotTests.swift */,
 				8162BEF63030F428C0701D36 /* SongDragPayloadTests.swift */,
 				9D36597444DBE5BA79FD6A96 /* MeasureGridSpansTests.swift */,
 				7CF189593AFE0AF119C35E18 /* TimelineTimeRulerScaleTests.swift */,
@@ -1792,6 +1803,8 @@
 		AA00000500000000000BB001 /* Playback */ = {
 			isa = PBXGroup;
 			children = (
+				EFAB814F7C397BE2200E1D78 /* TransportClock.swift */,
+				F67E97EB5E4FFB31472232C4 /* RealtimeSnapshot.swift */,
 				E78DC1BE7EFE5F9DBB5AFDA8 /* PlaybackCoordinator+GeneratedPayloads.swift */,
 				BA4E3FAE364CA8B92C0202D1 /* AudioEngineManager+Click.swift */,
 				898F31346CBDF0BBA0C71DCB /* AudioEngineManager+PlayRange.swift */,
@@ -2158,6 +2171,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9DF40F5EDFBEE84668EEB95E /* TransportClock.swift in Sources */,
+				5FC9BC3F382F79F9C53C9815 /* RealtimeSnapshot.swift in Sources */,
 				581A5A9153B27167B112B94E /* SongDragPreview.swift in Sources */,
 				AED888695053E00BEAB7E655 /* SongDragPayload.swift in Sources */,
 				9334AEA1842FC7C9A2C6C7C9 /* TimelineLiveZoomPacer.swift in Sources */,
@@ -2521,6 +2536,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				77FC097575F8137BFE46B7EC /* RealtimeSnapshotTests.swift in Sources */,
 				2349CC10D8698BA82B9759A0 /* SongDragPayloadTests.swift in Sources */,
 				A81251877119FDFAE5C59F4F /* MeasureGridSpansTests.swift in Sources */,
 				2122DA6FD1A7B13B7E382B92 /* TimelineTimeRulerScaleTests.swift in Sources */,
@@ -2604,6 +2620,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D684191BCC074C4B28FBDA5 /* TransportClock.swift in Sources */,
+				0CDBA10A7C7A68D8473F19D7 /* RealtimeSnapshot.swift in Sources */,
 				72DA8D514D6926DBE89680A3 /* SongDragPreview.swift in Sources */,
 				CC40F116B26F6E58CB0E700D /* SongDragPayload.swift in Sources */,
 				AC3C41E7903B446B686C7F82 /* TimelineLiveZoomPacer.swift in Sources */,
