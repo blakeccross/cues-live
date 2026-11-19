@@ -15,7 +15,7 @@ struct LiveSetlistAddMenu: View {
                     withAnimation { isEditing.wrappedValue.toggle() }
                 }
                 .font(AppTypography.body)
-                .accessibilityLabel(isEditing.wrappedValue ? "Done reordering" : "Edit setlist order")
+                .accessibilityLabel(isEditing.wrappedValue ? "Done editing setlist" : "Edit setlist")
             }
             #endif
 

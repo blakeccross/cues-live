@@ -36,7 +36,7 @@ extension LivePlaybackView {
         case .loop:
             toggleSectionLoop()
         case .goToSong(let index):
-            coordinator.goToSong(at: index, autoPlay: coordinator.isAudiblePlaying)
+            coordinator.goToSong(at: index, autoPlay: false)
         case .goToSection(let songIndex, let sectionIndex):
             performMappedSection(songIndex: songIndex, sectionIndex: sectionIndex)
         }

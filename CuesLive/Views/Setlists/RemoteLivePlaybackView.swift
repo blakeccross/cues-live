@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RemoteLivePlaybackView: View {
-    @Bindable private var client = RemoteSessionClientService.shared
+    @Bindable var client = RemoteSessionClientService.shared
     @Environment(InputMappingController.self) private var mapping
 
     @State private var mixerVisible = false
@@ -12,10 +12,10 @@ struct RemoteLivePlaybackView: View {
     @State private var isEditingSetlist = false
     @State private var newHeaderTitle = "New Header"
     @State private var newHeaderTimeSeconds: TimeInterval = 0
-    @State private var workingEntries: [RemoteSetlistEntryDTO] = []
+    @State var workingEntries: [RemoteSetlistEntryDTO] = []
 
-    private var snapshot: RemoteSessionSnapshot? { client.snapshot }
-    private var state: RemoteSessionState { client.state }
+    var snapshot: RemoteSessionSnapshot? { client.snapshot }
+    var state: RemoteSessionState { client.state }
     private var librarySongs: [RemoteLibrarySongDTO] { snapshot?.librarySongs ?? [] }
 
     /// macOS `.primaryAction` is the leading edge, so these controls use `.automatic`.
@@ -280,7 +280,7 @@ struct RemoteLivePlaybackView: View {
         case .loop:
             client.send(.toggleSectionLoop)
         case .goToSong(let index):
-            client.send(.goToSong(index: index, autoPlay: state.isAudiblePlaying))
+            client.send(.goToSong(index: index, autoPlay: false))
         case .goToSection(let songIndex, let sectionIndex):
             performMappedSection(songIndex: songIndex, sectionIndex: sectionIndex)
         }
@@ -401,7 +401,8 @@ struct RemoteLivePlaybackView: View {
                         isPlaying: state.isAudiblePlaying,
                         isEditing: $isEditingSetlist,
                         actions: remoteRowActions(for:),
-                        onMove: moveWorkingEntries,
+                        onMove: moveWorkingRows,
+                        onRemove: removeWorkingRows,
                         onAddHeader: beginAddingHeader,
                         sectionPlayback: sectionPlayback
                     )
@@ -433,121 +434,6 @@ struct RemoteLivePlaybackView: View {
             cueFlashPhase: cueFlashPhase,
             selectSection: selectSection(songIndex:section:)
         )
-    }
-
-    private func remoteRowModels(snapshot: RemoteSessionSnapshot) -> [SetlistRowModel] {
-        workingEntries.compactMap { entry in
-            if let header = entry.headerTitle, entry.songID == nil {
-                let seconds = entry.headerTimeSeconds ?? 0
-                return SetlistRowModel(
-                    id: entry.id,
-                    kind: .header(
-                        title: header,
-                        timeText: seconds > 0 ? LiveSetlistDurationFormat.clock(for: seconds) : nil
-                    )
-                )
-            }
-            guard let songID = entry.songID,
-                  let song = snapshot.songs.first(where: { $0.id == songID }),
-                  let playbackIndex = entry.playbackIndex else {
-                return nil
-            }
-            return SetlistRowModel(
-                id: entry.id,
-                kind: .song(SetlistRowModel.Song(
-                    title: song.name,
-                    durationText: LiveSetlistDurationFormat.clock(for: song.timelineDuration),
-                    keyText: remoteSongKeyText(song),
-                    bpmText: remoteSongBPMText(song),
-                    playbackIndex: playbackIndex,
-                    hasSmartGuide: song.smartGuideEnabled,
-                    transition: remoteTransition(for: entry, in: workingEntries),
-                    sections: song.sections.map { $0.asSection(loopSectionIDs: Set(song.loopSectionIDs)) }
-                ))
-            )
-        }
-    }
-
-    /// The host protocol only supports play / move / remove, so the remote menu is smaller.
-    private func remoteRowActions(for model: SetlistRowModel) -> SetlistRowActions {
-        guard let entry = workingEntries.first(where: { AnyHashable($0.id) == model.id }) else {
-            return SetlistRowActions(remove: {})
-        }
-        guard case .song(let song) = model.kind else {
-            return SetlistRowActions(remove: { removeWorkingEntry(entry) })
-        }
-        return SetlistRowActions(
-            play: {
-                client.send(.goToSong(index: song.playbackIndex, autoPlay: state.isAudiblePlaying))
-            },
-            remove: { removeWorkingEntry(entry) }
-        )
-    }
-
-    /// Rows skip entries whose song is missing from the snapshot, so translate row offsets
-    /// into offsets in `workingEntries`.
-    private func moveWorkingEntries(from source: IndexSet, to destination: Int) {
-        guard let snapshot else { return }
-        let visibleIDs = remoteRowModels(snapshot: snapshot).compactMap { $0.id.base as? UUID }
-        guard let visibleSource = source.first, visibleSource < visibleIDs.count,
-              let sourceIndex = workingEntries.firstIndex(where: { $0.id == visibleIDs[visibleSource] }) else {
-            return
-        }
-        let destinationIndex = destination < visibleIDs.count
-            ? (workingEntries.firstIndex(where: { $0.id == visibleIDs[destination] }) ?? workingEntries.count)
-            : workingEntries.count
-        let movedID = workingEntries[sourceIndex].id
-        workingEntries.move(fromOffsets: IndexSet(integer: sourceIndex), toOffset: destinationIndex)
-        recomputeWorkingEntryIndices()
-        guard let toIndex = workingEntries.firstIndex(where: { $0.id == movedID }) else { return }
-        client.send(.moveSetlistEntry(entryID: movedID, toIndex: toIndex))
-    }
-
-    private func removeWorkingEntry(_ entry: RemoteSetlistEntryDTO) {
-        workingEntries.removeAll { $0.id == entry.id }
-        recomputeWorkingEntryIndices()
-        client.send(.removeSetlistEntry(entryID: entry.id))
-    }
-
-    private func syncWorkingEntries(from entries: [RemoteSetlistEntryDTO]) {
-        workingEntries = entries
-    }
-
-    private func recomputeWorkingEntryIndices() {
-        var playbackIndex = 0
-        for index in workingEntries.indices {
-            workingEntries[index].sortOrder = index
-            if workingEntries[index].songID != nil {
-                workingEntries[index].playbackIndex = playbackIndex
-                playbackIndex += 1
-            } else {
-                workingEntries[index].playbackIndex = nil
-            }
-        }
-    }
-
-    private func remoteSongBPMText(_ song: RemoteSongDTO) -> String? {
-        guard let bpm = song.tempoChanges.first?.bpm else { return nil }
-        return String(format: "%.0f BPM", bpm.rounded())
-    }
-
-    private func remoteSongKeyText(_ song: RemoteSongDTO) -> String? {
-        let trimmed = song.key.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed != "—", trimmed != "-" else { return nil }
-        return trimmed
-    }
-
-    private func remoteTransition(
-        for entry: RemoteSetlistEntryDTO,
-        in entries: [RemoteSetlistEntryDTO]
-    ) -> SetlistTransition? {
-        guard entry.playbackIndex != nil else { return nil }
-        let songEntries = entries.filter { $0.playbackIndex != nil }
-        guard let index = songEntries.firstIndex(where: { $0.id == entry.id }),
-              index < songEntries.count - 1 else {
-            return nil
-        }
-        return SetlistTransition(rawValue: entry.transition)
     }
 
     private func song(atPlaybackIndex index: Int) -> RemoteSongDTO? {

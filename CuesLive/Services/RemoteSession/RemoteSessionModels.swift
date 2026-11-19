@@ -3,7 +3,7 @@ import Network
 
 enum RemoteSessionBonjour {
     static let serviceType = "_cueslive._tcp"
-    static let protocolVersion = 1
+    static let protocolVersion = 2
     static let pinLength = 4
     /// Bonjour TXT key for a stable per-install ID used to hide this device from its own browse list.
     static let instanceIDTXTKey = "iid"
@@ -455,10 +455,11 @@ enum RemoteSessionCommand: Codable, Sendable {
     case toggleSectionLoop
     case beginManualLoop(sectionID: UUID)
     case endLoop
-    /// Removes a setlist entry (song or header) by remote stable entry ID.
-    case removeSetlistEntry(entryID: UUID)
-    /// Moves a setlist entry to `toIndex` in the current sorted entry list.
-    case moveSetlistEntry(entryID: UUID, toIndex: Int)
+    /// Removes setlist entries (songs or headers) by remote stable entry ID.
+    case removeSetlistEntries(entryIDs: [UUID])
+    /// Moves setlist entries as one block, in setlist order, to just before `beforeEntryID`
+    /// (nil moves them to the end). IDs rather than offsets, so a stale client can't misplace them.
+    case moveSetlistEntries(entryIDs: [UUID], beforeEntryID: UUID?)
     /// Adds a host-library song to the live setlist (`atIndex` nil appends).
     case addSongToSetlist(songID: UUID, atIndex: Int?)
     /// Inserts a setlist header (`atIndex` nil appends). Optional `timeSeconds` is the clock shown beside the header.
