@@ -860,6 +860,8 @@
 		3CA1C82F8476DCBF00AD5CAC /* SmartGuideBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388A7FB003626235D85520DB /* SmartGuideBadge.swift */; };
 		56908879CBFF28A5E97BDE80 /* RemoteLivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */; };
 		D4F1FFA05D80147145E6BC41 /* RemoteLivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */; };
+		3B9B92D06878EBE33A2C5772 /* NowPlayingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */; };
+		09034FE2A9A0C58D8C1EA17C /* NowPlayingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1350,6 +1352,7 @@
 		21F381352B226E130F21FB32 /* SetlistHeaderRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistHeaderRowView.swift; sourceTree = "<group>"; };
 		388A7FB003626235D85520DB /* SmartGuideBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideBadge.swift; sourceTree = "<group>"; };
 		F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RemoteLivePlaybackView+Setlist.swift"; sourceTree = "<group>"; };
+		67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingIndicator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1576,6 +1579,7 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */,
 				F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */,
 				388A7FB003626235D85520DB /* SmartGuideBadge.swift */,
 				21F381352B226E130F21FB32 /* SetlistHeaderRowView.swift */,
@@ -2268,6 +2272,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3B9B92D06878EBE33A2C5772 /* NowPlayingIndicator.swift in Sources */,
 				56908879CBFF28A5E97BDE80 /* RemoteLivePlaybackView+Setlist.swift in Sources */,
 				098996FDE544EA0F1097F4C1 /* SmartGuideBadge.swift in Sources */,
 				07233A48642502690EA6197F /* SetlistHeaderRowView.swift in Sources */,
@@ -2743,6 +2748,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				09034FE2A9A0C58D8C1EA17C /* NowPlayingIndicator.swift in Sources */,
 				D4F1FFA05D80147145E6BC41 /* RemoteLivePlaybackView+Setlist.swift in Sources */,
 				3CA1C82F8476DCBF00AD5CAC /* SmartGuideBadge.swift in Sources */,
 				79260939229095CA41C6E357 /* SetlistHeaderRowView.swift in Sources */,

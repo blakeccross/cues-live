@@ -76,11 +76,7 @@ struct SetlistSongRowView<MenuContent: View>: View {
     @ViewBuilder
     private var leadingIndicator: some View {
         if isCurrent {
-            Image(systemName: "speaker.wave.2.fill")
-                .font(AppTypography.subheadline)
-                .foregroundStyle(AppColors.accent)
-                .symbolEffect(.variableColor.iterative, isActive: isPlaying)
-                .accessibilityLabel("Now playing")
+            NowPlayingIndicator(isPlaying: isPlaying)
         } else {
             Text("\(song.playbackIndex + 1)")
                 .font(AppTypography.subheadline.monospacedDigit())
