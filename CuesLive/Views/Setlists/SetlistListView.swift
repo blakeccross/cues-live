@@ -104,6 +104,7 @@ struct SetlistListView: View {
             .padding(.horizontal, rowHorizontalPadding)
             .listRowSeparator(.hidden)
             .listRowBackground(rowBackground(for: row, base: AppColors.headerBand))
+            .nativeSelectionHighlightHidden()
             .setlistSwipeActions(actions: rowActions, remove: { requestRemoval(of: [row.id]) })
 
         case .song(let song):
@@ -151,16 +152,14 @@ struct SetlistListView: View {
         }
         .padding(.horizontal, rowHorizontalPadding)
         .listRowBackground(rowBackground(for: row, base: Color.clear))
+        .nativeSelectionHighlightHidden()
         .setlistSwipeActions(actions: rowActions, remove: remove)
     }
 
-    /// iOS hides the list's own selection highlight behind custom row backgrounds, so draw it here.
+    /// Selection is drawn here rather than by the list: iOS hides its own highlight behind custom
+    /// row backgrounds, and macOS's is turned off so both platforms share one color.
     private func rowBackground(for row: SetlistRowModel, base: Color) -> Color {
-        #if os(iOS)
         selection.contains(row.id) ? AppColors.rowSelection : base
-        #else
-        base
-        #endif
     }
 
     /// Nil when the row can't expand. Otherwise a manual override wins, and the current song
@@ -176,6 +175,15 @@ struct SetlistListView: View {
 }
 
 private extension View {
+    @ViewBuilder
+    func nativeSelectionHighlightHidden() -> some View {
+        #if os(macOS)
+        listSelectionHighlightHidden()
+        #else
+        self
+        #endif
+    }
+
     /// Swipe to cue (leading) or remove / edit (trailing). iOS only; macOS uses the menu.
     @ViewBuilder
     func setlistSwipeActions(actions: SetlistRowActions, remove: @escaping () -> Void) -> some View {

@@ -3,9 +3,9 @@ import SwiftUI
 extension AppColors {
     /// Voice Memos–style colors for the live setlist waveform.
     enum LiveWaveform {
-        static let background = Color(.liveWaveformBackground)
+        static let background = AppPalette.gray850
         /// Section markers in the ribbon above the waveform, in songs other than the current one.
-        static let sectionMarker = Color(.liveWaveformSectionMarker)
+        static let sectionMarker = AppPalette.gray750
         /// Ribbon the playhead has passed in the current song.
         static let sectionMarkerPlayed = AppColors.accent
         /// Ribbon still ahead of the playhead in the current song.

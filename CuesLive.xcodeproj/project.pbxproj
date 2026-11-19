@@ -862,6 +862,10 @@
 		D4F1FFA05D80147145E6BC41 /* RemoteLivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */; };
 		3B9B92D06878EBE33A2C5772 /* NowPlayingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */; };
 		09034FE2A9A0C58D8C1EA17C /* NowPlayingIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */; };
+		A12D3BD0CF83EA9C18CA9112 /* ListSelectionHighlightRemover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 895D633A3BEF9E79AFCB191C /* ListSelectionHighlightRemover.swift */; };
+		E32BF3AE316F5B767780EEBB /* ListSelectionHighlightRemover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 895D633A3BEF9E79AFCB191C /* ListSelectionHighlightRemover.swift */; };
+		096248152BDBC8161E99B041 /* AppPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81F647C03B007BE28885F26 /* AppPalette.swift */; };
+		A2926709C4A3AA83E8DEBC28 /* AppPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = C81F647C03B007BE28885F26 /* AppPalette.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1353,6 +1357,8 @@
 		388A7FB003626235D85520DB /* SmartGuideBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideBadge.swift; sourceTree = "<group>"; };
 		F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RemoteLivePlaybackView+Setlist.swift"; sourceTree = "<group>"; };
 		67A8147FB0FAA2DE38C368A5 /* NowPlayingIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingIndicator.swift; sourceTree = "<group>"; };
+		895D633A3BEF9E79AFCB191C /* ListSelectionHighlightRemover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListSelectionHighlightRemover.swift; sourceTree = "<group>"; };
+		C81F647C03B007BE28885F26 /* AppPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPalette.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1652,6 +1658,7 @@
 		AA000005000000000000000A /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				895D633A3BEF9E79AFCB191C /* ListSelectionHighlightRemover.swift */,
 				FC3FABAEEE0EB8C1E380F465 /* SongDragPayload.swift */,
 				5E931872A9B2B3F989A062D0 /* VideoWindowFullScreenSupport.swift */,
 				2ACCAEEBBE74F75BCBAFA843 /* VideoOutputClaimModifier.swift */,
@@ -1796,6 +1803,7 @@
 		AA00000500000000000000A2 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				C81F647C03B007BE28885F26 /* AppPalette.swift */,
 				CF6AD00D8920DF8E02875AC7 /* AppTypography+CoreText.swift */,
 				3D6ED5E2B194918FF2CD2EAE /* AppColors+Video.swift */,
 				3164CD37C653775A3FFA1711 /* AppOpacity.swift */,
@@ -2272,6 +2280,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				096248152BDBC8161E99B041 /* AppPalette.swift in Sources */,
+				A12D3BD0CF83EA9C18CA9112 /* ListSelectionHighlightRemover.swift in Sources */,
 				3B9B92D06878EBE33A2C5772 /* NowPlayingIndicator.swift in Sources */,
 				56908879CBFF28A5E97BDE80 /* RemoteLivePlaybackView+Setlist.swift in Sources */,
 				098996FDE544EA0F1097F4C1 /* SmartGuideBadge.swift in Sources */,
@@ -2748,6 +2758,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A2926709C4A3AA83E8DEBC28 /* AppPalette.swift in Sources */,
+				E32BF3AE316F5B767780EEBB /* ListSelectionHighlightRemover.swift in Sources */,
 				09034FE2A9A0C58D8C1EA17C /* NowPlayingIndicator.swift in Sources */,
 				D4F1FFA05D80147145E6BC41 /* RemoteLivePlaybackView+Setlist.swift in Sources */,
 				3CA1C82F8476DCBF00AD5CAC /* SmartGuideBadge.swift in Sources */,

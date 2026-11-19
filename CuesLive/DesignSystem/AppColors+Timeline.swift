@@ -12,27 +12,27 @@ extension AppColors {
 
         static let divider = AppColors.separator
         /// Hairline between edit-view track rows.
-        static let laneDivider = Color(.timelineLaneDivider)
+        static let laneDivider = AppPalette.gray700
 
         /// Minor and major ticks on the seconds ruler.
         static let timeRulerTick = Color.secondary.opacity(0.5)
         /// Dot marking where a tempo or time signature change starts.
-        static let rulerChangeMarker = Color(.timelineRulerMarker)
+        static let rulerChangeMarker = AppPalette.gray500
 
         /// Lane ticks drawn through the tracks. One black, heavier for bars than beats than eighths.
-        static let barTick = Color.black.opacity(0.20)
-        static let beatTick = Color.black.opacity(0.12)
-        static let subdivisionTick = Color.black.opacity(0.08)
+        static let barTick = AppPalette.shade3
+        static let beatTick = AppPalette.shade2
+        static let subdivisionTick = AppPalette.shade1
 
         /// Section-marker tick, drawn over the tracks.
-        static let sectionMarkerLine = Color(.timelineSectionMarkerLine)
+        static let sectionMarkerLine = AppPalette.gray600
 
         /// In and out flags on the time ruler.
-        static let playRangeFlag = Color(.timelinePlayRangeFlag)
+        static let playRangeFlag = AppPalette.gray400
         /// Wash over the timeline before the in point and after the out point.
-        static let outsidePlayRange = Color(.timelinePlayRangeOutside)
+        static let outsidePlayRange = AppPalette.shade4
         /// Shadow the played stretch casts past the out point, so it reads as raised.
-        static let playRangeEdgeShadow = Color(.timelinePlayRangeEdgeShadow)
+        static let playRangeEdgeShadow = AppPalette.shade5
 
         /// Edit-selection wash composited over the lanes.
         static let selection = Color(.timelineSelection)
@@ -40,18 +40,18 @@ extension AppColors {
         /// Playback playhead line.
         static let playhead = Color(.timelinePlayhead)
         /// Insertion cursor shown while stopped.
-        static let insertionCursor = Color(.timelineInsertionCursor)
-        static let playheadHandleFill = Color(.timelinePlayheadHandleFill)
-        static let playheadHandleBorder = Color(.timelinePlayheadHandleBorder)
+        static let insertionCursor = AppPalette.gray200
+        static let playheadHandleFill = AppPalette.gray200
+        static let playheadHandleBorder = AppPalette.gray900
 
         /// Track name on a clip header; dark on the light selected header, like Logic.
-        static let clipHeaderText = Color.white.opacity(0.65)
-        static let clipHeaderTextSelected = Color.black.opacity(0.72)
+        static let clipHeaderText = AppPalette.lift6
+        static let clipHeaderTextSelected = AppPalette.shade6
         /// Clip gain line across the clip body, and its dB readout.
-        static let clipGainLine = Color.white.opacity(170.0 / 255.0)
-        static let clipGainReadout = Color.white.opacity(200.0 / 255.0)
+        static let clipGainLine = AppPalette.lift6
+        static let clipGainReadout = AppPalette.lift7
         static let fadeKnobFill = AppColors.scrim
-        static let fadeKnobBorder = Color.white.opacity(0.78)
-        static let fadeKnobBorderLit = Color.white.opacity(0.9)
+        static let fadeKnobBorder = AppPalette.lift7
+        static let fadeKnobBorderLit = AppPalette.lift8
     }
 }

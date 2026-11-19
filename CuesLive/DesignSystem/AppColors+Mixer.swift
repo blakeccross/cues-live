@@ -4,7 +4,7 @@ extension AppColors {
     /// Colors for the mixer: solo/mute buttons, faders, and level meters.
     enum Mixer {
         /// Solo/mute label while its button is lit.
-        static let buttonActiveLabel = Color.black.opacity(0.85)
+        static let buttonActiveLabel = AppPalette.shade6
 
         static let meterLevel = Color(.meterLevel)
         /// Live level drawn behind the volume readout.
@@ -15,7 +15,7 @@ extension AppColors {
         /// Grip lines on the fader thumb.
         static let faderGrip = AppColors.textTertiary.opacity(0.35)
         /// Center line on the fader thumb.
-        static let faderThumbLine = Color.white.opacity(0.9)
+        static let faderThumbLine = AppPalette.lift8
         /// Fader scale ticks other than unity.
         static let scaleTick = AppColors.textTertiary.opacity(0.6)
     }

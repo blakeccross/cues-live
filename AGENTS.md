@@ -126,10 +126,14 @@ SwiftUI out of it.
 
 Every visual constant has one home in `DesignSystem/`, so restyling the app is an edit to one file.
 
-- **Colors.** Fixed colors live in `Assets.xcassets` (with light/dark variants where they differ) and are
-  read through Xcode's generated symbols, `Color(.surface)`, never `Color("Surface")`. `AppColors` and its
-  area extensions (`AppColors.Timeline`, `.LiveWaveform`, `.Live`, `.Mixer`) wrap them and may add opacity
-  variants. Views never write `Color(red:…)`, `Color(white:…)`, `Color.white`/`.black`, or `.red`-style
+- **Colors.** Two layers. `AppPalette` is the fixed set of colors: a gray ramp (`gray950` … `gray200`,
+  stored in `Assets.xcassets/Palette`), translucent white `lift1`–`lift8` and black `shade1`–`shade6`
+  steps, accent steps, and status hues. `AppColors` and its area extensions (`AppColors.Timeline`,
+  `.LiveWaveform`, `.Live`, `.Mixer`, `.Video`) give those colors roles. A role picks the nearest
+  palette step instead of inventing an opacity; add a palette step only when no existing one works.
+  The few single-purpose hues (meter, solo/mute, playhead) are assets read through Xcode's generated
+  symbols, `Color(.meterLevel)`, never `Color("MeterLevel")`. The app is dark-only. Views use roles,
+  never `AppPalette` directly, and never write `Color(red:…)`, `Color(white:…)`, `Color.white`/`.black`, or `.red`-style
   system colors; reach for a token, or add one. Exceptions: `Color.clear`, hierarchical styles
   (`.secondary`, `.tertiary`), and opacity on data-driven colors such as a track's palette color.
 - **Fonts.** `AppTypography` wraps Apple's text styles so text follows Dynamic Type; the suffix names the
