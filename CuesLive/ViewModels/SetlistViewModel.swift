@@ -33,17 +33,45 @@ final class SetlistViewModel {
         persistSetlist(setlist, context: context)
     }
 
-    func removeEntry(_ entry: SetlistEntry, from setlist: Setlist, context: ModelContext) {
-        setlist.entries.removeAll { $0 === entry }
+    /// Removes every given entry in one save. Entries that belong to another setlist are ignored.
+    func removeEntries(_ entries: [SetlistEntry], from setlist: Setlist, context: ModelContext) {
+        let removed = entries.filter { entry in setlist.entries.contains { $0 === entry } }
+        guard !removed.isEmpty else { return }
+        setlist.entries.removeAll { entry in removed.contains { $0 === entry } }
         normalizeSortOrder(for: setlist)
-        context.delete(entry)
+        for entry in removed {
+            context.delete(entry)
+        }
         persistSetlist(setlist, context: context)
     }
 
+    /// Reorders entries. A drop that leaves the order unchanged does nothing, so it can't reset
+    /// the moved entries' overlap transitions.
     func moveEntries(in setlist: Setlist, from source: IndexSet, to destination: Int, context: ModelContext) {
+        let sorted = setlist.sortedEntries
+        var reordered = sorted
+        reordered.move(fromOffsets: source, toOffset: destination)
+        guard !zip(sorted, reordered).allSatisfy({ $0 === $1 }) else { return }
         let movedEntries = applyMove(in: setlist, from: source, to: destination)
         clearOverlapTransitions(for: movedEntries)
         persistSetlist(setlist, context: context)
+    }
+
+    /// Moves `entries` as one block, keeping their relative order, so they land directly before
+    /// `target`, or at the end when `target` is nil. A target that is itself being moved is
+    /// treated as the next unmoved entry after it.
+    func moveEntries(
+        _ entries: [SetlistEntry],
+        before target: SetlistEntry?,
+        in setlist: Setlist,
+        context: ModelContext
+    ) {
+        let sorted = setlist.sortedEntries
+        let source = IndexSet(entries.compactMap { entry in sorted.firstIndex { $0 === entry } })
+        guard !source.isEmpty else { return }
+        let targetOffset = target.flatMap { target in sorted.firstIndex { $0 === target } } ?? sorted.count
+        let destination = sorted.indices[targetOffset...].first { !source.contains($0) } ?? sorted.count
+        moveEntries(in: setlist, from: source, to: destination, context: context)
     }
 
     func setTransition(_ transition: SetlistTransition, for entry: SetlistEntry, context: ModelContext) {

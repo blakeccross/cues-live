@@ -72,10 +72,10 @@ final class RemoteSessionCommandBridge {
             host.sectionLoop.beginManualLoop(sectionID: sectionID)
         case .endLoop:
             host.sectionLoop.endLoop()
-        case .removeSetlistEntry(let entryID):
-            removeSetlistEntry(entryID: entryID, host: host)
-        case .moveSetlistEntry(let entryID, let toIndex):
-            moveSetlistEntry(entryID: entryID, toIndex: toIndex, host: host)
+        case .removeSetlistEntries(let entryIDs):
+            removeSetlistEntries(entryIDs: entryIDs, host: host)
+        case .moveSetlistEntries(let entryIDs, let beforeEntryID):
+            moveSetlistEntries(entryIDs: entryIDs, beforeEntryID: beforeEntryID, host: host)
         case .addSongToSetlist(let songID, let atIndex):
             addSongToSetlist(songID: songID, atIndex: atIndex, host: host)
         case .addSetlistHeader(let title, let atIndex, let timeSeconds):
@@ -110,33 +110,23 @@ final class RemoteSessionCommandBridge {
         host.onSetlistChanged()
     }
 
-    private func removeSetlistEntry(entryID: UUID, host: HostContext) {
-        guard let setlist = host.setlist,
-              let entry = entry(withRemoteID: entryID, in: setlist) else {
-            return
-        }
-        SetlistViewModel().removeEntry(entry, from: setlist, context: host.modelContext)
+    private func removeSetlistEntries(entryIDs: [UUID], host: HostContext) {
+        guard let setlist = host.setlist else { return }
+        let entries = entryIDs.compactMap { entry(withRemoteID: $0, in: setlist) }
+        guard !entries.isEmpty else { return }
+        SetlistViewModel().removeEntries(entries, from: setlist, context: host.modelContext)
         host.coordinator.syncSetlist(setlist)
         host.onSetlistChanged()
     }
 
-    private func moveSetlistEntry(entryID: UUID, toIndex: Int, host: HostContext) {
+    private func moveSetlistEntries(entryIDs: [UUID], beforeEntryID: UUID?, host: HostContext) {
         guard let setlist = host.setlist else { return }
-        let entries = setlist.sortedEntries
-        guard let sourceIndex = entries.firstIndex(where: {
-            RemoteSessionSnapshotBuilder.stableEntryID(for: $0) == entryID
-        }) else {
-            return
-        }
-        let clampedDestination = min(max(0, toIndex), entries.count)
-        guard sourceIndex != clampedDestination,
-              sourceIndex + 1 != clampedDestination else {
-            return
-        }
+        let entries = entryIDs.compactMap { entry(withRemoteID: $0, in: setlist) }
+        guard !entries.isEmpty else { return }
         SetlistViewModel().moveEntries(
+            entries,
+            before: beforeEntryID.flatMap { entry(withRemoteID: $0, in: setlist) },
             in: setlist,
-            from: IndexSet(integer: sourceIndex),
-            to: clampedDestination,
             context: host.modelContext
         )
         host.coordinator.syncSetlist(setlist)

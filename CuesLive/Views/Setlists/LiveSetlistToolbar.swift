@@ -46,7 +46,7 @@ struct LiveSetlistToolbarContent<Switcher: View>: ToolbarContent {
                 Button(isEditingSetlist.wrappedValue ? "Done" : "Edit") {
                     withAnimation { isEditingSetlist.wrappedValue.toggle() }
                 }
-                .accessibilityLabel(isEditingSetlist.wrappedValue ? "Done reordering" : "Edit setlist order")
+                .accessibilityLabel(isEditingSetlist.wrappedValue ? "Done editing setlist" : "Edit setlist")
             }
         }
 

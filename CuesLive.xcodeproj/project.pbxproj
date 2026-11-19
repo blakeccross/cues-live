@@ -103,7 +103,6 @@
 		9DF88DAA085CABDF5DFAD08E /* RemoteSessionClientService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000305 /* RemoteSessionClientService.swift */; };
 		A0098CC5375653F730D0E085 /* HelpSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000033A /* HelpSettingsView.swift */; };
 		A226C680E0B88DB12B7ACAD2 /* LiveSetlistSnapshots.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000F1001 /* LiveSetlistSnapshots.swift */; };
-		A384FD84AA2A32587F49F3FB /* LiveSetlistRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000310 /* LiveSetlistRows.swift */; };
 		A471859ECA9875C2DABDAA29 /* GroupOutputRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002F /* GroupOutputRoute.swift */; };
 		A52C618F779EC1571CFD0792 /* SetlistPackageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000E0 /* SetlistPackageStore.swift */; };
 		A6231BC1653A96074D7380B4 /* SetlistOverlapEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */; };
@@ -252,7 +251,6 @@
 		AA0000010000000000000309 /* RemoteSessionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000309 /* RemoteSessionSettingsView.swift */; };
 		AA000001000000000000030A /* DeviceSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000030A /* DeviceSettingsSheet.swift */; };
 		AA000001000000000000030B /* RemoteLivePlaybackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000030B /* RemoteLivePlaybackView.swift */; };
-		AA0000010000000000000310 /* LiveSetlistRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000310 /* LiveSetlistRows.swift */; };
 		AA0000010000000000000320 /* MappableLiveAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000320 /* MappableLiveAction.swift */; };
 		AA0000010000000000000321 /* InputBinding.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000321 /* InputBinding.swift */; };
 		AA0000010000000000000322 /* InputMappingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000322 /* InputMappingStore.swift */; };
@@ -840,6 +838,28 @@
 		067B5A75B4C98E4B41DEF9F8 /* AudioEngineManager+Output.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */; };
 		BE0ABF48123D5B6F57549009 /* AudioEngineManager+Output.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */; };
 		0800E133A5EB5CD077C72F27 /* OutputSampleRateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74C8A68B261CFDD834BFA3B5 /* OutputSampleRateTests.swift */; };
+		1312AA912D242916C8192693 /* SetlistListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21287E331590267E3EFA2D61 /* SetlistListView.swift */; };
+		20B3A8D2A96B17E2C5A75F39 /* SetlistListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21287E331590267E3EFA2D61 /* SetlistListView.swift */; };
+		CA9E41BF7249B96C5A1D3371 /* SetlistListView+Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8E9F05F9827448534D7BE4 /* SetlistListView+Selection.swift */; };
+		E7941EB0A098E812CDDB3A37 /* SetlistListView+Selection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8E9F05F9827448534D7BE4 /* SetlistListView+Selection.swift */; };
+		7C5E8DDDDC13EF258B5F15B8 /* SetlistSelectionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C83101EEDA65E2A316A4F8 /* SetlistSelectionBar.swift */; };
+		92360C694046C6BDD7646F01 /* SetlistSelectionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C83101EEDA65E2A316A4F8 /* SetlistSelectionBar.swift */; };
+		10C42FBF518679A84FBBE965 /* SetlistRowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7B0CB182E232A97B3BB81B /* SetlistRowModel.swift */; };
+		44F7840CA84F31BA33A6C7F7 /* SetlistRowModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE7B0CB182E232A97B3BB81B /* SetlistRowModel.swift */; };
+		9895DC9C743A9F6BEBADE73F /* SetlistRowActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8DB0013D97263089E17F7FA /* SetlistRowActions.swift */; };
+		DC5F0992594D020D857E93CB /* SetlistRowActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8DB0013D97263089E17F7FA /* SetlistRowActions.swift */; };
+		30133D414B04D7F07F8322FA /* SetlistSectionPlayback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0012C9BA9EFC0689A137A381 /* SetlistSectionPlayback.swift */; };
+		5027343C9C90DBB27E3B4143 /* SetlistSectionPlayback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0012C9BA9EFC0689A137A381 /* SetlistSectionPlayback.swift */; };
+		AA10D3D1ACB000D761571CD9 /* SetlistRowMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D6432137D0A3305494459B /* SetlistRowMenuContent.swift */; };
+		5E23431C1FE4593DE0B45C88 /* SetlistRowMenuContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24D6432137D0A3305494459B /* SetlistRowMenuContent.swift */; };
+		B8AF0761681E3D83879D1245 /* SetlistRowMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33ED0303416A06C93A439F7 /* SetlistRowMenuButton.swift */; };
+		F5AF041057F617C9E78DF38B /* SetlistRowMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33ED0303416A06C93A439F7 /* SetlistRowMenuButton.swift */; };
+		07233A48642502690EA6197F /* SetlistHeaderRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F381352B226E130F21FB32 /* SetlistHeaderRowView.swift */; };
+		79260939229095CA41C6E357 /* SetlistHeaderRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F381352B226E130F21FB32 /* SetlistHeaderRowView.swift */; };
+		098996FDE544EA0F1097F4C1 /* SmartGuideBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388A7FB003626235D85520DB /* SmartGuideBadge.swift */; };
+		3CA1C82F8476DCBF00AD5CAC /* SmartGuideBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388A7FB003626235D85520DB /* SmartGuideBadge.swift */; };
+		56908879CBFF28A5E97BDE80 /* RemoteLivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */; };
+		D4F1FFA05D80147145E6BC41 /* RemoteLivePlaybackView+Setlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1000,7 +1020,6 @@
 		AA0000020000000000000309 /* RemoteSessionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSessionSettingsView.swift; sourceTree = "<group>"; };
 		AA000002000000000000030A /* DeviceSettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSettingsSheet.swift; sourceTree = "<group>"; };
 		AA000002000000000000030B /* RemoteLivePlaybackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLivePlaybackView.swift; sourceTree = "<group>"; };
-		AA0000020000000000000310 /* LiveSetlistRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSetlistRows.swift; sourceTree = "<group>"; };
 		AA0000020000000000000320 /* MappableLiveAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MappableLiveAction.swift; sourceTree = "<group>"; };
 		AA0000020000000000000321 /* InputBinding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBinding.swift; sourceTree = "<group>"; };
 		AA0000020000000000000322 /* InputMappingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMappingStore.swift; sourceTree = "<group>"; };
@@ -1320,6 +1339,17 @@
 		8F3A949AC6DD8D11CF7289D7 /* AudioOutputDeviceService+SampleRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudioOutputDeviceService+SampleRate.swift"; sourceTree = "<group>"; };
 		F41C74FD3A9778CE5D4EC84A /* AudioEngineManager+Output.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AudioEngineManager+Output.swift"; sourceTree = "<group>"; };
 		74C8A68B261CFDD834BFA3B5 /* OutputSampleRateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutputSampleRateTests.swift; sourceTree = "<group>"; };
+		21287E331590267E3EFA2D61 /* SetlistListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistListView.swift; sourceTree = "<group>"; };
+		6A8E9F05F9827448534D7BE4 /* SetlistListView+Selection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetlistListView+Selection.swift"; sourceTree = "<group>"; };
+		F3C83101EEDA65E2A316A4F8 /* SetlistSelectionBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSelectionBar.swift; sourceTree = "<group>"; };
+		EE7B0CB182E232A97B3BB81B /* SetlistRowModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistRowModel.swift; sourceTree = "<group>"; };
+		C8DB0013D97263089E17F7FA /* SetlistRowActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistRowActions.swift; sourceTree = "<group>"; };
+		0012C9BA9EFC0689A137A381 /* SetlistSectionPlayback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistSectionPlayback.swift; sourceTree = "<group>"; };
+		24D6432137D0A3305494459B /* SetlistRowMenuContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistRowMenuContent.swift; sourceTree = "<group>"; };
+		C33ED0303416A06C93A439F7 /* SetlistRowMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistRowMenuButton.swift; sourceTree = "<group>"; };
+		21F381352B226E130F21FB32 /* SetlistHeaderRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetlistHeaderRowView.swift; sourceTree = "<group>"; };
+		388A7FB003626235D85520DB /* SmartGuideBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartGuideBadge.swift; sourceTree = "<group>"; };
+		F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RemoteLivePlaybackView+Setlist.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1546,6 +1576,17 @@
 		AA0000050000000000000009 /* Setlists */ = {
 			isa = PBXGroup;
 			children = (
+				F4ECFF106F71E6BCB5CC7ECE /* RemoteLivePlaybackView+Setlist.swift */,
+				388A7FB003626235D85520DB /* SmartGuideBadge.swift */,
+				21F381352B226E130F21FB32 /* SetlistHeaderRowView.swift */,
+				C33ED0303416A06C93A439F7 /* SetlistRowMenuButton.swift */,
+				24D6432137D0A3305494459B /* SetlistRowMenuContent.swift */,
+				0012C9BA9EFC0689A137A381 /* SetlistSectionPlayback.swift */,
+				C8DB0013D97263089E17F7FA /* SetlistRowActions.swift */,
+				EE7B0CB182E232A97B3BB81B /* SetlistRowModel.swift */,
+				F3C83101EEDA65E2A316A4F8 /* SetlistSelectionBar.swift */,
+				6A8E9F05F9827448534D7BE4 /* SetlistListView+Selection.swift */,
+				21287E331590267E3EFA2D61 /* SetlistListView.swift */,
 				C3434C43DC2F74BDCBE6C13F /* LivePlaybackView+SetlistLibrary.swift */,
 				CCA32C93D564C1205D5C1930 /* LiveSectionRibbonLabels.swift */,
 				86D83122963D86A28C30E30A /* OverlapLaneCanvas.swift */,
@@ -1596,7 +1637,6 @@
 				AA00000200000000000F0002 /* LivePlaybackSupportViews.swift */,
 				AA00000200000000000F0001 /* LiveSetlistToolbar.swift */,
 				AA000002000000000000030B /* RemoteLivePlaybackView.swift */,
-				AA0000020000000000000310 /* LiveSetlistRows.swift */,
 				AA00000200000000000000E2 /* MissingMediaRelinkView.swift */,
 				AA0000020000000000000028 /* LiveSongWaveformView.swift */,
 				AA00000200000000000000B3 /* SetlistOverlapEditorView.swift */,
@@ -2228,6 +2268,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56908879CBFF28A5E97BDE80 /* RemoteLivePlaybackView+Setlist.swift in Sources */,
+				098996FDE544EA0F1097F4C1 /* SmartGuideBadge.swift in Sources */,
+				07233A48642502690EA6197F /* SetlistHeaderRowView.swift in Sources */,
+				B8AF0761681E3D83879D1245 /* SetlistRowMenuButton.swift in Sources */,
+				AA10D3D1ACB000D761571CD9 /* SetlistRowMenuContent.swift in Sources */,
+				30133D414B04D7F07F8322FA /* SetlistSectionPlayback.swift in Sources */,
+				9895DC9C743A9F6BEBADE73F /* SetlistRowActions.swift in Sources */,
+				10C42FBF518679A84FBBE965 /* SetlistRowModel.swift in Sources */,
+				7C5E8DDDDC13EF258B5F15B8 /* SetlistSelectionBar.swift in Sources */,
+				CA9E41BF7249B96C5A1D3371 /* SetlistListView+Selection.swift in Sources */,
+				1312AA912D242916C8192693 /* SetlistListView.swift in Sources */,
 				067B5A75B4C98E4B41DEF9F8 /* AudioEngineManager+Output.swift in Sources */,
 				D4A9583CFDE365DBAD13C01D /* AudioOutputDeviceService+SampleRate.swift in Sources */,
 				7C845436B3E9F71AB893CB9D /* OutputSampleRate.swift in Sources */,
@@ -2524,7 +2575,6 @@
 				AA0000010000000000000309 /* RemoteSessionSettingsView.swift in Sources */,
 				AA000001000000000000030A /* DeviceSettingsSheet.swift in Sources */,
 				AA000001000000000000030B /* RemoteLivePlaybackView.swift in Sources */,
-				AA0000010000000000000310 /* LiveSetlistRows.swift in Sources */,
 				AA0000010000000000000320 /* MappableLiveAction.swift in Sources */,
 				AA0000010000000000000321 /* InputBinding.swift in Sources */,
 				AA0000010000000000000322 /* InputMappingStore.swift in Sources */,
@@ -2693,6 +2743,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4F1FFA05D80147145E6BC41 /* RemoteLivePlaybackView+Setlist.swift in Sources */,
+				3CA1C82F8476DCBF00AD5CAC /* SmartGuideBadge.swift in Sources */,
+				79260939229095CA41C6E357 /* SetlistHeaderRowView.swift in Sources */,
+				F5AF041057F617C9E78DF38B /* SetlistRowMenuButton.swift in Sources */,
+				5E23431C1FE4593DE0B45C88 /* SetlistRowMenuContent.swift in Sources */,
+				5027343C9C90DBB27E3B4143 /* SetlistSectionPlayback.swift in Sources */,
+				DC5F0992594D020D857E93CB /* SetlistRowActions.swift in Sources */,
+				44F7840CA84F31BA33A6C7F7 /* SetlistRowModel.swift in Sources */,
+				92360C694046C6BDD7646F01 /* SetlistSelectionBar.swift in Sources */,
+				E7941EB0A098E812CDDB3A37 /* SetlistListView+Selection.swift in Sources */,
+				20B3A8D2A96B17E2C5A75F39 /* SetlistListView.swift in Sources */,
 				BE0ABF48123D5B6F57549009 /* AudioEngineManager+Output.swift in Sources */,
 				C36CF0EF9B65E3E6AB2EDF8A /* AudioOutputDeviceService+SampleRate.swift in Sources */,
 				C35296C99381861C82938BEF /* OutputSampleRate.swift in Sources */,
@@ -2989,7 +3050,6 @@
 				7677255193CAEA034F97288F /* RemoteSessionSettingsView.swift in Sources */,
 				2190D9EB6B43CD965AEFA8FE /* DeviceSettingsSheet.swift in Sources */,
 				8E1DA345FCA18ABC2256B34E /* RemoteLivePlaybackView.swift in Sources */,
-				A384FD84AA2A32587F49F3FB /* LiveSetlistRows.swift in Sources */,
 				D09825BE9A7B7991E4D60748 /* MappableLiveAction.swift in Sources */,
 				BB2538C2ECD8C0B97355D1F4 /* InputBinding.swift in Sources */,
 				FE240D938D9768F049D4540A /* InputMappingStore.swift in Sources */,

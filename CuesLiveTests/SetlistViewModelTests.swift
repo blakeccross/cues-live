@@ -81,10 +81,110 @@ final class SetlistViewModelTests: XCTestCase {
             viewModel.insertSong(song, at: setlist.entries.count, to: setlist, context: context)
         }
 
-        viewModel.removeEntry(setlist.sortedEntries[1], from: setlist, context: context)
+        viewModel.removeEntries([setlist.sortedEntries[1]], from: setlist, context: context)
 
         XCTAssertEqual(titles(of: setlist), ["A", "C"])
         XCTAssertEqual(setlist.sortedEntries.map(\.sortOrder), [0, 1])
+    }
+
+    func testRemoveEntriesRemovesSongsAndHeadersTogether() throws {
+        let context = try makeContext()
+        let viewModel = SetlistViewModel()
+        let setlist = makeSetlist(in: context)
+        viewModel.insertHeader(title: "Set 1", at: 0, to: setlist, context: context)
+        insertSongs(["A", "B", "C", "D"], into: setlist, viewModel: viewModel, context: context)
+
+        let entries = setlist.sortedEntries
+        viewModel.removeEntries([entries[0], entries[2], entries[4]], from: setlist, context: context)
+
+        XCTAssertEqual(titles(of: setlist), ["A", "C"])
+        XCTAssertEqual(setlist.sortedEntries.map(\.sortOrder), [0, 1])
+    }
+
+    func testRemoveEntriesIgnoresEntriesFromAnotherSetlist() throws {
+        let context = try makeContext()
+        let viewModel = SetlistViewModel()
+        let setlist = makeSetlist(in: context)
+        let other = makeSetlist(in: context)
+        insertSongs(["A", "B"], into: setlist, viewModel: viewModel, context: context)
+        insertSongs(["X"], into: other, viewModel: viewModel, context: context)
+
+        viewModel.removeEntries(other.sortedEntries, from: setlist, context: context)
+
+        XCTAssertEqual(titles(of: setlist), ["A", "B"])
+        XCTAssertEqual(titles(of: other), ["X"])
+    }
+
+    func testMoveEntriesMovesNonContiguousSelectionAsOneBlock() throws {
+        let context = try makeContext()
+        let viewModel = SetlistViewModel()
+        let setlist = makeSetlist(in: context)
+        insertSongs(["A", "B", "C", "D", "E"], into: setlist, viewModel: viewModel, context: context)
+
+        // Drag "A" and "C" below "D" (destination offset 4 = before "E").
+        viewModel.moveEntries(in: setlist, from: IndexSet([0, 2]), to: 4, context: context)
+
+        XCTAssertEqual(titles(of: setlist), ["B", "D", "A", "C", "E"])
+        XCTAssertEqual(setlist.sortedEntries.map(\.sortOrder), [0, 1, 2, 3, 4])
+    }
+
+    func testMoveEntriesBeforeTargetKeepsRelativeOrder() throws {
+        let context = try makeContext()
+        let viewModel = SetlistViewModel()
+        let setlist = makeSetlist(in: context)
+        insertSongs(["A", "B", "C", "D", "E"], into: setlist, viewModel: viewModel, context: context)
+        let entries = setlist.sortedEntries
+
+        // Passed out of order; the block keeps setlist order ("B" before "E").
+        viewModel.moveEntries([entries[4], entries[1]], before: entries[0], in: setlist, context: context)
+        XCTAssertEqual(titles(of: setlist), ["B", "E", "A", "C", "D"])
+
+        viewModel.moveEntries([entries[0], entries[2]], before: nil, in: setlist, context: context)
+        XCTAssertEqual(titles(of: setlist), ["B", "E", "D", "A", "C"])
+    }
+
+    func testMoveEntriesBeforeMovedTargetUsesNextUnmovedEntry() throws {
+        let context = try makeContext()
+        let viewModel = SetlistViewModel()
+        let setlist = makeSetlist(in: context)
+        insertSongs(["A", "B", "C", "D"], into: setlist, viewModel: viewModel, context: context)
+        let entries = setlist.sortedEntries
+
+        viewModel.moveEntries([entries[0], entries[2]], before: entries[2], in: setlist, context: context)
+
+        XCTAssertEqual(titles(of: setlist), ["B", "A", "C", "D"])
+    }
+
+    func testMoveEntriesInPlaceKeepsOverlapTransition() throws {
+        let context = try makeContext()
+        let viewModel = SetlistViewModel()
+        let setlist = makeSetlist(in: context)
+        insertSongs(["A", "B", "C"], into: setlist, viewModel: viewModel, context: context)
+        let entries = setlist.sortedEntries
+        viewModel.setOverlapTransition(
+            OverlapTransitionConfig(startOffsetSeconds: 4),
+            for: entries[0],
+            context: context
+        )
+
+        // Drop "A" and "B" back where they already are.
+        viewModel.moveEntries([entries[0], entries[1]], before: entries[2], in: setlist, context: context)
+
+        XCTAssertEqual(titles(of: setlist), ["A", "B", "C"])
+        XCTAssertEqual(entries[0].transition, .overlap)
+    }
+
+    private func insertSongs(
+        _ names: [String],
+        into setlist: Setlist,
+        viewModel: SetlistViewModel,
+        context: ModelContext
+    ) {
+        for name in names {
+            let song = Song(name: name)
+            context.insert(song)
+            viewModel.insertSong(song, at: setlist.entries.count, to: setlist, context: context)
+        }
     }
 }
 

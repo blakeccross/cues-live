@@ -38,6 +38,7 @@ extension LivePlaybackView {
                     isEditing: $isEditingSetlist,
                     actions: setlistRowActions(for:),
                     onMove: moveSetlistRows,
+                    onRemove: removeSetlistRows,
                     onAddHeader: addHeader,
                     onDropItems: { performSetlistDrop(at: $0, providers: $1) },
                     sectionPlayback: setlistSectionPlayback,
@@ -110,23 +111,19 @@ extension LivePlaybackView {
 
     private func setlistRowActions(for model: SetlistRowModel) -> SetlistRowActions {
         guard let entry = visibleSetlistEntries.first(where: { AnyHashable($0.persistentModelID) == model.id }) else {
-            return SetlistRowActions(remove: {})
+            return SetlistRowActions()
         }
 
         guard case .song(let rowSong) = model.kind, let song = entry.song else {
-            return SetlistRowActions(
-                edit: { beginEditingHeader(entry) },
-                remove: { removeFromSetlist(entry) }
-            )
+            return SetlistRowActions(edit: { beginEditingHeader(entry) })
         }
 
         return SetlistRowActions(
-            play: { coordinator.goToSong(at: rowSong.playbackIndex, autoPlay: coordinator.isAudiblePlaying) },
+            cue: { coordinator.goToSong(at: rowSong.playbackIndex, autoPlay: false) },
             edit: { presentSongEditor(for: song) },
             relink: rowSong.hasMissingMedia ? { presentMissingMediaRelink(for: song) } : nil,
             transitions: rowSong.transition == nil ? [] : availableTransitions(for: entry),
-            setTransition: { handleTransitionSelection($0, for: entry) },
-            remove: { removeFromSetlist(entry) }
+            setTransition: { handleTransitionSelection($0, for: entry) }
         )
     }
 
@@ -182,8 +179,9 @@ extension LivePlaybackView {
         )
     }
 
-    private func removeFromSetlist(_ entry: SetlistEntry) {
-        viewModel.removeEntry(entry, from: workingSetlist, context: modelContext)
+    private func removeSetlistRows(_ ids: [AnyHashable]) {
+        let entries = visibleSetlistEntries.filter { ids.contains(AnyHashable($0.persistentModelID)) }
+        viewModel.removeEntries(entries, from: workingSetlist, context: modelContext)
         coordinator.syncSetlist(workingSetlist)
     }
 

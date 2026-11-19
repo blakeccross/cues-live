@@ -88,6 +88,9 @@ enum AppColors {
     /// Highlighted track header background when the track row is selected.
     static let trackHeaderSelected = Color(.trackHeaderSelected)
 
+    /// Selected setlist row on iOS, where the list's own highlight is hidden by custom row backgrounds.
+    static let rowSelection = accent.opacity(0.18)
+
     /// Editor section-marker blocks: the track palette's dark gray, lifting to its white when selected.
     static let sectionMarker = Color(.trackPaletteDarkGray)
     static let sectionMarkerSelected = Color(.trackPaletteWhite)
