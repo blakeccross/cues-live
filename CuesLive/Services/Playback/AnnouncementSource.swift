@@ -1,31 +1,41 @@
 import AVFoundation
 import Foundation
-import os
 
-/// Plays short spoken callouts through an `AVAudioSourceNode`.
+/// Plays short spoken callouts (Smart Guide) as a `StemMixer` voice, so they follow the
+/// Cues group's output route and fader like any track.
 ///
-/// A source node (not a player node) is used so the output router can apply an AU channel map,
-/// letting Smart Guide follow the Cues group's destination like any other track.
-final class AnnouncementSource: @unchecked Sendable {
-    let format: AVAudioFormat
-    private(set) var sourceNode: AVAudioSourceNode!
-    private let context = RenderContext()
+/// Each callout is an immutable snapshot handed to the render thread without locking; a
+/// new one restarts from its first sample.
+final class AnnouncementSource: MixerVoice, @unchecked Sendable {
+    private final class Callout {
+        let samples: [Float]
+        /// Tells the render thread a new callout arrived, even if it has the same address
+        /// as one already freed.
+        let serial: UInt64
 
-    init?(sampleRate: Double = DecodedStemBuffer.engineSampleRate) {
-        guard let format = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: sampleRate,
-            channels: 1,
-            interleaved: false
-        ) else {
-            return nil
+        init(samples: [Float], serial: UInt64) {
+            self.samples = samples
+            self.serial = serial
         }
-        self.format = format
-        let context = context
-        sourceNode = AVAudioSourceNode(format: format) { _, _, frameCount, outputBuffer in
-            context.render(frameCount: Int(frameCount), outputBuffer: outputBuffer)
-            return noErr
-        }
+    }
+
+    private let callout = RealtimeReference(Callout(samples: [], serial: 0))
+    /// Main thread only.
+    private var lastSerial: UInt64 = 0
+    /// The gain as a float's bits, so the render thread reads it without locking.
+    private let gainBits: UnsafeMutablePointer<UInt64>
+
+    // Render-thread state.
+    private var playingSerial: UInt64 = 0
+    private var position = 0
+
+    init() {
+        gainBits = .allocate(capacity: 1)
+        gainBits.initialize(to: UInt64(Float(1).bitPattern))
+    }
+
+    deinit {
+        gainBits.deallocate()
     }
 
     /// Restarts playback from the beginning of `stem`, cutting off any callout still speaking.
@@ -43,65 +53,49 @@ final class AnnouncementSource: @unchecked Sendable {
                 gain: 1
             )
         }
-        context.start(samples)
+        publish(samples)
     }
 
     func stop() {
-        context.start([])
+        publish([])
     }
 
     /// Group fader / mute applied to the callout. Takes effect on the next render block.
     func setGain(_ gain: Float) {
-        context.setGain(gain)
+        realtime_atomic_store_release(gainBits, UInt64(gain.bitPattern))
     }
 
-    private final class RenderContext: @unchecked Sendable {
-        private var lock = os_unfair_lock()
-        private var samples: [Float] = []
-        private var position = 0
-        private var gain: Float = 1
+    private func publish(_ samples: [Float]) {
+        lastSerial += 1
+        callout.publish(Callout(samples: samples, serial: lastSerial))
+    }
 
-        func start(_ samples: [Float]) {
-            os_unfair_lock_lock(&lock)
-            let previous = self.samples
-            self.samples = samples
-            position = 0
-            os_unfair_lock_unlock(&lock)
-            // Release the old buffer off the audio thread, outside the lock.
-            _ = previous
-        }
-
-        func setGain(_ gain: Float) {
-            os_unfair_lock_lock(&lock)
-            self.gain = gain
-            os_unfair_lock_unlock(&lock)
-        }
-
-        func render(frameCount: Int, outputBuffer: UnsafeMutablePointer<AudioBufferList>) {
-            let buffers = UnsafeMutableAudioBufferListPointer(outputBuffer)
-
-            os_unfair_lock_lock(&lock)
-            defer { os_unfair_lock_unlock(&lock) }
-
-            let remaining = max(0, samples.count - position)
-            let copied = min(frameCount, remaining)
-            let currentGain = gain
-
-            for buffer in buffers {
-                guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
-                if copied > 0 {
-                    samples.withUnsafeBufferPointer { source in
-                        guard let base = source.baseAddress else { return }
-                        for frame in 0..<copied {
-                            data[frame] = base[position + frame] * currentGain
-                        }
+    func render(
+        frameCount: AVAudioFrameCount,
+        hostTime: UInt64,
+        outputBuffer: UnsafeMutablePointer<AudioBufferList>
+    ) -> Bool {
+        let gain = Float(bitPattern: UInt32(truncatingIfNeeded: realtime_atomic_load_acquire(gainBits)))
+        return callout.withCurrent { callout in
+            if callout.serial != playingSerial {
+                playingSerial = callout.serial
+                position = 0
+            }
+            let frames = Int(frameCount)
+            let copied = min(frames, max(0, callout.samples.count - position))
+            callout.samples.withUnsafeBufferPointer { source in
+                for buffer in UnsafeMutableAudioBufferListPointer(outputBuffer) {
+                    guard let data = buffer.mData?.assumingMemoryBound(to: Float.self) else { continue }
+                    for frame in 0..<copied {
+                        data[frame] = source[position + frame] * gain
                     }
-                }
-                if copied < frameCount {
-                    (data + copied).initialize(repeating: 0, count: frameCount - copied)
+                    if copied < frames {
+                        (data + copied).initialize(repeating: 0, count: frames - copied)
+                    }
                 }
             }
             position += copied
+            return copied > 0
         }
     }
 }

@@ -11,8 +11,8 @@ struct OutputRoutingSnapshot {
 
     /// True when any group (or the ungrouped bus) is routed somewhere other than
     /// the default full stereo pair — e.g. pinned to a single mono channel. On a
-    /// stereo-only device this signals that AU channel-map routing is needed
-    /// instead of the plain master-mixer path, so that routing is honored.
+    /// stereo-only device this connects the mixer at device width, so each output
+    /// channel can be addressed on its own.
     var hasNonDefaultRouting: Bool {
         if ungroupedDestination != .defaultDestination { return true }
         return routesByGroupID.values.contains { $0 != .defaultDestination }

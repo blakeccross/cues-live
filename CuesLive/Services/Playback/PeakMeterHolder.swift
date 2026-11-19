@@ -1,41 +1,59 @@
 import Foundation
-import os
 
+/// A track's peak level, reported from the render thread and read by the meter UI.
+///
+/// The peak is kept as a float's bits in an atomic word, so `report` never waits on the
+/// UI. `consume` and `reset` belong to one reading thread.
 final class PeakMeterHolder: @unchecked Sendable {
     /// Fast DAW channel-meter release: 20 dB in 300 ms, so a full-scale peak
     /// falls off a 60 dB scale in about a second. Attack stays immediate.
     private static let releaseDbPerSecond: Float = 20 / 0.3
 
-    private var peak: Float = 0
+    private let peakBits: UnsafeMutablePointer<UInt64>
+    /// Reading thread only.
     private var updatedAt: TimeInterval = 0
-    private let lock = OSAllocatedUnfairLock()
 
+    init() {
+        peakBits = .allocate(capacity: 1)
+        peakBits.initialize(to: 0)
+    }
+
+    deinit {
+        peakBits.deallocate()
+    }
+
+    /// Raises the held peak to `value`. Safe on the render thread.
     func report(_ value: Float) {
         guard value.isFinite, value > 0 else { return }
-        lock.withLock {
-            peak = max(peak, value)
+        let reported = UInt64(value.bitPattern)
+        while true {
+            let held = realtime_atomic_load_acquire(peakBits)
+            guard Float(bitPattern: UInt32(held)) < value else { return }
+            if realtime_atomic_compare_exchange(peakBits, held, reported) { return }
         }
     }
 
+    /// The peak to show now; the held peak then decays with the time since the last call.
     func consume() -> Float {
         let now = Date().timeIntervalSinceReferenceDate
-        return lock.withLock {
-            let shown = peak
-            if updatedAt > 0, peak > 0 {
-                let dt = Float(min(max(0, now - updatedAt), 0.25))
-                if dt > 0 {
-                    peak *= pow(10, -Self.releaseDbPerSecond * dt / 20)
-                    if peak < 0.001 { peak = 0 }
-                }
+        let elapsed = updatedAt > 0 ? Float(min(max(0, now - updatedAt), 0.25)) : 0
+        updatedAt = now
+        while true {
+            let held = realtime_atomic_load_acquire(peakBits)
+            let shown = Float(bitPattern: UInt32(held))
+            var decayed = shown
+            if elapsed > 0, decayed > 0 {
+                decayed *= pow(10, -Self.releaseDbPerSecond * elapsed / 20)
+                if decayed < 0.001 { decayed = 0 }
             }
-            updatedAt = now
-            return shown
+            // A failed swap means the render thread raised the peak meanwhile; decay that.
+            if realtime_atomic_compare_exchange(peakBits, held, UInt64(decayed.bitPattern)) {
+                return shown
+            }
         }
     }
 
     func reset() {
-        lock.withLock {
-            peak = 0
-        }
+        realtime_atomic_store_release(peakBits, 0)
     }
 }

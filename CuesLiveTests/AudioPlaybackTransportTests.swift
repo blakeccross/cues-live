@@ -1,3 +1,4 @@
+import os
 import XCTest
 @testable import CuesLive
 
@@ -303,5 +304,83 @@ final class AudioPlaybackTransportTests: XCTestCase {
         XCTAssertEqual(transport.pausedTimelineSeconds(), 5.5, accuracy: 0.0000001)
     }
 
-}
+    // MARK: - Concurrency
 
+    func testEditsFromAnotherThreadDoNotDisturbTheRenderedTimeline() {
+        let undisturbed = renderTimelineWithJump(whileHammering: false)
+        let hammered = renderTimelineWithJump(whileHammering: true)
+
+        XCTAssertEqual(hammered.count, undisturbed.count)
+        XCTAssertEqual(hammered, undisturbed, "the render thread must read the same clock while the UI edits it")
+        // The last block starts one block short of 8 s; the jump moved it 4 s back.
+        let lastBlockStart = 8 - 512 / DecodedStemBuffer.engineSampleRate
+        XCTAssertEqual(undisturbed.last ?? 0, lastBlockStart - 4, accuracy: 0.001, "the jump from 5 s back to 1 s was taken once")
+    }
+
+    /// Plays from 0 with a jump scheduled at 5 s back to 1 s, reading the clock the way the
+    /// render thread does: many tracks per block, each capturing the anchor and taking the
+    /// jump. Optionally another thread keeps publishing edits that must not move the
+    /// playhead (a duration change past the end of what plays, and UI reads).
+    private func renderTimelineWithJump(whileHammering: Bool) -> [TimeInterval] {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(60)
+        transport.scheduleTransition(to: 1, at: 5)
+        transport.beginPlayback(from: 0)
+
+        let stopHammering = OSAllocatedUnfairLock(initialState: false)
+        let hammerFinished = DispatchGroup()
+        if whileHammering {
+            hammerFinished.enter()
+            Thread.detachNewThread {
+                var toggle = false
+                while !stopHammering.withLock({ $0 }) {
+                    toggle.toggle()
+                    transport.setDuration(toggle ? 61 : 60)
+                    _ = transport.hasPendingTransition
+                    _ = transport.audibleTimelineSeconds(atHostTime: mach_absolute_time())
+                }
+                hammerFinished.leave()
+            }
+        }
+
+        let origin = hostTicks(seconds: 100)
+        let blockSeconds = 512 / DecodedStemBuffer.engineSampleRate
+        let tracksPerBlock = 64
+        var timeline: [TimeInterval] = []
+        for block in 0..<Int(8 / blockSeconds) {
+            let hostTime = origin + hostTicks(seconds: Double(block) * blockSeconds)
+            for _ in 0..<tracksPerBlock {
+                timeline.append(transport.renderTimeline(atHostTime: hostTime, captureAnchor: true).timelineSeconds)
+            }
+        }
+
+        stopHammering.withLock { $0 = true }
+        hammerFinished.wait()
+        return timeline
+    }
+
+    // MARK: - Sample rate
+
+    func testLoopBoundsSnapToTheMixersFrameGrid() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(32)
+        transport.setSampleRate(44_100)
+
+        transport.setLoopRegion(start: 4.00001, end: 8)
+
+        let start = try? XCTUnwrap(transport.currentLoopRegion()).start
+        XCTAssertEqual(start, Double(176_400) / 44_100, "4.00001 s is frame 176,400 at 44.1 kHz")
+    }
+
+    func testChangingTheRateResnapsAnArmedLoop() {
+        let transport = AudioPlaybackTransport()
+        transport.setDuration(32)
+        transport.setLoopRegion(start: 4.00001, end: 8)
+
+        transport.setSampleRate(44_100)
+
+        let loop = transport.currentLoopRegion()
+        XCTAssertEqual(loop.map { $0.start * 44_100 }, 176_400)
+        XCTAssertEqual(loop.map { $0.end * 44_100 }, 352_800)
+    }
+}

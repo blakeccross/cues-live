@@ -1,10 +1,8 @@
-import AVFoundation
 import Foundation
-import os
 
 /// Sample-accurate shared transport clock used by all track source nodes.
 final class AudioPlaybackTransport: @unchecked Sendable {
-    struct PendingTransition: Sendable {
+    struct PendingTransition: Sendable, Equatable {
         let transitionAt: TimeInterval
         let targetOffset: TimeInterval
     }
@@ -33,120 +31,110 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         var transitionSplit: TransitionSplit?
     }
 
-    private var lock = os_unfair_lock()
-    private static var hostTimebase: mach_timebase_info_data_t = {
-        var info = mach_timebase_info_data_t()
-        mach_timebase_info(&info)
-        return info
-    }()
+    /// Read by every track's render block and written by the UI, the MIDI queue, and the
+    /// render thread itself (anchor capture, scheduled jumps). Lock-free so the render
+    /// thread never waits on another thread.
+    private let clock = RealtimeSnapshot(TransportClock())
 
-    private(set) var isPlaying = false
-    private(set) var duration: TimeInterval = 0
+    var isPlaying: Bool { clock.load().isPlaying }
+    var duration: TimeInterval { clock.load().duration }
 
-    private var pausedTimeline: TimeInterval = 0
-    private var anchorTimeline: TimeInterval = 0
-    private var anchorHostTime: UInt64 = 0
-    private var hasAnchor = false
-    private var pendingTransition: PendingTransition?
-    private var loopRegion: LoopRegion?
+    /// Sets the frame grid loop bounds snap to. Re-snaps an armed loop to the new grid.
+    func setSampleRate(_ sampleRate: Double) {
+        guard sampleRate > 0 else { return }
+        let loop = clock.load().loopRegion
+        clock.update { $0.sampleRate = sampleRate }
+        if let loop {
+            setLoopRegion(start: loop.start, end: loop.end)
+        }
+    }
 
     func setDuration(_ duration: TimeInterval) {
-        os_unfair_lock_lock(&lock)
-        self.duration = max(0, duration)
-        os_unfair_lock_unlock(&lock)
+        clock.update { $0.duration = max(0, duration) }
     }
 
     func setPausedTimeline(_ timeline: TimeInterval) {
-        os_unfair_lock_lock(&lock)
-        pausedTimeline = max(0, min(timeline, duration))
-        os_unfair_lock_unlock(&lock)
+        clock.update { $0.pausedTimeline = max(0, min(timeline, $0.duration)) }
     }
 
     func pausedTimelineSeconds() -> TimeInterval {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        return pausedTimeline
+        clock.load().pausedTimeline
     }
 
     func beginPlayback(from timeline: TimeInterval) {
-        os_unfair_lock_lock(&lock)
-        pausedTimeline = max(0, min(timeline, duration))
-        anchorTimeline = pausedTimeline
-        hasAnchor = false
-        isPlaying = true
-        os_unfair_lock_unlock(&lock)
+        clock.update { state in
+            state.pausedTimeline = max(0, min(timeline, state.duration))
+            state.anchorTimeline = state.pausedTimeline
+            state.hasAnchor = false
+            state.isPlaying = true
+        }
     }
 
     func pause(capturingTimeline timeline: TimeInterval) {
-        os_unfair_lock_lock(&lock)
-        pausedTimeline = max(0, min(timeline, duration))
-        isPlaying = false
-        hasAnchor = false
-        os_unfair_lock_unlock(&lock)
+        clock.update { state in
+            state.pausedTimeline = max(0, min(timeline, state.duration))
+            state.isPlaying = false
+            state.hasAnchor = false
+        }
     }
 
     func stop() {
-        os_unfair_lock_lock(&lock)
-        pausedTimeline = 0
-        anchorTimeline = 0
-        isPlaying = false
-        hasAnchor = false
-        pendingTransition = nil
-        os_unfair_lock_unlock(&lock)
+        clock.update { state in
+            state.pausedTimeline = 0
+            state.anchorTimeline = 0
+            state.isPlaying = false
+            state.hasAnchor = false
+            state.pendingTransition = nil
+        }
     }
 
     func scheduleTransition(to targetOffset: TimeInterval, at transitionTimelineTime: TimeInterval) {
-        os_unfair_lock_lock(&lock)
-        let target = max(0, min(targetOffset, duration))
-        let transitionAt = max(0, min(transitionTimelineTime, duration))
-        pendingTransition = PendingTransition(transitionAt: transitionAt, targetOffset: target)
-        os_unfair_lock_unlock(&lock)
+        clock.update { state in
+            state.pendingTransition = PendingTransition(
+                transitionAt: max(0, min(transitionTimelineTime, state.duration)),
+                targetOffset: max(0, min(targetOffset, state.duration))
+            )
+        }
     }
 
     func cancelScheduledTransition() {
-        os_unfair_lock_lock(&lock)
-        pendingTransition = nil
-        os_unfair_lock_unlock(&lock)
+        clock.update { $0.pendingTransition = nil }
     }
 
     /// True from scheduling until the audio thread has taken the jump (or it is cancelled).
     var hasPendingTransition: Bool {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        return pendingTransition != nil
+        clock.load().pendingTransition != nil
     }
 
     func clearScheduledTransition() {
-        os_unfair_lock_lock(&lock)
-        pendingTransition = nil
-        os_unfair_lock_unlock(&lock)
+        clock.update { $0.pendingTransition = nil }
     }
 
     /// Enables sample-accurate section looping on the audio thread.
-    /// Loop bounds are quantized to whole sample frames at the engine sample rate.
+    /// Loop bounds are quantized to whole sample frames at the mixer's rate (`setSampleRate`).
     func setLoopRegion(start: TimeInterval, end: TimeInterval) {
-        os_unfair_lock_lock(&lock)
-        let sampleRate = DecodedStemBuffer.engineSampleRate
-        let startFrame = Self.frameIndex(for: max(0, start), sampleRate: sampleRate)
-        let endFrame = Self.frameIndex(for: max(0, end), sampleRate: sampleRate)
-        let maxFrame = Self.frameIndex(for: duration, sampleRate: sampleRate)
-        let clampedStart = min(max(0, startFrame), maxFrame)
-        let clampedEnd = min(max(0, endFrame), maxFrame)
-        if clampedEnd > clampedStart {
-            loopRegion = LoopRegion(
-                start: Double(clampedStart) / sampleRate,
-                end: Double(clampedEnd) / sampleRate
-            )
-        } else {
-            loopRegion = nil
+        clock.update { state in
+            let sampleRate = state.sampleRate
+            let startFrame = Self.frameIndex(for: max(0, start), sampleRate: sampleRate)
+            let endFrame = Self.frameIndex(for: max(0, end), sampleRate: sampleRate)
+            let maxFrame = Self.frameIndex(for: state.duration, sampleRate: sampleRate)
+            let clampedStart = min(max(0, startFrame), maxFrame)
+            let clampedEnd = min(max(0, endFrame), maxFrame)
+            if clampedEnd > clampedStart {
+                state.loopRegion = LoopRegion(
+                    start: Double(clampedStart) / sampleRate,
+                    end: Double(clampedEnd) / sampleRate
+                )
+            } else {
+                state.loopRegion = nil
+            }
         }
-        os_unfair_lock_unlock(&lock)
     }
 
     /// Disarms the loop region.
     ///
     /// When `continuingFrom` is provided (the audible/wrapped playhead), the
-    /// transport clock is re-anchored there under the same lock so clearing a
+    /// transport clock is re-anchored there in the same update so clearing a
     /// loop never briefly exposes the unwrapped timeline.
     ///
     /// Pass `hostTime` from the same clock the UI reads (`lastRenderTime`) and
@@ -156,141 +144,63 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         continuingFrom audibleTimeline: TimeInterval? = nil,
         hostTime: UInt64? = nil
     ) {
-        os_unfair_lock_lock(&lock)
-        let hadActiveLoop = loopRegion?.isValid == true
-        loopRegion = nil
-        if hadActiveLoop, let audibleTimeline {
-            let clamped = max(0, min(audibleTimeline, duration))
-            pausedTimeline = clamped
-            if isPlaying {
-                anchorTimeline = clamped
-                if let hostTime {
-                    anchorHostTime = hostTime
-                    hasAnchor = true
-                } else {
-                    // Next render captures a fresh host-time anchor at elapsed = 0.
-                    hasAnchor = false
-                }
+        clock.update { state in
+            let hadActiveLoop = state.loopRegion?.isValid == true
+            state.loopRegion = nil
+            guard hadActiveLoop, let audibleTimeline else { return }
+            let clamped = max(0, min(audibleTimeline, state.duration))
+            state.pausedTimeline = clamped
+            guard state.isPlaying else { return }
+            state.anchorTimeline = clamped
+            if let hostTime {
+                state.anchorHostTime = hostTime
+                state.hasAnchor = true
+            } else {
+                // Next render captures a fresh host-time anchor at elapsed = 0.
+                state.hasAnchor = false
             }
         }
-        os_unfair_lock_unlock(&lock)
     }
 
     var hasActiveLoopRegion: Bool {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        return loopRegion?.isValid == true
+        clock.load().loopRegion?.isValid == true
     }
 
     func currentLoopRegion() -> LoopRegion? {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        return loopRegion
+        clock.load().loopRegion
     }
 
-    /// Single locked read used by each track source node.
+    /// The timeline position each track source node renders from. With `captureAnchor`
+    /// (the audio thread's read) this also pins the start anchor and takes due jumps.
     func renderTimeline(atHostTime hostTime: UInt64, captureAnchor: Bool) -> RenderState {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-        return renderTimelineLocked(atHostTime: hostTime, captureAnchor: captureAnchor)
+        guard captureAnchor else {
+            var reading = clock.load()
+            return reading.render(atHostTime: hostTime, captureAnchor: false)
+        }
+        return clock.update { $0.render(atHostTime: hostTime, captureAnchor: true) }
     }
 
     func timelineSeconds(atHostTime hostTime: UInt64) -> TimeInterval {
         renderTimeline(atHostTime: hostTime, captureAnchor: false).timelineSeconds
     }
 
-    /// Playhead time for UI: wraps into the active loop under the same lock as the
+    /// Playhead time for UI: wraps into the active loop from the same snapshot as the
     /// raw transport read so clearing a loop cannot tear the two apart.
     func audibleTimelineSeconds(atHostTime hostTime: UInt64?) -> TimeInterval {
-        os_unfair_lock_lock(&lock)
-        defer { os_unfair_lock_unlock(&lock) }
-
-        let raw: TimeInterval
-        if let hostTime {
-            raw = renderTimelineLocked(atHostTime: hostTime, captureAnchor: false).timelineSeconds
-        } else {
-            raw = pausedTimeline
-        }
-        if let loopRegion, loopRegion.isValid {
-            return Self.wrappedTimeline(raw, loop: loopRegion)
-        }
-        return raw
-    }
-
-    /// Must be called while `lock` is held.
-    private func renderTimelineLocked(atHostTime hostTime: UInt64, captureAnchor: Bool) -> RenderState {
-        if captureAnchor, isPlaying, !hasAnchor {
-            anchorHostTime = hostTime
-            hasAnchor = true
-        }
-
-        guard isPlaying else {
-            return RenderState(timelineSeconds: pausedTimeline, isPlaying: false)
-        }
-
-        guard hasAnchor else {
-            return RenderState(timelineSeconds: pausedTimeline, isPlaying: true)
-        }
-
-        // UI may read `outputNode.lastRenderTime` behind a freshly captured audio
-        // anchor; unsigned subtraction would underflow and flash the playhead ahead.
-        guard hostTime >= anchorHostTime else {
-            return RenderState(timelineSeconds: positionedTimeline(anchorTimeline), isPlaying: true)
-        }
-
-        func linearTimeline() -> TimeInterval {
-            anchorTimeline + Self.seconds(fromHostTimeDelta: hostTime &- anchorHostTime)
-        }
-
-        var timeline = linearTimeline()
-        // The audio thread re-anchors the clock on the jump itself, at the host time the
-        // transition point was reached. Every track then reads one continuous clock, and
-        // nothing on the UI thread has to touch it (a UI re-anchor lands at an arbitrary
-        // moment and splices audible glitches into the stream).
-        if captureAnchor, loopRegion?.isValid != true,
-           let pendingTransition, timeline >= pendingTransition.transitionAt {
-            let wallToTransition = max(0, pendingTransition.transitionAt - anchorTimeline)
-            anchorHostTime = anchorHostTime &+ Self.hostTicks(forSeconds: wallToTransition)
-            anchorTimeline = pendingTransition.targetOffset
-            pausedTimeline = pendingTransition.targetOffset
-            self.pendingTransition = nil
-            timeline = linearTimeline()
-        }
-        let positioned = positionedTimeline(mappedTimeline(fromLinear: timeline))
-        var split: TransitionSplit?
-        if let pendingTransition, loopRegion?.isValid != true, timeline < pendingTransition.transitionAt {
-            split = TransitionSplit(
-                secondsUntil: pendingTransition.transitionAt - timeline,
-                targetOffset: pendingTransition.targetOffset
-            )
-        }
-        return RenderState(timelineSeconds: positioned, isPlaying: true, transitionSplit: split)
-    }
-
-    /// When a section loop is armed, keep continuous unwrapped time so the player
-    /// can apply integer-frame modulo. Otherwise clamp to song duration.
-    private func positionedTimeline(_ mapped: TimeInterval) -> TimeInterval {
-        if loopRegion?.isValid == true {
-            return max(0, mapped)
-        }
-        return max(0, min(mapped, duration))
+        clock.load().audibleTimeline(atHostTime: hostTime)
     }
 
     func mappedTimeline(fromLinear linear: TimeInterval) -> TimeInterval {
-        if let pendingTransition, linear >= pendingTransition.transitionAt {
-            let jumped = pendingTransition.targetOffset + (linear - pendingTransition.transitionAt)
-            return max(0, min(jumped, duration))
-        }
-        return linear
+        clock.load().mappedTimeline(fromLinear: linear)
     }
 
     func resetAnchor(to timeline: TimeInterval, hostTime: UInt64) {
-        os_unfair_lock_lock(&lock)
-        anchorTimeline = max(0, min(timeline, duration))
-        pausedTimeline = anchorTimeline
-        anchorHostTime = hostTime
-        hasAnchor = true
-        os_unfair_lock_unlock(&lock)
+        clock.update { state in
+            state.anchorTimeline = max(0, min(timeline, state.duration))
+            state.pausedTimeline = state.anchorTimeline
+            state.anchorHostTime = hostTime
+            state.hasAnchor = true
+        }
     }
 
     /// Converts timeline seconds to a sample frame using floor so times in
@@ -336,15 +246,5 @@ final class AudioPlaybackTransport: @unchecked Sendable {
         }
         let wrappedFrame = startFrame + ((frame - startFrame) % length)
         return Double(wrappedFrame) / sampleRate
-    }
-
-    private static func hostTicks(forSeconds seconds: TimeInterval) -> UInt64 {
-        guard seconds > 0 else { return 0 }
-        return UInt64(seconds * 1_000_000_000 * Double(hostTimebase.denom) / Double(hostTimebase.numer))
-    }
-
-    private static func seconds(fromHostTimeDelta delta: UInt64) -> TimeInterval {
-        let nanos = Double(delta) * Double(hostTimebase.numer) / Double(hostTimebase.denom)
-        return nanos / 1_000_000_000
     }
 }

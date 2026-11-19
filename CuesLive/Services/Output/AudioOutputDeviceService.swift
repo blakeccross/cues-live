@@ -231,7 +231,7 @@ enum AudioOutputDeviceService {
         return min(max(preferred, minimum), maximum)
     }
 
-    private static func defaultOutputDeviceID() -> AudioDeviceID? {
+    static func defaultOutputDeviceID() -> AudioDeviceID? {
         var deviceID = AudioDeviceID(0)
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDefaultOutputDevice,
@@ -257,7 +257,7 @@ enum AudioOutputDeviceService {
         return max(outputChannelCount(for: deviceID), 2)
     }
 
-    private static func deviceID(forUID uid: String) -> AudioDeviceID? {
+    static func deviceID(forUID uid: String) -> AudioDeviceID? {
         var deviceIDs = [AudioDeviceID]()
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDevices,

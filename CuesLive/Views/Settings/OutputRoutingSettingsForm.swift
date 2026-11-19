@@ -28,6 +28,7 @@ struct OutputRoutingSettingsForm: View {
     @State private var devices: [AudioOutputDevice] = []
     @State private var selectedDeviceUID: String?
     @State private var channelCount = 2
+    @State private var sampleRate = OutputSampleRate.selected()
     @State private var groupDestinations: [UUID: OutputDestination] = [:]
     @State private var ungroupedDestination: OutputDestination = .none
     @State private var timecodeEnabled = false
@@ -86,6 +87,14 @@ struct OutputRoutingSettingsForm: View {
                     applyDeviceSelection(newValue)
                 }
             }
+            Picker("Sample Rate", selection: $sampleRate) {
+                ForEach(OutputSampleRate.choices, id: \.self) { rate in
+                    Text(OutputSampleRate.label(for: rate)).tag(rate)
+                }
+            }
+            .onChange(of: sampleRate) { _, newValue in
+                applySampleRate(newValue)
+            }
         } footer: {
             deviceFooter
         }
@@ -96,6 +105,11 @@ struct OutputRoutingSettingsForm: View {
         if !devices.isEmpty {
             Text("\(channelCount) output channels available.")
         }
+        #if os(macOS)
+        Text("cues.live mixes at this rate and switches the output device to it, which also changes it for other apps using the device. A device that can't run at it gets converted audio.")
+        #else
+        Text("cues.live mixes at this rate and asks iOS to run the output at it. If the route can't, the audio is converted.")
+        #endif
         #if os(iOS)
         Text("On iOS, connect a multi-channel USB interface for additional outputs. Device selection follows the current audio route.")
         #endif
@@ -316,8 +330,21 @@ struct OutputRoutingSettingsForm: View {
         channelCount = AudioOutputDeviceService.channelCount(for: uid)
         reloadDestinations()
 
-        scheduleRoutingChange {
-            AudioEngineManager.shared.selectOutputDevice(uid: uid)
+        let rate = sampleRate
+        Task {
+            await AudioOutputDeviceService.requestSampleRate(rate, deviceUID: uid)
+            scheduleRoutingChange {
+                AudioEngineManager.shared.selectOutputDevice(uid: uid)
+            }
+        }
+    }
+
+    private func applySampleRate(_ rate: Double) {
+        OutputSampleRate.select(rate)
+        let deviceUID = selectedDeviceUID
+        Task {
+            await AudioOutputDeviceService.requestSampleRate(rate, deviceUID: deviceUID)
+            scheduleRoutingChange()
         }
     }
 
