@@ -24,6 +24,10 @@ struct DeviceSettingsSheet: View {
                         )
                         .navigationTitle("Outputs")
                     }
+                    NavigationLink("Section Names") {
+                        SectionNameListEditorView(presentation: .settings)
+                            .navigationTitle("Section Names")
+                    }
                     NavigationLink("Mappings") {
                         InputMappingSettingsView()
                             .navigationTitle("Mappings")

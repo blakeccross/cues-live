@@ -126,9 +126,7 @@ extension EditView {
             timeline.markers.append(newMarker)
         }
 
-        if let section = displaySections.first(where: { $0.id == newMarker.id }) {
-            activeSheet = .renameSection(section, title: "Name Section")
-        }
+        editingSectionID = newMarker.id
     }
 
     func requestDetectSections() {
@@ -174,12 +172,7 @@ extension EditView {
         prepareSectionAnnouncements()
     }
 
-    func beginRenameSection(_ section: SongSection) {
-        activeSheet = .renameSection(section, title: "Rename Section")
-    }
-
     func applySectionRename(_ newName: String, to section: SongSection) {
-        activeSheet = nil
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let index = timeline.markers.firstIndex(where: { $0.id == section.id }) else {

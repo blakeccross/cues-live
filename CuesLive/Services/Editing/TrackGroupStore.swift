@@ -336,7 +336,7 @@ enum TrackGroupStore {
         case "bgv":
             return [
                 "vocoder", "backing", "harmony", "choir",
-                "soprano", "alto", "tenor", "baritone", "mezzo", "bgv", "gangs"
+                "soprano", "alto", "tenor", "baritone", "mezzo", "bgv", "bgvs", "gangs"
             ]
         case "eg":
             return [

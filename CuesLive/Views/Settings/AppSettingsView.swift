@@ -43,6 +43,8 @@ struct AppSettingsView: View {
             timecodePane
         case .groups:
             groupsPane
+        case .sections:
+            SectionNameListEditorView(presentation: .settings)
         case .remote:
             remoteSessionPane
         case .mapping:

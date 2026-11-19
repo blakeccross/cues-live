@@ -53,6 +53,7 @@ struct TimelineRulerView: View {
     let cuedSectionID: UUID?
     let cueFlashPhase: Bool
     @Binding var selectedSectionID: UUID?
+    @Binding var editingSectionID: UUID?
     let loopSectionIDs: Set<UUID>
     let sectionMarkerHeight: CGFloat
     let timeSignatureRulerHeight: CGFloat
@@ -61,7 +62,8 @@ struct TimelineRulerView: View {
     let onCueSection: (SongSection) -> Void
     let onToggleLoopSection: (SongSection) -> Void
     let onAddSection: (TimeInterval) -> Void
-    let onRenameSection: (SongSection) -> Void
+    let onRenameSection: (SongSection, String) -> Void
+    let onManageSectionNames: () -> Void
     let onRemoveMarker: (SongSection) -> Void
     let previewSections: (SectionEdgeEdit) -> [SongSection]
     let onEditSectionEdge: (SectionEdgeEdit) -> Void
@@ -135,12 +137,14 @@ struct TimelineRulerView: View {
             cuedSectionID: cuedSectionID,
             cueFlashPhase: cueFlashPhase,
             selectedSectionID: $selectedSectionID,
+            editingSectionID: $editingSectionID,
             loopSectionIDs: loopSectionIDs,
             isPlaying: isPlaying,
             onCueSection: onCueSection,
             onToggleLoopSection: onToggleLoopSection,
             onAddSection: onAddSection,
             onRenameSection: onRenameSection,
+            onManageSectionNames: onManageSectionNames,
             onRemoveMarker: onRemoveMarker,
             previewSections: previewSections,
             onEditSectionEdge: onEditSectionEdge,

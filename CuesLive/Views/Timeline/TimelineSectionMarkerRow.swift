@@ -3,8 +3,8 @@ import SwiftUI
 import AppKit
 #endif
 
-/// Sections on the marker ruler, drawn as square-cornered blocks. Click a block to select it.
-/// Dragging an edge of the selected block moves only that edge; dragging the boundary between two
+/// Sections on the marker ruler, drawn as square-cornered blocks. Click a block to select it;
+/// double-click it to edit it in a popover. Dragging an edge of the selected block moves only that edge; dragging the boundary between two
 /// unselected blocks moves both. Right-click the row to add, rename, loop, or remove a marker.
 struct TimelineSectionMarkerRowView: View {
     let sections: [SongSection]
@@ -15,12 +15,14 @@ struct TimelineSectionMarkerRowView: View {
     let cuedSectionID: UUID?
     let cueFlashPhase: Bool
     @Binding var selectedSectionID: UUID?
+    @Binding var editingSectionID: UUID?
     let loopSectionIDs: Set<UUID>
     let isPlaying: Bool
     let onCueSection: (SongSection) -> Void
     let onToggleLoopSection: (SongSection) -> Void
     let onAddSection: (TimeInterval) -> Void
-    let onRenameSection: (SongSection) -> Void
+    let onRenameSection: (SongSection, String) -> Void
+    let onManageSectionNames: () -> Void
     let onRemoveMarker: (SongSection) -> Void
     /// Sections as they would be after an edge edit, drawn while the edge is dragged.
     let previewSections: (SectionEdgeEdit) -> [SongSection]
@@ -74,6 +76,41 @@ struct TimelineSectionMarkerRowView: View {
             }
         }
         .coordinateSpace(name: Self.dragSpace)
+        .popover(
+            isPresented: isEditorPresented,
+            attachmentAnchor: .rect(.rect(editorAnchor(in: slice))),
+            arrowEdge: .bottom
+        ) {
+            if let section = editingSection {
+                SectionEditorPopover(
+                    currentName: section.name,
+                    onRename: { onRenameSection(section, $0) },
+                    onManageNames: onManageSectionNames
+                )
+            }
+        }
+    }
+
+    private var editingSection: SongSection? {
+        guard let editingSectionID else { return nil }
+        return sections.first { $0.id == editingSectionID }
+    }
+
+    private var isEditorPresented: Binding<Bool> {
+        Binding(
+            get: { editingSection != nil },
+            set: { isPresented in
+                if !isPresented { editingSectionID = nil }
+            }
+        )
+    }
+
+    /// The edited block's visible part, so the popover arrow points at what is on screen.
+    private func editorAnchor(in slice: ClosedRange<CGFloat>) -> CGRect {
+        guard let section = editingSection else { return .zero }
+        let startX = max(xPosition(for: section.timelineStartSeconds), slice.lowerBound)
+        let endX = min(xPosition(for: section.timelineEndSeconds), slice.upperBound)
+        return CGRect(x: startX, y: 0, width: max(0, endX - startX), height: height)
     }
 
     private func edges(in slice: ClosedRange<CGFloat>) -> [SectionEdge] {
@@ -171,13 +208,21 @@ struct TimelineSectionMarkerRowView: View {
                         selectedSectionID = shown.section(atTimeline: timelineTime(at: event.location.x))?.id
                     }
             )
+            .simultaneousGesture(
+                SpatialTapGesture(count: 2)
+                    .onEnded { event in
+                        if let section = shown.section(atTimeline: timelineTime(at: event.location.x)) {
+                            editingSectionID = section.id
+                        }
+                    }
+            )
             .contextMenu {
                 Button("Add Section Marker") {
                     onAddSection(timelineTime(at: pointerX))
                 }
                 if let section = shown.section(atTimeline: timelineTime(at: pointerX)) {
-                    Button("Rename") {
-                        onRenameSection(section)
+                    Button("Edit Section…") {
+                        editingSectionID = section.id
                     }
                     Button(loopSectionIDs.contains(section.id) ? "Remove Loop" : "Loop Section") {
                         onToggleLoopSection(section)

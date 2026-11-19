@@ -44,6 +44,8 @@ final class TrackGroupStoreTests: XCTestCase {
             ("session_37-V5 Tim", "LV"),
             ("session_44-Announce 1 HH", "LV"),
             ("session_45-Announce 2 HH", "LV"),
+            ("session_46-BGV 1", "BGV"),
+            ("session_47-BGVS L_R", "BGV"),
             ("session_55-Crowd L", "Other"),
             ("session_56-Crowd R", "Other"),
         ]

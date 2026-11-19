@@ -5,6 +5,7 @@ enum AppSettingsTab: Hashable, CaseIterable, Identifiable {
     case audio
     case timecode
     case groups
+    case sections
     case remote
     case mapping
 
@@ -15,6 +16,7 @@ enum AppSettingsTab: Hashable, CaseIterable, Identifiable {
         case .audio: "Audio"
         case .timecode: "Timecode"
         case .groups: "Groups"
+        case .sections: "Sections"
         case .remote: "Remote"
         case .mapping: "Mapping"
         }
@@ -25,6 +27,7 @@ enum AppSettingsTab: Hashable, CaseIterable, Identifiable {
         case .audio: "speaker.wave.2"
         case .timecode: "timelapse"
         case .groups: "rectangle.3.group"
+        case .sections: "list.bullet.rectangle"
         case .remote: "antenna.radiowaves.left.and.right"
         case .mapping: "keyboard"
         }

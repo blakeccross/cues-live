@@ -4,11 +4,11 @@ import Foundation
 /// so a single optional value replaces a flag per sheet that could disagree.
 enum EditSheet: Identifiable {
     case groupEditor
+    case sectionNames
     case changeKey
     case addTrackType
     case midiDevicePicker
     case midiDeviceEditor(MIDIDevice)
-    case renameSection(SongSection, title: String)
     case tempoChange(TempoLanePrompt)
     case timeSignatureChange(TimeSignatureLanePrompt)
     case clipGain(ClipGainPromptRequest)
@@ -17,6 +17,8 @@ enum EditSheet: Identifiable {
         switch self {
         case .groupEditor:
             "groupEditor"
+        case .sectionNames:
+            "sectionNames"
         case .changeKey:
             "changeKey"
         case .addTrackType:
@@ -25,8 +27,6 @@ enum EditSheet: Identifiable {
             "midiDevicePicker"
         case .midiDeviceEditor(let device):
             "midiDeviceEditor-\(device.id)"
-        case .renameSection(let section, _):
-            "renameSection-\(section.id)"
         case .tempoChange(let prompt):
             "tempoChange-\(prompt.id)"
         case .timeSignatureChange(let prompt):

@@ -156,7 +156,7 @@ extension EditView {
     }
 
     private var stemTimeline: some View {
-        EditStemTimelineView(
+         EditStemTimelineView(
             timelineDuration: timelineDuration,
             timelineContentWidth: timelineContentWidth,
             timelineDisplayWidth: timelineDisplayWidth,

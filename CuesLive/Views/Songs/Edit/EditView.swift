@@ -65,6 +65,8 @@ struct EditView: View {
     /// The section block selected on the marker ruler. Here rather than in the ruler so the live
     /// ruler drawn during a zoom shows it too.
     @State var selectedSectionMarkerID: UUID?
+    /// The section marker whose editor popover is open.
+    @State var editingSectionID: UUID?
     @State var cueFireTime: TimeInterval?
     @State var cueFlashPhase = false
     @State var sectionLoop = SectionLoopController()

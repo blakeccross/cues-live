@@ -6,6 +6,8 @@ extension EditView {
         switch sheet {
         case .groupEditor:
             TrackGroupEditorView()
+        case .sectionNames:
+            SectionNameListEditorView()
         case .changeKey:
             ChangeKeyDialog(
                 song: song,
@@ -24,10 +26,6 @@ extension EditView {
             }
         case .midiDeviceEditor(let device):
             midiDeviceEditor(for: device)
-        case .renameSection(let section, let title):
-            RenameSectionSheet(title: title, currentName: section.name) { newName in
-                applySectionRename(newName, to: section)
-            }
         case .tempoChange(let prompt):
             TempoChangePrompt(
                 measure: prompt.measure,

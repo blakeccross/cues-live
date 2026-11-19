@@ -1,6 +1,6 @@
 import Foundation
 
-/// Canonical song section labels used by the rename sheet and import normalization.
+/// Canonical song section labels used by import normalization.
 enum SongSectionPresets {
     static let groups: [(title: String, options: [String])] = [
         ("Song Structure", [
