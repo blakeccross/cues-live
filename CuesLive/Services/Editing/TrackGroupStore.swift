@@ -2,8 +2,8 @@ import Foundation
 import SwiftData
 
 enum TrackGroupStore {
-    /// Group that carries guide audio (the Cues track group and Smart Guide callouts).
-    static let guideGroupName = "Cues"
+    /// Group that carries guide audio (the Guide track group and Smart Guide callouts).
+    static let guideGroupName = "Guide"
     static let clickGroupName = "Click"
 
     static let defaultNames = [
@@ -19,7 +19,7 @@ enum TrackGroupStore {
         "Strings",
         "Other",
         "Click",
-        "Cues",
+        "Guide",
         "Timecode",
     ]
 
@@ -119,7 +119,7 @@ enum TrackGroupStore {
             .caseInsensitiveCompare(name) == .orderedSame
     }
 
-    /// Whether tracks in `group` are left out of the setlist's song waveforms. Click and Cues
+    /// Whether tracks in `group` are left out of the setlist's song waveforms. Click and Guide
     /// stems run through the whole song and would flatten the shape of the music.
     static func isExcludedFromWaveform(_ group: TrackGroup?) -> Bool {
         isGroup(group, named: clickGroupName) || isGroup(group, named: guideGroupName)
@@ -295,10 +295,8 @@ enum TrackGroupStore {
             return "purple"
         case "strings":
             return "brown"
-        case "click":
+        case "click", "guide":
             return "darkGray"
-        case "cues":
-            return "white"
         case "timecode":
             return "darkGray"
         default:
@@ -356,8 +354,8 @@ enum TrackGroupStore {
             return ["crowd", "audience", "ambience", "ambient", "talkback", "sfx"]
         case "click":
             return ["click track", "click", "metronome"]
-        case "cues":
-            return ["cues", "cue"]
+        case "guide":
+            return ["guide", "guides", "cues", "cue"]
         case "timecode":
             return ["timecode", "ltc", "smpte"]
         default:

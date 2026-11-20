@@ -6,7 +6,7 @@ struct OutputRoutingSnapshot {
     let routesByGroupID: [UUID: OutputDestination]
     let ungroupedDestination: OutputDestination
     let channelCount: Int
-    /// The "Cues" track group. Smart Guide callouts follow its destination, fader, and mute.
+    /// The "Guide" track group. Smart Guide callouts follow its destination, fader, and mute.
     var guideGroupID: UUID?
 
     /// True when any group (or the ungrouped bus) is routed somewhere other than
@@ -106,7 +106,7 @@ enum OutputRoutingStore {
         )
     }
 
-    /// Group that carries Smart Guide audio, matched by name like the default "Cues" group.
+    /// Group that carries Smart Guide audio, matched by name like the default "Guide" group.
     static func guideGroupID(in context: ModelContext) -> UUID? {
         let groups = (try? context.fetch(FetchDescriptor<TrackGroup>())) ?? []
         return groups.first {

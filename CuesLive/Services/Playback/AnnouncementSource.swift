@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 
 /// Plays short spoken callouts (Smart Guide) as a `StemMixer` voice, so they follow the
-/// Cues group's output route and fader like any track.
+/// Guide group's output route and fader like any track.
 ///
 /// Each callout is an immutable snapshot handed to the render thread without locking; a
 /// new one restarts from its first sample.

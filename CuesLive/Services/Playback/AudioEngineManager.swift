@@ -132,7 +132,7 @@ final class AudioEngineManager {
         )
     }
 
-    /// Speaks a Smart Guide callout. It follows the Cues group's output routing and fader.
+    /// Speaks a Smart Guide callout. It follows the Guide group's output routing and fader.
     func playAnnouncement(_ stem: DecodedStemBuffer) {
         guard !isOutputLost else { return }
         try? startEngineIfNeeded()
@@ -140,7 +140,7 @@ final class AudioEngineManager {
         announcementSource.play(stem)
     }
 
-    /// Smart Guide shares the Cues group's fader, mute, and solo with the Cues track group.
+    /// Smart Guide shares the Guide group's fader, mute, and solo with the Guide track group.
     private func applyAnnouncementGain() {
         let snapshot = groupMixSnapshot
         guard let guideGroupID = routingSnapshot?.guideGroupID else {

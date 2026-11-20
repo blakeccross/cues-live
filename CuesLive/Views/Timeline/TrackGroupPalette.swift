@@ -98,10 +98,8 @@ enum TrackGroupPalette {
             return .purple
         case "strings":
             return .brown
-        case "click":
+        case "click", "guide":
             return .darkGray
-        case "cues":
-            return .white
         case "other":
             return .gray
         default:

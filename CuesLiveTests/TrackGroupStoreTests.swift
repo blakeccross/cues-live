@@ -60,14 +60,28 @@ final class TrackGroupStoreTests: XCTestCase {
         }
     }
 
-    func testClickAndCuesGroupsAreExcludedFromWaveform() {
+    func testClickAndGuideGroupsAreExcludedFromWaveform() {
         let groups = Dictionary(uniqueKeysWithValues: defaultGroups().map { ($0.name, $0) })
 
         XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(groups["Click"]))
-        XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(groups["Cues"]))
+        XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(groups["Guide"]))
         XCTAssertTrue(TrackGroupStore.isExcludedFromWaveform(TrackGroup(name: " click ", sortOrder: 0)))
         XCTAssertFalse(TrackGroupStore.isExcludedFromWaveform(groups["Drums"]))
         XCTAssertFalse(TrackGroupStore.isExcludedFromWaveform(groups["Timecode"]))
         XCTAssertFalse(TrackGroupStore.isExcludedFromWaveform(nil))
+    }
+
+    func testGuideGroupUsesClickColor() {
+        XCTAssertEqual(
+            TrackGroupStore.defaultPaletteKey(forGroupName: TrackGroupStore.guideGroupName),
+            TrackGroupStore.defaultPaletteKey(forGroupName: TrackGroupStore.clickGroupName)
+        )
+    }
+
+    func testGuideKeywordsStillMatchCuesStems() {
+        let groups = defaultGroups()
+
+        XCTAssertEqual(TrackGroupStore.guessGroup(for: "Cues", from: groups)?.name, "Guide")
+        XCTAssertEqual(TrackGroupStore.guessGroup(for: "Guide", from: groups)?.name, "Guide")
     }
 }
