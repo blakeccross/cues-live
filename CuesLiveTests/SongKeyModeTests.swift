@@ -23,12 +23,6 @@ final class SongKeyModeTests: XCTestCase {
         let data = try JSONEncoder().encode(SongProjectMetadata(from: song))
         let decoded = try JSONDecoder().decode(SongProjectMetadata.self, from: data)
         XCTAssertEqual(decoded.keyModeRaw, "minor")
-
-        let legacy = try JSONDecoder().decode(
-            SongProjectMetadata.self,
-            from: Data(#"{"baseKeyRaw":"G","smartGuideEnabled":false}"#.utf8)
-        )
-        XCTAssertNil(legacy.keyModeRaw)
     }
 
     func testKeyDetectionSkipsRhythmAndUtilityStems() {

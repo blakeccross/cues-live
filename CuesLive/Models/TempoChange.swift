@@ -46,12 +46,12 @@ struct TempoChange: Codable, Identifiable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        id = try container.decode(UUID.self, forKey: .id)
         startMeasure = try container.decode(Int.self, forKey: .startMeasure)
-        let decodedOffset = try container.decodeIfPresent(Double.self, forKey: .beatOffset) ?? 0
+        let decodedOffset = try container.decode(Double.self, forKey: .beatOffset)
         beatOffset = decodedOffset.isFinite ? max(0, decodedOffset) : 0
         bpm = try container.decode(Double.self, forKey: .bpm)
-        sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
+        sortOrder = try container.decode(Int.self, forKey: .sortOrder)
     }
 
     func encode(to encoder: Encoder) throws {

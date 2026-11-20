@@ -4,16 +4,6 @@ import XCTest
 final class TrackClipTests: XCTestCase {
     private let trackID = UUID()
 
-    func testClipsSavedBeforePlaybackRateDecodeAtOriginalSpeed() throws {
-        let json = """
-        {"id":"\(UUID().uuidString)","trackID":"\(trackID.uuidString)",
-         "timelineStartSeconds":2,"duration":4,"sourceStartSeconds":1,"gainDB":0}
-        """
-        let clip = try JSONDecoder().decode(TrackClip.self, from: Data(json.utf8))
-        XCTAssertEqual(clip.playbackRate, 1)
-        XCTAssertTrue(clip.playsAtOriginalSpeed)
-    }
-
     func testPlaybackRateRoundTrips() throws {
         let clip = TrackClip(
             trackID: trackID,

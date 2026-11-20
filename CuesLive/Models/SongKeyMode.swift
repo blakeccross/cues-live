@@ -25,7 +25,7 @@ enum SongKeyMode: String, CaseIterable, Codable, Hashable, Sendable {
         }
     }
 
-    /// Stored value: nil for major so older files and new major songs serialize the same way.
+    /// Stored value: nil for major.
     var storedRaw: String? {
         self == .major ? nil : rawValue
     }

@@ -91,14 +91,13 @@ struct ClipFade: Codable, Hashable, Sendable {
 }
 
 extension ClipFade {
-    /// A shape this version does not know falls back to the default curve, so the file still opens.
+    /// Decodes through `init(duration:shape:curvature:)`, so out-of-range values are cleaned up.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let shapeName = try container.decodeIfPresent(String.self, forKey: .shape)
         self.init(
-            duration: try container.decodeIfPresent(TimeInterval.self, forKey: .duration) ?? 0,
-            shape: shapeName.flatMap(ClipFadeShape.init(rawValue:)) ?? .sCurve,
-            curvature: try container.decodeIfPresent(Double.self, forKey: .curvature) ?? 0
+            duration: try container.decode(TimeInterval.self, forKey: .duration),
+            shape: try container.decode(ClipFadeShape.self, forKey: .shape),
+            curvature: try container.decode(Double.self, forKey: .curvature)
         )
     }
 }

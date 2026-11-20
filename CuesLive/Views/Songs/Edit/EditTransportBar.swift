@@ -62,7 +62,6 @@ struct EditTransportBar<Chrome: View>: View {
         .sheet(isPresented: $showingSmartGuideEditor) {
             SmartGuideEditorSheet(
                 song: song,
-                viewModel: viewModel,
                 captureSnapshot: captureSnapshot,
                 registerUndo: registerUndo
             )

@@ -61,28 +61,13 @@ final class ClipFadeTests: XCTestCase {
         XCTAssertEqual(ClipFade(duration: 1).curvature(forMidpointGain: .nan), 0, accuracy: 1e-9)
     }
 
-    func testClipsSavedBeforeFadesDecodeWithoutThem() throws {
-        let json = """
-        {"id":"\(UUID().uuidString)","trackID":"\(drums.uuidString)",
-         "timelineStartSeconds":2,"duration":4,"sourceStartSeconds":1,"gainDB":0,"playbackRate":1}
-        """
-        let clip = try JSONDecoder().decode(TrackClip.self, from: Data(json.utf8))
-        XCTAssertEqual(clip.fadeIn, .none)
-        XCTAssertEqual(clip.fadeOut, .none)
-        XCTAssertFalse(clip.hasFades)
-    }
-
-    func testFadesRoundTripAndAnUnknownShapeStillDecodes() throws {
+    func testFadesRoundTrip() throws {
         let clip = makeClip(
             fadeIn: ClipFade(duration: 2, shape: .equalPower, curvature: 0.25),
             fadeOut: ClipFade(duration: 3, shape: .logarithmic, curvature: -0.5)
         )
         let data = try JSONEncoder().encode(clip)
         XCTAssertEqual(try JSONDecoder().decode(TrackClip.self, from: data), clip)
-
-        let future = Data(#"{"duration":1.5,"shape":"fromALaterVersion","curvature":0.2}"#.utf8)
-        let fade = try JSONDecoder().decode(ClipFade.self, from: future)
-        XCTAssertEqual(fade, ClipFade(duration: 1.5, shape: .sCurve, curvature: 0.2))
     }
 
     func testFadeGainFollowsBothFades() {

@@ -32,15 +32,6 @@ final class SongTimelineTests: XCTestCase {
         XCTAssertEqual(spans(timeline), [[0, 10], [10, 20], [20, 30]])
     }
 
-    func testMarkerDecodesWithoutEndFromOlderFiles() throws {
-        let json = #"{"id":"\#(UUID().uuidString)","name":"Verse","startSeconds":10,"sortOrder":1,"loops":false}"#
-
-        let marker = try JSONDecoder().decode(ArrangementMarker.self, from: Data(json.utf8))
-
-        XCTAssertNil(marker.endSeconds)
-        XCTAssertEqual(marker.startSeconds, 10)
-    }
-
     func testMarkerEndRoundTrips() throws {
         let marker = ArrangementMarker(name: "Verse", startSeconds: 10, endSeconds: 15)
 

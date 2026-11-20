@@ -10,10 +10,7 @@ struct OverlapTransitionConfig: Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        startOffsetSeconds = max(
-            0,
-            try container.decodeIfPresent(TimeInterval.self, forKey: .startOffsetSeconds) ?? 0
-        )
+        startOffsetSeconds = max(0, try container.decode(TimeInterval.self, forKey: .startOffsetSeconds))
     }
 
     var isValid: Bool {

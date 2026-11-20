@@ -17,18 +17,6 @@ struct ClickSettings: Codable, Hashable {
     /// Linear gain applied to every other hit, 0...1.
     var beatVolume = fullVolume
 
-    enum CodingKeys: String, CodingKey {
-        case isEnabled
-        case rhythm
-        /// Files written before separate accent and beat samples have only this key. It is still
-        /// written, as the beat sample's sound, so older versions open newer files.
-        case sound
-        case accentSample
-        case beatSample
-        case accentVolume
-        case beatVolume
-    }
-
     init(isEnabled: Bool = false, rhythm: ClickRhythm = .auto, sound: ClickSound = .standard) {
         self.isEnabled = isEnabled
         self.rhythm = rhythm
@@ -64,32 +52,7 @@ struct ClickSettings: Codable, Hashable {
             && accentVolume == other.accentVolume && beatVolume == other.beatVolume
     }
 
-    /// Unknown rhythms or samples from a newer file fall back to the defaults.
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? false
-        rhythm = (try? container.decodeIfPresent(ClickRhythm.self, forKey: .rhythm)) ?? .auto
-        let shared = (try? container.decodeIfPresent(ClickSound.self, forKey: .sound)) ?? .standard
-        accentSample = (try? container.decodeIfPresent(ClickSample.self, forKey: .accentSample))
-            ?? .accent(of: shared)
-        beatSample = (try? container.decodeIfPresent(ClickSample.self, forKey: .beatSample))
-            ?? .normal(of: shared)
-        accentVolume = Self.volume(try container.decodeIfPresent(Double.self, forKey: .accentVolume))
-        beatVolume = Self.volume(try container.decodeIfPresent(Double.self, forKey: .beatVolume))
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(isEnabled, forKey: .isEnabled)
-        try container.encode(rhythm, forKey: .rhythm)
-        try container.encode(beatSample.sound, forKey: .sound)
-        try container.encode(accentSample, forKey: .accentSample)
-        try container.encode(beatSample, forKey: .beatSample)
-        try container.encode(accentVolume, forKey: .accentVolume)
-        try container.encode(beatVolume, forKey: .beatVolume)
-    }
-
-    /// A stored volume clamped to 0...1; missing means full volume.
+    /// A stored volume clamped to 0...1; nil means full volume.
     static func volume(_ stored: Double?) -> Double {
         guard let stored, stored.isFinite else { return fullVolume }
         return min(max(stored, 0), fullVolume)

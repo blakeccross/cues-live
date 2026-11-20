@@ -139,15 +139,6 @@ final class SongPlayRangeTests: XCTestCase {
 
     // MARK: - Project files
 
-    func testArrangementWithoutPlayRangeDecodesToTheWholeSong() throws {
-        let arrangement = try JSONDecoder().decode(
-            SongProjectArrangement.self,
-            from: Data(#"{"markers":[],"clips":[]}"#.utf8)
-        )
-
-        XCTAssertEqual(arrangement.timeline.playRange, SongPlayRange())
-    }
-
     func testPlayRangeRoundTripsThroughTheProjectFile() throws {
         let original = timeline(contentEnd: 30, playRange: SongPlayRange(startSeconds: 4, endSeconds: 25))
 

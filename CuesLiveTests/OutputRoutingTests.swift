@@ -211,29 +211,6 @@ final class OutputRoutingTests: XCTestCase {
         XCTAssertEqual(snapshot.ungroupedDestination, .stereoPair(startChannel: 3))
     }
 
-    @MainActor
-    func testRoutesSavedBeforePerDeviceMemoryStayWithTheSelectedDevice() throws {
-        let container = try makeRoutingContainer()
-        let context = container.mainContext
-        let groupID = UUID()
-        OutputRoutingStore.setSelectedDevice(uid: "speakers", in: context)
-        context.insert(GroupOutputRoute(groupID: groupID, destination: .mono(channel: 4)))
-        try context.save()
-
-        let snapshot = OutputRoutingStore.snapshot(in: context, channelCount: 8)
-        XCTAssertEqual(snapshot.routesByGroupID[groupID], .mono(channel: 4))
-
-        OutputRoutingStore.setSelectedDevice(uid: "headphones", in: context)
-        XCTAssertEqual(
-            OutputRoutingStore.route(for: groupID, deviceUID: "speakers", in: context),
-            .mono(channel: 4)
-        )
-        XCTAssertEqual(
-            OutputRoutingStore.route(for: groupID, deviceUID: "headphones", in: context),
-            .defaultDestination
-        )
-    }
-
     private func makeRoutingContainer() throws -> ModelContainer {
         let schema = Schema(PersistenceController.modelTypes)
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)

@@ -4,13 +4,12 @@ import SwiftData
 @Model
 final class GroupOutputRoute {
     var groupID: UUID
-    /// Output device these assignments belong to. Empty means a route saved
-    /// before devices were remembered; it is claimed by the selected device.
+    /// Output device these assignments belong to. Empty when no device is selected.
     var deviceUID: String = ""
     var destinationKind: String
     var destinationChannel: Int
 
-    init(groupID: UUID, deviceUID: String = "", destination: OutputDestination) {
+    init(groupID: UUID, deviceUID: String, destination: OutputDestination) {
         self.groupID = groupID
         self.deviceUID = deviceUID
         switch destination {

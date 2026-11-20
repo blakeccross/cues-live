@@ -148,10 +148,10 @@ extension TrackClip {
             timelineStartSeconds: try container.decode(TimeInterval.self, forKey: .timelineStartSeconds),
             duration: try container.decode(TimeInterval.self, forKey: .duration),
             sourceStartSeconds: try container.decode(TimeInterval.self, forKey: .sourceStartSeconds),
-            gainDB: try container.decodeIfPresent(Double.self, forKey: .gainDB) ?? 0,
-            playbackRate: try container.decodeIfPresent(Double.self, forKey: .playbackRate) ?? 1,
-            fadeIn: try container.decodeIfPresent(ClipFade.self, forKey: .fadeIn) ?? .none,
-            fadeOut: try container.decodeIfPresent(ClipFade.self, forKey: .fadeOut) ?? .none
+            gainDB: try container.decode(Double.self, forKey: .gainDB),
+            playbackRate: try container.decode(Double.self, forKey: .playbackRate),
+            fadeIn: try container.decode(ClipFade.self, forKey: .fadeIn),
+            fadeOut: try container.decode(ClipFade.self, forKey: .fadeOut)
         )
     }
 

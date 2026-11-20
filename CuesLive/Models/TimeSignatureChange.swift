@@ -28,38 +28,6 @@ struct TimeSignatureChange: Codable, Identifiable, Hashable {
     var displayName: String {
         "\(numerator)/\(denominator)"
     }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case numerator
-        case denominator
-        case startMeasure
-        case startSeconds
-        case sortOrder
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        numerator = try container.decode(Int.self, forKey: .numerator)
-        denominator = try container.decode(Int.self, forKey: .denominator)
-        sortOrder = try container.decode(Int.self, forKey: .sortOrder)
-        if let measure = try container.decodeIfPresent(Int.self, forKey: .startMeasure) {
-            startMeasure = measure
-        } else {
-            _ = try container.decodeIfPresent(Double.self, forKey: .startSeconds)
-            startMeasure = 1
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(numerator, forKey: .numerator)
-        try container.encode(denominator, forKey: .denominator)
-        try container.encode(startMeasure, forKey: .startMeasure)
-        try container.encode(sortOrder, forKey: .sortOrder)
-    }
 }
 
 extension Array where Element == TimeSignatureChange {

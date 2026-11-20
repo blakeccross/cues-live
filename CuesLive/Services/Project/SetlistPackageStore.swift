@@ -38,7 +38,7 @@ enum SetlistPackageStore {
         let fileManager = FileManager.default
         let stagingRoot = fileManager.temporaryDirectory
             .appendingPathComponent("MTLSetlistExport-\(UUID().uuidString)", isDirectory: true)
-        let folderName = sanitizedExportFolderName(from: destinationURL)
+        let folderName = sanitizedFolderName(destinationURL.lastPathComponent)
         let stagingPackage = stagingRoot.appendingPathComponent(folderName, isDirectory: true)
 
         try fileManager.createDirectory(at: stagingPackage, withIntermediateDirectories: true)
@@ -227,16 +227,6 @@ enum SetlistPackageStore {
             lastOpenedAt: setlist.lastOpenedAt,
             entries: entries
         )
-    }
-
-    private static func sanitizedExportFolderName(from destinationURL: URL) -> String {
-        var name = destinationURL.lastPathComponent
-        let lower = name.lowercased()
-        let packageSuffix = ".\(ProjectUTType.setlistPackageExtension)"
-        if lower.hasSuffix(packageSuffix) {
-            name = String(name.dropLast(packageSuffix.count))
-        }
-        return sanitizedFolderName(name)
     }
 
     private static func sanitizedFolderName(_ name: String) -> String {

@@ -36,14 +36,4 @@ final class ClickSampleTests: XCTestCase {
         XCTAssertEqual(hits.accent, pair.normal)
         XCTAssertEqual(hits.normal, pair.accent)
     }
-
-    func testUnknownSampleInAFileFallsBackToTheSoundsPair() throws {
-        let settings = try JSONDecoder().decode(
-            ClickSettings.self,
-            from: Data(#"{"sound":"beep","accentSample":"cowbell-accent","beatSample":"beep"}"#.utf8)
-        )
-
-        XCTAssertEqual(settings.accentSample, .accent(of: .beep))
-        XCTAssertEqual(settings.beatSample, .normal(of: .beep))
-    }
 }

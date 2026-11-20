@@ -5,7 +5,7 @@ import Foundation
 struct ArrangementMarker: Codable, Identifiable, Hashable {
     let id: UUID
     var name: String
-    /// Timeline position. Format-2 projects stored source-file time here; migration converts it.
+    /// Timeline position.
     var startSeconds: Double
     /// Where the section ends when it stops short of the next marker. Nil runs to the next marker.
     var endSeconds: Double?
@@ -27,16 +27,6 @@ struct ArrangementMarker: Codable, Identifiable, Hashable {
         self.endSeconds = endSeconds
         self.sortOrder = sortOrder
         self.loops = loops
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        name = try container.decode(String.self, forKey: .name)
-        startSeconds = try container.decode(Double.self, forKey: .startSeconds)
-        endSeconds = try container.decodeIfPresent(Double.self, forKey: .endSeconds)
-        sortOrder = try container.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
-        loops = try container.decodeIfPresent(Bool.self, forKey: .loops) ?? false
     }
 }
 

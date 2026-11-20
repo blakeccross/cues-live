@@ -84,19 +84,12 @@ enum OutputRoutingStore {
     }
 
     static func setSelectedDevice(uid: String?, in context: ModelContext) {
-        let config = config(in: context)
-        let previous = config.selectedDeviceUID
-        // Routes saved before per-device memory belong to the device already in
-        // use. If none was stored yet, they belong to the device being selected.
-        let legacyOwner = (previous?.isEmpty == false) ? previous : uid
-        claimLegacyRoutes(for: legacyOwner, in: context)
-        config.selectedDeviceUID = uid
+        config(in: context).selectedDeviceUID = uid
         try? context.save()
     }
 
     static func snapshot(in context: ModelContext, channelCount: Int) -> OutputRoutingSnapshot {
         let config = config(in: context)
-        claimLegacyRoutes(for: config.selectedDeviceUID, in: context)
         let key = deviceKey(config.selectedDeviceUID)
         let routes = (try? context.fetch(FetchDescriptor<GroupOutputRoute>())) ?? []
         var routesByGroupID: [UUID: OutputDestination] = [:]
@@ -129,21 +122,6 @@ enum OutputRoutingStore {
 
     private static func deviceKey(_ uid: String?) -> String {
         uid ?? ""
-    }
-
-    /// Assigns routes that predate per-device memory to one device.
-    private static func claimLegacyRoutes(for deviceUID: String?, in context: ModelContext) {
-        let key = deviceKey(deviceUID)
-        guard !key.isEmpty else { return }
-        let routes = (try? context.fetch(FetchDescriptor<GroupOutputRoute>())) ?? []
-        var claimed = false
-        for route in routes where route.deviceUID.isEmpty {
-            route.deviceUID = key
-            claimed = true
-        }
-        if claimed {
-            try? context.save()
-        }
     }
 
     static func destination(

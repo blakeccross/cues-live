@@ -692,20 +692,6 @@ final class ClipEditingTests: XCTestCase {
         XCTAssertEqual(timeline.clips.first { $0.id == copy }?.gainDB, -6)
     }
 
-    func testMissingGainDecodesAsUnity() throws {
-        let clip = TrackClip(trackID: drums, timelineStartSeconds: 0, duration: 4, sourceStartSeconds: 1, gainDB: -3)
-        let encoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(clip)) as? [String: Any]
-        var legacy = try XCTUnwrap(encoded)
-        legacy.removeValue(forKey: "gainDB")
-        let data = try JSONSerialization.data(withJSONObject: legacy)
-        let decoded = try JSONDecoder().decode(TrackClip.self, from: data)
-        XCTAssertEqual(decoded.gainDB, 0)
-        XCTAssertEqual(decoded.sourceStartSeconds, 1)
-
-        let stored = try JSONDecoder().decode(TrackClip.self, from: JSONEncoder().encode(clip))
-        XCTAssertEqual(stored.gainDB, -3)
-    }
-
     func testPlacedFileStartsWhereItWasDropped() {
         let clip = TrackClip.placed(trackID: drums, sourceDuration: 10, timelineStart: 4)
         XCTAssertEqual(clip?.timelineStartSeconds, 4)

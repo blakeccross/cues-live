@@ -18,13 +18,4 @@ final class KeyChangeTests: XCTestCase {
         XCTAssertTrue(KeyChangeTrackSelection.includesByDefault(displayName: "Bass", groupName: "Bass"))
         XCTAssertTrue(KeyChangeTrackSelection.includesByDefault(displayName: "Vocal", groupName: nil))
     }
-
-    func testOldMetadataDecodesWithoutTranspose() throws {
-        let json = """
-        {"baseKeyRaw":"G","smartGuideEnabled":false}
-        """.data(using: .utf8)!
-        let metadata = try JSONDecoder().decode(SongProjectMetadata.self, from: json)
-        XCTAssertEqual(metadata.transposeSemitones, 0)
-        XCTAssertEqual(metadata.baseKeyRaw, "G")
-    }
 }

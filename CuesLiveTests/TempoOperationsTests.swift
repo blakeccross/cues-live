@@ -4,14 +4,6 @@ import XCTest
 final class TempoOperationsTests: XCTestCase {
     private let fourFour = [TimeSignatureChange(numerator: 4, denominator: 4, startMeasure: 1)]
 
-    func testLegacyTempoDecodesWithoutBeatOffset() throws {
-        let json = #"{"id":"11111111-1111-1111-1111-111111111111","startMeasure":3,"bpm":90,"sortOrder":1}"#
-        let change = try JSONDecoder().decode(TempoChange.self, from: Data(json.utf8))
-        XCTAssertEqual(change.startMeasure, 3)
-        XCTAssertEqual(change.beatOffset, 0)
-        XCTAssertEqual(change.bpm, 90)
-    }
-
     func testConstantReplacesInteriorAndRestoresTheEnd() {
         let original = [
             TempoChange(startMeasure: 1, bpm: 100),

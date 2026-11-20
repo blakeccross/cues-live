@@ -4,14 +4,13 @@ import SwiftUI
 /// The Smart Guide settings shown in a sheet; everything changed while it is open is one undo step.
 struct SmartGuideEditorSheet: View {
     @Bindable var song: Song
-    let viewModel: SongEditorViewModel
     let captureSnapshot: () -> SongEditSnapshot
     let registerUndo: (_ actionName: String, _ before: SongEditSnapshot, _ after: SongEditSnapshot) -> Void
 
     @State private var editStartSnapshot: SongEditSnapshot?
 
     var body: some View {
-        SmartGuideMenu(song: song, viewModel: viewModel)
+        SmartGuideMenu(song: song)
             .onAppear {
                 editStartSnapshot = captureSnapshot()
             }
@@ -31,14 +30,6 @@ struct SmartGuideEditorSheet: View {
 struct SmartGuideMenu: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var song: Song
-    let viewModel: SongEditorViewModel
-
-    /// A "Cues" track baked by an earlier version would double every callout.
-    private var legacyCuesTrack: AudioTrack? {
-        song.sortedTracks.first {
-            $0.displayName.caseInsensitiveCompare(TrackGroupStore.guideGroupName) == .orderedSame
-        }
-    }
 
     private var sectionNames: [String] {
         var seen = Set<String>()
@@ -63,19 +54,6 @@ struct SmartGuideMenu: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-
-            if song.smartGuideEnabled, let cuesTrack = legacyCuesTrack, !cuesTrack.isMuted {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("This song has a baked Cues track, so callouts would play twice.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button("Mute Cues Track") {
-                        cuesTrack.isMuted = true
-                        viewModel.updateMix(for: cuesTrack, context: modelContext)
-                    }
-                }
-            }
 
             if song.smartGuideEnabled, !sectionsWithoutVoice.isEmpty {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
