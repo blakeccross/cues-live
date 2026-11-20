@@ -23,13 +23,17 @@ extension EditView {
         }
     }
 
+    /// Stops and rewinds to the song's in point. The insertion moves there too, since the stopped
+    /// playhead shows the insertion and Play starts from it.
     func stopTransport() {
         groupMixFade.clearFade(context: modelContext) {
             audioEngine.applyGroupMix(GroupMixStore.snapshot(in: modelContext))
             try? modelContext.save()
         }
         clearMarkerCue()
+        guard !viewModel.followsSetlist else { return }
         viewModel.stop()
+        insertionTime = audioEngine.startTime
     }
 
     func toggleGroupMixFade() {
