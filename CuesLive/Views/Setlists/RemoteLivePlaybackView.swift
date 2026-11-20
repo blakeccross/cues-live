@@ -52,7 +52,8 @@ struct RemoteLivePlaybackView: View {
             .overlay(alignment: .top) {
                 AppHairline()
             }
-            .toolbarBackground(.hidden, for: .windowToolbar)
+            .toolbarBackground(AppColors.backgroundPrimary, for: .windowToolbar)
+            .toolbarBackground(.visible, for: .windowToolbar)
             #else
             remotePlaybackMain
                 .inputMappingInspector()

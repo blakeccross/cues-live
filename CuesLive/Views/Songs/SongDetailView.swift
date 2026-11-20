@@ -29,7 +29,8 @@ struct SongDetailView: View {
             .locksInterfaceOrientations(.landscape)
             #else
             .navigationTitle("")
-            .toolbarBackground(.hidden, for: .windowToolbar)
+            .toolbarBackground(AppColors.backgroundPrimary, for: .windowToolbar)
+            .toolbarBackground(.visible, for: .windowToolbar)
             #endif
             .fileImporter(
                 isPresented: $showingAbletonImporter,
