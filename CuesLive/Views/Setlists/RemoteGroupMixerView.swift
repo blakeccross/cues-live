@@ -39,6 +39,7 @@ struct RemoteGroupMixerView: View {
                             groupID: group.id,
                             volume: volumeBinding(for: group.id),
                             isMuted: muteBinding(for: group.id),
+                            isSoloed: soloBinding(for: group.id),
                             stripHeight: stripHeight,
                             stripWidth: stripWidth,
                             onLiveVolumeChange: { groupID, liveVolume in
@@ -67,6 +68,12 @@ struct RemoteGroupMixerView: View {
                             get: { client.state.ungroupedIsMuted },
                             set: { newValue in
                                 client.send(.setGroupMuted(groupID: nil, muted: newValue))
+                            }
+                        ),
+                        isSoloed: Binding(
+                            get: { client.state.ungroupedIsSoloed },
+                            set: { newValue in
+                                client.send(.setGroupSoloed(groupID: nil, soloed: newValue))
                             }
                         ),
                         stripHeight: stripHeight,
@@ -109,6 +116,15 @@ struct RemoteGroupMixerView: View {
             get: { client.state.mutedGroupIDs.contains(groupID) },
             set: { newValue in
                 client.send(.setGroupMuted(groupID: groupID, muted: newValue))
+            }
+        )
+    }
+
+    private func soloBinding(for groupID: UUID) -> Binding<Bool> {
+        Binding(
+            get: { client.state.soloedGroupIDs.contains(groupID) },
+            set: { newValue in
+                client.send(.setGroupSoloed(groupID: groupID, soloed: newValue))
             }
         )
     }

@@ -37,6 +37,8 @@ extension AppTypography {
 
         /// Solo/mute button letters.
         static let mixButton = Font.system(size: 10, weight: .bold, design: .rounded)
+        /// Solo/mute letters on the larger group mixer buttons.
+        static let mixButtonLarge = Font.system(size: 12, weight: .bold, design: .rounded)
         /// Volume and pan readouts. Pair with `.monospacedDigit()`.
         static let mixReadout = Font.system(size: 11, weight: .semibold, design: .rounded)
         /// Fader dB scale; unity gain uses the emphasized variant.

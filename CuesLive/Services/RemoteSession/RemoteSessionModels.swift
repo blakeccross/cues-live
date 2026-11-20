@@ -274,6 +274,8 @@ struct RemoteGroupDTO: Codable, Hashable, Identifiable, Sendable {
     var sortOrder: Int
     var volume: Double
     var isMuted: Bool
+    /// Defaults to false for older hosts.
+    var isSoloed: Bool
     var isMixable: Bool
     /// Key into `TrackGroupPalette` (e.g. "red", "blue"). Defaults for older hosts.
     var paletteKey: String
@@ -284,6 +286,7 @@ struct RemoteGroupDTO: Codable, Hashable, Identifiable, Sendable {
         case sortOrder
         case volume
         case isMuted
+        case isSoloed
         case isMixable
         case paletteKey
     }
@@ -294,6 +297,7 @@ struct RemoteGroupDTO: Codable, Hashable, Identifiable, Sendable {
         sortOrder: Int,
         volume: Double,
         isMuted: Bool,
+        isSoloed: Bool = false,
         isMixable: Bool,
         paletteKey: String = "gray"
     ) {
@@ -302,6 +306,7 @@ struct RemoteGroupDTO: Codable, Hashable, Identifiable, Sendable {
         self.sortOrder = sortOrder
         self.volume = volume
         self.isMuted = isMuted
+        self.isSoloed = isSoloed
         self.isMixable = isMixable
         self.paletteKey = paletteKey
     }
@@ -313,6 +318,7 @@ struct RemoteGroupDTO: Codable, Hashable, Identifiable, Sendable {
         sortOrder = try container.decode(Int.self, forKey: .sortOrder)
         volume = try container.decode(Double.self, forKey: .volume)
         isMuted = try container.decode(Bool.self, forKey: .isMuted)
+        isSoloed = try container.decodeIfPresent(Bool.self, forKey: .isSoloed) ?? false
         isMixable = try container.decode(Bool.self, forKey: .isMixable)
         paletteKey = try container.decodeIfPresent(String.self, forKey: .paletteKey) ?? "gray"
     }
@@ -391,52 +397,6 @@ struct RemoteSessionSnapshot: Codable, Sendable {
     }
 }
 
-struct RemoteSessionState: Codable, Hashable, Sendable {
-    var currentIndex: Int
-    var currentSongID: UUID?
-    var isPlaying: Bool
-    var isAudiblePlaying: Bool
-    var isLoaded: Bool
-    var isLoadingSong: Bool
-    var loadError: String?
-    var currentTime: TimeInterval
-    var duration: TimeInterval
-    var cuedSectionID: UUID?
-    var cueFireTime: TimeInterval?
-    var isLooping: Bool
-    var activeLoopSectionID: UUID?
-    var manualLoopSectionID: UUID?
-    var isFadedOut: Bool
-    var isFading: Bool
-    var groupVolumes: [String: Double]
-    var mutedGroupIDs: [UUID]
-    var ungroupedVolume: Double
-    var ungroupedIsMuted: Bool
-
-    static let empty = RemoteSessionState(
-        currentIndex: 0,
-        currentSongID: nil,
-        isPlaying: false,
-        isAudiblePlaying: false,
-        isLoaded: false,
-        isLoadingSong: false,
-        loadError: nil,
-        currentTime: 0,
-        duration: 0,
-        cuedSectionID: nil,
-        cueFireTime: nil,
-        isLooping: false,
-        activeLoopSectionID: nil,
-        manualLoopSectionID: nil,
-        isFadedOut: false,
-        isFading: false,
-        groupVolumes: [:],
-        mutedGroupIDs: [],
-        ungroupedVolume: 1,
-        ungroupedIsMuted: false
-    )
-}
-
 enum RemoteSessionCommand: Codable, Sendable {
     case play
     case pause
@@ -447,6 +407,7 @@ enum RemoteSessionCommand: Codable, Sendable {
     case goToSong(index: Int, autoPlay: Bool, startTime: TimeInterval? = nil)
     case setGroupVolume(groupID: UUID?, volume: Double, provisional: Bool)
     case setGroupMuted(groupID: UUID?, muted: Bool)
+    case setGroupSoloed(groupID: UUID?, soloed: Bool)
     case toggleFade
     case clearFade
     case cueSection(sectionID: UUID)

@@ -140,15 +140,15 @@ final class AudioEngineManager {
         announcementSource.play(stem)
     }
 
-    /// Smart Guide shares the Cues group's fader and mute with the Cues track group.
+    /// Smart Guide shares the Cues group's fader, mute, and solo with the Cues track group.
     private func applyAnnouncementGain() {
         let snapshot = groupMixSnapshot
         guard let guideGroupID = routingSnapshot?.guideGroupID else {
             announcementSource.setGain(1)
             return
         }
-        let muted = snapshot.mutedGroupIDs.contains(guideGroupID)
-        announcementSource.setGain(muted ? 0 : (snapshot.volumeByGroupID[guideGroupID] ?? 1))
+        let silenced = snapshot.isSilenced(groupID: guideGroupID)
+        announcementSource.setGain(silenced ? 0 : (snapshot.volumeByGroupID[guideGroupID] ?? 1))
     }
 
     #if os(iOS)
@@ -773,16 +773,9 @@ final class AudioEngineManager {
                 isAudible = false
             }
 
-            let groupVolume: Float
-            let groupMuted: Bool
-            if let groupID = track.groupID {
-                groupVolume = snapshot.volumeByGroupID[groupID] ?? 1
-                groupMuted = snapshot.mutedGroupIDs.contains(groupID)
-            } else {
-                groupVolume = snapshot.ungroupedVolume
-                groupMuted = snapshot.ungroupedIsMuted
-            }
-            effectiveVolume *= groupMuted ? 0 : groupVolume
+            let groupVolume = track.groupID.map { snapshot.volumeByGroupID[$0] ?? 1 } ?? snapshot.ungroupedVolume
+            let groupSilenced = snapshot.isSilenced(groupID: track.groupID, ignoresSolo: track.settings.ignoresSolo)
+            effectiveVolume *= groupSilenced ? 0 : groupVolume
 
             track.memoryPlayer.updateMix(
                 volume: effectiveVolume,

@@ -2,10 +2,12 @@ import Foundation
 import SwiftData
 
 struct GroupMixSnapshot: Sendable {
-    let volumeByGroupID: [UUID: Float]
-    let mutedGroupIDs: Set<UUID>
-    let ungroupedVolume: Float
-    let ungroupedIsMuted: Bool
+    var volumeByGroupID: [UUID: Float]
+    var mutedGroupIDs: Set<UUID>
+    var soloedGroupIDs: Set<UUID> = []
+    var ungroupedVolume: Float
+    var ungroupedIsMuted: Bool
+    var ungroupedIsSoloed = false
 
     static let `default` = GroupMixSnapshot(
         volumeByGroupID: [:],
@@ -14,24 +16,28 @@ struct GroupMixSnapshot: Sendable {
         ungroupedIsMuted: false
     )
 
-    func replacingVolume(groupID: UUID?, volume: Float) -> GroupMixSnapshot {
-        if let groupID {
-            var volumes = volumeByGroupID
-            volumes[groupID] = volume
-            return GroupMixSnapshot(
-                volumeByGroupID: volumes,
-                mutedGroupIDs: mutedGroupIDs,
-                ungroupedVolume: ungroupedVolume,
-                ungroupedIsMuted: ungroupedIsMuted
-            )
-        }
+    var hasSolo: Bool {
+        ungroupedIsSoloed || !soloedGroupIDs.isEmpty
+    }
 
-        return GroupMixSnapshot(
-            volumeByGroupID: volumeByGroupID,
-            mutedGroupIDs: mutedGroupIDs,
-            ungroupedVolume: volume,
-            ungroupedIsMuted: ungroupedIsMuted
-        )
+    /// Whether a group (nil for "No Group") is silent: muted, or another group is soloed.
+    /// Tracks that ignore solo, such as the generated click, only follow mute.
+    func isSilenced(groupID: UUID?, ignoresSolo: Bool = false) -> Bool {
+        let isMuted = groupID.map(mutedGroupIDs.contains) ?? ungroupedIsMuted
+        if isMuted { return true }
+        guard hasSolo, !ignoresSolo else { return false }
+        let isSoloed = groupID.map(soloedGroupIDs.contains) ?? ungroupedIsSoloed
+        return !isSoloed
+    }
+
+    func replacingVolume(groupID: UUID?, volume: Float) -> GroupMixSnapshot {
+        var snapshot = self
+        if let groupID {
+            snapshot.volumeByGroupID[groupID] = volume
+        } else {
+            snapshot.ungroupedVolume = volume
+        }
+        return snapshot
     }
 }
 
@@ -40,6 +46,7 @@ enum GroupMixStore {
         let groups = TrackGroupStore.sortedGroups(from: context)
         var volumeByGroupID: [UUID: Float] = [:]
         var mutedGroupIDs = Set<UUID>()
+        var soloedGroupIDs = Set<UUID>()
 
         for group in groups {
             if TimecodePlaybackSupport.isTimecodeGroup(group) {
@@ -50,6 +57,9 @@ enum GroupMixStore {
                 if group.isMuted {
                     mutedGroupIDs.insert(group.id)
                 }
+                if group.isSoloed {
+                    soloedGroupIDs.insert(group.id)
+                }
             }
         }
 
@@ -57,8 +67,10 @@ enum GroupMixStore {
         return GroupMixSnapshot(
             volumeByGroupID: volumeByGroupID,
             mutedGroupIDs: mutedGroupIDs,
+            soloedGroupIDs: soloedGroupIDs,
             ungroupedVolume: Float(config.ungroupedVolume),
-            ungroupedIsMuted: config.ungroupedIsMuted
+            ungroupedIsMuted: config.ungroupedIsMuted,
+            ungroupedIsSoloed: config.ungroupedIsSoloed
         )
     }
 }

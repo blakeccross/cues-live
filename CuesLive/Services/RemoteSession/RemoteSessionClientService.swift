@@ -181,7 +181,7 @@ final class RemoteSessionClientService {
         enqueueOutbound(.command(command))
     }
 
-    /// Keep local fader/mute UI in sync immediately. Without this, drag-end commits
+    /// Keep local fader/mute/solo UI in sync immediately. Without this, drag-end commits
     /// re-read stale host echo state and send the old volume back to the host.
     private func applyOptimisticMixState(for command: RemoteSessionCommand) {
         switch command {
@@ -205,6 +205,17 @@ final class RemoteSessionClientService {
                 }
             } else {
                 next.ungroupedIsMuted = muted
+            }
+            state = next
+        case .setGroupSoloed(let groupID, let soloed):
+            var next = state
+            if let groupID {
+                next.soloedGroupIDs.removeAll { $0 == groupID }
+                if soloed {
+                    next.soloedGroupIDs.append(groupID)
+                }
+            } else {
+                next.ungroupedIsSoloed = soloed
             }
             state = next
         default:

@@ -7,6 +7,7 @@ final class OutputRoutingConfig {
     var selectedDeviceUID: String?
     var ungroupedVolume: Double = 1.0
     var ungroupedIsMuted: Bool = false
+    var ungroupedIsSoloed: Bool = false
 
     init(
         selectedDeviceUID: String? = nil,

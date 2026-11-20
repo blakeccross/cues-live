@@ -874,6 +874,14 @@
 		6136164C8DD4567C72CA9ABB /* ClickSample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D10FAADDFDAF14C949BB339 /* ClickSample.swift */; };
 		6B2677ACCFF9D86A6C7466D9 /* ClickSample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D10FAADDFDAF14C949BB339 /* ClickSample.swift */; };
 		37F20B704BD711EEC1B162FC /* ClickSampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9540E1C0596326072BE43025 /* ClickSampleTests.swift */; };
+		149B8B7ACFC0440411EF27FC /* MixerFaderScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9BE98F656A3A26E9E755430 /* MixerFaderScale.swift */; };
+		DF3D422A4D8CF58328D1574A /* MixerFaderScale.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9BE98F656A3A26E9E755430 /* MixerFaderScale.swift */; };
+		9D37E9C2C5E715D5621A02F9 /* MixerFaderColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = D96DAD8895A1F517818C28AB /* MixerFaderColumn.swift */; };
+		3AD19A3AAFD492B03A18663F /* MixerFaderColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = D96DAD8895A1F517818C28AB /* MixerFaderColumn.swift */; };
+		EB2E331B648D39E258E6B291 /* RemoteSessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A8A3C2561847EAB54E798E /* RemoteSessionState.swift */; };
+		076D8DDF5F985F6CD343F413 /* RemoteSessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95A8A3C2561847EAB54E798E /* RemoteSessionState.swift */; };
+		1C772522883198DB75F1581D /* GroupMixSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF34ACA8F229226EAF916A4A /* GroupMixSnapshotTests.swift */; };
+		CBAC0AF08AC13B33554D6CA2 /* RemoteSessionStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 586BEB93FBE220F6E3C1E3AF /* RemoteSessionStateTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1372,6 +1380,11 @@
 		DD4DE2EB0582AA0F9715CED7 /* SectionNameLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionNameLibraryTests.swift; sourceTree = "<group>"; };
 		5D10FAADDFDAF14C949BB339 /* ClickSample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickSample.swift; sourceTree = "<group>"; };
 		9540E1C0596326072BE43025 /* ClickSampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickSampleTests.swift; sourceTree = "<group>"; };
+		A9BE98F656A3A26E9E755430 /* MixerFaderScale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerFaderScale.swift; sourceTree = "<group>"; };
+		D96DAD8895A1F517818C28AB /* MixerFaderColumn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MixerFaderColumn.swift; sourceTree = "<group>"; };
+		95A8A3C2561847EAB54E798E /* RemoteSessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSessionState.swift; sourceTree = "<group>"; };
+		CF34ACA8F229226EAF916A4A /* GroupMixSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupMixSnapshotTests.swift; sourceTree = "<group>"; };
+		586BEB93FBE220F6E3C1E3AF /* RemoteSessionStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteSessionStateTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1672,6 +1685,8 @@
 		AA000005000000000000000A /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				D96DAD8895A1F517818C28AB /* MixerFaderColumn.swift */,
+				A9BE98F656A3A26E9E755430 /* MixerFaderScale.swift */,
 				895D633A3BEF9E79AFCB191C /* ListSelectionHighlightRemover.swift */,
 				FC3FABAEEE0EB8C1E380F465 /* SongDragPayload.swift */,
 				5E931872A9B2B3F989A062D0 /* VideoWindowFullScreenSupport.swift */,
@@ -1715,6 +1730,8 @@
 		AA0000050000000000000011 /* CuesLiveTests */ = {
 			isa = PBXGroup;
 			children = (
+				586BEB93FBE220F6E3C1E3AF /* RemoteSessionStateTests.swift */,
+				CF34ACA8F229226EAF916A4A /* GroupMixSnapshotTests.swift */,
 				9540E1C0596326072BE43025 /* ClickSampleTests.swift */,
 				DD4DE2EB0582AA0F9715CED7 /* SectionNameLibraryTests.swift */,
 				74C8A68B261CFDD834BFA3B5 /* OutputSampleRateTests.swift */,
@@ -1896,6 +1913,7 @@
 		AA0000050000000000000300 /* RemoteSession */ = {
 			isa = PBXGroup;
 			children = (
+				95A8A3C2561847EAB54E798E /* RemoteSessionState.swift */,
 				AA0000020000000000000301 /* RemoteSessionModels.swift */,
 				AA0000020000000000000302 /* RemoteSessionProtocol.swift */,
 				AA0000020000000000000303 /* RemoteSessionSettingsStore.swift */,
@@ -2298,6 +2316,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EB2E331B648D39E258E6B291 /* RemoteSessionState.swift in Sources */,
+				9D37E9C2C5E715D5621A02F9 /* MixerFaderColumn.swift in Sources */,
+				149B8B7ACFC0440411EF27FC /* MixerFaderScale.swift in Sources */,
 				6136164C8DD4567C72CA9ABB /* ClickSample.swift in Sources */,
 				C6108DDA8193E2D729D7646C /* SectionNameListEditorView.swift in Sources */,
 				359EC0CF685B9F18746FA80E /* SectionNameLibrary.swift in Sources */,
@@ -2688,6 +2709,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CBAC0AF08AC13B33554D6CA2 /* RemoteSessionStateTests.swift in Sources */,
+				1C772522883198DB75F1581D /* GroupMixSnapshotTests.swift in Sources */,
 				37F20B704BD711EEC1B162FC /* ClickSampleTests.swift in Sources */,
 				EEBC7ACBEF107414A443043A /* SectionNameLibraryTests.swift in Sources */,
 				0800E133A5EB5CD077C72F27 /* OutputSampleRateTests.swift in Sources */,
@@ -2781,6 +2804,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				076D8DDF5F985F6CD343F413 /* RemoteSessionState.swift in Sources */,
+				3AD19A3AAFD492B03A18663F /* MixerFaderColumn.swift in Sources */,
+				DF3D422A4D8CF58328D1574A /* MixerFaderScale.swift in Sources */,
 				6B2677ACCFF9D86A6C7466D9 /* ClickSample.swift in Sources */,
 				BB615F88A1B0FF7AB0E40A43 /* SectionNameListEditorView.swift in Sources */,
 				DB02B75B4104C14A12F73872 /* SectionNameLibrary.swift in Sources */,

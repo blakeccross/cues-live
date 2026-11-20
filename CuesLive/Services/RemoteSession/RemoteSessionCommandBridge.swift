@@ -47,6 +47,8 @@ final class RemoteSessionCommandBridge {
             applyVolume(groupID: groupID, volume: volume, provisional: provisional, host: host)
         case .setGroupMuted(let groupID, let muted):
             applyMute(groupID: groupID, muted: muted, host: host)
+        case .setGroupSoloed(let groupID, let soloed):
+            applySolo(groupID: groupID, soloed: soloed, host: host)
         case .toggleFade:
             host.groupMixFade.toggleFade(context: host.modelContext) {
                 host.coordinator.updateGroupMix(context: host.modelContext, persist: false)
@@ -165,6 +167,19 @@ final class RemoteSessionCommandBridge {
             }
         } else {
             OutputRoutingStore.config(in: host.modelContext).ungroupedIsMuted = muted
+        }
+        host.coordinator.updateGroupMix(context: host.modelContext)
+        host.onMixChanged()
+    }
+
+    private func applySolo(groupID: UUID?, soloed: Bool, host: HostContext) {
+        if let groupID {
+            let groups = TrackGroupStore.sortedGroups(from: host.modelContext)
+            if let group = groups.first(where: { $0.id == groupID }) {
+                group.isSoloed = soloed
+            }
+        } else {
+            OutputRoutingStore.config(in: host.modelContext).ungroupedIsSoloed = soloed
         }
         host.coordinator.updateGroupMix(context: host.modelContext)
         host.onMixChanged()

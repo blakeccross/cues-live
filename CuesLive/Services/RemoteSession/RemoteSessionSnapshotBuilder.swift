@@ -60,6 +60,7 @@ enum RemoteSessionSnapshotBuilder {
                 sortOrder: group.sortOrder,
                 volume: group.volume,
                 isMuted: group.isMuted,
+                isSoloed: group.isSoloed,
                 isMixable: !TimecodePlaybackSupport.isTimecodeGroup(group),
                 paletteKey: group.paletteKey
             )
@@ -146,8 +147,10 @@ enum RemoteSessionSnapshotBuilder {
             isFading: groupMixFade.isFading,
             groupVolumes: groupVolumes,
             mutedGroupIDs: Array(mix.mutedGroupIDs),
+            soloedGroupIDs: Array(mix.soloedGroupIDs),
             ungroupedVolume: Double(mix.ungroupedVolume).isFinite ? Double(mix.ungroupedVolume) : 1,
-            ungroupedIsMuted: mix.ungroupedIsMuted
+            ungroupedIsMuted: mix.ungroupedIsMuted,
+            ungroupedIsSoloed: mix.ungroupedIsSoloed
         )
     }
 

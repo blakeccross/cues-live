@@ -140,6 +140,10 @@ struct LiveGroupMixerView: View {
                                 get: { group.isMuted },
                                 set: { group.isMuted = $0 }
                             ),
+                            isSoloed: Binding(
+                                get: { group.isSoloed },
+                                set: { group.isSoloed = $0 }
+                            ),
                             stripHeight: stripHeight,
                             stripWidth: stripWidth,
                             onLiveVolumeChange: onLiveVolumeChange,
@@ -159,6 +163,10 @@ struct LiveGroupMixerView: View {
                             isMuted: Binding(
                                 get: { routingConfig.ungroupedIsMuted },
                                 set: { routingConfig.ungroupedIsMuted = $0 }
+                            ),
+                            isSoloed: Binding(
+                                get: { routingConfig.ungroupedIsSoloed },
+                                set: { routingConfig.ungroupedIsSoloed = $0 }
                             ),
                             stripHeight: stripHeight,
                             stripWidth: stripWidth,
@@ -199,14 +207,15 @@ struct LiveGroupChannelStrip: View {
     let groupID: UUID?
     @Binding var volume: Double
     @Binding var isMuted: Bool
+    @Binding var isSoloed: Bool
     let stripHeight: CGFloat
     var stripWidth: CGFloat = 96
     let onLiveVolumeChange: (UUID?, Double) -> Void
     let onMixChange: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: AppSpacing.xxs) {
+        VStack(spacing: AppSpacing.xs) {
+            VStack(spacing: AppSpacing.sm) {
                 GeometryReader { geometry in
                     MixerFaderColumn(
                         value: $volume,
@@ -221,13 +230,26 @@ struct LiveGroupChannelStrip: View {
                 }
                 .frame(minHeight: 60, maxHeight: .infinity)
 
-                TrackMixButton(
-                    label: "M",
-                    isActive: isMuted,
-                    activeColor: AppColors.muteActive
-                ) {
-                    isMuted.toggle()
-                    onMixChange()
+                HStack(spacing: AppSpacing.compact) {
+                    TrackMixButton(
+                        label: "M",
+                        isActive: isMuted,
+                        activeColor: AppColors.muteActive,
+                        size: .large
+                    ) {
+                        isMuted.toggle()
+                        onMixChange()
+                    }
+
+                    TrackMixButton(
+                        label: "S",
+                        isActive: isSoloed,
+                        activeColor: AppColors.soloActive,
+                        size: .large
+                    ) {
+                        isSoloed.toggle()
+                        onMixChange()
+                    }
                 }
             }
             .padding(.horizontal, AppSpacing.xxs)

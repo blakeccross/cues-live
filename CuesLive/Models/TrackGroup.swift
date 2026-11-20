@@ -8,6 +8,7 @@ final class TrackGroup {
     var sortOrder: Int
     var volume: Double = 1.0
     var isMuted: Bool = false
+    var isSoloed: Bool = false
     /// Key into `TrackGroupPalette` selectable swatches (e.g. "red", "blue").
     var paletteKey: String = "gray"
     /// Comma-separated track-name keywords used for auto-assign.

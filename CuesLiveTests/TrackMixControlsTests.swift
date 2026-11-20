@@ -12,6 +12,14 @@ final class TrackMixReadoutTests: XCTestCase {
         XCTAssertEqual(TrackMixReadout.volumeText(forGain: 0), "-inf")
     }
 
+    func testPeakTextShowsOneDecimalAndOvers() {
+        XCTAssertEqual(TrackMixReadout.peakText(forPeak: 1), "0.0")
+        XCTAssertEqual(TrackMixReadout.peakText(forPeak: Float(MixerFaderScale.linearGain(forDecibels: -12.34))), "-12.3")
+        XCTAssertEqual(TrackMixReadout.peakText(forPeak: Float(pow(10, 9.0 / 20))), "+9.0")
+        XCTAssertEqual(TrackMixReadout.peakText(forPeak: 0), "-inf")
+        XCTAssertEqual(TrackMixReadout.peakText(forPeak: 0.000_5), "-inf")
+    }
+
     func testTypedVolumeParsesDecibels() throws {
         let minusTen = try XCTUnwrap(TrackMixReadout.gain(fromVolumeText: "-10"))
         XCTAssertEqual(minusTen, MixerFaderScale.linearGain(forDecibels: -10), accuracy: 1e-9)

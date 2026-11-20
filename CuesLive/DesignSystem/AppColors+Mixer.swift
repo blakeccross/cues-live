@@ -5,6 +5,8 @@ extension AppColors {
     enum Mixer {
         /// Solo/mute label while its button is lit.
         static let buttonActiveLabel = AppPalette.shade6
+        /// Unlit solo/mute button on a group strip; matches the fader thumb.
+        static let groupButton = AppPalette.gray700
 
         static let meterLevel = Color(.meterLevel)
         /// Live level drawn behind the volume readout.
@@ -12,8 +14,10 @@ extension AppColors {
         /// Live level beside a group fader.
         static let faderLevel = meterLevel.opacity(0.85)
 
+        /// Fader thumb body, lighter than the mixer panel so the handle stands out.
+        static let faderThumb = AppPalette.gray700
         /// Grip lines on the fader thumb.
-        static let faderGrip = AppColors.textTertiary.opacity(0.35)
+        static let faderGrip = AppPalette.gray850
         /// Center line on the fader thumb.
         static let faderThumbLine = AppPalette.lift8
         /// Fader scale ticks other than unity.
