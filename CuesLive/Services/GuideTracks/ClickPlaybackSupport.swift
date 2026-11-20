@@ -80,14 +80,15 @@ enum ClickPlaybackSupport {
             duration: duration
         )
         if current.key != key {
-            // A tempo, rhythm or length edit keeps the sound, so reuse the hits it already has.
-            let hasSameSound = current.key?.settings.sound == settings.sound && !current.hits.accent.isEmpty
+            // A tempo, rhythm or length edit keeps the sounds, so reuse the hits it already has.
+            let hasSameHits = current.key?.settings.hasSameHits(as: settings) == true
+                && !current.hits.accent.isEmpty
             loaded.source.setPattern(makePattern(
                 settings: settings,
                 tempoChanges: tempoChanges,
                 timeSignatureChanges: timeSignatureChanges,
                 duration: duration,
-                hits: hasSameSound ? current.hits : nil
+                hits: hasSameHits ? current.hits : nil
             ))
         }
         if duration > 0, loaded.settings.trimEnd != duration {
@@ -114,9 +115,10 @@ enum ClickPlaybackSupport {
         }
         let hits: ProceduralClickSource.Hits
         do {
-            hits = try loadedHits ?? self.hits(for: settings.sound)
+            hits = try loadedHits ?? self.hits(for: settings)
         } catch {
-            logger.error("Click sound \(settings.sound.rawValue, privacy: .public) failed to load: \(error.localizedDescription, privacy: .public)")
+            let samples = "\(settings.accentSample.rawValue), \(settings.beatSample.rawValue)"
+            logger.error("Click samples \(samples, privacy: .public) failed to load: \(error.localizedDescription, privacy: .public)")
             return .silent
         }
 
@@ -154,15 +156,21 @@ enum ClickPlaybackSupport {
         )
     }
 
-    /// Both of a sound's hits, from the asset catalog.
-    static func hits(for sound: ClickSound) throws -> ProceduralClickSource.Hits {
+    /// The accent and beat hits from the asset catalog, each at its own volume.
+    static func hits(for settings: ClickSettings) throws -> ProceduralClickSource.Hits {
         ProceduralClickSource.Hits(
-            accent: try samples(assetName: sound.accentAssetName),
-            normal: try samples(assetName: sound.normalAssetName)
+            accent: try samples(
+                assetName: settings.accentSample.assetName,
+                gain: Float(settings.accentVolume)
+            ),
+            normal: try samples(
+                assetName: settings.beatSample.assetName,
+                gain: Float(settings.beatVolume)
+            )
         )
     }
 
-    private static func samples(assetName: String) throws -> [Float] {
+    private static func samples(assetName: String, gain: Float) throws -> [Float] {
         guard let data = NSDataAsset(name: assetName)?.data, !data.isEmpty else {
             throw SoundError.missingSample(assetName: assetName)
         }
@@ -176,7 +184,7 @@ enum ClickPlaybackSupport {
                 frameCount: buffer.frameCount,
                 into: base,
                 destinationOffset: 0,
-                gain: 1
+                gain: gain
             )
         }
         return samples

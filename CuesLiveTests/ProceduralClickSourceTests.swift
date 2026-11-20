@@ -89,9 +89,23 @@ final class ProceduralClickSourceTests: XCTestCase {
 
     func testEverySoundHasBothSamplesInTheAssetCatalog() throws {
         for sound in ClickSound.allCases {
-            let hits = try ClickPlaybackSupport.hits(for: sound)
+            let hits = try ClickPlaybackSupport.hits(for: ClickSettings(sound: sound))
             XCTAssertFalse(hits.accent.isEmpty, sound.displayName)
             XCTAssertFalse(hits.normal.isEmpty, sound.displayName)
         }
+    }
+
+    func testEachHitPlaysAtItsOwnVolumeAndSound() throws {
+        var settings = ClickSettings(sound: .standard)
+        settings.accentSample = .accent(of: .woodblock)
+        settings.accentVolume = 0.5
+        settings.beatVolume = 0.25
+
+        let hits = try ClickPlaybackSupport.hits(for: settings)
+        let fullAccent = try ClickPlaybackSupport.hits(for: ClickSettings(sound: .woodblock)).accent
+        let fullBeat = try ClickPlaybackSupport.hits(for: ClickSettings(sound: .standard)).normal
+
+        XCTAssertEqual(hits.accent, fullAccent.map { $0 * 0.5 })
+        XCTAssertEqual(hits.normal, fullBeat.map { $0 * 0.25 })
     }
 }

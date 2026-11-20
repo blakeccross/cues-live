@@ -19,8 +19,17 @@ final class Song {
     var clickEnabled: Bool = false
     /// `ClickRhythm.rawValue`; nil means auto.
     var clickRhythmRaw: String?
-    /// `ClickSound.rawValue`; nil means the default sound.
+    /// `ClickSound.rawValue`; nil means the default sound. Picks both samples unless the
+    /// sample fields below override them.
     var clickSoundRaw: String?
+    /// `ClickSample.rawValue` played on the accent; nil means `clickSoundRaw`'s accent sample.
+    var clickAccentSampleRaw: String?
+    /// `ClickSample.rawValue` played on the beats; nil means `clickSoundRaw`'s normal sample.
+    var clickBeatSampleRaw: String?
+    /// Nil means full volume.
+    var clickAccentVolume: Double?
+    /// Nil means full volume.
+    var clickBeatVolume: Double?
     var projectFilePath: String?
     /// Library folder; nil keeps the song only in All Songs.
     var folder: SongFolder?
@@ -65,16 +74,29 @@ final class Song {
 
     var clickSettings: ClickSettings {
         get {
-            ClickSettings(
+            var settings = ClickSettings(
                 isEnabled: clickEnabled,
                 rhythm: clickRhythmRaw.flatMap(ClickRhythm.init(rawValue:)) ?? .auto,
                 sound: clickSoundRaw.flatMap(ClickSound.init(rawValue:)) ?? .standard
             )
+            if let accent = clickAccentSampleRaw.flatMap(ClickSample.init(rawValue:)) {
+                settings.accentSample = accent
+            }
+            if let beat = clickBeatSampleRaw.flatMap(ClickSample.init(rawValue:)) {
+                settings.beatSample = beat
+            }
+            settings.accentVolume = ClickSettings.volume(clickAccentVolume)
+            settings.beatVolume = ClickSettings.volume(clickBeatVolume)
+            return settings
         }
         set {
             clickEnabled = newValue.isEnabled
             clickRhythmRaw = newValue.rhythm.rawValue
-            clickSoundRaw = newValue.sound.rawValue
+            clickSoundRaw = newValue.beatSample.sound.rawValue
+            clickAccentSampleRaw = newValue.accentSample.rawValue
+            clickBeatSampleRaw = newValue.beatSample.rawValue
+            clickAccentVolume = newValue.accentVolume
+            clickBeatVolume = newValue.beatVolume
         }
     }
 

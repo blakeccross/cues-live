@@ -88,6 +88,13 @@ final class SongEditorViewModel {
         reloadSong()
     }
 
+    /// Plays `settings` on the loaded song without saving, while a control is still moving.
+    /// `updateClickSettings` saves the final value.
+    func previewClickSettings(_ settings: ClickSettings) {
+        song.clickSettings = settings
+        refreshClick()
+    }
+
     /// Saves the song's click and applies it to the loaded song without reloading.
     func updateClickSettings(_ settings: ClickSettings, context: ModelContext) throws {
         song.clickSettings = settings
