@@ -12,6 +12,8 @@ final class TimelineLaneCanvasView: NSView, TimelineClipHoverFollowing {
         super.init(frame: frameRect)
         wantsLayer = true
         layerContentsRedrawPolicy = .onSetNeedsDisplay
+        // Views no longer clip by default on macOS 14; keep clips off the track names.
+        clipsToBounds = true
         painter.onNeedsDisplay = { [weak self] in
             self?.needsDisplay = true
         }

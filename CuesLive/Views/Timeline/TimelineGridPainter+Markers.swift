@@ -28,7 +28,11 @@ extension TimelineGridPainter {
         let start = max(rect.minX, outX)
         context.fill(CGRect(x: start, y: rect.minY, width: rect.maxX - start, height: rect.height))
         let shadow = CGRect(x: outX, y: rect.minY, width: TimelinePlayRangeEdgeShadow.width, height: rect.height)
+        guard shadow.maxX > rect.minX else { return }
+        context.saveGState()
+        context.clip(to: rect)
         Self.fillEdgeShadow(shadow, color: scene.playRangeEdgeShadowColor, in: context)
+        context.restoreGState()
     }
 
     /// `TimelinePlayRangeEdgeShadow`'s gradient: `color` at the leading edge, clear at the trailing.

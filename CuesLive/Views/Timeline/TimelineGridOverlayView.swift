@@ -12,6 +12,9 @@ final class TimelineGridOverlayView: NSView, TimelineOffsetFollowing, TimelinePl
         super.init(frame: frameRect)
         wantsLayer = true
         layerContentsRedrawPolicy = .onSetNeedsDisplay
+        // The out-point shadow would otherwise draw over the track names once it scrolls
+        // left of the viewport: views no longer clip by default on macOS 14.
+        clipsToBounds = true
     }
 
     @available(*, unavailable)
