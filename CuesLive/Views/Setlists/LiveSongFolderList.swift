@@ -1,16 +1,25 @@
 #if os(macOS)
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The folder column of the song browser: All Songs above the user's song folders. Folders
 /// rename in place (Return or Rename…), delete with the Delete key or the context menu, and take
 /// songs dragged onto them.
+///
+/// Song drops are handled once for the whole list rather than per row: drop targets on sidebar
+/// rows only cover part of the row and drift away from the cursor. The list resolves the row
+/// under the cursor from each row's measured frame instead.
 @MainActor
 struct LiveSongFolderList: View {
     enum Item: Hashable {
         case allSongs
         case folder(UUID)
     }
+
+    /// How far past a row's content the row still counts as under the cursor, so the gap
+    /// between rows is not a dead zone.
+    private static let dropRowSlack: CGFloat = AppSpacing.compact
 
     @Binding var selection: Item?
 
@@ -22,6 +31,9 @@ struct LiveSongFolderList: View {
     @State private var renameText = ""
     @State private var folderPendingDelete: SongFolder?
     @State private var errorMessage: String?
+    @State private var listFrame: CGRect = .zero
+    @State private var rowFrames: [Item: CGRect] = [:]
+    @State private var dropTarget: Item?
     @FocusState private var isRenameFieldFocused: Bool
 
     private var sortedFolders: [SongFolder] {
@@ -35,9 +47,7 @@ struct LiveSongFolderList: View {
     private var folderList: some View {
         List(selection: $selection) {
             Label("All Songs", systemImage: "music.note.house")
-                .fullRowDropDestination { payloads in
-                    moveDroppedSongs(payloads, to: nil)
-                }
+                .songDropRow(.allSongs, target: dropTarget, frames: $rowFrames)
                 .badge(songs.count)
                 .tag(Item.allSongs)
 
@@ -47,6 +57,16 @@ struct LiveSongFolderList: View {
         }
         .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
+        .onGeometryChange(for: CGRect.self) { proxy in
+            proxy.frame(in: .global)
+        } action: { frame in
+            listFrame = frame
+        }
+        .onDrop(of: [.plainText], delegate: SongFolderListDropDelegate(
+            target: { location in dropRow(at: location) },
+            onTargetChange: { dropTarget = $0 },
+            onPerform: { item, providers in performSongDrop(providers, on: item) }
+        ))
         .onKeyPress(.return) {
             guard renamingFolderID == nil, case .folder(let id) = selection else { return .ignored }
             beginRename(of: id)
@@ -78,9 +98,7 @@ struct LiveSongFolderList: View {
         } icon: {
             Image(systemName: "folder")
         }
-        .fullRowDropDestination { payloads in
-            moveDroppedSongs(payloads, to: folder)
-        }
+        .songDropRow(.folder(folder.id), target: dropTarget, frames: $rowFrames)
         .badge(folder.songs.count)
         .tag(Item.folder(folder.id))
         .contextMenu {
@@ -146,17 +164,40 @@ struct LiveSongFolderList: View {
         }
     }
 
+    /// The row under a drop location given in the list's own coordinates.
+    private func dropRow(at location: CGPoint) -> Item? {
+        let y = listFrame.minY + location.y
+        return rowFrames
+            .filter { _, frame in
+                y >= frame.minY - Self.dropRowSlack && y <= frame.maxY + Self.dropRowSlack
+            }
+            .min { abs($0.value.midY - y) < abs($1.value.midY - y) }?
+            .key
+    }
+
+    private func performSongDrop(_ providers: [NSItemProvider], on item: Item) {
+        Task {
+            let ids = await SongDragPayload.songIDs(from: providers)
+            moveDroppedSongs(Set(ids), to: item)
+        }
+    }
+
     /// Dropping on a folder moves songs into it; dropping on All Songs takes them out of folders.
-    private func moveDroppedSongs(_ payloads: [String], to folder: SongFolder?) -> Bool {
-        let ids = Set(payloads.flatMap(SongDragPayload.songIDs(from:)))
+    private func moveDroppedSongs(_ ids: Set<UUID>, to item: Item) {
         let dropped = songs.filter { ids.contains($0.id) }
-        guard !dropped.isEmpty else { return false }
+        guard !dropped.isEmpty else { return }
+        let folder: SongFolder?
+        switch item {
+        case .allSongs:
+            folder = nil
+        case .folder(let id):
+            guard let match = folders.first(where: { $0.id == id }) else { return }
+            folder = match
+        }
         do {
             try SongFolderStore.move(dropped, to: folder, context: modelContext)
-            return true
         } catch {
             errorMessage = error.localizedDescription
-            return false
         }
     }
 
@@ -188,13 +229,59 @@ struct LiveSongFolderList: View {
     }
 }
 
+/// Routes a song drag over the folder list to whichever row is under the cursor.
+private struct SongFolderListDropDelegate: DropDelegate {
+    let target: (CGPoint) -> LiveSongFolderList.Item?
+    let onTargetChange: (LiveSongFolderList.Item?) -> Void
+    let onPerform: (LiveSongFolderList.Item, [NSItemProvider]) -> Void
+
+    func validateDrop(info: DropInfo) -> Bool {
+        info.hasItemsConforming(to: [.plainText])
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        let item = target(info.location)
+        onTargetChange(item)
+        return DropProposal(operation: item == nil ? .forbidden : .move)
+    }
+
+    func dropExited(info: DropInfo) {
+        onTargetChange(nil)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        onTargetChange(nil)
+        guard let item = target(info.location) else { return false }
+        onPerform(item, info.itemProviders(for: [.plainText]))
+        return true
+    }
+}
+
 private extension View {
-    /// Accepts a drop anywhere on the sidebar row, not just over its icon and title.
-    func fullRowDropDestination(perform: @escaping ([String]) -> Bool) -> some View {
+    /// Spans the full row width, reports the row's frame for drop hit-testing, and outlines
+    /// the row while a song drag is over it.
+    func songDropRow(
+        _ item: LiveSongFolderList.Item,
+        target: LiveSongFolderList.Item?,
+        frames: Binding<[LiveSongFolderList.Item: CGRect]>
+    ) -> some View {
         frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .dropDestination(for: String.self) { payloads, _ in
-                perform(payloads)
+            .onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                frames.wrappedValue[item] = frame
+            }
+            .onDisappear {
+                frames.wrappedValue[item] = nil
+            }
+            .overlay {
+                if target == item {
+                    RoundedRectangle(cornerRadius: AppRadius.xxs)
+                        .stroke(AppColors.accent, lineWidth: 2)
+                        .padding(.horizontal, -AppSpacing.xxs)
+                        .allowsHitTesting(false)
+                }
             }
     }
 }

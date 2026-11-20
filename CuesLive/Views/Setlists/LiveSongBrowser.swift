@@ -13,7 +13,7 @@ struct LiveSongBrowser<Songs: View>: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            LiveSongFolderList(selection: $folderSelection)
+            LiveSongFolderList(selection: retainedFolderSelection)
                 .frame(width: Self.folderColumnWidth)
 
             Divider()
@@ -22,6 +22,17 @@ struct LiveSongBrowser<Songs: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(AppColors.backgroundSecondary)
+    }
+
+    /// The sidebar list writes `nil` when it leaves the window, such as while the song editor
+    /// is pushed over the live view. Ignoring those writes keeps the folder selected on return.
+    private var retainedFolderSelection: Binding<LiveSongFolderList.Item?> {
+        Binding {
+            folderSelection
+        } set: { newSelection in
+            guard let newSelection else { return }
+            folderSelection = newSelection
+        }
     }
 }
 #endif
